@@ -1,0 +1,23 @@
+{
+  "name": "storybook-maps",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Monorepo for OGC API-based map component library and demo app",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev:lib": "pnpm --filter @ogc-maps/storybook-components dev",
+    "dev:app": "pnpm --filter client-map-app dev",
+    "storybook": "pnpm --filter @ogc-maps/storybook-components storybook",
+    "build:lib": "pnpm --filter @ogc-maps/storybook-components build",
+    "build:app": "pnpm --filter client-map-app build",
+    "release": "pnpm build && changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.8",
+    "typescript": "^5.7.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}

@@ -1,0 +1,2 @@
+@import "tailwindcss" prefix(mapui);
+@source "./src/**/*.tsx";

@@ -1,0 +1,86 @@
+{
+  "name": "@ogc-maps/storybook-components",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/main.js",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "provenance": true,
+  "types": "./dist/main.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/main.js",
+      "types": "./dist/main.d.ts"
+    },
+    "./components/LayerPanel": {
+      "import": "./dist/components/LayerPanel/index.js",
+      "types": "./dist/components/LayerPanel/index.d.ts"
+    },
+    "./components/Legend": {
+      "import": "./dist/components/Legend/index.js",
+      "types": "./dist/components/Legend/index.d.ts"
+    },
+    "./components/BasemapSwitcher": {
+      "import": "./dist/components/BasemapSwitcher/index.js",
+      "types": "./dist/components/BasemapSwitcher/index.d.ts"
+    },
+    "./components/CollapsibleControl": {
+      "import": "./dist/components/CollapsibleControl/index.js",
+      "types": "./dist/components/CollapsibleControl/index.d.ts"
+    },
+    "./hooks": {
+      "import": "./dist/hooks/index.js",
+      "types": "./dist/hooks/index.d.ts"
+    },
+    "./schemas": {
+      "import": "./dist/schemas/index.js",
+      "types": "./dist/schemas/index.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types/index.js",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build && tsc --project tsconfig.build.json",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "peerDependencies": {
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "react-icons": "^5.0.0"
+  },
+  "dependencies": {
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@chromatic-com/storybook": "^3.2.2",
+    "@storybook/addon-essentials": "^8.5.0",
+    "@storybook/addon-interactions": "^8.5.0",
+    "@storybook/addon-links": "^8.5.0",
+    "@storybook/blocks": "^8.5.0",
+    "@storybook/react": "^8.5.0",
+    "@storybook/react-vite": "^8.5.0",
+    "@storybook/test": "^8.5.0",
+    "@tailwindcss/vite": "^4.0.0-beta.10",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-icons": "^5.0.0",
+    "storybook": "^8.5.0",
+    "tailwindcss": "^4.0.0-beta.10",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.7",
+    "vite-plugin-dts": "^4.3.0",
+    "vite-plugin-lib-inject-css": "^2.1.1"
+  }
+}

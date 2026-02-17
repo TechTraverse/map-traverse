@@ -1,0 +1,145 @@
+import type { Meta, StoryObj } from '@storybook/react';
+import { useState } from 'react';
+import {
+  CoordinateDisplay,
+  formatDecimal,
+  formatDMS,
+  type CoordinateFormatOption,
+} from './CoordinateDisplay';
+
+const meta = {
+  title: 'Components/CoordinateDisplay',
+  component: CoordinateDisplay,
+  parameters: {
+    layout: 'centered',
+  },
+  tags: ['autodocs'],
+} satisfies Meta<typeof CoordinateDisplay>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+const defaultFormats: CoordinateFormatOption[] = [
+  { id: 'decimal', label: 'Decimal', format: formatDecimal },
+  { id: 'dms', label: 'DMS', format: formatDMS },
+];
+
+/**
+ * Interactive wrapper to demonstrate format cycling
+ */
+function InteractiveWrapper({
+  latitude,
+  longitude,
+  formats,
+}: {
+  latitude: number | null;
+  longitude: number | null;
+  formats: CoordinateFormatOption[];
+}) {
+  const [activeFormat, setActiveFormat] = useState(formats[0].id);
+
+  return (
+    <div className="mapui:space-y-4">
+      <CoordinateDisplay
+        latitude={latitude}
+        longitude={longitude}
+        activeFormat={activeFormat}
+        formats={formats}
+        onFormatChange={setActiveFormat}
+      />
+      <p className="mapui:text-sm mapui:text-gray-600">
+        Click the format label to cycle through formats
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Default coordinate display in decimal degrees
+ */
+export const Default: Story = {
+  render: () => (
+    <InteractiveWrapper
+      latitude={40.7128}
+      longitude={-74.006}
+      formats={defaultFormats}
+    />
+  ),
+};
+
+/**
+ * DMS (Degrees, Minutes, Seconds) format
+ */
+export const DMS: Story = {
+  render: () => {
+    const [activeFormat, setActiveFormat] = useState('dms');
+    return (
+      <CoordinateDisplay
+        latitude={40.7128}
+        longitude={-74.006}
+        activeFormat={activeFormat}
+        formats={defaultFormats}
+        onFormatChange={setActiveFormat}
+      />
+    );
+  },
+};
+
+/**
+ * With projected CRS (Web Mercator EPSG:3857)
+ */
+export const WithProjectedCRS: Story = {
+  render: () => {
+    // Mock Web Mercator formatter (actual implementation uses proj4)
+    const formatWebMercator = (lat: number, lng: number): string => {
+      // Simplified conversion for demo purposes
+      const x = lng * 111320;
+      const y = Math.log(Math.tan((90 + lat) * (Math.PI / 360))) * 6378137;
+      return `${x.toFixed(2)}, ${y.toFixed(2)}`;
+    };
+
+    const formatsWithProjected: CoordinateFormatOption[] = [
+      ...defaultFormats,
+      { id: 'epsg3857', label: 'EPSG:3857', format: formatWebMercator },
+    ];
+
+    return (
+      <InteractiveWrapper
+        latitude={40.7128}
+        longitude={-74.006}
+        formats={formatsWithProjected}
+      />
+    );
+  },
+};
+
+/**
+ * No coordinates (null state)
+ */
+export const NoCoordinates: Story = {
+  render: () => {
+    const [activeFormat, setActiveFormat] = useState('decimal');
+    return (
+      <CoordinateDisplay
+        latitude={null}
+        longitude={null}
+        activeFormat={activeFormat}
+        formats={defaultFormats}
+        onFormatChange={setActiveFormat}
+      />
+    );
+  },
+};
+
+/**
+ * Custom styling with className
+ */
+export const CustomStyling: Story = {
+  render: () => (
+    <InteractiveWrapper
+      latitude={51.5074}
+      longitude={-0.1278}
+      formats={defaultFormats}
+    />
+  ),
+};
