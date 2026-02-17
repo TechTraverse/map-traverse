@@ -1,7 +1,7 @@
 services:
   postgis:
     image: postgis/postgis:16-3.4-alpine
-    container_name: storybook-maps-postgis
+    container_name: storybook-components-postgis
     environment:
       POSTGRES_DB: gis
       POSTGRES_USER: postgres
@@ -18,7 +18,7 @@ services:
 
   tipg:
     image: ghcr.io/developmentseed/tipg:latest
-    container_name: storybook-maps-tipg
+    container_name: storybook-components-tipg
     depends_on:
       postgis:
         condition: service_healthy
@@ -34,7 +34,7 @@ services:
     build:
       context: ./docker/seed
       dockerfile: Dockerfile
-    container_name: storybook-maps-seed
+    container_name: storybook-components-seed
     depends_on:
       postgis:
         condition: service_healthy

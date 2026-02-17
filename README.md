@@ -14,7 +14,7 @@ A reusable, config-driven map component ecosystem built on OGC API standards (ti
 
 ### Technical Principles
 
-- **Component Library** (`@storybook-maps/map-ui-lib`): Pure UI components with no MapLibre dependencies
+- **Component Library** (`@storybook-components/map-ui-lib`): Pure UI components with no MapLibre dependencies
 - **Controlled Components**: All components are fully controlled via props and callbacks
 - **Tree-shakeable**: Multiple entry points for optimal bundle sizes
 - **Storybook-First**: All components developed with interactive Storybook stories
@@ -49,7 +49,7 @@ A reusable, config-driven map component ecosystem built on OGC API standards (ti
 ## Monorepo Structure
 
 ```
-storybook-maps/
+storybook-components/
 ├── packages/
 │   └── map-ui-lib/              # Reusable component library
 │       ├── src/
@@ -112,7 +112,7 @@ pnpm install
 docker compose up -d
 
 # Wait for seed to complete (~30 seconds)
-docker logs -f storybook-maps-seed
+docker logs -f storybook-components-seed
 
 # Verify tipg is serving data
 curl http://localhost:8001/collections
