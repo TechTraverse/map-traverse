@@ -10,7 +10,7 @@ export interface UseOgcCollectionsResult {
 /**
  * Hook to fetch the list of collections from an OGC API endpoint.
  *
- * @param baseUrl - The base URL of the OGC API server (e.g. "http://localhost:8001")
+ * @param baseUrl - The base URL of the OGC API server (e.g. "http://localhost:8000")
  */
 export function useOgcCollections(baseUrl: string | null): UseOgcCollectionsResult {
   const [collections, setCollections] = useState<OgcCollection[]>([]);

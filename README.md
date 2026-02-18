@@ -14,7 +14,7 @@ A reusable, config-driven map component ecosystem built on OGC API standards (ti
 
 ### Technical Principles
 
-- **Component Library** (`@storybook-components/map-ui-lib`): Pure UI components with no MapLibre dependencies
+- **Component Library** (`@ogc-maps/storybook-components`): Pure UI components with no MapLibre dependencies
 - **Controlled Components**: All components are fully controlled via props and callbacks
 - **Tree-shakeable**: Multiple entry points for optimal bundle sizes
 - **Storybook-First**: All components developed with interactive Storybook stories
@@ -50,6 +50,7 @@ A reusable, config-driven map component ecosystem built on OGC API standards (ti
 
 ```
 storybook-components/
+├── docker-compose.yml           # PostGIS + tipg + seed
 ├── packages/
 │   └── map-ui-lib/              # Reusable component library
 │       ├── src/
@@ -69,7 +70,6 @@ storybook-components/
 │           └── components/      # Map containers
 │
 └── docker/                      # Development infrastructure
-    ├── docker-compose.yml       # PostGIS + tipg + seed
     └── seed/                    # Natural Earth sample data
 ```
 
@@ -99,7 +99,7 @@ storybook-components/
 ### Prerequisites
 
 - Node.js >= 18
-- pnpm >= 8
+- pnpm >= 10
 - Docker and Docker Compose
 
 ### Installation
@@ -115,7 +115,7 @@ docker compose up -d
 docker logs -f storybook-components-seed
 
 # Verify tipg is serving data
-curl http://localhost:8001/collections
+curl http://localhost:8000/collections
 ```
 
 ### Development
@@ -138,8 +138,8 @@ pnpm build:app
 
 - **Client App**: http://localhost:5173
 - **Storybook**: http://localhost:6006
-- **tipg API**: http://localhost:8001
-- **PostGIS**: localhost:54322
+- **tipg API**: http://localhost:8000
+- **PostGIS**: localhost:5432
 
 ## Key Features (Planned)
 
@@ -196,18 +196,18 @@ pnpm build:app
 
 ## Project Status
 
-See [IMPLEMENTATION.md](./IMPLEMENTATION.md) for detailed phase breakdown and current progress.
+All core implementation phases are complete. See [IMPLEMENTATION.md](./IMPLEMENTATION.md) for details.
 
 ## Contributing
 
 This is a demonstration/learning project. The implementation plan follows a phased approach:
 
 - **Phase 1**: ✅ Project scaffolding and Docker infrastructure
-- **Phase 2**: Config schemas and types (in progress)
-- **Phase 3**: Data hooks
-- **Phase 4**: Core UI components
-- **Phase 5**: Client app integration
-- **Phase 6**: URL state management
+- **Phase 2**: ✅ Config schemas and types
+- **Phase 3**: ✅ Data hooks
+- **Phase 4**: ✅ Core UI components
+- **Phase 5**: ✅ Client app integration
+- **Phase 6**: ✅ URL state management
 
 ## License
 

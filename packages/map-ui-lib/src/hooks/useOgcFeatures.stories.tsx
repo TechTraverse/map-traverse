@@ -173,7 +173,7 @@ type Story = StoryObj<FeaturesDisplayProps>;
 /** Fetches populated places (points) from the local tipg instance. */
 export const PopulatedPlaces: Story = {
   args: {
-    baseUrl: 'http://localhost:8001',
+    baseUrl: 'http://localhost:8000',
     collection: 'public.ne_110m_populated_places',
     limit: 10,
     bboxEnabled: false,
@@ -187,7 +187,7 @@ export const PopulatedPlaces: Story = {
 /** Fetches country polygons. */
 export const Countries: Story = {
   args: {
-    baseUrl: 'http://localhost:8001',
+    baseUrl: 'http://localhost:8000',
     collection: 'public.ne_110m_admin_0_countries',
     limit: 5,
     bboxEnabled: false,
@@ -201,7 +201,7 @@ export const Countries: Story = {
 /** Fetches rivers filtered by a European bounding box. */
 export const RiversWithBbox: Story = {
   args: {
-    baseUrl: 'http://localhost:8001',
+    baseUrl: 'http://localhost:8000',
     collection: 'public.ne_110m_rivers_lake_centerlines',
     limit: 20,
     bboxEnabled: true,
@@ -215,7 +215,7 @@ export const RiversWithBbox: Story = {
 /** Demonstrates the error state when the collection does not exist. */
 export const ErrorState: Story = {
   args: {
-    baseUrl: 'http://localhost:8001',
+    baseUrl: 'http://localhost:8000',
     collection: 'nonexistent_collection',
     limit: 10,
     bboxEnabled: false,

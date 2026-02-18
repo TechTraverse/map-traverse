@@ -82,7 +82,7 @@ type Story = StoryObj<CollectionsDisplayProps>;
 /** Fetches collections from the local tipg instance. */
 export const Default: Story = {
   args: {
-    baseUrl: 'http://localhost:8001',
+    baseUrl: 'http://localhost:8000',
   },
 };
 

@@ -4,7 +4,7 @@ export const mapConfig: MapConfig = {
   sources: [
     {
       id: 'tipg-local',
-      url: 'http://localhost:8001',
+      url: 'http://localhost:8000',
       label: 'Local tipg (Natural Earth)',
       tileMatrixSetId: 'WebMercatorQuad',
     },
