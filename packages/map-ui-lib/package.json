@@ -7,40 +7,47 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "provenance": true,
   "types": "./dist/main.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/main.js",
-      "types": "./dist/main.d.ts"
+      "types": "./dist/main.d.ts",
+      "import": "./dist/main.js"
     },
     "./components/LayerPanel": {
-      "import": "./dist/components/LayerPanel/index.js",
-      "types": "./dist/components/LayerPanel/index.d.ts"
+      "types": "./dist/components/LayerPanel/index.d.ts",
+      "import": "./dist/components/LayerPanel/index.js"
     },
     "./components/Legend": {
-      "import": "./dist/components/Legend/index.js",
-      "types": "./dist/components/Legend/index.d.ts"
+      "types": "./dist/components/Legend/index.d.ts",
+      "import": "./dist/components/Legend/index.js"
     },
     "./components/BasemapSwitcher": {
-      "import": "./dist/components/BasemapSwitcher/index.js",
-      "types": "./dist/components/BasemapSwitcher/index.d.ts"
+      "types": "./dist/components/BasemapSwitcher/index.d.ts",
+      "import": "./dist/components/BasemapSwitcher/index.js"
     },
     "./components/CollapsibleControl": {
-      "import": "./dist/components/CollapsibleControl/index.js",
-      "types": "./dist/components/CollapsibleControl/index.d.ts"
+      "types": "./dist/components/CollapsibleControl/index.d.ts",
+      "import": "./dist/components/CollapsibleControl/index.js"
+    },
+    "./components/CoordinateDisplay": {
+      "types": "./dist/components/CoordinateDisplay/index.d.ts",
+      "import": "./dist/components/CoordinateDisplay/index.js"
+    },
+    "./components/SearchPanel": {
+      "types": "./dist/components/SearchPanel/index.d.ts",
+      "import": "./dist/components/SearchPanel/index.js"
     },
     "./hooks": {
-      "import": "./dist/hooks/index.js",
-      "types": "./dist/hooks/index.d.ts"
+      "types": "./dist/hooks/index.d.ts",
+      "import": "./dist/hooks/index.js"
     },
     "./schemas": {
-      "import": "./dist/schemas/index.js",
-      "types": "./dist/schemas/index.d.ts"
+      "types": "./dist/schemas/index.d.ts",
+      "import": "./dist/schemas/index.js"
     },
     "./types": {
-      "import": "./dist/types/index.js",
-      "types": "./dist/types/index.d.ts"
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js"
     }
   },
   "files": [
@@ -49,7 +56,7 @@
   ],
   "scripts": {
     "dev": "vite build --watch",
-    "build": "vite build && tsc --project tsconfig.build.json",
+    "build": "vite build",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
