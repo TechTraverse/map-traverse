@@ -1,6 +1,6 @@
 # @ogc-maps/storybook-components
 
-A reuseable, config-driven map component library built on OGC API standards. Designed for building interactive web maps with React, MapLibre GL JS, and `tipg`.
+A reusable, config-driven map component library built on OGC API standards. Designed for building interactive web maps with React, MapLibre GL JS, and `tipg`.
 
 ## Features
 
@@ -20,69 +20,41 @@ npm install @ogc-maps/storybook-components
 yarn add @ogc-maps/storybook-components
 ```
 
-## Usage
+Peer dependencies: `react`, `react-dom`, `react-icons`
 
-### 1. Import Styles
-
-Import the library's CSS in your main entry point (e.g., `main.tsx` or `App.tsx`):
+## Quick Start
 
 ```tsx
+// 1. Import styles in your entry point
 import '@ogc-maps/storybook-components/dist/style.css';
-```
 
-### 2. Use Components
+// 2. Define and validate your config
+import { safeValidateMapConfig } from '@ogc-maps/storybook-components/schemas';
 
-Components are exported as named exports. Example using the `LayerPanel`:
+const result = safeValidateMapConfig(myConfig);
+if (!result.success) throw new Error('Invalid config');
 
-```tsx
+// 3. Render components with your state
 import { LayerPanel } from '@ogc-maps/storybook-components/components/LayerPanel';
+import { Legend }     from '@ogc-maps/storybook-components/components/Legend';
 
-function MyMapUI() {
-  const [activeLayers, setActiveLayers] = useState<string[]>(['my-layer-1']);
-
+function MapUI({ layers, visibleIds, onToggle }) {
   return (
-    <div className="absolute top-4 right-4 bg-white p-4 rounded shadow">
-      <LayerPanel 
-        layers={myLayerConfig}
-        activeLayerIds={activeLayers}
-        onToggleVisibility={(layerId) => {
-          // toggle logic
-        }}
-      />
-    </div>
-  );
-}
-```
-
-### 3. Use Hooks
-
-Data fetching hooks for OGC API endpoints:
-
-```tsx
-import { useOgcFeatures } from '@ogc-maps/storybook-components/hooks';
-
-function FeatureList() {
-  const { data, loading } = useOgcFeatures({
-    collectionId: 'public.my_collection',
-    limit: 10
-  });
-
-  if (loading) return <div>Loading...</div>;
-
-  return (
-    <ul>
-      {data.features.map(f => (
-        <li key={f.id}>{f.properties.name}</li>
-      ))}
-    </ul>
+    <>
+      <LayerPanel layers={layers} activeLayerIds={visibleIds} onToggleVisibility={onToggle} />
+      <Legend layers={layers} visibleLayerIds={visibleIds} />
+    </>
   );
 }
 ```
 
 ## Documentation
 
-Full documentation and component playground available at:
-[https://<YOUR_GITHUB_USERNAME>.github.io/ogc-maps](https://<YOUR_GITHUB_USERNAME>.github.io/ogc-maps) (Replace with actual URL once deployed)
+- [Getting Started](../../docs/GETTING-STARTED.md) — Installation, minimal config, first render
+- [Configuration](../../docs/CONFIGURATION.md) — Full `MapConfig` schema reference
+- [Components](../../docs/COMPONENTS.md) — All 6 component APIs with props tables and examples
+- [Hooks & Utilities](../../docs/HOOKS.md) — OGC API hooks and utility functions
+- [Publishing](../../docs/PUBLISHING.md) — Versioning and release guide
 
 ## License
 
