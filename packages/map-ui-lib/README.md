@@ -25,8 +25,8 @@ Peer dependencies: `react`, `react-dom`, `react-icons`
 ## Quick Start
 
 ```tsx
-// 1. Import styles in your entry point
-import '@ogc-maps/storybook-components/dist/style.css';
+// 1. Import styles in your entry point (default styles use the mapui: prefix; you can override with your own Tailwind/CSS)
+import '@ogc-maps/storybook-components/style.css';
 
 // 2. Define and validate your config
 import { safeValidateMapConfig } from '@ogc-maps/storybook-components/schemas';
@@ -47,6 +47,8 @@ function MapUI({ layers, visibleIds, onToggle }) {
   );
 }
 ```
+
+Default styles use the `mapui:` Tailwind prefix so they won't clash with your app's utility classes; override them with your own CSS or Tailwind as needed.
 
 ## Documentation
 

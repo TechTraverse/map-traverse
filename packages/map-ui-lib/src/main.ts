@@ -1,4 +1,5 @@
 // Main entry point for @ogc-maps/storybook-components
+import '../tailwind.css';
 
 // Re-export components
 export * from './components';

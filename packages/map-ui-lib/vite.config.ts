@@ -39,7 +39,8 @@ export default defineConfig({
       output: {
         preserveModules: false,
         entryFileNames: '[name].js',
-        assetFileNames: 'assets/[name][extname]',
+        assetFileNames: (assetInfo) =>
+          assetInfo.name?.endsWith('.css') ? 'style.css' : 'assets/[name][extname]',
       },
     },
   },
