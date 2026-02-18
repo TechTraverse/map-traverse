@@ -1,5 +1,11 @@
 # @ogc-maps/storybook-components
 
+## 0.2.2
+
+### Patch Changes
+
+- 0cffbc5: packaging updates
+
 ## 0.2.1
 
 ### Patch Changes
