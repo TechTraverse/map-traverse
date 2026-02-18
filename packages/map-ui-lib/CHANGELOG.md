@@ -1,5 +1,11 @@
 # @ogc-maps/storybook-components
 
+## 0.2.3
+
+### Patch Changes
+
+- 2412fbc: add default styles
+
 ## 0.2.2
 
 ### Patch Changes
