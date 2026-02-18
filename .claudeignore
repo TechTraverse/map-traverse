@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+out/
+storybook-static/
+
+# Build caches
+.turbo/
+.vite/
+.parcel-cache/
+tsconfig.tsbuildinfo
+
+# Lock files (large and not useful for code understanding)
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git internals
+.git/
+
+# Environment files (may contain secrets)
+.env.local
+.env.*.local
