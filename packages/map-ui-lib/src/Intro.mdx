@@ -1,0 +1,38 @@
+import { Meta } from '@storybook/blocks';
+
+<Meta title="Introduction" />
+
+# @ogc-maps/storybook-components
+
+Welcome to the **Storybook Maps** component library!
+
+This library provides a set of reusable, config-driven React components for building interactive web maps based on OGC API standards.
+
+## Key Features
+
+- 🧩 **Framework Agnostic**: Pure UI components, no hard dependency on MapLibre GL JS suitable for any React map application.
+- ⚙️ **Config Driven**: All components are powered by a strongly-typed JSON configuration (Zod validated).
+- 🌍 **OGC Standard**: First-class support for OGC API Features and Tiles (perfect pair with `tipg`).
+- 🎨 **Themable**: Built with Tailwind CSS and easily customizable.
+
+## Getting Started
+
+Install the package:
+
+```bash
+pnpm add @ogc-maps/storybook-components
+```
+
+Import styles in your app root:
+
+```tsx
+import '@ogc-maps/storybook-components/dist/style.css';
+```
+
+## core Components
+
+Explore the components in the sidebar:
+
+- **LayerPanel**: Manage layer visibility, opacity, and ordering.
+- **Legend**: Display legends for active layers.
+- **BasemapSwitcher**: Switch between different base maps.
