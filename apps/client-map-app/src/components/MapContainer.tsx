@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Map, Source, Layer, AttributionControl } from 'react-map-gl/maplibre';
 import { useOgcFeatures, getFilteredVectorTileUrl } from '@ogc-maps/storybook-components/hooks';
 import type { LayerConfig, SearchFilterValues } from '@ogc-maps/storybook-components/types';
@@ -86,12 +86,26 @@ function GeoJsonLayer({ layer, sourceUrl, filter }: { layer: LayerConfig; source
   );
 }
 
+interface FeatureClickInfo {
+  layerId: string;
+  properties: Record<string, unknown>;
+  lngLat: { lat: number; lng: number };
+}
+
+interface FeatureHoverInfo {
+  layerId: string;
+  properties: Record<string, unknown>;
+  point: { x: number; y: number };
+}
+
 interface MapContainerProps {
   onMouseMove?: (coords: { latitude: number; longitude: number }) => void;
   onMouseLeave?: () => void;
+  onFeatureClick?: (info: FeatureClickInfo) => void;
+  onFeatureHover?: (info: FeatureHoverInfo | null) => void;
 }
 
-export function MapContainer({ onMouseMove, onMouseLeave }: MapContainerProps = {}) {
+export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeatureHover }: MapContainerProps = {}) {
   const viewState = useMapStore((s) => s.viewState);
   const layers = useMapStore((s) => s.layers);
   const sources = useMapStore((s) => s.sources);
@@ -116,16 +130,36 @@ export function MapContainer({ onMouseMove, onMouseLeave }: MapContainerProps = 
   const activeBasemap = basemaps.find((b) => b.id === activeBasemapId);
   const mapStyle = activeBasemap?.url || basemaps[0]?.url;
 
+  const [cursor, setCursor] = useState<string>('auto');
+
   // Split layers by data mode
   const vectorTileLayers = layers.filter((l) => l.dataMode === 'vector-tiles');
   const geojsonLayers = layers.filter((l) => l.dataMode === 'geojson');
+
+  // IDs of visible layers for feature querying
+  const interactiveLayerIds = useMemo(
+    () => layers.filter((l) => l.visible).map((l) => l.id),
+    [layers],
+  );
 
   return (
     <Map
       {...viewState}
       style={{ width: '100%', height: '100%' }}
       mapStyle={mapStyle}
+      cursor={cursor}
+      interactiveLayerIds={interactiveLayerIds}
       onMove={(evt) => setViewState(evt.viewState)}
+      onClick={(evt) => {
+        const feature = evt.features?.[0];
+        if (feature && onFeatureClick) {
+          onFeatureClick({
+            layerId: feature.layer.id,
+            properties: (feature.properties ?? {}) as Record<string, unknown>,
+            lngLat: { lat: evt.lngLat.lat, lng: evt.lngLat.lng },
+          });
+        }
+      }}
       onMouseMove={(evt) => {
         if (onMouseMove) {
           onMouseMove({
@@ -133,10 +167,30 @@ export function MapContainer({ onMouseMove, onMouseLeave }: MapContainerProps = 
             longitude: evt.lngLat.lng,
           });
         }
+        const feature = evt.features?.[0];
+        if (feature) {
+          setCursor('pointer');
+          if (onFeatureHover) {
+            onFeatureHover({
+              layerId: feature.layer.id,
+              properties: (feature.properties ?? {}) as Record<string, unknown>,
+              point: { x: evt.point.x, y: evt.point.y },
+            });
+          }
+        } else {
+          setCursor('auto');
+          if (onFeatureHover) {
+            onFeatureHover(null);
+          }
+        }
       }}
       onMouseOut={() => {
+        setCursor('auto');
         if (onMouseLeave) {
           onMouseLeave();
+        }
+        if (onFeatureHover) {
+          onFeatureHover(null);
         }
       }}
       attributionControl={false}

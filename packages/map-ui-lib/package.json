@@ -34,6 +34,18 @@
       "types": "./dist/components/CoordinateDisplay/index.d.ts",
       "import": "./dist/components/CoordinateDisplay/index.js"
     },
+    "./components/ExportButton": {
+      "types": "./dist/components/ExportButton/index.d.ts",
+      "import": "./dist/components/ExportButton/index.js"
+    },
+    "./components/FeatureDetailPanel": {
+      "types": "./dist/components/FeatureDetailPanel/index.d.ts",
+      "import": "./dist/components/FeatureDetailPanel/index.js"
+    },
+    "./components/FeatureTooltip": {
+      "types": "./dist/components/FeatureTooltip/index.d.ts",
+      "import": "./dist/components/FeatureTooltip/index.js"
+    },
     "./components/SearchPanel": {
       "types": "./dist/components/SearchPanel/index.d.ts",
       "import": "./dist/components/SearchPanel/index.js"

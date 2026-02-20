@@ -149,6 +149,69 @@ function FeatureList() {
 
 ---
 
+### `useCsvExport`
+
+Exports features from an OGC API collection to a CSV file, paginating automatically.
+
+**Signature:**
+
+```ts
+function useCsvExport(options: UseCsvExportOptions): UseCsvExportResult
+```
+
+**`UseCsvExportOptions`:**
+
+| Option | Type | Description |
+|---|---|---|
+| `baseUrl` | `string` | Base URL of the OGC API server (required) |
+| `limit` | `number` | Max features to fetch in total (default: `1000`) |
+| `csvOptions` | `CsvExportOptions` | Optional CSV formatting options (see below) |
+
+**`UseCsvExportResult`:**
+
+| Field | Type | Description |
+|---|---|---|
+| `exportCsv` | `(collectionId: string, filename?: string) => Promise<void>` | Async function that fetches and downloads the CSV |
+| `loading` | `boolean` | `true` while the export is in progress |
+| `error` | `Error \| null` | Set if the fetch or conversion fails |
+
+**Behavior:**
+
+- Paginates through OGC API features in batches up to 1000 until `limit` features are collected or the collection is exhausted.
+- Converts features to CSV using `featuresToCsv` and triggers a browser download via `downloadCsv`.
+- `filename` defaults to `{collectionId}.csv` if not provided.
+
+**Example:**
+
+```tsx
+import { ExportButton } from '@ogc-maps/storybook-components/components/ExportButton';
+import { useCsvExport } from '@ogc-maps/storybook-components/hooks';
+
+function App() {
+  const { exportCsv, loading, error } = useCsvExport({
+    baseUrl: 'http://localhost:8000',
+    limit: 500,
+  });
+
+  const layers = [
+    { id: 'countries', label: 'Countries', collection: 'public.ne_110m_admin_0_countries' },
+  ];
+
+  return (
+    <>
+      {error && <p>Export failed: {error.message}</p>}
+      <ExportButton
+        layers={layers}
+        onExport={(layer) => exportCsv(layer.collection, `${layer.label}.csv`)}
+        loading={loading}
+      />
+    </>
+  );
+}
+```
+
+---
+
 ## Utility Functions
 
 These are pure async functions with no React dependencies. They can be used server-side, in Zustand actions, or anywhere outside a component.
@@ -281,6 +344,52 @@ const url = getFilteredVectorTileUrl(
 
 ---
 
+### `featuresToCsv`
+
+```ts
+function featuresToCsv(features: GeoJsonFeature[], options?: CsvExportOptions): string
+```
+
+Converts an array of GeoJSON features to a CSV string.
+
+**`CsvExportOptions`:**
+
+| Option | Type | Description |
+|---|---|---|
+| `fields` | `string[]` | Property keys to include as columns; auto-discovers all keys if omitted |
+| `includeGeometry` | `boolean` | Append a `geometry` column with serialised GeoJSON geometry (default: `false`) |
+| `delimiter` | `string` | Column delimiter (default: `','`) |
+
+**Behavior:**
+
+- Returns an empty string when `features` is empty.
+- Auto-discovers property keys from all features when `fields` is not specified.
+- Properly escapes values containing quotes, the delimiter, or newlines using RFC 4180 quoting.
+
+```ts
+import { featuresToCsv } from '@ogc-maps/storybook-components/hooks';
+
+const csv = featuresToCsv(features, { fields: ['name', 'continent'], delimiter: ';' });
+```
+
+---
+
+### `downloadCsv`
+
+```ts
+function downloadCsv(csv: string, filename: string): void
+```
+
+Creates a `Blob` from a CSV string and triggers a browser file download.
+
+```ts
+import { downloadCsv } from '@ogc-maps/storybook-components/hooks';
+
+downloadCsv(csv, 'countries.csv');
+```
+
+---
+
 ## Types
 
 These types are re-exported from the `hooks` sub-path for convenience:
@@ -306,5 +415,7 @@ import type {
   LegendConfig,
   SearchConfig,
   SearchField,
+  // CSV export
+  CsvExportOptions,
 } from '@ogc-maps/storybook-components/hooks';
 ```

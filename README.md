@@ -54,7 +54,7 @@ storybook-components/
 ├── packages/
 │   └── map-ui-lib/              # Reusable component library
 │       ├── src/
-│       │   ├── components/      # LayerPanel, Legend, BasemapSwitcher
+│       │   ├── components/      # LayerPanel, Legend, BasemapSwitcher, FeatureDetailPanel, FeatureTooltip, ExportButton
 │       │   ├── hooks/           # useOgcCollections, useOgcFeatures
 │       │   ├── schemas/         # Zod config schemas
 │       │   ├── types/           # TypeScript types
@@ -159,7 +159,10 @@ pnpm build:app
 - **LayerPanel**: Toggle visibility, reorder layers, adjust opacity
 - **Legend**: Auto-generated or custom legend entries
 - **BasemapSwitcher**: Thumbnail-based basemap selection
-- **Search** (future): Full-text search across collections
+- **SearchPanel**: Full-text and attribute search across collections
+- **FeatureDetailPanel**: Click a feature to view its full properties
+- **FeatureTooltip**: Hover preview of feature properties
+- **ExportButton**: CSV export of visible layer data
 
 ### State Management
 - **URL Synchronization**: Shareable links with view state and filters

@@ -3,12 +3,15 @@
 All components are fully controlled — no internal state for data. Import them individually by sub-path to enable tree-shaking:
 
 ```ts
-import { LayerPanel }         from '@ogc-maps/storybook-components/components/LayerPanel';
-import { Legend }             from '@ogc-maps/storybook-components/components/Legend';
-import { BasemapSwitcher }    from '@ogc-maps/storybook-components/components/BasemapSwitcher';
-import { CollapsibleControl } from '@ogc-maps/storybook-components/components/CollapsibleControl';
-import { CoordinateDisplay }  from '@ogc-maps/storybook-components/components/CoordinateDisplay';
-import { SearchPanel }        from '@ogc-maps/storybook-components/components/SearchPanel';
+import { LayerPanel }           from '@ogc-maps/storybook-components/components/LayerPanel';
+import { Legend }               from '@ogc-maps/storybook-components/components/Legend';
+import { BasemapSwitcher }      from '@ogc-maps/storybook-components/components/BasemapSwitcher';
+import { CollapsibleControl }   from '@ogc-maps/storybook-components/components/CollapsibleControl';
+import { CoordinateDisplay }    from '@ogc-maps/storybook-components/components/CoordinateDisplay';
+import { SearchPanel }          from '@ogc-maps/storybook-components/components/SearchPanel';
+import { FeatureDetailPanel }   from '@ogc-maps/storybook-components/components/FeatureDetailPanel';
+import { FeatureTooltip }       from '@ogc-maps/storybook-components/components/FeatureTooltip';
+import { ExportButton }         from '@ogc-maps/storybook-components/components/ExportButton';
 ```
 
 ---
@@ -317,6 +320,151 @@ function App() {
       activeFilters={filters}
       onFilterChange={handleChange}
       onClearFilters={handleClear}
+    />
+  );
+}
+```
+
+---
+
+## FeatureDetailPanel
+
+Displays properties for a selected map feature. Supports an inline panel variant and a full-screen modal variant.
+
+### Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `isOpen` | `boolean` | Yes | Whether the panel/modal is visible |
+| `onClose` | `() => void` | Yes | Called when the close button (or modal backdrop) is clicked |
+| `properties` | `Record<string, unknown> \| null` | Yes | Feature properties to display |
+| `title` | `string` | No (default `'Feature Properties'`) | Panel header text |
+| `fields` | `string[]` | No | Subset of property keys to display; shows all keys if omitted |
+| `variant` | `'panel' \| 'modal'` | No (default `'panel'`) | Inline panel or full-screen modal |
+| `className` | `string` | No | Additional CSS classes |
+
+### Behavior
+
+- Returns `null` when `isOpen` is `false`.
+- **Panel variant**: inline container, `w-72`, scrollable up to `calc(100vh - 4rem)`.
+- **Modal variant**: full-screen backdrop (`bg-black/40`); clicking the backdrop calls `onClose`; clicking inside the panel stops propagation.
+- Uses `PropertyList` internally to render key–value pairs.
+- Shows "No properties available." when `properties` is `null` or empty.
+
+### Example
+
+```tsx
+import { useState } from 'react';
+import { FeatureDetailPanel } from '@ogc-maps/storybook-components/components/FeatureDetailPanel';
+
+function App() {
+  const [selectedFeature, setSelectedFeature] = useState<Record<string, unknown> | null>(null);
+
+  return (
+    <FeatureDetailPanel
+      isOpen={selectedFeature !== null}
+      onClose={() => setSelectedFeature(null)}
+      properties={selectedFeature}
+      title="Feature Properties"
+      variant="panel"
+    />
+  );
+}
+```
+
+---
+
+## FeatureTooltip
+
+A compact tooltip that shows a preview of feature properties. The caller is responsible for positioning.
+
+### Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `title` | `string` | No | Optional title shown above the property list |
+| `properties` | `Record<string, unknown> \| null` | Yes | Feature properties to display |
+| `fields` | `string[]` | No | Subset of property keys to display; shows all keys if omitted |
+| `maxItems` | `number` | No (default `4`) | Max number of properties shown before truncation |
+| `className` | `string` | No | Additional CSS classes |
+
+### Behavior
+
+- Shows "No data" when `properties` is `null`.
+- Truncates to `maxItems` fields with a "+N more" indicator when there are additional properties.
+- Uses compact density for the property list.
+- No internal positioning — place it absolutely relative to cursor or map feature using CSS.
+
+### Example
+
+```tsx
+import { FeatureTooltip } from '@ogc-maps/storybook-components/components/FeatureTooltip';
+
+function MapTooltip({ x, y, feature }) {
+  return (
+    <div style={{ position: 'absolute', left: x + 12, top: y - 8, pointerEvents: 'none' }}>
+      <FeatureTooltip
+        title={feature.properties?.name}
+        properties={feature.properties}
+        maxItems={4}
+      />
+    </div>
+  );
+}
+```
+
+---
+
+## ExportButton
+
+A button (or dropdown for multiple layers) that triggers CSV export of layer data.
+
+### ExportableLayer
+
+```ts
+interface ExportableLayer {
+  id: string;
+  label: string;
+  collection: string;
+}
+```
+
+### Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `layers` | `ExportableLayer[]` | Yes | Layers available for export |
+| `onExport` | `(layer: ExportableLayer) => void` | Yes | Called when a layer is selected for export |
+| `loading` | `boolean` | No (default `false`) | Shows "Exporting..." and disables the button |
+| `disabled` | `boolean` | No (default `false`) | Disables the button |
+| `className` | `string` | No | Additional CSS classes |
+
+### Behavior
+
+- **Single layer**: renders a simple button labeled "Export {label}".
+- **Multiple layers**: renders a dropdown with a layer list. Click outside closes the dropdown.
+- Disabled when `disabled || loading || layers.length === 0`.
+- While `loading`, the button text changes to "Exporting..." and the button becomes non-interactive.
+
+### Example
+
+```tsx
+import { ExportButton } from '@ogc-maps/storybook-components/components/ExportButton';
+import { useCsvExport } from '@ogc-maps/storybook-components/hooks';
+
+function App() {
+  const { exportCsv, loading } = useCsvExport({ baseUrl: 'http://localhost:8000' });
+
+  const exportableLayers = [
+    { id: 'countries', label: 'Countries', collection: 'public.ne_110m_admin_0_countries' },
+    { id: 'cities',    label: 'Cities',    collection: 'public.ne_110m_populated_places' },
+  ];
+
+  return (
+    <ExportButton
+      layers={exportableLayers}
+      onExport={(layer) => exportCsv(layer.collection, `${layer.label}.csv`)}
+      loading={loading}
     />
   );
 }

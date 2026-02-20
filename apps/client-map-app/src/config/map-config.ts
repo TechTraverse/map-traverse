@@ -123,6 +123,9 @@ export const mapConfig: MapConfig = {
     showBasemapSwitcher: true,
     showSearchPanel: true,
     showCoordinateDisplay: true,
+    showFeatureDetail: true,
+    showFeatureTooltip: true,
+    showExportButton: true,
   },
   initialView: {
     latitude: 0,

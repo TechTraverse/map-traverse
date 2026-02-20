@@ -243,6 +243,9 @@ Controls which UI panels are visible. All fields default to shown, except `showS
 | `showBasemapSwitcher` | `boolean` | `true` | Show/hide `BasemapSwitcher` |
 | `showSearchPanel` | `boolean` | `false` | Show/hide `SearchPanel` |
 | `showCoordinateDisplay` | `boolean` | `true` | Show/hide `CoordinateDisplay` |
+| `showFeatureDetail` | `boolean` | `true` | Show/hide `FeatureDetailPanel` |
+| `showFeatureTooltip` | `boolean` | `true` | Show/hide `FeatureTooltip` |
+| `showExportButton` | `boolean` | `true` | Show/hide `ExportButton` |
 
 ---
 
@@ -375,6 +378,9 @@ export const mapConfig: MapConfig = {
     showBasemapSwitcher: true,
     showSearchPanel: true,
     showCoordinateDisplay: true,
+    showFeatureDetail: true,
+    showFeatureTooltip: true,
+    showExportButton: true,
   },
   initialView: { latitude: 0, longitude: 0, zoom: 2, pitch: 0, bearing: 0 },
 };

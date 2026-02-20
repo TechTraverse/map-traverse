@@ -54,7 +54,7 @@ Default styles use the `mapui:` Tailwind prefix so they won't clash with your ap
 
 - [Getting Started](../../docs/GETTING-STARTED.md) — Installation, minimal config, first render
 - [Configuration](../../docs/CONFIGURATION.md) — Full `MapConfig` schema reference
-- [Components](../../docs/COMPONENTS.md) — All 6 component APIs with props tables and examples
+- [Components](../../docs/COMPONENTS.md) — All 9 component APIs with props tables and examples
 - [Hooks & Utilities](../../docs/HOOKS.md) — OGC API hooks and utility functions
 - [Publishing](../../docs/PUBLISHING.md) — Versioning and release guide
 

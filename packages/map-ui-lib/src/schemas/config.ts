@@ -133,6 +133,9 @@ export const UIConfigSchema = z.object({
   showBasemapSwitcher: z.boolean().default(true),
   showSearchPanel: z.boolean().default(false),
   showCoordinateDisplay: z.boolean().default(true),
+  showFeatureDetail: z.boolean().default(true),
+  showFeatureTooltip: z.boolean().default(true),
+  showExportButton: z.boolean().default(true),
 });
 
 // --- Root Map Config ---

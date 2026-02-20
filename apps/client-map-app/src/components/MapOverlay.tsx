@@ -6,8 +6,13 @@ import {
   SearchPanel,
   CollapsibleControl,
   CoordinateDisplay,
+  FeatureDetailPanel,
+  FeatureTooltip,
+  ExportButton,
   type CoordinateFormatOption,
+  type ExportableLayer,
 } from '@ogc-maps/storybook-components';
+import { useCsvExport } from '@ogc-maps/storybook-components/hooks';
 import type { UIConfig } from '@ogc-maps/storybook-components/types';
 import { useMapStore, useActiveLayerIds } from '../stores/mapStore';
 import { LuLayers3, LuMap, LuSearch } from 'react-icons/lu';
@@ -18,6 +23,13 @@ interface MapOverlayProps {
   activeCoordFormat: string;
   coordinateFormats: CoordinateFormatOption[];
   onCoordFormatChange: (formatId: string) => void;
+  selectedFeature: { properties: Record<string, unknown>; title?: string } | null;
+  onCloseFeatureDetail: () => void;
+  hoveredFeature: {
+    properties: Record<string, unknown>;
+    title?: string;
+    point: { x: number; y: number };
+  } | null;
 }
 
 export function MapOverlay({
@@ -26,6 +38,9 @@ export function MapOverlay({
   activeCoordFormat,
   coordinateFormats,
   onCoordFormatChange,
+  selectedFeature,
+  onCloseFeatureDetail,
+  hoveredFeature,
 }: MapOverlayProps) {
   const layers = useMapStore((s) => s.layers);
   const basemaps = useMapStore((s) => s.basemaps);
@@ -38,6 +53,21 @@ export function MapOverlay({
   const setLayerFilters = useMapStore((s) => s.setLayerFilters);
   const clearLayerFilters = useMapStore((s) => s.clearLayerFilters);
   const activeLayerIds = useActiveLayerIds();
+
+  // CSV export: use the first source's base URL (all layers in this app share one source)
+  const exportBaseUrl = sources[0]?.url ?? '';
+  const { exportCsv, loading: exportLoading } = useCsvExport({ baseUrl: exportBaseUrl });
+
+  const exportableLayers: ExportableLayer[] = layers
+    .filter((l) => l.visible)
+    .map((l) => ({ id: l.id, label: l.label, collection: l.collection }));
+
+  const handleExport = useCallback(
+    (layer: ExportableLayer) => {
+      exportCsv(layer.collection, `${layer.label}.csv`);
+    },
+    [exportCsv],
+  );
 
   // Accordion state: track which control is currently open
   const [openControl, setOpenControl] = useState<string | null>(null);
@@ -52,6 +82,32 @@ export function MapOverlay({
 
   return (
     <div className="absolute inset-0 pointer-events-none">
+      {/* Tooltip: follows cursor, pointer-events-none so it doesn't block map */}
+      {uiConfig.showFeatureTooltip && hoveredFeature && (
+        <div
+          className="absolute z-20"
+          style={{ left: hoveredFeature.point.x + 12, top: hoveredFeature.point.y + 12 }}
+        >
+          <FeatureTooltip
+            title={hoveredFeature.title}
+            properties={hoveredFeature.properties}
+          />
+        </div>
+      )}
+
+      {/* Top-left: Feature detail panel */}
+      {uiConfig.showFeatureDetail && (
+        <div className="absolute top-4 left-4 pointer-events-auto z-10">
+          <FeatureDetailPanel
+            isOpen={selectedFeature !== null}
+            onClose={onCloseFeatureDetail}
+            properties={selectedFeature?.properties ?? null}
+            title={selectedFeature?.title ?? 'Feature Properties'}
+            variant="panel"
+          />
+        </div>
+      )}
+
       {/* Top-right: Legend and controls stacked vertically */}
       <div className="absolute top-4 right-4 flex flex-col gap-4 items-end">
         {uiConfig.showLegend && (
@@ -115,6 +171,17 @@ export function MapOverlay({
           </div>
         )}
       </div>
+
+      {/* Bottom-right: Export button */}
+      {uiConfig.showExportButton && (
+        <div className="absolute bottom-8 right-4 pointer-events-auto">
+          <ExportButton
+            layers={exportableLayers}
+            onExport={handleExport}
+            loading={exportLoading}
+          />
+        </div>
+      )}
 
       {/* Bottom-center: Coordinate Display */}
       {uiConfig.showCoordinateDisplay && (

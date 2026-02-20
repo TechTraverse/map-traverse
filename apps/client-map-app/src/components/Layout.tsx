@@ -20,6 +20,17 @@ export function Layout({ uiConfig }: LayoutProps) {
   } | null>(null);
   const [coordFormat, setCoordFormat] = useState<string>('decimal');
 
+  const [selectedFeature, setSelectedFeature] = useState<{
+    properties: Record<string, unknown>;
+    title?: string;
+  } | null>(null);
+
+  const [hoveredFeature, setHoveredFeature] = useState<{
+    properties: Record<string, unknown>;
+    title?: string;
+    point: { x: number; y: number };
+  } | null>(null);
+
   // Define coordinate formats including projected CRS
   const coordinateFormats: CoordinateFormatOption[] = [
     { id: 'decimal', label: 'Decimal', format: formatDecimal },
@@ -50,6 +61,23 @@ export function Layout({ uiConfig }: LayoutProps) {
             })
           }
           onMouseLeave={() => setMouseCoords(null)}
+          onFeatureClick={(info) =>
+            setSelectedFeature({
+              properties: info.properties,
+              title: (info.properties['name'] as string) ?? info.layerId,
+            })
+          }
+          onFeatureHover={(info) =>
+            setHoveredFeature(
+              info
+                ? {
+                    properties: info.properties,
+                    title: (info.properties['name'] as string) ?? undefined,
+                    point: info.point,
+                  }
+                : null,
+            )
+          }
         />
         <MapOverlay
           uiConfig={uiConfig}
@@ -57,6 +85,9 @@ export function Layout({ uiConfig }: LayoutProps) {
           activeCoordFormat={coordFormat}
           coordinateFormats={coordinateFormats}
           onCoordFormatChange={setCoordFormat}
+          selectedFeature={selectedFeature}
+          onCloseFeatureDetail={() => setSelectedFeature(null)}
+          hoveredFeature={hoveredFeature}
         />
       </div>
     </>

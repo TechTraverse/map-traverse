@@ -1,6 +1,7 @@
 import type { SearchField } from '../types';
 export { useOgcCollections, type UseOgcCollectionsResult } from './useOgcCollections';
 export { useOgcFeatures, type UseOgcFeaturesResult } from './useOgcFeatures';
+export { useCsvExport, type UseCsvExportOptions, type UseCsvExportResult } from './useCsvExport';
 
 export type {
   OgcApiSource,
