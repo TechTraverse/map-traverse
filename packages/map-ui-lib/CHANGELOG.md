@@ -1,5 +1,11 @@
 # @ogc-maps/storybook-components
 
+## 0.3.0
+
+### Minor Changes
+
+- 71b5ace: add export, tooltip, and flyout components
+
 ## 0.2.3
 
 ### Patch Changes
