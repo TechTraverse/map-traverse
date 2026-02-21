@@ -62,7 +62,7 @@ export function CollapsibleControl({
         title={label}
         aria-label={label}
         className={`mapui:flex mapui:items-center mapui:justify-center mapui:w-10 mapui:h-10 mapui:bg-white mapui:rounded mapui:shadow-md hover:mapui:bg-gray-50 mapui:transition-colors ${
-          isCollapsed ? '' : 'mapui:opacity-0 mapui:pointer-events-none'
+          isCollapsed ? '' : 'mapui:bg-gray-100'
         }`}
       >
         <Icon size={20} className="mapui:text-gray-700" />
