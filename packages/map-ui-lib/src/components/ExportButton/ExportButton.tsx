@@ -85,7 +85,7 @@ export function ExportButton({
       {open && (
         <ul
           role="listbox"
-          className={`mapui:absolute mapui:left-0 mapui:z-10 mapui:min-w-[160px] mapui:overflow-y-auto mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:py-1 mapui:shadow-lg ${openUpward ? 'mapui:bottom-full mapui:mb-1' : 'mapui:top-full mapui:mt-1'}`}
+          className={`mapui:absolute mapui:right-0 mapui:z-10 mapui:min-w-[160px] mapui:overflow-y-auto mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:py-1 mapui:shadow-lg ${openUpward ? 'mapui:bottom-full mapui:mb-1' : 'mapui:top-full mapui:mt-1'}`}
           style={{ maxHeight: dropdownMaxHeight }}
         >
           {layers.map((layer) => (

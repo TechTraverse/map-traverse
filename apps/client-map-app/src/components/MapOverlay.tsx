@@ -126,11 +126,11 @@ export function MapOverlay({
             >
               <SearchPanel
                 layers={layers}
-                sources={sources}
                 activeFilters={activeFilters}
                 onFilterChange={handleFilterChange}
                 onClearFilters={clearLayerFilters}
                 className="p-3 max-w-xs"
+                hideTitle
               />
             </CollapsibleControl>
           </div>
@@ -149,6 +149,7 @@ export function MapOverlay({
                 activeLayerIds={activeLayerIds}
                 onToggleVisibility={toggleLayerVisibility}
                 onReorder={reorderLayers}
+                hideTitle
               />
             </CollapsibleControl>
           </div>

@@ -1,59 +1,27 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { LayerConfig, SearchFilterValues, OgcApiSource, SearchField } from '../../types';
-import { fetchQueryables, type QueryableProperty } from '../../utils/ogcApi';
+import { useCallback, useMemo } from 'react';
+import type { LayerConfig, SearchFilterValues, SearchField } from '../../types';
 
 export interface SearchPanelProps {
   layers: LayerConfig[];
-  sources?: OgcApiSource[];
   activeFilters: Record<string, SearchFilterValues>;
   onFilterChange: (layerId: string, property: string, value: string | number | undefined) => void;
   onClearFilters: (layerId: string) => void;
   className?: string;
+  hideTitle?: boolean;
 }
 
 export function SearchPanel({
   layers,
-  sources = [],
   activeFilters,
   onFilterChange,
   onClearFilters,
   className = '',
+  hideTitle,
 }: SearchPanelProps) {
   const searchableLayers = useMemo(
     () => layers.filter((layer) => layer.search?.fields.length),
     [layers]
   );
-  const [queryables, setQueryables] = useState<Record<string, Record<string, QueryableProperty>>>({});
-
-  // Stable dependency key for useEffect
-  const searchableLayerIds = useMemo(
-    () => searchableLayers.map((l) => l.id).join(','),
-    [searchableLayers]
-  );
-
-  // Fetch queryables for fields with 'select' type and no options
-  useEffect(() => {
-    searchableLayers.forEach(async (layer) => {
-      const source = sources.find((s) => s.id === layer.sourceId);
-      if (!source) return;
-
-      const needsQueryables = layer.search?.fields.some(
-        (f) => f.type === 'select' && (!f.options || f.options.length === 0)
-      );
-
-      if (needsQueryables) {
-        try {
-          const result = await fetchQueryables(source.url, layer.collection);
-          setQueryables((prev) => ({
-            ...prev,
-            [layer.id]: result.properties,
-          }));
-        } catch (err) {
-          console.error(`Failed to fetch queryables for layer ${layer.id}`, err);
-        }
-      }
-    });
-  }, [searchableLayerIds, searchableLayers, sources]);
 
   const handleTextChange = useCallback(
     (layerId: string, property: string, value: string) => {
@@ -79,9 +47,11 @@ export function SearchPanel({
   if (searchableLayers.length === 0) {
     return (
       <div className={`mapui:flex mapui:flex-col mapui:gap-1 ${className}`.trim()}>
-        <h3 className="mapui:m-0 mapui:mb-2 mapui:text-sm mapui:font-semibold mapui:text-gray-700">
-          Search &amp; Filter
-        </h3>
+        {!hideTitle && (
+          <h3 className="mapui:m-0 mapui:mb-2 mapui:text-sm mapui:font-semibold mapui:text-gray-700">
+            Search &amp; Filter
+          </h3>
+        )}
         <p className="mapui:m-0 mapui:text-xs mapui:text-gray-500">
           No searchable layers configured.
         </p>
@@ -91,9 +61,11 @@ export function SearchPanel({
 
   return (
     <div className={`mapui:flex mapui:flex-col mapui:gap-3 ${className}`.trim()}>
-      <h3 className="mapui:m-0 mapui:mb-2 mapui:text-sm mapui:font-semibold mapui:text-gray-700">
-        Search &amp; Filter
-      </h3>
+      {!hideTitle && (
+        <h3 className="mapui:m-0 mapui:mb-2 mapui:text-sm mapui:font-semibold mapui:text-gray-700">
+          Search &amp; Filter
+        </h3>
+      )}
 
       {searchableLayers.map((layer) => {
         const layerFilters = activeFilters[layer.id] ?? {};
@@ -118,14 +90,7 @@ export function SearchPanel({
             {layer.search!.fields.map((field: SearchField) => {
               const value = layerFilters[field.property];
 
-              // Determine options: either hardcoded or from queryables
-              let options = field.options;
-              if (field.type === 'select' && (!options || options.length === 0)) {
-                const layerQueryables = queryables[layer.id];
-                if (layerQueryables && layerQueryables[field.property]) {
-                  options = layerQueryables[field.property].enum;
-                }
-              }
+              const options = field.options;
 
               return (
                 <div key={field.property} className="mapui:flex mapui:flex-col mapui:gap-0.5">

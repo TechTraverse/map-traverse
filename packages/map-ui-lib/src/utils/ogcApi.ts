@@ -38,19 +38,19 @@ export interface OgcFeatureCollection {
   links?: Array<{ href: string; rel: string; type?: string }>;
 }
 
-/** A single queryable property definition. */
+/** A single queryable property definition (OGC API schemajson format). */
 export interface QueryableProperty {
-  title?: string;
-  description?: string;
-  type: string;
-  enum?: string[];
+  name?: string;
+  type?: string;
+  $ref?: string;
 }
 
-/** OGC API queryables response. */
+/** OGC API queryables response (schemajson format). */
 export interface OgcQueryables {
+  $id?: string;
+  $schema?: string;
   type: string;
   title?: string;
-  description?: string;
   properties: Record<string, QueryableProperty>;
 }
 
@@ -123,7 +123,7 @@ export async function fetchQueryables(
   collection: string,
 ): Promise<OgcQueryables> {
   const base = stripTrailingSlash(baseUrl);
-  const url = `${base}/collections/${encodeURIComponent(collection)}/queryables?f=json`;
+  const url = `${base}/collections/${encodeURIComponent(collection)}/queryables?f=schemajson`;
   return fetchJson<OgcQueryables>(url);
 }
 

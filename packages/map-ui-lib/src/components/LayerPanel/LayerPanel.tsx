@@ -7,6 +7,7 @@ export interface LayerPanelProps {
   onToggleVisibility: (layerId: string) => void;
   onReorder?: (layerIds: string[]) => void;
   className?: string;
+  hideTitle?: boolean;
 }
 
 export function LayerPanel({
@@ -15,6 +16,7 @@ export function LayerPanel({
   onToggleVisibility,
   onReorder,
   className = '',
+  hideTitle,
 }: LayerPanelProps) {
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -69,9 +71,11 @@ export function LayerPanel({
 
   return (
     <div className={`mapui:flex mapui:flex-col mapui:gap-1 ${className}`.trim()}>
-      <h3 className="mapui:m-0 mapui:mb-2 mapui:text-sm mapui:font-semibold mapui:text-gray-700">
-        Layers
-      </h3>
+      {!hideTitle && (
+        <h3 className="mapui:m-0 mapui:mb-2 mapui:text-sm mapui:font-semibold mapui:text-gray-700">
+          Layers
+        </h3>
+      )}
       <ul className="mapui:m-0 mapui:list-none mapui:p-0">
         {layers.map((layer) => {
           const isActive = activeLayerIds.includes(layer.id);
