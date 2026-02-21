@@ -1,5 +1,11 @@
 # @ogc-maps/storybook-components
 
+## 0.4.0
+
+### Minor Changes
+
+- 55bdf1d: collapsible control button update
+
 ## 0.3.0
 
 ### Minor Changes
