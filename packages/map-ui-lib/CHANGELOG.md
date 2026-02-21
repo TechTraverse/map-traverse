@@ -1,5 +1,11 @@
 # @ogc-maps/storybook-components
 
+## 0.4.1
+
+### Patch Changes
+
+- 866afbe: export menu style, hidetitle prop
+
 ## 0.4.0
 
 ### Minor Changes
