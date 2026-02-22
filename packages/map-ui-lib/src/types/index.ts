@@ -11,6 +11,10 @@ import {
   StyleConfigSchema,
   LegendEntrySchema,
   LegendConfigSchema,
+  TextSearchFieldSchema,
+  NumberSearchFieldSchema,
+  DatetimeSearchFieldSchema,
+  SelectSearchFieldSchema,
   SearchFieldSchema,
   SearchConfigSchema,
   FilterConfigSchema,
@@ -37,9 +41,22 @@ export type StyleConfig = z.infer<typeof StyleConfigSchema>;
 export type LegendEntry = z.infer<typeof LegendEntrySchema>;
 export type LegendConfig = z.infer<typeof LegendConfigSchema>;
 
+export type TextSearchField = z.infer<typeof TextSearchFieldSchema>;
+export type NumberSearchField = z.infer<typeof NumberSearchFieldSchema>;
+export type DatetimeSearchField = z.infer<typeof DatetimeSearchFieldSchema>;
+export type SelectSearchField = z.infer<typeof SelectSearchFieldSchema>;
 export type SearchField = z.infer<typeof SearchFieldSchema>;
 export type SearchConfig = z.infer<typeof SearchConfigSchema>;
-export type SearchFilterValues = Record<string, string | number | undefined>;
+
+export type SearchFilterValue =
+  | string
+  | number
+  | { start: string; end: string }
+  | { value: number; operator: string }
+  | { min: number; max: number }
+  | undefined;
+
+export type SearchFilterValues = Record<string, SearchFilterValue>;
 
 export type FilterConfig = z.infer<typeof FilterConfigSchema>;
 export type LayerConfig = z.infer<typeof LayerConfigSchema>;
@@ -60,6 +77,10 @@ export {
   StyleConfigSchema,
   LegendEntrySchema,
   LegendConfigSchema,
+  TextSearchFieldSchema,
+  NumberSearchFieldSchema,
+  DatetimeSearchFieldSchema,
+  SelectSearchFieldSchema,
   SearchFieldSchema,
   SearchConfigSchema,
   FilterConfigSchema,

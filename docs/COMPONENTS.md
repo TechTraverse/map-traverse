@@ -272,39 +272,56 @@ function App() {
 
 ## SearchPanel
 
-Renders search/filter fields for all layers that have a `search` config. Automatically fetches queryable properties from the OGC API for `select` fields without static options.
+Renders search/filter fields for all layers that have a `search` config. Supports text, number, datetime, and select field types with autocomplete, sliders, and range pickers.
 
 ### Props
 
 | Prop | Type | Required | Description |
 |---|---|---|---|
 | `layers` | `LayerConfig[]` | Yes | All layers (only those with `search.fields` are shown) |
-| `sources` | `OgcApiSource[]` | No (default `[]`) | Sources needed for dynamic queryables fetching |
 | `activeFilters` | `Record<string, SearchFilterValues>` | Yes | Current filter state, keyed by layer ID |
-| `onFilterChange` | `(layerId: string, property: string, value: string \| number \| undefined) => void` | Yes | Called on each field change |
+| `onFilterChange` | `(layerId: string, property: string, value: SearchFilterValue) => void` | Yes | Called on each field change |
 | `onClearFilters` | `(layerId: string) => void` | Yes | Called when the "Clear" button is clicked for a layer |
+| `autocompleteSuggestions` | `Record<string, string[]>` | No | Suggestions keyed by `"layerId:property"`, passed through to autocomplete fields |
+| `onFetchSuggestions` | `(layerId: string, property: string, query: string) => void` | No | Called when an autocomplete field queries for suggestions |
+| `hideTitle` | `boolean` | No | Hide the "Search & Filter" heading |
 | `className` | `string` | No | Additional CSS classes |
 
-Where `SearchFilterValues = Record<string, string | number | undefined>`.
+**`SearchFilterValue` and `SearchFilterValues`:**
+
+```ts
+type SearchFilterValue =
+  | string                              // text, select, plain datetime
+  | { start: string; end: string }      // datetime with range: true
+  | { value: number; operator: string } // number with single comparison
+  | { min: number; max: number }        // number with between operator
+  | undefined;                          // field cleared
+
+type SearchFilterValues = Record<string, SearchFilterValue>;
+```
 
 ### Behavior
 
 - Only layers with at least one `search.fields` entry are rendered.
-- For `select` fields with no `options` array, the component calls `fetchQueryables` for the layer's source/collection and populates options from the API response.
+- Text fields with `autocomplete: true` render an `AutocompleteInput` that calls `onFetchSuggestions` as the user types.
+- Number fields render a `NumberInput` supporting slider and between modes.
+- Datetime fields with `range: true` render start/end pickers via `DateRangeInput`.
 - A "Clear" button appears per layer when any filter is active.
 - Renders a placeholder message when no searchable layers are configured.
 
 ### Example
 
 ```tsx
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { SearchPanel } from '@ogc-maps/storybook-components/components/SearchPanel';
-import type { SearchFilterValues } from '@ogc-maps/storybook-components/types';
+import { fromStructuredFilters } from '@ogc-maps/storybook-components/hooks';
+import type { SearchFilterValues, SearchFilterValue } from '@ogc-maps/storybook-components/types';
 
 function App() {
   const [filters, setFilters] = useState<Record<string, SearchFilterValues>>({});
+  const [suggestions, setSuggestions] = useState<Record<string, string[]>>({});
 
-  const handleChange = (layerId: string, property: string, value: string | number | undefined) =>
+  const handleChange = (layerId: string, property: string, value: SearchFilterValue) =>
     setFilters((prev) => ({
       ...prev,
       [layerId]: { ...prev[layerId], [property]: value },
@@ -313,13 +330,23 @@ function App() {
   const handleClear = (layerId: string) =>
     setFilters((prev) => ({ ...prev, [layerId]: {} }));
 
+  // Convert to CQL2 for a specific layer
+  const layer = mapConfig.layers[0];
+  const cql2 = useMemo(
+    () => fromStructuredFilters(filters[layer.id] ?? {}, layer.search?.fields ?? []),
+    [filters, layer]
+  );
+
   return (
     <SearchPanel
       layers={mapConfig.layers}
-      sources={mapConfig.sources}
       activeFilters={filters}
       onFilterChange={handleChange}
       onClearFilters={handleClear}
+      autocompleteSuggestions={suggestions}
+      onFetchSuggestions={(layerId, property, query) => {
+        // See SEARCH-INTEGRATION.md for debounced fetchDistinctValues pattern
+      }}
     />
   );
 }

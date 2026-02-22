@@ -170,23 +170,67 @@ Configures the search/filter fields shown in `SearchPanel` for a layer.
 ```ts
 {
   fields: [
-    { property: 'name',      label: 'Name',      type: 'text',     placeholder: 'Search...' },
-    { property: 'continent', label: 'Continent', type: 'select',   options: ['Africa', 'Asia'] },
-    { property: 'pop',       label: 'Population',type: 'number' },
-    { property: 'created_at',label: 'Created',   type: 'datetime' },
+    // Text with autocomplete (fetches suggestions from API)
+    { property: 'name', label: 'Name', type: 'text', placeholder: 'Search...', autocomplete: true },
+
+    // Text with static suggestions (no API call)
+    { property: 'code', label: 'Code', type: 'text', options: ['US', 'DE', 'FR'] },
+
+    // Select dropdown (static options required)
+    { property: 'continent', label: 'Continent', type: 'select', options: ['Africa', 'Asia', 'Europe'] },
+
+    // Number with slider and between operator
+    { property: 'pop', label: 'Population', type: 'number', inputMode: 'slider', operator: 'between', min: 0, max: 1_500_000_000, step: 1_000_000 },
+
+    // Number with default input mode and comparison operator
+    { property: 'area', label: 'Area (km²)', type: 'number', operator: 'gte' },
+
+    // Datetime range (start + end pickers)
+    { property: 'created_at', label: 'Created', type: 'datetime', range: true },
+
+    // Datetime single value
+    { property: 'updated_at', label: 'Updated After', type: 'datetime' },
   ]
 }
 ```
 
-**SearchField:**
+**SearchField** is a discriminated union on `type`. All field types share these base fields:
 
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `property` | `string` | Yes | OGC API property name |
 | `label` | `string` | Yes | Display label |
-| `type` | `"text" \| "number" \| "select" \| "datetime"` | Yes | Input type |
-| `options` | `string[]` | No | For `select` — static option list. If omitted, fetched from API queryables |
+| `type` | `"text" \| "number" \| "select" \| "datetime"` | Yes | Discriminator — determines available options |
 | `placeholder` | `string` | No | Input placeholder text |
+
+### TextSearchField (`type: 'text'`)
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `autocomplete` | `boolean` | `false` | Enable autocomplete — triggers `onFetchSuggestions` callback on the `SearchPanel` |
+| `options` | `string[]` | — | Static suggestion list (merged with API suggestions when `autocomplete` is also `true`) |
+
+### NumberSearchField (`type: 'number'`)
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `inputMode` | `"input" \| "slider"` | `"input"` | Render a text input or a range slider |
+| `operator` | `"eq" \| "gt" \| "lt" \| "gte" \| "lte" \| "between"` | `"eq"` | Comparison operator. `"between"` shows min/max inputs (or a dual-thumb slider) |
+| `min` | `number` | — | Minimum value (required for `slider` input mode) |
+| `max` | `number` | — | Maximum value (required for `slider` input mode) |
+| `step` | `number` | — | Step increment for the slider or number input |
+
+### DatetimeSearchField (`type: 'datetime'`)
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `range` | `boolean` | `false` | When `true`, renders start + end datetime pickers. Value shape becomes `{ start: string; end: string }` |
+
+### SelectSearchField (`type: 'select'`)
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `options` | `string[]` | Yes | Static list of dropdown options |
 
 ---
 
@@ -331,9 +375,10 @@ export const mapConfig: MapConfig = {
       },
       search: {
         fields: [
-          { property: 'name',      label: 'Country Name', type: 'text',     placeholder: 'Enter country name...' },
-          { property: 'continent', label: 'Continent',    type: 'select',   options: ['Africa', 'Asia', 'Europe', 'North America', 'Oceania', 'South America'] },
-          { property: 'created_at',label: 'Created At',   type: 'datetime' },
+          { property: 'name',       label: 'Country Name', type: 'text',     placeholder: 'Enter country name...', autocomplete: true },
+          { property: 'continent',  label: 'Continent',    type: 'select',   options: ['Africa', 'Asia', 'Europe', 'North America', 'Oceania', 'South America'] },
+          { property: 'pop_est',    label: 'Population',   type: 'number',   inputMode: 'slider', operator: 'between', min: 0, max: 1_500_000_000, step: 1_000_000 },
+          { property: 'created_at', label: 'Created At',   type: 'datetime', range: true },
         ],
       },
     },

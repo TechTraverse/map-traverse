@@ -1,4 +1,5 @@
 // OGC API utility functions - pure fetch functions with no React dependencies
+import type { CQL2Expression } from './cql2';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -61,7 +62,10 @@ export interface FetchFeaturesOptions {
   offset?: number;
   properties?: string[];
   datetime?: string;
+  /** @deprecated Use cql2Filter instead. Simple key-value equality filters. */
   filter?: Record<string, string | number>;
+  /** CQL2 JSON filter expression. When provided, takes precedence over filter. */
+  cql2Filter?: CQL2Expression;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -105,7 +109,10 @@ export async function fetchFeatures(
   if (options.bbox) params.set('bbox', options.bbox.join(','));
   if (options.properties?.length) params.set('properties', options.properties.join(','));
   if (options.datetime) params.set('datetime', options.datetime);
-  if (options.filter) {
+  if (options.cql2Filter) {
+    params.set('filter-lang', 'cql2-json');
+    params.set('filter', JSON.stringify(options.cql2Filter));
+  } else if (options.filter) {
     for (const [key, value] of Object.entries(options.filter)) {
       params.set(key, String(value));
     }
@@ -170,5 +177,57 @@ export function getFilteredVectorTileUrl(
   for (const [key, value] of Object.entries(filter)) {
     params.set(key, String(value));
   }
+  return `${tileUrl}?${params}`;
+}
+
+/**
+ * Fetch distinct non-null string values for a property in an OGC API collection.
+ * Optionally filters by a substring query using a CQL2 `like` filter.
+ */
+export async function fetchDistinctValues(
+  baseUrl: string,
+  collection: string,
+  property: string,
+  options?: { query?: string; limit?: number },
+): Promise<string[]> {
+  const cql2Filter: CQL2Expression | undefined =
+    options?.query
+      ? { op: 'like', args: [{ property }, `%${options.query}%`] }
+      : undefined;
+
+  const data = await fetchFeatures(baseUrl, collection, {
+    properties: [property],
+    limit: options?.limit ?? 50,
+    cql2Filter,
+  });
+
+  const seen = new Set<string>();
+  for (const feature of data.features) {
+    const val = feature.properties?.[property];
+    if (val != null && typeof val === 'string') {
+      seen.add(val);
+    }
+  }
+  return Array.from(seen).sort();
+}
+
+/**
+ * Build a vector tile URL template with a CQL2 JSON filter applied.
+ * Returns a URL with `{z}/{x}/{y}` placeholders suitable for MapLibre.
+ */
+export function getCql2FilteredVectorTileUrl(
+  baseUrl: string,
+  collection: string,
+  cql2Filter?: CQL2Expression | null,
+  tileMatrixSetId: string = 'WebMercatorQuad',
+): string {
+  const base = stripTrailingSlash(baseUrl);
+  const tileUrl = `${base}/collections/${encodeURIComponent(collection)}/tiles/${encodeURIComponent(tileMatrixSetId)}/{z}/{x}/{y}`;
+  if (!cql2Filter) return tileUrl;
+
+  const params = new URLSearchParams({
+    'filter-lang': 'cql2-json',
+    filter: JSON.stringify(cql2Filter),
+  });
   return `${tileUrl}?${params}`;
 }

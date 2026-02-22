@@ -16,13 +16,19 @@ const viewportParsers = {
   bearing: parseAsFloat,
 };
 
+const searchFilterValueSchema = z.union([
+  z.string(),
+  z.number(),
+  z.object({ start: z.string(), end: z.string() }),
+  z.object({ value: z.number(), operator: z.string() }),
+  z.object({ min: z.number(), max: z.number() }),
+]);
+
 // Layer/basemap params: push history
 const stateParsers = {
   layers: parseAsArrayOf(parseAsString),
   basemap: parseAsString,
-  filters: parseAsJson(
-    z.record(z.record(z.union([z.string(), z.number()])))
-  ),
+  filters: parseAsJson(z.record(z.record(searchFilterValueSchema))),
 };
 
 export function useMapUrlState() {

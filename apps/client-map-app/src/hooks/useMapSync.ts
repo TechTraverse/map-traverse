@@ -1,4 +1,6 @@
 import { useEffect, useRef } from 'react';
+import { fromStructuredFilters } from '@ogc-maps/storybook-components/hooks';
+import type { SearchFilterValue, SearchFilterValues } from '@ogc-maps/storybook-components/types';
 import { useMapStore } from '../stores/mapStore';
 import { useMapUrlState } from './useMapUrlState';
 
@@ -23,6 +25,7 @@ export function useMapSync() {
   const setLayerVisibility = useMapStore((s) => s.setLayerVisibility);
   const setActiveBasemap = useMapStore((s) => s.setActiveBasemap);
   const setLayerFilters = useMapStore((s) => s.setLayerFilters);
+  const setLayerCql2Filter = useMapStore((s) => s.setLayerCql2Filter);
 
   // Prevent infinite loops when syncing from URL → store
   // Start as true to guard all effects during initial mount/hydration
@@ -64,11 +67,15 @@ export function useMapSync() {
       setActiveBasemap(layerState.basemap);
     }
 
-    // Sync filters
+    // Sync filters: restore form values and derive CQL2 for API calls
     if (layerState.filters) {
+      const storeLayers = useMapStore.getState().layers;
       Object.entries(layerState.filters).forEach(([layerId, filters]) => {
         if (filters) {
-          setLayerFilters(layerId, filters);
+          setLayerFilters(layerId, filters as SearchFilterValues);
+          const layer = storeLayers.find((l) => l.id === layerId);
+          const fields = layer?.search?.fields ?? [];
+          setLayerCql2Filter(layerId, fromStructuredFilters(filters as SearchFilterValues, fields));
         }
       });
     }
@@ -154,12 +161,12 @@ export function useMapSync() {
 
     if (filtersJson !== prevFiltersJson) {
       // Filter out empty objects
-      const cleanedFilters: Record<string, Record<string, string | number>> = {};
+      const cleanedFilters: Record<string, Record<string, NonNullable<SearchFilterValue>>> = {};
       for (const [layerId, filters] of Object.entries(activeFilters)) {
         const clean = Object.entries(filters).reduce((acc, [k, v]) => {
-          if (v !== undefined && v !== '') acc[k] = v;
+          if (v !== undefined && v !== '') acc[k] = v as NonNullable<SearchFilterValue>;
           return acc;
-        }, {} as Record<string, string | number>);
+        }, {} as Record<string, NonNullable<SearchFilterValue>>);
 
         if (Object.keys(clean).length > 0) {
           cleanedFilters[layerId] = clean;

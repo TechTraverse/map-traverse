@@ -79,13 +79,49 @@ export const LegendConfigSchema = z.object({
 
 // --- Search Config ---
 
-export const SearchFieldSchema = z.object({
+const searchFieldBase = {
   property: z.string().min(1),
   label: z.string(),
-  type: z.enum(['text', 'number', 'select', 'datetime']),
-  options: z.array(z.string()).optional(),
   placeholder: z.string().optional(),
+};
+
+export const TextSearchFieldSchema = z.object({
+  ...searchFieldBase,
+  type: z.literal('text'),
+  autocomplete: z.boolean().default(false),
+  prefetch: z.boolean().optional(),
+  options: z.array(z.string()).optional(),
 });
+
+export const NumberSearchFieldSchema = z.object({
+  ...searchFieldBase,
+  type: z.literal('number'),
+  inputMode: z.enum(['input', 'slider']).default('input'),
+  operator: z.enum(['eq', 'gt', 'lt', 'gte', 'lte', 'between']).default('eq'),
+  min: z.number().optional(),
+  max: z.number().optional(),
+  step: z.number().optional(),
+});
+
+export const DatetimeSearchFieldSchema = z.object({
+  ...searchFieldBase,
+  type: z.literal('datetime'),
+  range: z.boolean().default(false),
+});
+
+export const SelectSearchFieldSchema = z.object({
+  ...searchFieldBase,
+  type: z.literal('select'),
+  options: z.array(z.string()).optional(),
+  prefetch: z.boolean().optional(),
+});
+
+export const SearchFieldSchema = z.discriminatedUnion('type', [
+  TextSearchFieldSchema,
+  NumberSearchFieldSchema,
+  DatetimeSearchFieldSchema,
+  SelectSearchFieldSchema,
+]);
 
 export const SearchConfigSchema = z.object({
   fields: z.array(SearchFieldSchema).min(1),

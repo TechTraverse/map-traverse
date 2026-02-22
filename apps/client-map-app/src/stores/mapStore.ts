@@ -8,6 +8,7 @@ import type {
   OgcApiSource,
   SearchFilterValues,
 } from '@ogc-maps/storybook-components/types';
+import type { CQL2Expression } from '@ogc-maps/storybook-components/hooks';
 
 interface MapState {
   viewState: ViewConfig;
@@ -15,7 +16,10 @@ interface MapState {
   basemaps: BasemapConfig[];
   activeBasemapId: string;
   sources: OgcApiSource[];
+  /** Form values for the SearchPanel UI and URL serialization. */
   activeFilters: Record<string, SearchFilterValues>;
+  /** Derived CQL2 expressions for API calls. Kept in sync with activeFilters. */
+  activeCql2Filters: Record<string, CQL2Expression | null>;
 
   setViewState: (vs: Partial<ViewConfig>) => void;
   toggleLayerVisibility: (layerId: string) => void;
@@ -23,6 +27,7 @@ interface MapState {
   reorderLayers: (layerIds: string[]) => void;
   setActiveBasemap: (basemapId: string) => void;
   setLayerFilters: (layerId: string, filters: SearchFilterValues) => void;
+  setLayerCql2Filter: (layerId: string, cql2: CQL2Expression | null) => void;
   clearLayerFilters: (layerId: string) => void;
   hydrate: (config: MapConfig) => void;
 }
@@ -40,6 +45,7 @@ export const useMapStore = create<MapState>((set) => ({
   activeBasemapId: '',
   sources: [],
   activeFilters: {},
+  activeCql2Filters: {},
 
   setViewState: (vs) =>
     set((state) => ({
@@ -77,10 +83,16 @@ export const useMapStore = create<MapState>((set) => ({
       activeFilters: { ...state.activeFilters, [layerId]: filters },
     })),
 
+  setLayerCql2Filter: (layerId, cql2) =>
+    set((state) => ({
+      activeCql2Filters: { ...state.activeCql2Filters, [layerId]: cql2 },
+    })),
+
   clearLayerFilters: (layerId) =>
     set((state) => {
-      const { [layerId]: _, ...rest } = state.activeFilters;
-      return { activeFilters: rest };
+      const { [layerId]: _f, ...restFilters } = state.activeFilters;
+      const { [layerId]: _c, ...restCql2 } = state.activeCql2Filters;
+      return { activeFilters: restFilters, activeCql2Filters: restCql2 };
     }),
 
   hydrate: (config) =>
@@ -91,6 +103,7 @@ export const useMapStore = create<MapState>((set) => ({
       activeBasemapId: config.basemaps[0]?.id || '',
       sources: config.sources,
       activeFilters: {},
+      activeCql2Filters: {},
     }),
 }));
 

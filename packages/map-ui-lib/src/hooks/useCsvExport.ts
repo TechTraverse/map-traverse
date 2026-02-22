@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { fetchFeatures, type GeoJsonFeature } from '../utils/ogcApi';
 import { featuresToCsv, downloadCsv, type CsvExportOptions } from '../utils/csvExport';
+import type { CQL2Expression } from '../utils/cql2';
 
 export interface UseCsvExportOptions {
   baseUrl: string;
@@ -9,7 +10,7 @@ export interface UseCsvExportOptions {
 }
 
 export interface UseCsvExportResult {
-  exportCsv: (collectionId: string, filename?: string) => Promise<void>;
+  exportCsv: (collectionId: string, filename?: string, cql2Filter?: CQL2Expression) => Promise<void>;
   loading: boolean;
   error: Error | null;
 }
@@ -23,7 +24,7 @@ export function useCsvExport({
   const [error, setError] = useState<Error | null>(null);
 
   const exportCsv = useCallback(
-    async (collectionId: string, filename = `${collectionId}.csv`) => {
+    async (collectionId: string, filename = `${collectionId}.csv`, cql2Filter?: CQL2Expression) => {
       setLoading(true);
       setError(null);
 
@@ -38,6 +39,7 @@ export function useCsvExport({
           const page = await fetchFeatures(baseUrl, collectionId, {
             limit: batchSize,
             offset,
+            cql2Filter,
           });
 
           features.push(...page.features);

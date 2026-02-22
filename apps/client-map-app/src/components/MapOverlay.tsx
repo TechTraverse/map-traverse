@@ -12,9 +12,10 @@ import {
   type CoordinateFormatOption,
   type ExportableLayer,
 } from '@ogc-maps/storybook-components';
-import { useCsvExport } from '@ogc-maps/storybook-components/hooks';
-import type { UIConfig } from '@ogc-maps/storybook-components/types';
+import { useCsvExport, fromStructuredFilters } from '@ogc-maps/storybook-components/hooks';
+import type { UIConfig, SearchFilterValue, SearchFilterValues } from '@ogc-maps/storybook-components/types';
 import { useMapStore, useActiveLayerIds } from '../stores/mapStore';
+import { useAutocompleteSuggestions } from '../hooks/useAutocompleteSuggestions';
 import { LuLayers3, LuMap, LuSearch } from 'react-icons/lu';
 
 interface MapOverlayProps {
@@ -47,12 +48,16 @@ export function MapOverlay({
   const sources = useMapStore((s) => s.sources);
   const activeBasemapId = useMapStore((s) => s.activeBasemapId);
   const activeFilters = useMapStore((s) => s.activeFilters);
+  const activeCql2Filters = useMapStore((s) => s.activeCql2Filters);
   const toggleLayerVisibility = useMapStore((s) => s.toggleLayerVisibility);
   const reorderLayers = useMapStore((s) => s.reorderLayers);
   const setActiveBasemap = useMapStore((s) => s.setActiveBasemap);
   const setLayerFilters = useMapStore((s) => s.setLayerFilters);
+  const setLayerCql2Filter = useMapStore((s) => s.setLayerCql2Filter);
   const clearLayerFilters = useMapStore((s) => s.clearLayerFilters);
   const activeLayerIds = useActiveLayerIds();
+
+  const { autocompleteSuggestions, fetchSuggestions } = useAutocompleteSuggestions();
 
   // CSV export: use the first source's base URL (all layers in this app share one source)
   const exportBaseUrl = sources[0]?.url ?? '';
@@ -64,20 +69,26 @@ export function MapOverlay({
 
   const handleExport = useCallback(
     (layer: ExportableLayer) => {
-      exportCsv(layer.collection, `${layer.label}.csv`);
+      const cql2Filter = activeCql2Filters[layer.id] ?? undefined;
+      exportCsv(layer.collection, `${layer.label}.csv`, cql2Filter);
     },
-    [exportCsv],
+    [exportCsv, activeCql2Filters],
   );
 
   // Accordion state: track which control is currently open
   const [openControl, setOpenControl] = useState<string | null>(null);
 
   const handleFilterChange = useCallback(
-    (layerId: string, property: string, value: string | number | undefined) => {
+    (layerId: string, property: string, value: SearchFilterValue) => {
       const current = useMapStore.getState().activeFilters[layerId] ?? {};
-      setLayerFilters(layerId, { ...current, [property]: value });
+      const updated: SearchFilterValues = { ...current, [property]: value };
+      setLayerFilters(layerId, updated);
+
+      const layer = useMapStore.getState().layers.find((l) => l.id === layerId);
+      const fields = layer?.search?.fields ?? [];
+      setLayerCql2Filter(layerId, fromStructuredFilters(updated, fields));
     },
-    [setLayerFilters],
+    [setLayerFilters, setLayerCql2Filter],
   );
 
   return (
@@ -129,6 +140,8 @@ export function MapOverlay({
                 activeFilters={activeFilters}
                 onFilterChange={handleFilterChange}
                 onClearFilters={clearLayerFilters}
+                autocompleteSuggestions={autocompleteSuggestions}
+                onFetchSuggestions={fetchSuggestions}
                 className="p-3 max-w-xs"
                 hideTitle
               />

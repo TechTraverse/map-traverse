@@ -1,13 +1,30 @@
-import { useCallback, useMemo } from 'react';
-import type { LayerConfig, SearchFilterValues, SearchField } from '../../types';
+import { useEffect, useMemo } from 'react';
+import type { LayerConfig, SearchFilterValues, SearchFilterValue, SearchField, NumberSearchField, DatetimeSearchField, TextSearchField, SelectSearchField } from '../../types';
+import { AutocompleteInput } from './AutocompleteInput';
+import { DateRangeInput } from './DateRangeInput';
+import { NumberInput } from './NumberInput';
 
 export interface SearchPanelProps {
   layers: LayerConfig[];
   activeFilters: Record<string, SearchFilterValues>;
-  onFilterChange: (layerId: string, property: string, value: string | number | undefined) => void;
+  onFilterChange: (layerId: string, property: string, value: SearchFilterValue) => void;
   onClearFilters: (layerId: string) => void;
+  autocompleteSuggestions?: Record<string, string[]>;
+  onFetchSuggestions?: (layerId: string, property: string, query: string, options?: { prefetch?: boolean }) => void;
   className?: string;
   hideTitle?: boolean;
+}
+
+function isFilterActive(value: SearchFilterValue): boolean {
+  if (value === undefined || value === '' || value === null) return false;
+  if (typeof value === 'object') {
+    if ('start' in value && 'end' in value) {
+      return (value as { start: string; end: string }).start !== '' ||
+        (value as { start: string; end: string }).end !== '';
+    }
+    return true;
+  }
+  return true;
 }
 
 export function SearchPanel({
@@ -15,6 +32,8 @@ export function SearchPanel({
   activeFilters,
   onFilterChange,
   onClearFilters,
+  autocompleteSuggestions = {},
+  onFetchSuggestions,
   className = '',
   hideTitle,
 }: SearchPanelProps) {
@@ -23,26 +42,16 @@ export function SearchPanel({
     [layers]
   );
 
-  const handleTextChange = useCallback(
-    (layerId: string, property: string, value: string) => {
-      onFilterChange(layerId, property, value || undefined);
-    },
-    [onFilterChange],
-  );
-
-  const handleNumberChange = useCallback(
-    (layerId: string, property: string, value: string) => {
-      onFilterChange(layerId, property, value === '' ? undefined : Number(value));
-    },
-    [onFilterChange],
-  );
-
-  const handleSelectChange = useCallback(
-    (layerId: string, property: string, value: string) => {
-      onFilterChange(layerId, property, value || undefined);
-    },
-    [onFilterChange],
-  );
+  useEffect(() => {
+    if (!onFetchSuggestions) return;
+    for (const layer of searchableLayers) {
+      for (const field of layer.search!.fields) {
+        if (field.type === 'select' && (field as SelectSearchField).prefetch) {
+          onFetchSuggestions(layer.id, field.property, '', { prefetch: true });
+        }
+      }
+    }
+  }, [searchableLayers, onFetchSuggestions]);
 
   if (searchableLayers.length === 0) {
     return (
@@ -69,7 +78,7 @@ export function SearchPanel({
 
       {searchableLayers.map((layer) => {
         const layerFilters = activeFilters[layer.id] ?? {};
-        const hasActiveFilters = Object.values(layerFilters).some((v) => v !== undefined);
+        const hasActiveFilters = Object.values(layerFilters).some(isFilterActive);
 
         return (
           <div key={layer.id} className="mapui:flex mapui:flex-col mapui:gap-2 mapui:border-b mapui:border-gray-100 mapui:pb-2 last:mapui:border-0">
@@ -89,56 +98,108 @@ export function SearchPanel({
             </div>
             {layer.search!.fields.map((field: SearchField) => {
               const value = layerFilters[field.property];
-
-              const options = field.options;
+              const suggestionKey = `${layer.id}:${field.property}`;
+              const fieldId = `search-${layer.id}-${field.property}`;
 
               return (
                 <div key={field.property} className="mapui:flex mapui:flex-col mapui:gap-0.5">
-                  <label className="mapui:text-xs mapui:text-gray-500">{field.label}</label>
+                  <label htmlFor={fieldId} className="mapui:text-xs mapui:text-gray-500">{field.label}</label>
 
-                  {field.type === 'text' && (
+                  {field.type === 'text' && (field as TextSearchField).autocomplete ? (
+                    <AutocompleteInput
+                      id={fieldId}
+                      value={(value as string) ?? ''}
+                      onChange={(v) => onFilterChange(layer.id, field.property, v || undefined)}
+                      suggestions={[...new Set([
+                        ...(autocompleteSuggestions[suggestionKey] ?? []),
+                        ...((field as TextSearchField).options ?? []),
+                      ])]}
+                      onQueryChange={(q) => onFetchSuggestions?.(layer.id, field.property, q, { prefetch: (field as TextSearchField).prefetch })}
+                      placeholder={(field as TextSearchField).placeholder ?? ''}
+                    />
+                  ) : field.type === 'text' ? (
                     <input
+                      id={fieldId}
                       type="text"
                       value={(value as string) ?? ''}
-                      placeholder={field.placeholder ?? ''}
-                      onChange={(e) => handleTextChange(layer.id, field.property, e.target.value)}
+                      placeholder={(field as TextSearchField).placeholder ?? ''}
+                      onChange={(e) =>
+                        onFilterChange(layer.id, field.property, e.target.value || undefined)
+                      }
                       className="mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
                     />
-                  )}
-
-                  {field.type === 'number' && (
-                    <input
-                      type="number"
-                      value={value ?? ''}
-                      placeholder={field.placeholder ?? ''}
-                      onChange={(e) => handleNumberChange(layer.id, field.property, e.target.value)}
-                      className="mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
+                  ) : field.type === 'datetime' && (field as DatetimeSearchField).range ? (
+                    <DateRangeInput
+                      id={fieldId}
+                      startValue={
+                        value && typeof value === 'object' && 'start' in value
+                          ? (value as { start: string; end: string }).start
+                          : ''
+                      }
+                      endValue={
+                        value && typeof value === 'object' && 'end' in value
+                          ? (value as { start: string; end: string }).end
+                          : ''
+                      }
+                      onStartChange={(start) =>
+                        onFilterChange(layer.id, field.property, {
+                          start,
+                          end:
+                            value && typeof value === 'object' && 'end' in value
+                              ? (value as { start: string; end: string }).end
+                              : '',
+                        })
+                      }
+                      onEndChange={(end) =>
+                        onFilterChange(layer.id, field.property, {
+                          start:
+                            value && typeof value === 'object' && 'start' in value
+                              ? (value as { start: string; end: string }).start
+                              : '',
+                          end,
+                        })
+                      }
                     />
-                  )}
-
-                  {field.type === 'datetime' && (
+                  ) : field.type === 'datetime' ? (
                     <input
+                      id={fieldId}
                       type="datetime-local"
                       value={(value as string) ?? ''}
-                      onChange={(e) => handleTextChange(layer.id, field.property, e.target.value)}
+                      onChange={(e) =>
+                        onFilterChange(layer.id, field.property, e.target.value || undefined)
+                      }
                       className="mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
                     />
-                  )}
-
-                  {field.type === 'select' && (
-                    <select
-                      value={(value as string) ?? ''}
-                      onChange={(e) => handleSelectChange(layer.id, field.property, e.target.value)}
-                      className="mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
-                    >
-                      <option value="">{field.placeholder ?? 'Select...'}</option>
-                      {options?.map((opt) => (
-                        <option key={opt} value={opt}>
-                          {opt}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+                  ) : field.type === 'number' ? (
+                    <NumberInput
+                      id={fieldId}
+                      field={field as NumberSearchField}
+                      value={value}
+                      onChange={(v) => onFilterChange(layer.id, field.property, v)}
+                    />
+                  ) : field.type === 'select' ? (() => {
+                    const selectField = field as SelectSearchField;
+                    const dynamicOptions = autocompleteSuggestions[suggestionKey] ?? [];
+                    const staticOptions = selectField.options ?? [];
+                    const allOptions = [...new Set([...dynamicOptions, ...staticOptions])];
+                    return (
+                      <select
+                        id={fieldId}
+                        value={(value as string) ?? ''}
+                        onChange={(e) =>
+                          onFilterChange(layer.id, field.property, e.target.value || undefined)
+                        }
+                        className="mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
+                      >
+                        <option value="">{field.placeholder ?? 'Select...'}</option>
+                        {allOptions.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                    );
+                  })() : null}
                 </div>
               );
             })}

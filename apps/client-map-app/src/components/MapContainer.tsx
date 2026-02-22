@@ -1,21 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Map, Source, Layer, AttributionControl } from 'react-map-gl/maplibre';
-import { useOgcFeatures, getFilteredVectorTileUrl } from '@ogc-maps/storybook-components/hooks';
-import type { LayerConfig, SearchFilterValues } from '@ogc-maps/storybook-components/types';
+import { useOgcFeatures, getCql2FilteredVectorTileUrl } from '@ogc-maps/storybook-components/hooks';
+import type { CQL2Expression } from '@ogc-maps/storybook-components/hooks';
+import type { LayerConfig } from '@ogc-maps/storybook-components/types';
 import { useMapStore } from '../stores/mapStore';
 
-/** Strip undefined/empty-string values from filters to produce a clean Record. */
-function cleanFilters(
-  filters?: SearchFilterValues,
-): Record<string, string | number> | undefined {
-  if (!filters) return undefined;
-  const cleaned: Record<string, string | number> = {};
-  for (const [key, value] of Object.entries(filters)) {
-    if (value !== undefined && value !== '') {
-      cleaned[key] = value;
-    }
-  }
-  return Object.keys(cleaned).length > 0 ? cleaned : undefined;
+function getVectorTileSourceKey(layerId: string, cql2Filter?: CQL2Expression | null): string {
+  return cql2Filter ? `${layerId}--${JSON.stringify(cql2Filter)}` : layerId;
 }
 
 // Inline component for vector tile layers
@@ -23,14 +14,15 @@ function VectorTileLayer({
   layer,
   sourceUrl,
   tileMatrixSetId,
-  filter
+  cql2Filter,
 }: {
   layer: LayerConfig;
   sourceUrl: string;
   tileMatrixSetId?: string;
-  filter?: Record<string, string | number>;
+  cql2Filter?: CQL2Expression | null;
 }) {
-  const tileUrl = getFilteredVectorTileUrl(sourceUrl, layer.collection, filter, tileMatrixSetId);
+  const tileUrl = getCql2FilteredVectorTileUrl(sourceUrl, layer.collection, cql2Filter, tileMatrixSetId);
+  const sourceKey = getVectorTileSourceKey(layer.id, cql2Filter);
 
   if (!layer.style) {
     console.warn(`Layer ${layer.id} has no style configuration`);
@@ -38,9 +30,9 @@ function VectorTileLayer({
   }
 
   return (
-    <Source id={layer.id} key={layer.id} type="vector" tiles={[tileUrl]}>
+    <Source id={sourceKey} key={sourceKey} type="vector" tiles={[tileUrl]}>
       <Layer
-        id={layer.id}
+        id={sourceKey}
         type={layer.style.type}
         source-layer={layer.collection.replace(/^[^.]+\./, '')}
         paint={layer.style.paint as any}
@@ -51,10 +43,10 @@ function VectorTileLayer({
 }
 
 // Inline component for GeoJSON layers
-function GeoJsonLayer({ layer, sourceUrl, filter }: { layer: LayerConfig; sourceUrl: string; filter?: Record<string, string | number> }) {
+function GeoJsonLayer({ layer, sourceUrl, cql2Filter }: { layer: LayerConfig; sourceUrl: string; cql2Filter?: CQL2Expression | null }) {
   const { features, error } = useOgcFeatures(sourceUrl, layer.collection, {
     limit: 10000,
-    filter,
+    cql2Filter: cql2Filter ?? undefined,
   });
 
   const featureCollection = useMemo(
@@ -111,7 +103,7 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
   const sources = useMapStore((s) => s.sources);
   const basemaps = useMapStore((s) => s.basemaps);
   const activeBasemapId = useMapStore((s) => s.activeBasemapId);
-  const activeFilters = useMapStore((s) => s.activeFilters);
+  const activeCql2Filters = useMapStore((s) => s.activeCql2Filters);
   const setViewState = useMapStore((s) => s.setViewState);
 
   // Build source URL lookup map with tileMatrixSetId
@@ -138,8 +130,14 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
 
   // IDs of visible layers for feature querying
   const interactiveLayerIds = useMemo(
-    () => layers.filter((l) => l.visible).map((l) => l.id),
-    [layers],
+    () =>
+      layers.filter((l) => l.visible).map((l) => {
+        if (l.dataMode === 'vector-tiles') {
+          return getVectorTileSourceKey(l.id, activeCql2Filters[l.id]);
+        }
+        return l.id;
+      }),
+    [layers, activeCql2Filters],
   );
 
   return (
@@ -206,11 +204,11 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
         }
         return (
           <VectorTileLayer
-            key={layer.id}
+            key={getVectorTileSourceKey(layer.id, activeCql2Filters[layer.id])}
             layer={layer}
             sourceUrl={sourceInfo.url}
             tileMatrixSetId={sourceInfo.tileMatrixSetId}
-            filter={cleanFilters(activeFilters[layer.id])}
+            cql2Filter={activeCql2Filters[layer.id]}
           />
         );
       })}
@@ -222,7 +220,7 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
           console.warn(`Source URL not found for layer ${layer.id}`);
           return null;
         }
-        return <GeoJsonLayer key={layer.id} layer={layer} sourceUrl={sourceInfo.url} filter={cleanFilters(activeFilters[layer.id])} />;
+        return <GeoJsonLayer key={layer.id} layer={layer} sourceUrl={sourceInfo.url} cql2Filter={activeCql2Filters[layer.id]} />;
       })}
     </Map>
   );
