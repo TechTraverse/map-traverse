@@ -50,5 +50,30 @@ services:
       - ./docker/seed:/scripts
     command: sh /scripts/seed.sh
 
+  admin-ui:
+    build:
+      context: .
+      dockerfile: apps/admin-ui/Dockerfile
+    container_name: storybook-components-admin-ui
+    depends_on:
+      postgis:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
+    environment:
+      DB_HOST: postgis
+      DB_PORT: 5432
+      DB_NAME: gis
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      PORT: 3001
+      SESSION_SECRET: change-me-in-production
+      ADMIN_ENVIRONMENTS: development,staging,production
+      # Set ADMIN_USERNAME and ADMIN_PASSWORD_HASH to enable authentication
+      # ADMIN_USERNAME: admin
+      # ADMIN_PASSWORD_HASH: <bcrypt hash>
+    ports:
+      - "3001:3001"
+
 volumes:
   postgis_data:

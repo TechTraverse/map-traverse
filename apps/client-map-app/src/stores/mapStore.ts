@@ -6,6 +6,7 @@ import type {
   BasemapConfig,
   ViewConfig,
   OgcApiSource,
+  UIConfig,
   SearchFilterValues,
 } from '@ogc-maps/storybook-components/types';
 import type { CQL2Expression } from '@ogc-maps/storybook-components/hooks';
@@ -16,6 +17,7 @@ interface MapState {
   basemaps: BasemapConfig[];
   activeBasemapId: string;
   sources: OgcApiSource[];
+  uiConfig: UIConfig;
   /** Form values for the SearchPanel UI and URL serialization. */
   activeFilters: Record<string, SearchFilterValues>;
   /** Derived CQL2 expressions for API calls. Kept in sync with activeFilters. */
@@ -44,6 +46,16 @@ export const useMapStore = create<MapState>((set) => ({
   basemaps: [],
   activeBasemapId: '',
   sources: [],
+  uiConfig: {
+    showLayerPanel: true,
+    showLegend: true,
+    showBasemapSwitcher: true,
+    showSearchPanel: false,
+    showCoordinateDisplay: true,
+    showFeatureDetail: true,
+    showFeatureTooltip: true,
+    showExportButton: true,
+  },
   activeFilters: {},
   activeCql2Filters: {},
 
@@ -102,6 +114,7 @@ export const useMapStore = create<MapState>((set) => ({
       basemaps: config.basemaps,
       activeBasemapId: config.basemaps[0]?.id || '',
       sources: config.sources,
+      uiConfig: config.ui,
       activeFilters: {},
       activeCql2Filters: {},
     }),

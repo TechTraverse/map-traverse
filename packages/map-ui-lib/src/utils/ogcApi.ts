@@ -44,6 +44,12 @@ export interface QueryableProperty {
   name?: string;
   type?: string;
   $ref?: string;
+  title?: string;
+  description?: string;
+  format?: string;
+  enum?: string[];
+  minimum?: number;
+  maximum?: number;
 }
 
 /** OGC API queryables response (schemajson format). */
@@ -53,6 +59,28 @@ export interface OgcQueryables {
   type: string;
   title?: string;
   properties: Record<string, QueryableProperty>;
+}
+
+/** OGC API conformance response. */
+export interface OgcConformance {
+  conformsTo: string[];
+}
+
+/** TileJSON response for a vector tile layer. */
+export interface TileJson {
+  tilejson: string;
+  tiles: string[];
+  name?: string;
+  description?: string;
+  minzoom?: number;
+  maxzoom?: number;
+  bounds?: [number, number, number, number];
+  center?: [number, number, number];
+  vector_layers?: Array<{
+    id: string;
+    description?: string;
+    fields?: Record<string, string>;
+  }>;
 }
 
 /** Options for fetchFeatures. */
@@ -132,6 +160,55 @@ export async function fetchQueryables(
   const base = stripTrailingSlash(baseUrl);
   const url = `${base}/collections/${encodeURIComponent(collection)}/queryables?f=schemajson`;
   return fetchJson<OgcQueryables>(url);
+}
+
+/**
+ * Fetch metadata for a single OGC API collection.
+ */
+export async function fetchCollectionDetail(
+  baseUrl: string,
+  collectionId: string,
+): Promise<OgcCollection> {
+  const base = stripTrailingSlash(baseUrl);
+  const url = `${base}/collections/${encodeURIComponent(collectionId)}?f=json`;
+  return fetchJson<OgcCollection>(url);
+}
+
+/**
+ * Fetch the OGC API conformance declaration to discover server capabilities.
+ */
+export async function fetchConformance(baseUrl: string): Promise<OgcConformance> {
+  const url = `${stripTrailingSlash(baseUrl)}/conformance?f=json`;
+  return fetchJson<OgcConformance>(url);
+}
+
+/**
+ * Fetch the TileJSON document for a collection's vector tiles.
+ */
+export async function fetchTileJson(
+  baseUrl: string,
+  collection: string,
+  tileMatrixSetId: string = 'WebMercatorQuad',
+): Promise<TileJson> {
+  const url = getTileJsonUrl(baseUrl, collection, tileMatrixSetId);
+  return fetchJson<TileJson>(url);
+}
+
+/**
+ * Fetch the total feature count for a collection (optionally filtered).
+ * Uses limit=0 and reads `numberMatched` from the response.
+ * Returns null if the server does not report numberMatched.
+ */
+export async function fetchFeatureCount(
+  baseUrl: string,
+  collection: string,
+  options: Omit<FetchFeaturesOptions, 'limit' | 'offset' | 'properties'> = {},
+): Promise<number | null> {
+  const data = await fetchFeatures(baseUrl, collection, {
+    ...options,
+    limit: 0,
+  });
+  return data.numberMatched ?? null;
 }
 
 /**

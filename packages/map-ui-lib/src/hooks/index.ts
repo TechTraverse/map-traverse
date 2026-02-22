@@ -2,6 +2,8 @@ import type { SearchField } from '../types';
 export { useOgcCollections, type UseOgcCollectionsResult } from './useOgcCollections';
 export { useOgcFeatures, type UseOgcFeaturesResult } from './useOgcFeatures';
 export { useCsvExport, type UseCsvExportOptions, type UseCsvExportResult } from './useCsvExport';
+export { useOgcQueryables, type UseOgcQueryablesResult } from './useOgcQueryables';
+export { useOgcCollectionDetail, type UseOgcCollectionDetailResult } from './useOgcCollectionDetail';
 
 export type {
   OgcApiSource,
@@ -24,6 +26,10 @@ export {
   fetchCollections,
   fetchFeatures,
   fetchQueryables,
+  fetchCollectionDetail,
+  fetchConformance,
+  fetchTileJson,
+  fetchFeatureCount,
   fetchDistinctValues,
   getFilteredVectorTileUrl,
   getCql2FilteredVectorTileUrl,
@@ -34,6 +40,8 @@ export {
   type GeoJsonFeature,
   type OgcFeatureCollection,
   type OgcQueryables,
+  type OgcConformance,
+  type TileJson,
   type QueryableProperty,
   type FetchFeaturesOptions,
 } from '../utils/ogcApi';

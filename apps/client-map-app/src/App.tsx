@@ -1,30 +1,73 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { safeValidateMapConfig } from '@ogc-maps/storybook-components/schemas';
-import { mapConfig } from './config/map-config';
 import { useMapStore } from './stores/mapStore';
 import { useMapSync } from './hooks/useMapSync';
 import { Layout } from './components/Layout';
+import { CachedConfigBanner } from './components/CachedConfigBanner';
+
+const CACHE_KEY = 'mapui:cached-config';
+const CACHE_TS_KEY = 'mapui:cached-config-timestamp';
 
 function App() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const [usingCachedConfig, setUsingCachedConfig] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<number>(0);
   const hydrate = useMapStore((s) => s.hydrate);
 
-  useEffect(() => {
-    // Validate config
-    const result = safeValidateMapConfig(mapConfig);
+  const loadConfig = useCallback(async () => {
+    const configUrl = import.meta.env.VITE_CONFIG_URL || '/config.json';
 
-    if (!result.success) {
+    try {
+      const res = await fetch(configUrl);
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+      const raw: unknown = await res.json();
+
+      const result = safeValidateMapConfig(raw);
+      if (!result.success) {
+        setValidationError(
+          `Config validation failed: ${result.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ')}`
+        );
+        return;
+      }
+
+      // Cache successful config
+      localStorage.setItem(CACHE_KEY, JSON.stringify(raw));
+      localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
+
+      hydrate(result.data);
+      setUsingCachedConfig(false);
+      setIsReady(true);
+    } catch {
+      // Network failure — try localStorage cache
+      const cachedRaw = localStorage.getItem(CACHE_KEY);
+      const cachedTs = localStorage.getItem(CACHE_TS_KEY);
+
+      if (cachedRaw) {
+        try {
+          const parsed: unknown = JSON.parse(cachedRaw);
+          const result = safeValidateMapConfig(parsed);
+          if (result.success) {
+            hydrate(result.data);
+            setUsingCachedConfig(true);
+            setCacheTimestamp(cachedTs ? Number(cachedTs) : Date.now());
+            setIsReady(true);
+            return;
+          }
+        } catch {
+          // Cached value is corrupt — fall through to error
+        }
+      }
+
       setValidationError(
-        `Config validation failed: ${result.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ')}`
+        `Failed to load config from ${configUrl} and no cached config is available.`
       );
-      return;
     }
-
-    // Hydrate stores with validated config
-    hydrate(result.data);
-    setIsReady(true);
   }, [hydrate]);
+
+  useEffect(() => {
+    loadConfig();
+  }, [loadConfig]);
 
   if (validationError) {
     return (
@@ -47,14 +90,31 @@ function App() {
     );
   }
 
-  return <AppContent />;
+  return <AppContent usingCachedConfig={usingCachedConfig} cacheTimestamp={cacheTimestamp} onRetry={loadConfig} />;
 }
 
-function AppContent() {
+function AppContent({
+  usingCachedConfig,
+  cacheTimestamp,
+  onRetry,
+}: {
+  usingCachedConfig: boolean;
+  cacheTimestamp: number;
+  onRetry: () => void;
+}) {
   // Enable URL state sync after hydration is complete
   useMapSync();
 
-  return <Layout uiConfig={mapConfig.ui} />;
+  const uiConfig = useMapStore((s) => s.uiConfig);
+
+  return (
+    <>
+      {usingCachedConfig && (
+        <CachedConfigBanner timestamp={cacheTimestamp} onRetry={onRetry} />
+      )}
+      <Layout uiConfig={uiConfig} />
+    </>
+  );
 }
 
 export default App;

@@ -23,3 +23,27 @@ export { Legend } from './Legend';
 export type { LegendProps } from './Legend';
 export { SearchPanel } from './SearchPanel';
 export type { SearchPanelProps } from './SearchPanel';
+
+// Admin components
+export { FormField, ColorPicker, ConfirmDialog } from './admin';
+export type { FormFieldProps, ColorPickerProps, ConfirmDialogProps } from './admin';
+export { SourceEditor, SourceList } from './SourceEditor';
+export type { SourceEditorProps, SourceListProps } from './SourceEditor';
+export { CollectionBrowser } from './CollectionBrowser';
+export type { CollectionBrowserProps } from './CollectionBrowser';
+export { StyleEditor } from './StyleEditor';
+export type { StyleEditorProps } from './StyleEditor';
+export { LegendEntryEditor, LegendEditor } from './LegendEditor';
+export type { LegendEntryEditorProps, LegendEditorProps } from './LegendEditor';
+export { SearchFieldEditor, SearchFieldList } from './SearchFieldEditor';
+export type { SearchFieldEditorProps, SearchFieldListProps } from './SearchFieldEditor';
+export { LayerEditor, LayerList } from './LayerEditor';
+export type { LayerEditorProps, LayerListProps } from './LayerEditor';
+export { BasemapEditor, BasemapList } from './BasemapEditor';
+export type { BasemapEditorProps, BasemapListProps } from './BasemapEditor';
+export { UIConfigEditor } from './UIConfigEditor';
+export type { UIConfigEditorProps } from './UIConfigEditor';
+export { ViewEditor } from './ViewEditor';
+export type { ViewEditorProps } from './ViewEditor';
+export { ConfigPreview } from './ConfigPreview';
+export type { ConfigPreviewProps } from './ConfigPreview';

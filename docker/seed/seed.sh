@@ -15,6 +15,10 @@ echo "PostgreSQL is ready!"
 DATA_EXISTS=$(psql -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" -tAc \
   "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'ne_110m_admin_0_countries');")
 
+echo "Running admin UI migrations..."
+psql -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" -f /scripts/init_admin.sql
+echo "Admin UI migrations completed!"
+
 if [ "$DATA_EXISTS" = "t" ]; then
   echo "Data already exists. Skipping seed."
   exit 0
