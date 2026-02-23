@@ -6,6 +6,8 @@ import {
   formatDMS,
   type CoordinateFormatOption,
 } from '@ogc-maps/storybook-components';
+import { resolvePropertyDisplay } from '@ogc-maps/storybook-components/hooks';
+import { useMapStore } from '../stores/mapStore';
 import { MapContainer } from './MapContainer';
 import { MapOverlay } from './MapOverlay';
 
@@ -14,6 +16,8 @@ interface LayoutProps {
 }
 
 export function Layout({ uiConfig }: LayoutProps) {
+  const layers = useMapStore((s) => s.layers);
+
   const [mouseCoords, setMouseCoords] = useState<{
     latitude: number;
     longitude: number;
@@ -23,11 +27,15 @@ export function Layout({ uiConfig }: LayoutProps) {
   const [selectedFeature, setSelectedFeature] = useState<{
     properties: Record<string, unknown>;
     title?: string;
+    fields?: string[];
+    labels?: Record<string, string>;
   } | null>(null);
 
   const [hoveredFeature, setHoveredFeature] = useState<{
     properties: Record<string, unknown>;
     title?: string;
+    fields?: string[];
+    labels?: Record<string, string>;
     point: { x: number; y: number };
   } | null>(null);
 
@@ -61,20 +69,34 @@ export function Layout({ uiConfig }: LayoutProps) {
             })
           }
           onMouseLeave={() => setMouseCoords(null)}
-          onFeatureClick={(info) =>
+          onFeatureClick={(info) => {
+            const layer = layers.find(
+              (l) => info.layerId === l.id || info.layerId.startsWith(l.id + '--'),
+            );
+            const resolved = resolvePropertyDisplay(layer?.propertyDisplay);
             setSelectedFeature({
               properties: info.properties,
               title: (info.properties['name'] as string) ?? info.layerId,
-            })
-          }
+              fields: resolved?.fields,
+              labels: resolved?.labels,
+            });
+          }}
           onFeatureHover={(info) =>
             setHoveredFeature(
               info
-                ? {
-                    properties: info.properties,
-                    title: (info.properties['name'] as string) ?? undefined,
-                    point: info.point,
-                  }
+                ? (() => {
+                    const layer = layers.find(
+                      (l) => info.layerId === l.id || info.layerId.startsWith(l.id + '--'),
+                    );
+                    const resolved = resolvePropertyDisplay(layer?.propertyDisplay);
+                    return {
+                      properties: info.properties,
+                      title: (info.properties['name'] as string) ?? undefined,
+                      fields: resolved?.fields,
+                      labels: resolved?.labels,
+                      point: info.point,
+                    };
+                  })()
                 : null,
             )
           }

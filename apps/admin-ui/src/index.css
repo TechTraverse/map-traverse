@@ -1,2 +1,3 @@
 @import 'maplibre-gl/dist/maplibre-gl.css';
 @import '@ogc-maps/storybook-components/tailwind.css';
+@source "./**/*.tsx";

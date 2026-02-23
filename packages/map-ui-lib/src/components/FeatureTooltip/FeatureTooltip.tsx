@@ -4,6 +4,7 @@ export interface FeatureTooltipProps {
   title?: string;
   properties: Record<string, unknown> | null;
   fields?: string[];
+  labels?: Record<string, string>;
   maxItems?: number;
   className?: string;
 }
@@ -12,6 +13,7 @@ export function FeatureTooltip({
   title,
   properties,
   fields,
+  labels,
   maxItems = 4,
   className = '',
 }: FeatureTooltipProps) {
@@ -41,6 +43,7 @@ export function FeatureTooltip({
       <PropertyList
         properties={properties}
         fields={fields}
+        labels={labels}
         maxItems={maxItems}
         density="compact"
       />

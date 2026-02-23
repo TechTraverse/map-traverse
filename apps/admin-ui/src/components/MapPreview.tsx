@@ -4,6 +4,10 @@ import {
   getVectorTileUrl,
   useOgcFeatures,
 } from '@ogc-maps/storybook-components/hooks';
+import {
+  Legend,
+  LayerPanel,
+} from '@ogc-maps/storybook-components';
 import type {
   OgcApiSource,
   LayerConfig,
@@ -12,6 +16,11 @@ import type {
 } from '@ogc-maps/storybook-components';
 
 const FALLBACK_BASEMAP_URL = 'https://demotiles.maplibre.org/style.json';
+
+const DEFAULT_STYLE = {
+  type: 'circle' as const,
+  paint: { 'circle-radius': 4, 'circle-color': '#4a90d9', 'circle-opacity': 1 },
+};
 
 function PreviewVectorTileLayer({
   layer,
@@ -22,18 +31,31 @@ function PreviewVectorTileLayer({
   sourceUrl: string;
   tileMatrixSetId?: string;
 }) {
-  if (!layer.style) return null;
-
   const tileUrl = getVectorTileUrl(sourceUrl, layer.collection, tileMatrixSetId);
+  const sourceLayer = layer.collection.replace(/^[^.]+\./, '');
+  const layout = { visibility: layer.visible ? 'visible' : 'none' } as const;
+
+  if (!layer.style) {
+    return (
+      <Source id={layer.id} key={layer.id} type="vector" tiles={[tileUrl]}>
+        <Layer id={`${layer.id}-fill`} type="fill" source-layer={sourceLayer}
+          paint={{ 'fill-color': '#4a90d9', 'fill-opacity': 0.6 }} layout={layout} />
+        <Layer id={`${layer.id}-line`} type="line" source-layer={sourceLayer}
+          paint={{ 'line-color': '#4a90d9', 'line-width': 2 }} layout={layout} />
+        <Layer id={`${layer.id}-circle`} type="circle" source-layer={sourceLayer}
+          paint={{ 'circle-radius': 4, 'circle-color': '#4a90d9' }} layout={layout} />
+      </Source>
+    );
+  }
 
   return (
     <Source id={layer.id} key={layer.id} type="vector" tiles={[tileUrl]}>
       <Layer
         id={layer.id}
         type={layer.style.type}
-        source-layer={layer.collection.replace(/^[^.]+\./, '')}
+        source-layer={sourceLayer}
         paint={layer.style.paint as any}
-        layout={{ visibility: layer.visible ? 'visible' : 'none' }}
+        layout={layout}
       />
     </Source>
   );
@@ -56,7 +78,20 @@ function PreviewGeoJsonLayer({
     [features],
   );
 
-  if (!layer.style) return null;
+  const layout = { visibility: layer.visible ? 'visible' : 'none' } as const;
+
+  if (!layer.style) {
+    return (
+      <Source id={layer.id} key={layer.id} type="geojson" data={featureCollection}>
+        <Layer id={`${layer.id}-fill`} type="fill"
+          paint={{ 'fill-color': '#4a90d9', 'fill-opacity': 0.6 }} layout={layout} />
+        <Layer id={`${layer.id}-line`} type="line"
+          paint={{ 'line-color': '#4a90d9', 'line-width': 2 }} layout={layout} />
+        <Layer id={`${layer.id}-circle`} type="circle"
+          paint={{ 'circle-radius': 4, 'circle-color': '#4a90d9' }} layout={layout} />
+      </Source>
+    );
+  }
 
   return (
     <Source id={layer.id} key={layer.id} type="geojson" data={featureCollection}>
@@ -64,7 +99,7 @@ function PreviewGeoJsonLayer({
         id={layer.id}
         type={layer.style.type}
         paint={layer.style.paint as any}
-        layout={{ visibility: layer.visible ? 'visible' : 'none' }}
+        layout={layout}
       />
     </Source>
   );
@@ -76,6 +111,7 @@ export interface MapPreviewProps {
   basemaps: BasemapConfig[];
   viewState: ViewConfig;
   onViewStateChange?: (view: ViewConfig) => void;
+  onLayersChange?: (layers: LayerConfig[]) => void;
   currentStep: string;
 }
 
@@ -85,6 +121,7 @@ export function MapPreview({
   basemaps,
   viewState,
   onViewStateChange,
+  onLayersChange,
   currentStep,
 }: MapPreviewProps) {
   const [internalViewState, setInternalViewState] = useState<ViewConfig>(viewState);
@@ -104,12 +141,20 @@ export function MapPreview({
     return map;
   }, [sources]);
 
+  // Apply a fallback style to layers that have none, so Legend/LayerPanel can render them
+  const layersWithDefaults = useMemo(
+    () => layers.map(l => l.style ? l : { ...l, style: DEFAULT_STYLE }),
+    [layers],
+  );
+
   const mapStyle = basemaps[0]?.url ?? FALLBACK_BASEMAP_URL;
 
   const vectorTileLayers = layers.filter((l) => l.dataMode === 'vector-tiles');
   const geojsonLayers = layers.filter((l) => l.dataMode === 'geojson');
 
   const showEmptyState = currentStep === 'metadata' || (sources.length === 0 && layers.length === 0);
+
+  const visibleLayerIds = layers.filter(l => l.visible).map(l => l.id);
 
   const handleMove = (evt: { viewState: { latitude: number; longitude: number; zoom: number; pitch: number; bearing: number } }) => {
     const next: ViewConfig = {
@@ -166,6 +211,23 @@ export function MapPreview({
           );
         })}
       </Map>
+
+      {!showEmptyState && (
+        <div className="mapui:absolute mapui:top-2 mapui:right-2 mapui:flex mapui:flex-col mapui:gap-2 mapui:max-w-[280px]">
+          <Legend
+            layers={layersWithDefaults}
+            visibleLayerIds={visibleLayerIds}
+          />
+          <LayerPanel
+            layers={layersWithDefaults}
+            activeLayerIds={visibleLayerIds}
+            onToggleVisibility={(layerId) => {
+              onLayersChange?.(layers.map(l => l.id === layerId ? { ...l, visible: !l.visible } : l));
+            }}
+            hideTitle
+          />
+        </div>
+      )}
 
       {showEmptyState && (
         <div className="mapui:absolute mapui:inset-0 mapui:flex mapui:items-center mapui:justify-center mapui:pointer-events-none">

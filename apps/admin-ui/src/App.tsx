@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { ConfigListPage } from './pages/ConfigListPage';
 import { ConfigWizardPage } from './pages/ConfigWizardPage';
+import { ConfigPreviewPage } from './pages/ConfigPreviewPage';
 import { VersionHistoryPage } from './pages/VersionHistoryPage';
 import { LoginPage } from './pages/LoginPage';
 import { RequireAuth } from './components/RequireAuth';
@@ -62,6 +63,7 @@ export default function App() {
                   <Route path="/configs/new" element={<ConfigWizardPage />} />
                   <Route path="/configs/:id/edit" element={<ConfigWizardPage />} />
                   <Route path="/configs/:id/versions" element={<VersionHistoryPage />} />
+                  <Route path="/configs/:id/preview" element={<ConfigPreviewPage />} />
                 </Routes>
               </main>
             </RequireAuth>

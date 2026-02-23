@@ -108,14 +108,14 @@ export function LayerPanel({
                   ⠿
                 </span>
               )}
-              <label className="mapui:flex mapui:flex-1 mapui:cursor-pointer mapui:items-center mapui:gap-2">
+              <label className="mapui:flex mapui:flex-1 mapui:cursor-pointer mapui:items-center mapui:gap-2 mapui:min-w-0">
                 <input
                   type="checkbox"
                   checked={isActive}
                   onChange={() => onToggleVisibility(layer.id)}
                   className="mapui:h-4 mapui:w-4 mapui:cursor-pointer mapui:accent-blue-600"
                 />
-                <span className="mapui:text-sm mapui:text-gray-800">{layer.label}</span>
+                <span className="mapui:text-sm mapui:text-gray-800 mapui:truncate">{layer.label}</span>
               </label>
             </li>
           );

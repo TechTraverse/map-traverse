@@ -1,0 +1,150 @@
+import type { PropertyDisplayConfig } from '../../types';
+import { FormField } from '../admin/FormField';
+
+export interface PropertyDisplayEditorProps {
+  value: PropertyDisplayConfig;
+  onChange: (config: PropertyDisplayConfig) => void;
+}
+
+export type PropertyEntry = { key: string; label: string; visible: boolean };
+
+export function toEntries(config: PropertyDisplayConfig): PropertyEntry[] {
+  return Object.entries(config).map(([key, val]) => ({
+    key,
+    label: val.label ?? '',
+    visible: val.visible ?? true,
+  }));
+}
+
+export function fromEntries(entries: PropertyEntry[]): PropertyDisplayConfig {
+  const result: PropertyDisplayConfig = {};
+  for (const entry of entries) {
+    result[entry.key] = {
+      visible: entry.visible,
+      ...(entry.label ? { label: entry.label } : {}),
+    };
+  }
+  return result;
+}
+
+const inputClass =
+  'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
+
+export function PropertyDisplayEditor({ value, onChange }: PropertyDisplayEditorProps) {
+  const entries = toEntries(value);
+
+  const update = (updated: PropertyEntry[]) => onChange(fromEntries(updated));
+
+  const handleAdd = () => {
+    update([...entries, { key: '', label: '', visible: true }]);
+  };
+
+  const handleRemove = (index: number) => {
+    update(entries.filter((_, i) => i !== index));
+  };
+
+  const handleChange = (index: number, patch: Partial<PropertyEntry>) => {
+    update(entries.map((e, i) => (i === index ? { ...e, ...patch } : e)));
+  };
+
+  const handleMoveUp = (index: number) => {
+    if (index === 0) return;
+    const updated = [...entries];
+    [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
+    update(updated);
+  };
+
+  const handleMoveDown = (index: number) => {
+    if (index === entries.length - 1) return;
+    const updated = [...entries];
+    [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
+    update(updated);
+  };
+
+  return (
+    <div className="mapui:flex mapui:flex-col mapui:gap-2">
+      {entries.length === 0 ? (
+        <p className="mapui:m-0 mapui:text-sm mapui:text-gray-500">
+          No property display rules configured. All properties will be shown.
+        </p>
+      ) : (
+        <>
+          <div className="mapui:grid mapui:items-center mapui:gap-2 mapui:px-8" style={{ gridTemplateColumns: '1fr 1fr auto' }}>
+            <FormField label="Property Key"><span /></FormField>
+            <FormField label="Display Label"><span /></FormField>
+            <span className="mapui:text-xs mapui:font-medium mapui:text-gray-600">Visible</span>
+          </div>
+
+          <ul className="mapui:m-0 mapui:list-none mapui:flex mapui:flex-col mapui:gap-1.5 mapui:p-0">
+            {entries.map((entry, index) => (
+              <li key={index} className="mapui:flex mapui:items-center mapui:gap-1 mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:px-2 mapui:py-1.5">
+                <div className="mapui:flex mapui:flex-col mapui:gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => handleMoveUp(index)}
+                    disabled={index === 0}
+                    aria-label="Move up"
+                    className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:px-1 mapui:text-xs mapui:text-gray-400 hover:mapui:text-gray-600 disabled:mapui:opacity-30"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleMoveDown(index)}
+                    disabled={index === entries.length - 1}
+                    aria-label="Move down"
+                    className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:px-1 mapui:text-xs mapui:text-gray-400 hover:mapui:text-gray-600 disabled:mapui:opacity-30"
+                  >
+                    ▼
+                  </button>
+                </div>
+
+                <div className="mapui:grid mapui:flex-1 mapui:items-center mapui:gap-2" style={{ gridTemplateColumns: '1fr 1fr auto auto' }}>
+                  <input
+                    type="text"
+                    value={entry.key}
+                    onChange={(e) => handleChange(index, { key: e.target.value })}
+                    placeholder="property_name"
+                    aria-label="Property key"
+                    className={inputClass}
+                  />
+                  <input
+                    type="text"
+                    value={entry.label}
+                    onChange={(e) => handleChange(index, { label: e.target.value })}
+                    placeholder="Friendly name"
+                    aria-label="Display label"
+                    className={inputClass}
+                  />
+                  <input
+                    type="checkbox"
+                    checked={entry.visible}
+                    onChange={(e) => handleChange(index, { visible: e.target.checked })}
+                    aria-label="Visible"
+                    className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemove(index)}
+                    aria-label="Remove property"
+                    className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-red-200 mapui:bg-white mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:text-red-600 hover:mapui:bg-red-50"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      <button
+        type="button"
+        onClick={handleAdd}
+        className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-dashed mapui:border-gray-300 mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-gray-600 hover:mapui:border-blue-400 hover:mapui:text-blue-600"
+      >
+        + Add Property
+      </button>
+    </div>
+  );
+}

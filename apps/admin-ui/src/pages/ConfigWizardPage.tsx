@@ -61,6 +61,7 @@ export function ConfigWizardPage() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   // Config state
   const [sources, setSources] = useState<OgcApiSource[]>([]);
@@ -171,7 +172,7 @@ export function ConfigWizardPage() {
   }
 
   return (
-    <div className="mapui:flex mapui:h-[calc(100vh-4rem)]">
+    <div className="mapui:flex mapui:flex-col md:mapui:flex-row mapui:h-[calc(100vh-4rem)]">
       {/* Left: wizard form (scrollable) */}
       <div className="mapui:flex-1 mapui:min-w-0 mapui:overflow-y-auto mapui:p-8">
         <div className="mapui:max-w-3xl mapui:mx-auto">
@@ -343,13 +344,19 @@ export function ConfigWizardPage() {
       </div>
 
       {/* Navigation */}
-      <div className="mapui:flex mapui:justify-between">
+      <div className="mapui:flex mapui:justify-between mapui:items-center">
         <button
           onClick={() => setCurrentStep(STEPS[currentStepIndex - 1]?.key ?? 'metadata')}
           disabled={currentStepIndex === 0}
           className="mapui:px-4 mapui:py-2 mapui:border mapui:border-gray-300 mapui:rounded mapui:text-sm mapui:hover:bg-gray-50 disabled:mapui:opacity-50"
         >
           Previous
+        </button>
+        <button
+          onClick={() => setShowPreview(p => !p)}
+          className="md:mapui:hidden mapui:px-3 mapui:py-2 mapui:border mapui:border-blue-300 mapui:rounded mapui:text-sm mapui:text-blue-600 mapui:hover:bg-blue-50"
+        >
+          {showPreview ? 'Hide Preview' : 'Show Map Preview'}
         </button>
         {currentStepIndex < STEPS.length - 1 ? (
           <button
@@ -371,14 +378,15 @@ export function ConfigWizardPage() {
         </div>
       </div>
 
-      {/* Right: map preview (sticky, hidden on small screens) */}
-      <div className="mapui:w-[45%] mapui:hidden lg:mapui:block mapui:border-l mapui:border-gray-200">
+      {/* Right: map preview (always visible on ≥md, toggle on <md) */}
+      <div className={`mapui:shrink-0 md:mapui:w-[45%] mapui:h-[400px] md:mapui:h-auto mapui:border-gray-200 md:mapui:border-l md:mapui:block ${showPreview ? 'mapui:block mapui:border-t' : 'mapui:hidden'}`}>
         <MapPreview
           sources={sources}
           layers={layers}
           basemaps={basemaps}
           viewState={initialView}
           onViewStateChange={currentStep === 'view' ? setInitialView : undefined}
+          onLayersChange={setLayers}
           currentStep={currentStep}
         />
       </div>

@@ -20,7 +20,10 @@ export type {
   NumberSearchField,
   DatetimeSearchField,
   SelectSearchField,
+  PropertyDisplay,
+  PropertyDisplayConfig,
 } from '../types';
+export { resolvePropertyDisplay } from '../utils/propertyDisplay';
 export type SearchFieldType = SearchField['type'];
 export {
   fetchCollections,

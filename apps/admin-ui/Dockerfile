@@ -5,7 +5,7 @@ RUN corepack enable
 WORKDIR /app
 
 # Copy workspace manifest files for dependency resolution
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
 COPY packages/map-ui-lib/package.json ./packages/map-ui-lib/
 COPY apps/admin-ui/package.json ./apps/admin-ui/
 
@@ -16,9 +16,10 @@ RUN pnpm install --frozen-lockfile
 COPY packages/map-ui-lib/ ./packages/map-ui-lib/
 COPY apps/admin-ui/ ./apps/admin-ui/
 
-# Build lib then admin-ui SPA
+# Build lib then admin-ui SPA then server
 RUN pnpm --filter @ogc-maps/storybook-components build
 RUN pnpm --filter admin-ui build
+RUN pnpm --filter admin-ui build:server
 
 # Stage 2: Runtime
 FROM node:20-alpine AS runtime
@@ -31,16 +32,16 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY packages/map-ui-lib/package.json ./packages/map-ui-lib/
 COPY apps/admin-ui/package.json ./apps/admin-ui/
 
-# Install all deps (ts-node is needed at runtime)
-RUN pnpm install --frozen-lockfile
+# Install production deps only
+RUN pnpm install --frozen-lockfile --prod
 
 # Copy built SPA + server from builder
 COPY --from=builder /app/packages/map-ui-lib/dist/ ./packages/map-ui-lib/dist/
 COPY --from=builder /app/apps/admin-ui/dist/ ./apps/admin-ui/dist/
-COPY --from=builder /app/apps/admin-ui/server/ ./apps/admin-ui/server/
+COPY --from=builder /app/apps/admin-ui/dist-server/ ./apps/admin-ui/dist-server/
 
 WORKDIR /app/apps/admin-ui
 
 EXPOSE 3001
 
-CMD ["node", "--loader", "ts-node/esm", "server/index.ts"]
+CMD ["node", "dist-server/index.js"]

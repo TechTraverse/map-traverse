@@ -156,6 +156,12 @@ export function ConfigListPage() {
                         Edit
                       </Link>
                       <Link
+                        to={`/configs/${config.id}/preview`}
+                        className="mapui:text-indigo-600 mapui:hover:underline mapui:text-sm"
+                      >
+                        Preview
+                      </Link>
+                      <Link
                         to={`/configs/${config.id}/versions`}
                         className="mapui:text-purple-600 mapui:hover:underline mapui:text-sm"
                       >

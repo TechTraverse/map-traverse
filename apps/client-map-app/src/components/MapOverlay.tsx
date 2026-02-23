@@ -24,11 +24,18 @@ interface MapOverlayProps {
   activeCoordFormat: string;
   coordinateFormats: CoordinateFormatOption[];
   onCoordFormatChange: (formatId: string) => void;
-  selectedFeature: { properties: Record<string, unknown>; title?: string } | null;
+  selectedFeature: {
+    properties: Record<string, unknown>;
+    title?: string;
+    fields?: string[];
+    labels?: Record<string, string>;
+  } | null;
   onCloseFeatureDetail: () => void;
   hoveredFeature: {
     properties: Record<string, unknown>;
     title?: string;
+    fields?: string[];
+    labels?: Record<string, string>;
     point: { x: number; y: number };
   } | null;
 }
@@ -102,6 +109,8 @@ export function MapOverlay({
           <FeatureTooltip
             title={hoveredFeature.title}
             properties={hoveredFeature.properties}
+            fields={hoveredFeature.fields}
+            labels={hoveredFeature.labels}
           />
         </div>
       )}
@@ -114,6 +123,8 @@ export function MapOverlay({
             onClose={onCloseFeatureDetail}
             properties={selectedFeature?.properties ?? null}
             title={selectedFeature?.title ?? 'Feature Properties'}
+            fields={selectedFeature?.fields}
+            labels={selectedFeature?.labels}
             variant="panel"
           />
         </div>

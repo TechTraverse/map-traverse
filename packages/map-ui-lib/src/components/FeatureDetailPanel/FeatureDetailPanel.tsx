@@ -6,6 +6,7 @@ export interface FeatureDetailPanelProps {
   properties: Record<string, unknown> | null;
   title?: string;
   fields?: string[];
+  labels?: Record<string, string>;
   variant?: 'panel' | 'modal';
   className?: string;
 }
@@ -16,6 +17,7 @@ export function FeatureDetailPanel({
   properties,
   title = 'Feature Properties',
   fields,
+  labels,
   variant = 'panel',
   className = '',
 }: FeatureDetailPanelProps) {
@@ -49,7 +51,7 @@ export function FeatureDetailPanel({
       </div>
       <div className="mapui:overflow-y-auto mapui:px-4 mapui:py-3">
         {properties && Object.keys(properties).length > 0 ? (
-          <PropertyList properties={properties} fields={fields} density="default" />
+          <PropertyList properties={properties} fields={fields} labels={labels} density="default" />
         ) : (
           <p className="mapui:m-0 mapui:text-sm mapui:text-gray-400">No properties available.</p>
         )}

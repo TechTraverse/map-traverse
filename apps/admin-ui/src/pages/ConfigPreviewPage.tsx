@@ -1,0 +1,59 @@
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import type { MapConfig, LayerConfig } from '@ogc-maps/storybook-components';
+import { MapPreview } from '../components/MapPreview';
+
+const DEFAULT_VIEW = { latitude: 0, longitude: 0, zoom: 2, pitch: 0, bearing: 0 };
+
+export function ConfigPreviewPage() {
+  const { id } = useParams<{ id: string }>();
+  const [config, setConfig] = useState<MapConfig | null>(null);
+  const [layers, setLayers] = useState<LayerConfig[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    fetch(`/api/configs/${id}`)
+      .then(res => res.json())
+      .then((data: { config?: MapConfig }) => {
+        if (data.config) {
+          setConfig(data.config);
+          setLayers(data.config.layers ?? []);
+        }
+      })
+      .catch(err => setError(String(err)))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="mapui:flex mapui:items-center mapui:justify-center mapui:h-[calc(100vh-4rem)] mapui:text-gray-500">
+        Loading...
+      </div>
+    );
+  }
+
+  if (error) return <div className="mapui:p-8 mapui:text-red-600">{error}</div>;
+  if (!config) return <div className="mapui:p-8 mapui:text-gray-500">Configuration not found.</div>;
+
+  return (
+    <div className="mapui:flex mapui:flex-col mapui:h-[calc(100vh-4rem)]">
+      <div className="mapui:px-4 mapui:py-2 mapui:border-b mapui:border-gray-200 mapui:flex mapui:items-center mapui:gap-3 mapui:bg-white mapui:shrink-0">
+        <Link to="/configs" className="mapui:text-blue-600 mapui:hover:underline mapui:text-sm">
+          ← Back to Configurations
+        </Link>
+      </div>
+      <div className="mapui:flex-1 mapui:min-h-0">
+        <MapPreview
+          sources={config.sources ?? []}
+          layers={layers}
+          basemaps={config.basemaps ?? []}
+          viewState={config.initialView ?? DEFAULT_VIEW}
+          onLayersChange={setLayers}
+          currentStep="preview"
+        />
+      </div>
+    </div>
+  );
+}

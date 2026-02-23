@@ -3,6 +3,7 @@ export type PropertyListDensity = 'compact' | 'default';
 interface PropertyListProps {
   properties: Record<string, unknown>;
   fields?: string[];
+  labels?: Record<string, string>;
   maxItems?: number;
   density?: PropertyListDensity;
   className?: string;
@@ -19,6 +20,7 @@ export function formatPropertyValue(value: unknown): string {
 export function PropertyList({
   properties,
   fields,
+  labels,
   maxItems,
   density = 'default',
   className = '',
@@ -31,7 +33,7 @@ export function PropertyList({
       <dl className={`mapui:m-0 mapui:text-xs ${className}`.trim()}>
         {displayKeys.map((key) => (
           <div key={key} className="mapui:flex mapui:gap-1 mapui:py-0.5">
-            <dt className="mapui:shrink-0 mapui:font-medium mapui:text-gray-500">{key}:</dt>
+            <dt className="mapui:shrink-0 mapui:font-medium mapui:text-gray-500">{labels?.[key] ?? key}:</dt>
             <dd className="mapui:m-0 mapui:truncate mapui:text-gray-800">
               {formatPropertyValue(properties[key])}
             </dd>
@@ -47,7 +49,7 @@ export function PropertyList({
     >
       {displayKeys.map((key) => (
         <div key={key} className="mapui:contents">
-          <dt className="mapui:break-words mapui:font-medium mapui:text-gray-500">{key}</dt>
+          <dt className="mapui:break-words mapui:font-medium mapui:text-gray-500">{labels?.[key] ?? key}</dt>
           <dd className="mapui:m-0 mapui:break-words mapui:text-gray-800">
             {formatPropertyValue(properties[key])}
           </dd>

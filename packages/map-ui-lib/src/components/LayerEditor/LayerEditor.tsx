@@ -4,6 +4,7 @@ import { FormField } from '../admin/FormField';
 import { StyleEditor } from '../StyleEditor/StyleEditor';
 import { LegendEditor } from '../LegendEditor/LegendEditor';
 import { SearchFieldList } from '../SearchFieldEditor/SearchFieldList';
+import { PropertyDisplayEditor } from '../PropertyDisplayEditor/PropertyDisplayEditor';
 
 export interface LayerEditorProps {
   value: LayerConfig;
@@ -143,6 +144,15 @@ export function LayerEditor({ value, onChange, availableSources }: LayerEditorPr
           fields={value.search?.fields ?? []}
           onChange={(fields) =>
             update({ search: fields.length > 0 ? { fields } : undefined })
+          }
+        />
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Property Display">
+        <PropertyDisplayEditor
+          value={value.propertyDisplay ?? {}}
+          onChange={(propertyDisplay) =>
+            update({ propertyDisplay: Object.keys(propertyDisplay).length > 0 ? propertyDisplay : undefined })
           }
         />
       </CollapsibleSection>

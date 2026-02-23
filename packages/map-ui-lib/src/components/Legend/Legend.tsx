@@ -97,12 +97,12 @@ export function Legend({ layers, visibleLayerIds, className }: LegendProps) {
         {layerEntries.map(({ layer, entries }) => (
           <li key={layer.id}>
             {entries.length === 1 ? (
-              <div className="mapui:flex mapui:items-center mapui:gap-2">
+              <div className="mapui:flex mapui:items-center mapui:gap-2 mapui:min-w-0">
                 <Swatch
                   color={entries[0].color}
                   shape={entries[0].shape}
                 />
-                <span className="mapui:text-gray-700">{entries[0].label}</span>
+                <span className="mapui:text-gray-700 mapui:truncate">{entries[0].label}</span>
               </div>
             ) : (
               <div>
@@ -113,10 +113,10 @@ export function Legend({ layers, visibleLayerIds, className }: LegendProps) {
                   {entries.map((entry, i) => (
                     <li
                       key={`${entry.label}-${i}`}
-                      className="mapui:flex mapui:items-center mapui:gap-2"
+                      className="mapui:flex mapui:items-center mapui:gap-2 mapui:min-w-0"
                     >
                       <Swatch color={entry.color} shape={entry.shape} />
-                      <span className="mapui:text-gray-700">
+                      <span className="mapui:text-gray-700 mapui:truncate">
                         {entry.label}
                       </span>
                     </li>

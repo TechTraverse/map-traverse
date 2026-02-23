@@ -127,6 +127,15 @@ export const SearchConfigSchema = z.object({
   fields: z.array(SearchFieldSchema).min(1),
 });
 
+// --- Property Display Config ---
+
+export const PropertyDisplaySchema = z.object({
+  label: z.string().optional(),
+  visible: z.boolean().default(true),
+});
+
+export const PropertyDisplayConfigSchema = z.record(z.string(), PropertyDisplaySchema);
+
 // --- Filter Config ---
 
 export const FilterConfigSchema = z.object({
@@ -150,6 +159,7 @@ export const LayerConfigSchema = z.object({
   legend: LegendConfigSchema.optional(),
   filters: FilterConfigSchema.optional(),
   search: SearchConfigSchema.optional(),
+  propertyDisplay: PropertyDisplayConfigSchema.optional(),
 });
 
 // --- Basemap Config ---

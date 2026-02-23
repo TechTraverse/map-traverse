@@ -37,6 +37,8 @@ export { LegendEntryEditor, LegendEditor } from './LegendEditor';
 export type { LegendEntryEditorProps, LegendEditorProps } from './LegendEditor';
 export { SearchFieldEditor, SearchFieldList } from './SearchFieldEditor';
 export type { SearchFieldEditorProps, SearchFieldListProps } from './SearchFieldEditor';
+export { PropertyDisplayEditor } from './PropertyDisplayEditor';
+export type { PropertyDisplayEditorProps } from './PropertyDisplayEditor';
 export { LayerEditor, LayerList } from './LayerEditor';
 export type { LayerEditorProps, LayerListProps } from './LayerEditor';
 export { BasemapEditor, BasemapList } from './BasemapEditor';

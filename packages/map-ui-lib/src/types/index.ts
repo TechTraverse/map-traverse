@@ -18,6 +18,8 @@ import {
   SearchFieldSchema,
   SearchConfigSchema,
   FilterConfigSchema,
+  PropertyDisplaySchema,
+  PropertyDisplayConfigSchema,
   LayerConfigSchema,
   BasemapConfigSchema,
   UIConfigSchema,
@@ -59,6 +61,8 @@ export type SearchFilterValue =
 export type SearchFilterValues = Record<string, SearchFilterValue>;
 
 export type FilterConfig = z.infer<typeof FilterConfigSchema>;
+export type PropertyDisplay = z.infer<typeof PropertyDisplaySchema>;
+export type PropertyDisplayConfig = z.infer<typeof PropertyDisplayConfigSchema>;
 export type LayerConfig = z.infer<typeof LayerConfigSchema>;
 export type BasemapConfig = z.infer<typeof BasemapConfigSchema>;
 export type UIConfig = z.infer<typeof UIConfigSchema>;
@@ -84,6 +88,8 @@ export {
   SearchFieldSchema,
   SearchConfigSchema,
   FilterConfigSchema,
+  PropertyDisplaySchema,
+  PropertyDisplayConfigSchema,
   LayerConfigSchema,
   BasemapConfigSchema,
   UIConfigSchema,
