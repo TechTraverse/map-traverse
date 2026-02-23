@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import type { SearchField } from '../../types';
+import type { SearchField, AvailableProperty } from '../../types';
 import { SearchFieldEditor } from './SearchFieldEditor';
 
 export interface SearchFieldListProps {
   fields: SearchField[];
   onChange: (fields: SearchField[]) => void;
+  availableProperties?: AvailableProperty[];
 }
 
 const defaultField = (): SearchField => ({
@@ -14,7 +15,7 @@ const defaultField = (): SearchField => ({
   autocomplete: false,
 });
 
-export function SearchFieldList({ fields, onChange }: SearchFieldListProps) {
+export function SearchFieldList({ fields, onChange, availableProperties }: SearchFieldListProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   const handleAdd = () => {
@@ -103,6 +104,7 @@ export function SearchFieldList({ fields, onChange }: SearchFieldListProps) {
                 <SearchFieldEditor
                   value={field}
                   onChange={(updated) => handleUpdate(index, updated)}
+                  availableProperties={availableProperties}
                 />
               </div>
             )}

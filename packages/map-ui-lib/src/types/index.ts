@@ -68,6 +68,17 @@ export type BasemapConfig = z.infer<typeof BasemapConfigSchema>;
 export type UIConfig = z.infer<typeof UIConfigSchema>;
 export type MapConfig = z.infer<typeof MapConfigSchema>;
 
+/** A queryable property from OGC API metadata, used to drive editor dropdowns. */
+export interface AvailableProperty {
+  name: string;
+  title?: string;
+  type?: string;
+  format?: string;
+  enum?: string[];
+  minimum?: number;
+  maximum?: number;
+}
+
 // Re-export schemas for convenience
 export {
   ViewConfigSchema,

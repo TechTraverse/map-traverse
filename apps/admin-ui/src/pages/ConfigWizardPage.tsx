@@ -8,6 +8,10 @@ import {
   UIConfigEditor,
   ViewEditor,
   ConfigPreview,
+  detectStyleTypeForCollection,
+  defaultFill,
+  defaultLine,
+  defaultCircle,
 } from '@ogc-maps/storybook-components';
 import type {
   OgcApiSource,
@@ -140,8 +144,12 @@ export function ConfigWizardPage() {
 
   const handleCollectionSelect = (collectionId: string) => {
     if (!browseSourceId) return;
+    const source = sources.find(s => s.id === browseSourceId);
+    if (!source) return;
+
+    const layerId = `${browseSourceId}-${collectionId}`;
     const newLayer: LayerConfig = {
-      id: `${browseSourceId}-${collectionId}`,
+      id: layerId,
       sourceId: browseSourceId,
       collection: collectionId,
       label: collectionId,
@@ -149,6 +157,12 @@ export function ConfigWizardPage() {
       dataMode: 'vector-tiles',
     };
     setLayers(prev => [...prev, newLayer]);
+
+    detectStyleTypeForCollection(source.url, collectionId).then(styleType => {
+      if (!styleType) return;
+      const style = styleType === 'fill' ? defaultFill : styleType === 'line' ? defaultLine : defaultCircle;
+      setLayers(prev => prev.map(l => l.id === layerId && !l.style ? { ...l, style } : l));
+    });
   };
 
   const handleCollectionDeselect = (collectionId: string) => {
@@ -388,6 +402,7 @@ export function ConfigWizardPage() {
           onViewStateChange={currentStep === 'view' ? setInitialView : undefined}
           onLayersChange={setLayers}
           currentStep={currentStep}
+          uiConfig={uiConfig}
         />
       </div>
     </div>

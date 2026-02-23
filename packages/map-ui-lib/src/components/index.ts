@@ -31,7 +31,7 @@ export { SourceEditor, SourceList } from './SourceEditor';
 export type { SourceEditorProps, SourceListProps } from './SourceEditor';
 export { CollectionBrowser } from './CollectionBrowser';
 export type { CollectionBrowserProps } from './CollectionBrowser';
-export { StyleEditor } from './StyleEditor';
+export { StyleEditor, defaultFill, defaultLine, defaultCircle } from './StyleEditor';
 export type { StyleEditorProps } from './StyleEditor';
 export { LegendEntryEditor, LegendEditor } from './LegendEditor';
 export type { LegendEntryEditorProps, LegendEditorProps } from './LegendEditor';

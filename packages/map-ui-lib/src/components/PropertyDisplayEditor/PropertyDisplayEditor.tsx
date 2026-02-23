@@ -1,9 +1,10 @@
-import type { PropertyDisplayConfig } from '../../types';
+import type { PropertyDisplayConfig, AvailableProperty } from '../../types';
 import { FormField } from '../admin/FormField';
 
 export interface PropertyDisplayEditorProps {
   value: PropertyDisplayConfig;
   onChange: (config: PropertyDisplayConfig) => void;
+  availableProperties?: AvailableProperty[];
 }
 
 export type PropertyEntry = { key: string; label: string; visible: boolean };
@@ -30,8 +31,9 @@ export function fromEntries(entries: PropertyEntry[]): PropertyDisplayConfig {
 const inputClass =
   'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
-export function PropertyDisplayEditor({ value, onChange }: PropertyDisplayEditorProps) {
+export function PropertyDisplayEditor({ value, onChange, availableProperties }: PropertyDisplayEditorProps) {
   const entries = toEntries(value);
+  const hasProperties = availableProperties && availableProperties.length > 0;
 
   const update = (updated: PropertyEntry[]) => onChange(fromEntries(updated));
 
@@ -45,6 +47,13 @@ export function PropertyDisplayEditor({ value, onChange }: PropertyDisplayEditor
 
   const handleChange = (index: number, patch: Partial<PropertyEntry>) => {
     update(entries.map((e, i) => (i === index ? { ...e, ...patch } : e)));
+  };
+
+  const handleKeyChange = (index: number, key: string) => {
+    // Auto-fill label from property title when selecting from dropdown
+    const matchingProp = availableProperties?.find((p) => p.name === key);
+    const label = matchingProp?.title ?? entries[index].label;
+    update(entries.map((e, i) => (i === index ? { ...e, key, label } : e)));
   };
 
   const handleMoveUp = (index: number) => {
@@ -61,12 +70,33 @@ export function PropertyDisplayEditor({ value, onChange }: PropertyDisplayEditor
     update(updated);
   };
 
+  const handlePopulateAll = () => {
+    if (!availableProperties) return;
+    const newEntries: PropertyEntry[] = availableProperties.map((p) => ({
+      key: p.name,
+      label: p.title ?? '',
+      visible: true,
+    }));
+    update(newEntries);
+  };
+
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-2">
       {entries.length === 0 ? (
-        <p className="mapui:m-0 mapui:text-sm mapui:text-gray-500">
-          No property display rules configured. All properties will be shown.
-        </p>
+        <>
+          <p className="mapui:m-0 mapui:text-sm mapui:text-gray-500">
+            No property display rules configured. All properties will be shown.
+          </p>
+          {hasProperties && (
+            <button
+              type="button"
+              onClick={handlePopulateAll}
+              className="mapui:cursor-pointer mapui:self-start mapui:rounded mapui:border mapui:border-blue-300 mapui:bg-blue-50 mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:text-blue-700 hover:mapui:bg-blue-100"
+            >
+              Populate from API metadata
+            </button>
+          )}
+        </>
       ) : (
         <>
           <div className="mapui:grid mapui:items-center mapui:gap-2 mapui:px-8" style={{ gridTemplateColumns: '1fr 1fr auto' }}>
@@ -100,14 +130,30 @@ export function PropertyDisplayEditor({ value, onChange }: PropertyDisplayEditor
                 </div>
 
                 <div className="mapui:grid mapui:flex-1 mapui:items-center mapui:gap-2" style={{ gridTemplateColumns: '1fr 1fr auto auto' }}>
-                  <input
-                    type="text"
-                    value={entry.key}
-                    onChange={(e) => handleChange(index, { key: e.target.value })}
-                    placeholder="property_name"
-                    aria-label="Property key"
-                    className={inputClass}
-                  />
+                  {hasProperties ? (
+                    <select
+                      value={entry.key}
+                      onChange={(e) => handleKeyChange(index, e.target.value)}
+                      aria-label="Property key"
+                      className={inputClass}
+                    >
+                      <option value="">Select a property…</option>
+                      {availableProperties.map((p) => (
+                        <option key={p.name} value={p.name}>
+                          {p.title ?? p.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={entry.key}
+                      onChange={(e) => handleChange(index, { key: e.target.value })}
+                      placeholder="property_name"
+                      aria-label="Property key"
+                      className={inputClass}
+                    />
+                  )}
                   <input
                     type="text"
                     value={entry.label}

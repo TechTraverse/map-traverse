@@ -4,12 +4,14 @@ import type {
   NumberSearchField,
   DatetimeSearchField,
   SelectSearchField,
+  AvailableProperty,
 } from '../../types';
 import { FormField } from '../admin/FormField';
 
 export interface SearchFieldEditorProps {
   value: SearchField;
   onChange: (field: SearchField) => void;
+  availableProperties?: AvailableProperty[];
 }
 
 const inputClass =
@@ -22,13 +24,15 @@ const defaultsByType: Record<SearchField['type'], SearchField> = {
   select: { type: 'select', property: '', label: '' },
 };
 
-export function SearchFieldEditor({ value, onChange }: SearchFieldEditorProps) {
+export function SearchFieldEditor({ value, onChange, availableProperties }: SearchFieldEditorProps) {
   const handleTypeChange = (type: SearchField['type']) => {
     onChange({ ...defaultsByType[type], property: value.property, label: value.label });
   };
 
   const updateBase = (patch: Partial<Pick<SearchField, 'property' | 'label' | 'placeholder'>>) =>
     onChange({ ...value, ...patch } as SearchField);
+
+  const hasProperties = availableProperties && availableProperties.length > 0;
 
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-3">
@@ -46,13 +50,28 @@ export function SearchFieldEditor({ value, onChange }: SearchFieldEditorProps) {
       </FormField>
 
       <FormField label="Property" required>
-        <input
-          type="text"
-          value={value.property}
-          onChange={(e) => updateBase({ property: e.target.value })}
-          placeholder="e.g. name"
-          className={inputClass}
-        />
+        {hasProperties ? (
+          <select
+            value={value.property}
+            onChange={(e) => updateBase({ property: e.target.value })}
+            className={inputClass}
+          >
+            <option value="">Select a property…</option>
+            {availableProperties.map((p) => (
+              <option key={p.name} value={p.name}>
+                {p.title ?? p.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input
+            type="text"
+            value={value.property}
+            onChange={(e) => updateBase({ property: e.target.value })}
+            placeholder="e.g. name"
+            className={inputClass}
+          />
+        )}
       </FormField>
 
       <FormField label="Label">

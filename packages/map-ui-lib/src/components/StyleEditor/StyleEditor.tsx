@@ -5,19 +5,20 @@ import { FormField } from '../admin/FormField';
 export interface StyleEditorProps {
   value: StyleConfig;
   onChange: (style: StyleConfig) => void;
+  suggestedType?: 'fill' | 'line' | 'circle' | null;
 }
 
-const defaultFill: FillStyle = {
+export const defaultFill: FillStyle = {
   type: 'fill',
-  paint: { 'fill-color': '#4a90d9', 'fill-opacity': 0.6 },
+  paint: { 'fill-color': '#4a90d9', 'fill-opacity': 0.6, 'fill-outline-color': 'transparent' },
 };
 
-const defaultLine: LineStyle = {
+export const defaultLine: LineStyle = {
   type: 'line',
   paint: { 'line-color': '#2980b9', 'line-width': 2, 'line-opacity': 1 },
 };
 
-const defaultCircle: CircleStyle = {
+export const defaultCircle: CircleStyle = {
   type: 'circle',
   paint: { 'circle-color': '#e74c3c', 'circle-radius': 5, 'circle-opacity': 0.9 },
 };
@@ -80,7 +81,7 @@ function StylePreview({ style }: { style: StyleConfig }) {
   );
 }
 
-export function StyleEditor({ value, onChange }: StyleEditorProps) {
+export function StyleEditor({ value, onChange, suggestedType }: StyleEditorProps) {
   const handleTypeChange = (type: StyleConfig['type']) => {
     if (type === 'fill') onChange(defaultFill);
     else if (type === 'line') onChange(defaultLine);
@@ -89,6 +90,21 @@ export function StyleEditor({ value, onChange }: StyleEditorProps) {
 
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-3">
+      {suggestedType && suggestedType !== value.type && (
+        <div className="mapui:flex mapui:items-center mapui:justify-between mapui:rounded mapui:border mapui:border-blue-200 mapui:bg-blue-50 mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-blue-800">
+          <span>
+            Detected geometry suggests <strong>{suggestedType}</strong> style.
+          </span>
+          <button
+            type="button"
+            onClick={() => handleTypeChange(suggestedType)}
+            className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-blue-400 mapui:bg-white mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:text-blue-700 hover:mapui:bg-blue-100"
+          >
+            Apply
+          </button>
+        </div>
+      )}
+
       <FormField label="Style Type">
         <select
           value={value.type}

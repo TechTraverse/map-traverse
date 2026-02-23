@@ -1,10 +1,18 @@
-import { useState } from 'react';
-import type { LayerConfig, OgcApiSource, StyleConfig } from '../../types';
+import { useState, useEffect, useRef } from 'react';
+import type { LayerConfig, OgcApiSource, AvailableProperty } from '../../types';
 import { FormField } from '../admin/FormField';
-import { StyleEditor } from '../StyleEditor/StyleEditor';
+import { StyleEditor, defaultFill, defaultLine, defaultCircle } from '../StyleEditor/StyleEditor';
 import { LegendEditor } from '../LegendEditor/LegendEditor';
 import { SearchFieldList } from '../SearchFieldEditor/SearchFieldList';
 import { PropertyDisplayEditor } from '../PropertyDisplayEditor/PropertyDisplayEditor';
+import { useOgcCollections } from '../../hooks/useOgcCollections';
+import { useOgcQueryables } from '../../hooks/useOgcQueryables';
+import { fetchFeatures } from '../../utils/ogcApi';
+import {
+  detectGeometryTypeFromQueryables,
+  geometryTypeToStyleType,
+  toAvailableProperties,
+} from '../../utils/queryableHelpers';
 
 export interface LayerEditorProps {
   value: LayerConfig;
@@ -15,10 +23,6 @@ export interface LayerEditorProps {
 const inputClass =
   'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
-const defaultStyle: StyleConfig = {
-  type: 'fill',
-  paint: { 'fill-color': '#4a90d9', 'fill-opacity': 0.6 },
-};
 
 function CollapsibleSection({
   title,
@@ -45,6 +49,84 @@ function CollapsibleSection({
 
 export function LayerEditor({ value, onChange, availableSources }: LayerEditorProps) {
   const update = (patch: Partial<LayerConfig>) => onChange({ ...value, ...patch });
+
+  // Refs to always have latest value/onChange in async callbacks (avoid stale closures)
+  const valueRef = useRef(value);
+  valueRef.current = value;
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
+  // Resolve baseUrl from the selected source
+  const source = availableSources.find((s) => s.id === value.sourceId);
+  const baseUrl = source?.url ?? null;
+  const collection = value.collection || null;
+
+  // Fetch collections for the dropdown
+  const { collections, loading: collectionsLoading } = useOgcCollections(baseUrl);
+
+  // Fetch queryables when a collection is selected
+  const { queryables, loading: queryablesLoading } = useOgcQueryables(baseUrl, collection);
+
+  // Derive available non-geometry properties
+  const availableProperties: AvailableProperty[] = queryables
+    ? toAvailableProperties(queryables)
+    : [];
+
+  // Detect suggested style type from queryables; fall back to fetching one feature
+  const [suggestedStyleType, setSuggestedStyleType] = useState<'fill' | 'line' | 'circle' | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (!queryables) {
+      setSuggestedStyleType(null);
+      return;
+    }
+
+    const applyStyleType = (styleType: 'fill' | 'line' | 'circle' | null) => {
+      setSuggestedStyleType(styleType);
+      if (styleType && !valueRef.current.style) {
+        const style = styleType === 'fill' ? defaultFill : styleType === 'line' ? defaultLine : defaultCircle;
+        onChangeRef.current({ ...valueRef.current, style });
+      }
+    };
+
+    const fromQueryables = detectGeometryTypeFromQueryables(queryables);
+    if (fromQueryables) {
+      applyStyleType(fromQueryables);
+      return;
+    }
+
+    // Fallback: inspect geometry.type from a single fetched feature
+    if (!baseUrl || !collection) {
+      setSuggestedStyleType(null);
+      return;
+    }
+
+    let cancelled = false;
+    fetchFeatures(baseUrl, collection, { limit: 1 })
+      .then((fc) => {
+        if (cancelled) return;
+        const geomType = fc.features[0]?.geometry?.type;
+        if (typeof geomType === 'string') {
+          applyStyleType(geometryTypeToStyleType(geomType));
+        } else {
+          applyStyleType(null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setSuggestedStyleType(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [queryables, baseUrl, collection]);
+
+  // Reset suggested type when source/collection changes
+  useEffect(() => {
+    setSuggestedStyleType(null);
+  }, [baseUrl, collection]);
 
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-3">
@@ -85,13 +167,33 @@ export function LayerEditor({ value, onChange, availableSources }: LayerEditorPr
       </FormField>
 
       <FormField label="Collection" required>
-        <input
-          type="text"
-          value={value.collection}
-          onChange={(e) => update({ collection: e.target.value })}
-          placeholder="collection-id"
-          className={inputClass}
-        />
+        {collections.length > 0 ? (
+          <select
+            value={value.collection}
+            onChange={(e) => update({ collection: e.target.value })}
+            className={inputClass}
+          >
+            <option value="">Select a collection…</option>
+            {collections.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.title ?? c.id}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input
+            type="text"
+            value={value.collection}
+            onChange={(e) => update({ collection: e.target.value })}
+            placeholder={collectionsLoading ? 'Loading collections…' : 'collection-id'}
+            className={inputClass}
+          />
+        )}
+        {queryablesLoading && (
+          <span className="mapui:mt-0.5 mapui:block mapui:text-xs mapui:text-gray-400">
+            Loading properties…
+          </span>
+        )}
       </FormField>
 
       <FormField label="Data Mode">
@@ -127,8 +229,9 @@ export function LayerEditor({ value, onChange, availableSources }: LayerEditorPr
 
       <CollapsibleSection title="Style">
         <StyleEditor
-          value={value.style ?? defaultStyle}
+          value={value.style ?? defaultFill}
           onChange={(style) => update({ style })}
+          suggestedType={suggestedStyleType}
         />
       </CollapsibleSection>
 
@@ -145,6 +248,7 @@ export function LayerEditor({ value, onChange, availableSources }: LayerEditorPr
           onChange={(fields) =>
             update({ search: fields.length > 0 ? { fields } : undefined })
           }
+          availableProperties={availableProperties}
         />
       </CollapsibleSection>
 
@@ -154,6 +258,7 @@ export function LayerEditor({ value, onChange, availableSources }: LayerEditorPr
           onChange={(propertyDisplay) =>
             update({ propertyDisplay: Object.keys(propertyDisplay).length > 0 ? propertyDisplay : undefined })
           }
+          availableProperties={availableProperties}
         />
       </CollapsibleSection>
     </div>

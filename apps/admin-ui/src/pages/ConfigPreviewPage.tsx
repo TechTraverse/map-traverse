@@ -52,6 +52,7 @@ export function ConfigPreviewPage() {
           viewState={config.initialView ?? DEFAULT_VIEW}
           onLayersChange={setLayers}
           currentStep="preview"
+          uiConfig={config.ui}
         />
       </div>
     </div>
