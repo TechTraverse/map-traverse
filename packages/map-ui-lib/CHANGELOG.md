@@ -1,5 +1,11 @@
 # @ogc-maps/storybook-components
 
+## 0.5.1
+
+### Patch Changes
+
+- 1a31b3d: layer summary and sorting
+
 ## 0.5.0
 
 ### Minor Changes
