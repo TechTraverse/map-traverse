@@ -73,6 +73,31 @@ export function LayerList({ layers, onChange, availableSources }: LayerListProps
                 <span className="mapui:font-mono mapui:text-xs mapui:text-gray-500">
                   {layer.collection}
                 </span>
+                <div className="mapui:mt-1 mapui:flex mapui:flex-wrap mapui:gap-1">
+                  <span className="mapui:rounded mapui:px-1.5 mapui:py-0.5 mapui:text-[10px] mapui:font-medium mapui:bg-slate-100 mapui:text-slate-700">
+                    {layer.dataMode}
+                  </span>
+                  {layer.style && (
+                    <span className="mapui:rounded mapui:px-1.5 mapui:py-0.5 mapui:text-[10px] mapui:font-medium mapui:bg-purple-100 mapui:text-purple-700">
+                      {layer.style.type}
+                    </span>
+                  )}
+                  {layer.visible === false && (
+                    <span className="mapui:rounded mapui:px-1.5 mapui:py-0.5 mapui:text-[10px] mapui:font-medium mapui:bg-amber-100 mapui:text-amber-700">
+                      hidden
+                    </span>
+                  )}
+                  {(layer.search?.fields?.length ?? 0) > 0 && (
+                    <span className="mapui:rounded mapui:px-1.5 mapui:py-0.5 mapui:text-[10px] mapui:font-medium mapui:bg-blue-100 mapui:text-blue-700">
+                      {layer.search!.fields.length} search fields
+                    </span>
+                  )}
+                  {(layer.legend?.entries?.length ?? 0) > 0 && (
+                    <span className="mapui:rounded mapui:px-1.5 mapui:py-0.5 mapui:text-[10px] mapui:font-medium mapui:bg-green-100 mapui:text-green-700">
+                      {layer.legend!.entries.length} legend entries
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="mapui:flex mapui:shrink-0 mapui:gap-1">
                 <button
