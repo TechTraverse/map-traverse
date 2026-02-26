@@ -13,6 +13,7 @@ import {
   defaultLine,
   defaultCircle,
 } from '@ogc-maps/storybook-components';
+import { safeValidateMapConfig } from '@ogc-maps/storybook-components/schemas';
 import type {
   OgcApiSource,
   LayerConfig,
@@ -66,6 +67,7 @@ export function ConfigWizardPage() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [showPreview, setShowPreview] = useState(true);
   const [previewLayout, setPreviewLayout] = useState<'horizontal' | 'vertical'>('vertical');
 
@@ -125,6 +127,15 @@ export function ConfigWizardPage() {
   const handleSave = async () => {
     setSaving(true);
     setError(null);
+    setValidationErrors([]);
+
+    const validation = safeValidateMapConfig(assembledConfig);
+    if (!validation.success) {
+      setValidationErrors(validation.error.errors.map(e => `${e.path.join('.')}: ${e.message}`));
+      setSaving(false);
+      return;
+    }
+
     try {
       const body = { name, description, config: assembledConfig, environment };
       const url = isEditing ? `/api/configs/${id}` : '/api/configs';
@@ -364,6 +375,16 @@ export function ConfigWizardPage() {
               <p><strong>Description:</strong> {description || '(not set)'}</p>
             </div>
             <ConfigPreview config={assembledConfig} />
+            {validationErrors.length > 0 && (
+              <div className="mapui:rounded mapui:bg-red-50 mapui:border mapui:border-red-200 mapui:p-4">
+                <p className="mapui:text-sm mapui:font-medium mapui:text-red-800 mapui:mb-2">Config validation failed:</p>
+                <ul className="mapui:list-disc mapui:list-inside mapui:space-y-1">
+                  {validationErrors.map((e, i) => (
+                    <li key={i} className="mapui:text-sm mapui:text-red-700">{e}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {error && <p className="mapui:text-red-600 mapui:text-sm">{error}</p>}
             <button
               onClick={handleSave}

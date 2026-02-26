@@ -5,6 +5,7 @@ import { ConfigPreviewPage } from './pages/ConfigPreviewPage';
 import { VersionHistoryPage } from './pages/VersionHistoryPage';
 import { LoginPage } from './pages/LoginPage';
 import { RequireAuth } from './components/RequireAuth';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { useAuth } from './hooks/useAuth';
 
 function Header() {
@@ -55,17 +56,19 @@ export default function App() {
           path="*"
           element={
             <RequireAuth>
-              <Header />
-              <main className="mapui:flex-1">
-                <Routes>
-                  <Route path="/" element={<Navigate to="/configs" replace />} />
-                  <Route path="/configs" element={<ConfigListPage />} />
-                  <Route path="/configs/new" element={<ConfigWizardPage />} />
-                  <Route path="/configs/:id/edit" element={<ConfigWizardPage />} />
-                  <Route path="/configs/:id/versions" element={<VersionHistoryPage />} />
-                  <Route path="/configs/:id/preview" element={<ConfigPreviewPage />} />
-                </Routes>
-              </main>
+              <ErrorBoundary>
+                <Header />
+                <main className="mapui:flex-1">
+                  <Routes>
+                    <Route path="/" element={<Navigate to="/configs" replace />} />
+                    <Route path="/configs" element={<ConfigListPage />} />
+                    <Route path="/configs/new" element={<ConfigWizardPage />} />
+                    <Route path="/configs/:id/edit" element={<ConfigWizardPage />} />
+                    <Route path="/configs/:id/versions" element={<VersionHistoryPage />} />
+                    <Route path="/configs/:id/preview" element={<ConfigPreviewPage />} />
+                  </Routes>
+                </main>
+              </ErrorBoundary>
             </RequireAuth>
           }
         />

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ConfigPreview } from '@ogc-maps/storybook-components';
 
 interface VersionSummary {
@@ -17,6 +17,7 @@ interface VersionDetail extends VersionSummary {
 
 export function VersionHistoryPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [versions, setVersions] = useState<VersionSummary[]>([]);
   const [selected, setSelected] = useState<VersionDetail | null>(null);
   const [current, setCurrent] = useState<VersionDetail | null>(null);
@@ -51,8 +52,8 @@ export function VersionHistoryPage() {
     if (!confirm('Restore this version? The current state will be saved as a new version.')) return;
     setRestoring(true);
     try {
-      await fetch(`/api/configs/${id}/restore/${versionId}`, { method: 'POST' });
-      window.location.href = '/configs';
+      await fetch(`/api/configs/${id}/restore/${versionId}`, { method: 'POST', credentials: 'include' });
+      navigate('/configs');
     } catch (err) {
       setError(String(err));
     } finally {

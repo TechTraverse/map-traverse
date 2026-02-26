@@ -21,8 +21,12 @@ const PORT = Number(process.env.PORT ?? 3001);
 
 const PgSession = connectPgSimple(session);
 
-app.use(cors({ credentials: true, origin: true }));
-app.use(express.json());
+const corsOrigins = process.env.CORS_ORIGINS;
+app.use(cors({
+  credentials: true,
+  origin: corsOrigins ? corsOrigins.split(',').map(o => o.trim()) : true,
+}));
+app.use(express.json({ limit: '1mb' }));
 
 // Session middleware
 app.use(
@@ -43,6 +47,11 @@ app.use(
 );
 
 // --- Helpers ---
+
+function handleServerError(res: express.Response, err: unknown): void {
+  console.error(err);
+  res.status(500).json({ error: 'Internal server error' });
+}
 
 function getEnvironments(): string[] {
   return (process.env.ADMIN_ENVIRONMENTS ?? 'production')
@@ -104,7 +113,7 @@ app.post('/api/auth/login', async (req, res) => {
     req.session.username = username;
     res.json({ ok: true });
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+    handleServerError(res, err);
   }
 });
 
@@ -125,6 +134,18 @@ app.post('/api/auth/logout', (req, res) => {
   req.session.destroy(() => {
     res.json({ ok: true });
   });
+});
+
+// --- Health check ---
+
+app.get('/api/health', async (_req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ status: 'ok' });
+  } catch (err) {
+    console.error('Health check failed:', err);
+    res.status(503).json({ status: 'error' });
+  }
 });
 
 // --- Environments ---
@@ -150,7 +171,7 @@ app.get('/api/configs', async (req, res) => {
     const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+    handleServerError(res, err);
   }
 });
 
@@ -168,7 +189,7 @@ app.get('/api/configs/published', async (req, res) => {
     }
     res.json((result.rows[0] as { config: unknown }).config);
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+    handleServerError(res, err);
   }
 });
 
@@ -182,7 +203,7 @@ app.get('/api/configs/:id', async (req, res) => {
     }
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+    handleServerError(res, err);
   }
 });
 
@@ -221,7 +242,7 @@ app.post('/api/configs', requireAuth, async (req, res) => {
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+    handleServerError(res, err);
   }
 });
 
@@ -294,7 +315,7 @@ app.put('/api/configs/:id', requireAuth, async (req, res) => {
     }
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+    handleServerError(res, err);
   }
 });
 
@@ -310,7 +331,7 @@ app.delete('/api/configs/:id', requireAuth, async (req, res) => {
     }
     res.json({ deleted: req.params.id });
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+    handleServerError(res, err);
   }
 });
 
@@ -345,7 +366,7 @@ app.post('/api/configs/:id/publish', requireAuth, async (req, res) => {
     }
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+    handleServerError(res, err);
   }
 });
 
@@ -360,7 +381,7 @@ app.get('/api/configs/:id/versions', async (req, res) => {
     );
     res.json(result.rows);
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+    handleServerError(res, err);
   }
 });
 
@@ -377,7 +398,7 @@ app.get('/api/configs/:id/versions/:versionId', async (req, res) => {
     }
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+    handleServerError(res, err);
   }
 });
 
@@ -448,7 +469,7 @@ app.post('/api/configs/:id/restore/:versionId', requireAuth, async (req, res) =>
     }
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+    handleServerError(res, err);
   }
 });
 
@@ -456,6 +477,12 @@ app.post('/api/configs/:id/restore/:versionId', requireAuth, async (req, res) =>
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath = path.join(__dirname, '..', 'dist');
 app.use(express.static(distPath));
+
+// JSON 404 for unmatched API routes (must be before SPA catch-all)
+app.all('/api/*', (_req, res) => {
+  res.status(404).json({ error: 'Not found' });
+});
+
 app.get('*', (_req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });

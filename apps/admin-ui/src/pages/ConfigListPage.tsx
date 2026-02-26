@@ -17,6 +17,8 @@ export function ConfigListPage() {
   const [envFilter, setEnvFilter] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [publishingId, setPublishingId] = useState<string | null>(null);
 
   // Load available environments
   useEffect(() => {
@@ -44,19 +46,22 @@ export function ConfigListPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this configuration?')) return;
+    setActionError(null);
     const res = await fetch(`/api/configs/${id}`, { method: 'DELETE', credentials: 'include' });
     if (!res.ok) {
-      alert(`Delete failed: ${await res.text()}`);
+      setActionError(`Delete failed: ${await res.text()}`);
       return;
     }
     setConfigs(prev => prev.filter(c => c.id !== id));
   };
 
   const handlePublish = async (id: string) => {
+    setPublishingId(id);
+    setActionError(null);
     try {
       const res = await fetch(`/api/configs/${id}/publish`, { method: 'POST', credentials: 'include' });
       if (!res.ok) {
-        alert(`Publish failed: ${await res.text()}`);
+        setActionError(`Publish failed: ${await res.text()}`);
         return;
       }
       // Re-fetch to reflect updated published state per environment
@@ -64,12 +69,13 @@ export function ConfigListPage() {
       const listRes = await fetch(url);
       setConfigs(await listRes.json() as ConfigSummary[]);
     } catch (err) {
-      alert(`Publish failed: ${String(err)}`);
+      setActionError(`Publish failed: ${String(err)}`);
+    } finally {
+      setPublishingId(null);
     }
   };
 
   if (loading) return <div className="mapui:p-8 mapui:text-center mapui:text-gray-500">Loading...</div>;
-  if (error) return <div className="mapui:p-8 mapui:text-red-600">{error}</div>;
 
   return (
     <div className="mapui:p-8">
@@ -82,6 +88,20 @@ export function ConfigListPage() {
           Create New Config
         </Link>
       </div>
+
+      {error && (
+        <div className="mapui:mb-4 mapui:rounded mapui:bg-red-50 mapui:border mapui:border-red-200 mapui:px-4 mapui:py-3 mapui:flex mapui:items-center mapui:justify-between">
+          <span className="mapui:text-sm mapui:text-red-700">{error}</span>
+          <button onClick={() => setError(null)} className="mapui:text-red-500 mapui:hover:text-red-700 mapui:text-lg mapui:leading-none">×</button>
+        </div>
+      )}
+
+      {actionError && (
+        <div className="mapui:mb-4 mapui:rounded mapui:bg-red-50 mapui:border mapui:border-red-200 mapui:px-4 mapui:py-3 mapui:flex mapui:items-center mapui:justify-between">
+          <span className="mapui:text-sm mapui:text-red-700">{actionError}</span>
+          <button onClick={() => setActionError(null)} className="mapui:text-red-500 mapui:hover:text-red-700 mapui:text-lg mapui:leading-none">×</button>
+        </div>
+      )}
 
       {/* Environment filter */}
       {environments.length > 1 && (
@@ -170,9 +190,10 @@ export function ConfigListPage() {
                       {!config.is_published && (
                         <button
                           onClick={() => handlePublish(config.id)}
-                          className="mapui:text-green-600 mapui:hover:underline mapui:text-sm"
+                          disabled={publishingId === config.id}
+                          className="mapui:text-green-600 mapui:hover:underline mapui:text-sm mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
                         >
-                          Publish
+                          {publishingId === config.id ? 'Publishing...' : 'Publish'}
                         </button>
                       )}
                       <button
