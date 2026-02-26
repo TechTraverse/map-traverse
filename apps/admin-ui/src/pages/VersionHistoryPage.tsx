@@ -100,7 +100,7 @@ export function VersionHistoryPage() {
                       <button
                         onClick={e => { e.stopPropagation(); handleRestore(v.id); }}
                         disabled={restoring}
-                        className="mapui:text-xs mapui:text-green-600 mapui:hover:underline disabled:mapui:opacity-50"
+                        className="mapui:text-xs mapui:text-green-600 mapui:hover:underline mapui:disabled:opacity-50"
                       >
                         Restore
                       </button>

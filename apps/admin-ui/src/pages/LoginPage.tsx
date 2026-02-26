@@ -50,7 +50,7 @@ export function LoginPage() {
                 onChange={e => setUsername(e.target.value)}
                 required
                 autoFocus
-                className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm focus:mapui:outline-none focus:mapui:ring-2 focus:mapui:ring-blue-500"
+                className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
               />
             </div>
             <div>
@@ -62,7 +62,7 @@ export function LoginPage() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
-                className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm focus:mapui:outline-none focus:mapui:ring-2 focus:mapui:ring-blue-500"
+                className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
               />
             </div>
             {error && (
@@ -71,7 +71,7 @@ export function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="mapui:w-full mapui:bg-blue-600 mapui:text-white mapui:py-2 mapui:rounded mapui:hover:bg-blue-700 disabled:mapui:opacity-50 disabled:mapui:cursor-not-allowed mapui:font-medium"
+              className="mapui:w-full mapui:bg-blue-600 mapui:text-white mapui:py-2 mapui:rounded mapui:hover:bg-blue-700 mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed mapui:font-medium"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>

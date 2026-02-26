@@ -65,7 +65,8 @@ export function ConfigWizardPage() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
+  const [showPreview, setShowPreview] = useState(true);
+  const [previewLayout, setPreviewLayout] = useState<'horizontal' | 'vertical'>('vertical');
 
   // Config state
   const [sources, setSources] = useState<OgcApiSource[]>([]);
@@ -186,7 +187,7 @@ export function ConfigWizardPage() {
   }
 
   return (
-    <div className="mapui:flex mapui:flex-col md:mapui:flex-row mapui:h-[calc(100vh-4rem)]">
+    <div className={`mapui:flex ${previewLayout === 'vertical' ? 'mapui:flex-row' : 'mapui:flex-col'} mapui:h-[calc(100vh-4rem)]`}>
       {/* Left: wizard form (scrollable) */}
       <div className="mapui:flex-1 mapui:min-w-0 mapui:overflow-y-auto mapui:p-8">
         <div className="mapui:max-w-3xl mapui:mx-auto">
@@ -227,7 +228,7 @@ export function ConfigWizardPage() {
                 value={name}
                 onChange={e => setName(e.target.value)}
                 placeholder="My Map Configuration"
-                className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm focus:mapui:outline-none focus:mapui:ring-2 focus:mapui:ring-blue-500"
+                className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
               />
             </div>
             <div>
@@ -239,7 +240,7 @@ export function ConfigWizardPage() {
                 onChange={e => setDescription(e.target.value)}
                 placeholder="Describe what this configuration is for..."
                 rows={3}
-                className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm focus:mapui:outline-none focus:mapui:ring-2 focus:mapui:ring-blue-500"
+                className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
               />
             </div>
             {environments.length > 1 && (
@@ -251,7 +252,7 @@ export function ConfigWizardPage() {
                   value={environment}
                   onChange={e => setEnvironment(e.target.value)}
                   disabled={isEditing}
-                  className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm focus:mapui:outline-none focus:mapui:ring-2 focus:mapui:ring-blue-500 disabled:mapui:bg-gray-50 disabled:mapui:text-gray-500"
+                  className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500 mapui:disabled:bg-gray-50 mapui:disabled:text-gray-500"
                 >
                   {environments.map(env => (
                     <option key={env} value={env}>{env}</option>
@@ -292,7 +293,7 @@ export function ConfigWizardPage() {
                     <select
                       value={browseSourceId}
                       onChange={e => setBrowseSourceId(e.target.value)}
-                      className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm focus:mapui:outline-none focus:mapui:ring-2 focus:mapui:ring-blue-500"
+                      className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
                     >
                       {sources.map(s => (
                         <option key={s.id} value={s.id}>
@@ -349,7 +350,7 @@ export function ConfigWizardPage() {
             <button
               onClick={handleSave}
               disabled={saving || !name}
-              className="mapui:bg-blue-600 mapui:text-white mapui:px-6 mapui:py-2 mapui:rounded mapui:hover:bg-blue-700 disabled:mapui:opacity-50 disabled:mapui:cursor-not-allowed"
+              className="mapui:bg-blue-600 mapui:text-white mapui:px-6 mapui:py-2 mapui:rounded mapui:hover:bg-blue-700 mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
             >
               {saving ? 'Saving...' : isEditing ? 'Update Configuration' : 'Create Configuration'}
             </button>
@@ -362,16 +363,40 @@ export function ConfigWizardPage() {
         <button
           onClick={() => setCurrentStep(STEPS[currentStepIndex - 1]?.key ?? 'metadata')}
           disabled={currentStepIndex === 0}
-          className="mapui:px-4 mapui:py-2 mapui:border mapui:border-gray-300 mapui:rounded mapui:text-sm mapui:hover:bg-gray-50 disabled:mapui:opacity-50"
+          className="mapui:px-4 mapui:py-2 mapui:border mapui:border-gray-300 mapui:rounded mapui:text-sm mapui:hover:bg-gray-50 mapui:disabled:opacity-50"
         >
           Previous
         </button>
-        <button
-          onClick={() => setShowPreview(p => !p)}
-          className="md:mapui:hidden mapui:px-3 mapui:py-2 mapui:border mapui:border-blue-300 mapui:rounded mapui:text-sm mapui:text-blue-600 mapui:hover:bg-blue-50"
-        >
-          {showPreview ? 'Hide Preview' : 'Show Map Preview'}
-        </button>
+        <div className="mapui:flex mapui:gap-2 mapui:items-center">
+          <button
+            onClick={() => setShowPreview(p => !p)}
+            className="mapui:px-3 mapui:py-2 mapui:border mapui:border-blue-300 mapui:rounded mapui:text-sm mapui:text-blue-600 mapui:hover:bg-blue-50"
+          >
+            {showPreview ? 'Hide Preview' : 'Show Map Preview'}
+          </button>
+          <div className={showPreview ? 'mapui:flex mapui:gap-1' : 'mapui:hidden'}>
+            <button
+              onClick={() => setPreviewLayout('vertical')}
+              title="Side-by-side layout"
+              className={`mapui:p-1.5 mapui:rounded mapui:border ${previewLayout === 'vertical' ? 'mapui:bg-blue-100 mapui:border-blue-400 mapui:text-blue-700' : 'mapui:border-gray-300 mapui:text-gray-500 mapui:hover:bg-gray-50'}`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="8" height="18" rx="1"/>
+                <rect x="13" y="3" width="8" height="18" rx="1"/>
+              </svg>
+            </button>
+            <button
+              onClick={() => setPreviewLayout('horizontal')}
+              title="Stacked layout"
+              className={`mapui:p-1.5 mapui:rounded mapui:border ${previewLayout === 'horizontal' ? 'mapui:bg-blue-100 mapui:border-blue-400 mapui:text-blue-700' : 'mapui:border-gray-300 mapui:text-gray-500 mapui:hover:bg-gray-50'}`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="8" rx="1"/>
+                <rect x="3" y="13" width="18" height="8" rx="1"/>
+              </svg>
+            </button>
+          </div>
+        </div>
         {currentStepIndex < STEPS.length - 1 ? (
           <button
             onClick={() => setCurrentStep(STEPS[currentStepIndex + 1].key)}
@@ -383,7 +408,7 @@ export function ConfigWizardPage() {
           <button
             onClick={handleSave}
             disabled={saving || !name}
-            className="mapui:bg-green-600 mapui:text-white mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:hover:bg-green-700 disabled:mapui:opacity-50"
+            className="mapui:bg-green-600 mapui:text-white mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:hover:bg-green-700 mapui:disabled:opacity-50"
           >
             {saving ? 'Saving...' : 'Save Configuration'}
           </button>
@@ -393,7 +418,7 @@ export function ConfigWizardPage() {
       </div>
 
       {/* Right: map preview (always visible on ≥md, toggle on <md) */}
-      <div className={`mapui:shrink-0 md:mapui:w-[45%] mapui:h-[400px] md:mapui:h-auto mapui:border-gray-200 md:mapui:border-l md:mapui:block ${showPreview ? 'mapui:block mapui:border-t' : 'mapui:hidden'}`}>
+      <div className={`mapui:shrink-0 mapui:border-gray-200 ${previewLayout === 'vertical' ? 'mapui:w-[45%] mapui:h-auto mapui:border-l' : 'mapui:w-full mapui:h-[400px] mapui:border-t'} ${showPreview ? 'mapui:block' : 'mapui:hidden'}`}>
         <MapPreview
           sources={sources}
           layers={layers}

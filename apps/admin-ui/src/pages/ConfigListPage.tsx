@@ -92,7 +92,7 @@ export function ConfigListPage() {
           <select
             value={envFilter}
             onChange={e => setEnvFilter(e.target.value)}
-            className="mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-1.5 mapui:text-sm focus:mapui:outline-none focus:mapui:ring-2 focus:mapui:ring-blue-500"
+            className="mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
           >
             <option value="">All</option>
             {environments.map(env => (
