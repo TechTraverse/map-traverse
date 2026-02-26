@@ -1,6 +1,6 @@
 # @ogc-maps/storybook-components
 
-A reusable, config-driven map component library built on OGC API standards. Designed for building interactive web maps with React, MapLibre GL JS, and `tipg`.
+A reusable, config-driven map component library built on OGC API standards. Designed for building interactive web maps with React and `tipg` — the library itself has no MapLibre dependency.
 
 ## Features
 
@@ -54,7 +54,7 @@ Default styles use the `mapui:` Tailwind prefix so they won't clash with your ap
 
 - [Getting Started](../../docs/GETTING-STARTED.md) — Installation, minimal config, first render
 - [Configuration](../../docs/CONFIGURATION.md) — Full `MapConfig` schema reference
-- [Components](../../docs/COMPONENTS.md) — All 9 component APIs with props tables and examples
+- [Components](../../docs/COMPONENTS.md) — All component APIs with props tables and examples
 - [Hooks & Utilities](../../docs/HOOKS.md) — OGC API hooks and utility functions
 - [Publishing](../../docs/PUBLISHING.md) — Versioning and release guide
 

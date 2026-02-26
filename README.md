@@ -50,24 +50,31 @@ A reusable, config-driven map component ecosystem built on OGC API standards (ti
 
 ```
 storybook-components/
-├── docker-compose.yml           # PostGIS + tipg + seed
+├── docker-compose.yml           # PostGIS + tipg + seed + admin-ui
 ├── packages/
 │   └── map-ui-lib/              # Reusable component library
 │       ├── src/
-│       │   ├── components/      # LayerPanel, Legend, BasemapSwitcher, FeatureDetailPanel, FeatureTooltip, ExportButton
-│       │   ├── hooks/           # useOgcCollections, useOgcFeatures
+│       │   ├── components/      # LayerPanel, Legend, BasemapSwitcher, CollapsibleControl,
+│       │   │                    # CoordinateDisplay, SearchPanel, FeatureDetailPanel,
+│       │   │                    # FeatureTooltip, ExportButton, + admin editor components
+│       │   ├── hooks/           # useOgcCollections, useOgcFeatures, useOgcQueryables,
+│       │   │                    # useOgcCollectionDetail, useCsvExport
 │       │   ├── schemas/         # Zod config schemas
 │       │   ├── types/           # TypeScript types
-│       │   └── utils/           # OGC API fetch utilities
+│       │   └── utils/           # OGC API fetch utilities, CQL2 builders
 │       └── .storybook/          # Storybook configuration
 │
 ├── apps/
-│   └── client-map-app/          # Demo map application
-│       └── src/
-│           ├── config/          # Map configuration
-│           ├── stores/          # Zustand state management
-│           ├── hooks/           # URL sync hooks
-│           └── components/      # Map containers
+│   ├── client-map-app/          # Demo map application
+│   │   └── src/
+│   │       ├── config/          # Map configuration
+│   │       ├── stores/          # Zustand state management
+│   │       ├── hooks/           # URL sync hooks
+│   │       └── components/      # Map containers
+│   │
+│   └── admin-ui/                # Map config admin panel
+│       ├── src/                 # React frontend (config wizard, version history)
+│       └── server/              # Express API + PostgreSQL backend
 │
 └── docker/                      # Development infrastructure
     └── seed/                    # Natural Earth sample data
@@ -139,9 +146,10 @@ pnpm build:app
 - **Client App**: http://localhost:5173
 - **Storybook**: http://localhost:6006
 - **tipg API**: http://localhost:8000
+- **Admin UI**: http://localhost:5174
 - **PostGIS**: localhost:5432
 
-## Key Features (Planned)
+## Key Features
 
 ### Map Configuration
 - Declarative layer definitions with style specifications
@@ -199,11 +207,7 @@ pnpm build:app
 
 ## Project Status
 
-All core implementation phases are complete. See [IMPLEMENTATION.md](./IMPLEMENTATION.md) for details.
-
-## Contributing
-
-This is a demonstration/learning project. The implementation plan follows a phased approach:
+All core implementation phases are complete:
 
 - **Phase 1**: ✅ Project scaffolding and Docker infrastructure
 - **Phase 2**: ✅ Config schemas and types
@@ -211,6 +215,10 @@ This is a demonstration/learning project. The implementation plan follows a phas
 - **Phase 4**: ✅ Core UI components
 - **Phase 5**: ✅ Client app integration
 - **Phase 6**: ✅ URL state management
+
+## Contributing
+
+This is a demonstration/learning project.
 
 ## License
 

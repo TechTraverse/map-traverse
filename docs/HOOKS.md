@@ -150,6 +150,104 @@ function FeatureList() {
 
 ---
 
+### `useOgcQueryables`
+
+Fetches queryable properties for an OGC API collection.
+
+**Signature:**
+
+```ts
+function useOgcQueryables(
+  baseUrl: string | null,
+  collectionId: string | null
+): UseOgcQueryablesResult
+```
+
+**Return type:**
+
+```ts
+interface UseOgcQueryablesResult {
+  queryables: OgcQueryables | null;
+  loading: boolean;
+  error: Error | null;
+}
+```
+
+**Behavior:**
+
+- Fetches `GET {baseUrl}/collections/{collectionId}/queryables?f=json` on mount and whenever inputs change.
+- Pass `null` for either parameter to skip fetching.
+- Cancels the in-flight request if inputs change or the component unmounts.
+
+**Example:**
+
+```tsx
+import { useOgcQueryables } from '@ogc-maps/storybook-components/hooks';
+
+function QueryablesList({ baseUrl, collectionId }) {
+  const { queryables, loading, error } = useOgcQueryables(baseUrl, collectionId);
+
+  if (loading) return <p>Loading…</p>;
+  if (error)   return <p>Error: {error.message}</p>;
+
+  return (
+    <ul>
+      {Object.entries(queryables?.properties ?? {}).map(([key, prop]) => (
+        <li key={key}>{key}: {prop.type}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+---
+
+### `useOgcCollectionDetail`
+
+Fetches metadata for a single OGC API collection.
+
+**Signature:**
+
+```ts
+function useOgcCollectionDetail(
+  baseUrl: string | null,
+  collectionId: string | null
+): UseOgcCollectionDetailResult
+```
+
+**Return type:**
+
+```ts
+interface UseOgcCollectionDetailResult {
+  collection: OgcCollection | null;
+  loading: boolean;
+  error: Error | null;
+}
+```
+
+**Behavior:**
+
+- Fetches `GET {baseUrl}/collections/{collectionId}?f=json` on mount and whenever inputs change.
+- Pass `null` for either parameter to skip fetching.
+- Cancels the in-flight request on unmount or input change.
+
+**Example:**
+
+```tsx
+import { useOgcCollectionDetail } from '@ogc-maps/storybook-components/hooks';
+
+function CollectionInfo({ baseUrl, collectionId }) {
+  const { collection, loading, error } = useOgcCollectionDetail(baseUrl, collectionId);
+
+  if (loading) return <p>Loading…</p>;
+  if (error)   return <p>Error: {error.message}</p>;
+
+  return <h2>{collection?.title ?? collectionId}</h2>;
+}
+```
+
+---
+
 ### `useCsvExport`
 
 Exports features from an OGC API collection to a CSV file, paginating automatically.
@@ -309,6 +407,91 @@ const matching = await fetchDistinctValues(
 
 ---
 
+### `fetchCollectionDetail`
+
+```ts
+async function fetchCollectionDetail(
+  baseUrl: string,
+  collectionId: string
+): Promise<OgcCollection>
+```
+
+Fetches metadata for a single OGC API collection by ID from `GET {baseUrl}/collections/{collectionId}?f=json`.
+
+```ts
+import { fetchCollectionDetail } from '@ogc-maps/storybook-components/hooks';
+
+const collection = await fetchCollectionDetail('http://localhost:8000', 'public.countries');
+console.log(collection.title, collection.description);
+```
+
+---
+
+### `fetchConformance`
+
+```ts
+async function fetchConformance(baseUrl: string): Promise<OgcConformance>
+```
+
+Fetches the OGC API conformance declaration to discover server capabilities. Returns an object with a `conformsTo` array of conformance class URIs.
+
+```ts
+import { fetchConformance } from '@ogc-maps/storybook-components/hooks';
+
+const conformance = await fetchConformance('http://localhost:8000');
+const supportsCql2 = conformance.conformsTo.some((c) => c.includes('cql2'));
+```
+
+---
+
+### `fetchTileJson`
+
+```ts
+async function fetchTileJson(
+  baseUrl: string,
+  collection: string,
+  tileMatrixSetId?: string  // default: 'WebMercatorQuad'
+): Promise<TileJson>
+```
+
+Fetches the TileJSON document for a collection's vector tiles. Returns tile metadata including bounds, min/max zoom, and `vector_layers` schema.
+
+```ts
+import { fetchTileJson } from '@ogc-maps/storybook-components/hooks';
+
+const tileJson = await fetchTileJson('http://localhost:8000', 'public.countries');
+console.log(tileJson.vector_layers); // layer definitions
+```
+
+---
+
+### `fetchFeatureCount`
+
+```ts
+async function fetchFeatureCount(
+  baseUrl: string,
+  collection: string,
+  options?: Omit<FetchFeaturesOptions, 'limit' | 'offset' | 'properties'>
+): Promise<number | null>
+```
+
+Fetches the total feature count for a collection using `limit=0` and reading `numberMatched` from the response. Returns `null` if the server does not report `numberMatched`. Accepts optional CQL2 or datetime filters to count filtered results.
+
+```ts
+import { fetchFeatureCount } from '@ogc-maps/storybook-components/hooks';
+
+const total = await fetchFeatureCount('http://localhost:8000', 'public.countries');
+// total may be null if server doesn't support numberMatched
+
+const europeanCount = await fetchFeatureCount(
+  'http://localhost:8000',
+  'public.countries',
+  { cql2Filter: { op: '=', args: [{ property: 'continent' }, 'Europe'] } }
+);
+```
+
+---
+
 ### `getTileJsonUrl`
 
 ```ts
@@ -447,6 +630,28 @@ Creates a `Blob` from a CSV string and triggers a browser file download.
 import { downloadCsv } from '@ogc-maps/storybook-components/hooks';
 
 downloadCsv(csv, 'countries.csv');
+```
+
+---
+
+### `resolvePropertyDisplay`
+
+```ts
+function resolvePropertyDisplay(
+  propertyDisplay: PropertyDisplayConfig | undefined
+): { fields: string[]; labels: Record<string, string> } | undefined
+```
+
+Transforms a `PropertyDisplayConfig` into a resolved form with a flat list of visible field names and a label map. Filters out entries with `visible: false`. Returns `undefined` if input is `undefined` (meaning "show all properties with default labels").
+
+Use this utility when rendering feature properties to respect the layer's `propertyDisplay` configuration.
+
+```ts
+import { resolvePropertyDisplay } from '@ogc-maps/storybook-components/hooks';
+
+const resolved = resolvePropertyDisplay(layer.propertyDisplay);
+// resolved?.fields → ['name', 'continent', 'pop_est']
+// resolved?.labels → { name: 'Country Name', pop_est: 'Population' }
 ```
 
 ---
@@ -593,6 +798,8 @@ import type {
   // OGC API response types
   OgcCollection,
   OgcCollectionsResponse,
+  OgcConformance,
+  TileJson,
   GeoJsonFeature,
   OgcFeatureCollection,
   OgcQueryables,
@@ -609,6 +816,7 @@ import type {
   LegendConfig,
   SearchConfig,
   SearchField,
+  SearchFieldType,
   // Search field sub-types
   TextSearchField,
   NumberSearchField,
@@ -616,6 +824,9 @@ import type {
   SelectSearchField,
   SearchFilterValue,
   SearchFilterValues,
+  // Property display
+  PropertyDisplay,
+  PropertyDisplayConfig,
   // CQL2 filter
   CQL2Expression,
   CQL2PropertyRef,

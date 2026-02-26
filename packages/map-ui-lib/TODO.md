@@ -1,28 +1,33 @@
 # map-ui-lib - Future Features
 
-## Planned Features
+## Completed Features
 
-### Search Component
-- [ ] Full-text search across OGC collections
-- [ ] Autocomplete with queryables support
-- [ ] Result highlighting on map
-- [ ] Configurable search providers
+### Search Component ✅
+- [x] Full-text search across OGC collections (SearchPanel)
+- [x] Autocomplete with `fetchDistinctValues` support
+- [x] Configurable search providers (text, number, datetime, select field types)
+- [x] Filter-to-CQL2 conversion via `fromStructuredFilters`
+- [x] Debounced search (in client app via `useAutocompleteSuggestions`)
 
-### URL Router Integration
-- [ ] Deep linking for feature details
-- [ ] Shareable layer configurations
+### URL Router Integration ✅
+- [x] Shareable URLs with view state and active filters (nuqs in client app)
+- [x] Query parameter validation
+- [ ] Deep linking for feature detail panels
 - [ ] Bookmark support for saved views
-- [ ] Query parameter validation
+
+### Filter Builder ✅
+- [x] SearchPanel with visual filter builder UI
+- [x] CQL2 expression builder functions
+
+## Planned Features
 
 ### Advanced Layer Controls
 - [ ] Opacity sliders
 - [ ] Layer styling editor
-- [ ] Filter builder UI
 - [ ] Time slider for temporal data
 
 ### Performance
 - [ ] Virtualized layer lists for large configs
-- [ ] Debounced search
 - [ ] Lazy loading for Storybook assets
 
 ## Notes

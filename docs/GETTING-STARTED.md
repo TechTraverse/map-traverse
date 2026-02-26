@@ -23,7 +23,7 @@ pnpm add react react-dom react-icons
 Import the library's compiled CSS in your app entry point (e.g., `main.tsx`):
 
 ```tsx
-import '@ogc-maps/storybook-components/dist/style.css';
+import '@ogc-maps/storybook-components/style.css';
 ```
 
 The library uses TailwindCSS v4 with a `mapui:` prefix — all styles are scoped and self-contained.
@@ -135,6 +135,6 @@ function MapUI() {
 ## Next Steps
 
 - **[CONFIGURATION.md](./CONFIGURATION.md)** — Full `MapConfig` schema reference
-- **[COMPONENTS.md](./COMPONENTS.md)** — All 9 component APIs
+- **[COMPONENTS.md](./COMPONENTS.md)** — All component APIs
 - **[HOOKS.md](./HOOKS.md)** — OGC API hooks and utility functions
 - **[PUBLISHING.md](./PUBLISHING.md)** — Publishing and versioning guide

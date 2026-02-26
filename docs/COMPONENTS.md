@@ -1,6 +1,11 @@
 # Component API Reference
 
-All components are fully controlled — no internal state for data. Import them individually by sub-path to enable tree-shaking:
+All components are fully controlled — no internal state for data. The library exports two categories of components:
+
+- **Map UI Components** (9): Consumer-facing UI overlays for interactive maps.
+- **Admin/Editor Components** (13+): Configuration editors used by the `admin-ui` app and any custom admin interfaces.
+
+Import them individually by sub-path to enable tree-shaking:
 
 ```ts
 import { LayerPanel }           from '@ogc-maps/storybook-components/components/LayerPanel';
@@ -496,3 +501,254 @@ function App() {
   );
 }
 ```
+
+---
+
+# Admin / Editor Components
+
+These components are used by the `admin-ui` app to build a visual config wizard for `MapConfig`. They are exported from the main components entry point and can be used to build custom admin interfaces.
+
+Import via the main components sub-path:
+
+```ts
+import { SourceEditor, LayerEditor, StyleEditor, ... } from '@ogc-maps/storybook-components/components/...';
+// or from the main entry:
+import { SourceEditor } from '@ogc-maps/storybook-components';
+```
+
+All admin components are fully controlled (value + onChange pattern).
+
+---
+
+## SourceEditor / SourceList
+
+Edits a single `OgcApiSource` entry. `SourceList` renders a list of sources with add/remove controls.
+
+### SourceEditor Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `value` | `OgcApiSource` | Yes | The source being edited |
+| `onChange` | `(source: OgcApiSource) => void` | Yes | Called on any field change |
+| `onTestConnection` | `(url: string) => void` | No | Called when the user tests connectivity |
+| `testStatus` | `'idle' \| 'loading' \| 'success' \| 'error'` | No | Displays connection test result |
+| `testError` | `string` | No | Error message shown when `testStatus` is `'error'` |
+
+### SourceList Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `sources` | `OgcApiSource[]` | Yes | All sources |
+| `onAdd` | `() => void` | Yes | Called when the user clicks "Add Source" |
+| `onRemove` | `(id: string) => void` | Yes | Called when the user removes a source |
+| `onChange` | `(source: OgcApiSource) => void` | Yes | Called when a source field changes |
+
+---
+
+## StyleEditor
+
+Configures the visual style for a layer (`fill`, `line`, or `circle`).
+
+### Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `value` | `StyleConfig` | Yes | Current style config |
+| `onChange` | `(style: StyleConfig) => void` | Yes | Called on any style change |
+| `suggestedType` | `'fill' \| 'line' \| 'circle' \| null` | No | Geometry-based hint for the default style type |
+
+---
+
+## LayerEditor / LayerList
+
+Full-featured layer editor managing all `LayerConfig` fields.
+
+### LayerEditor Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `value` | `LayerConfig` | Yes | The layer being edited |
+| `onChange` | `(layer: LayerConfig) => void` | Yes | Called on any field change |
+| `availableSources` | `OgcApiSource[]` | Yes | Sources the user can select from |
+
+### LayerList Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `layers` | `LayerConfig[]` | Yes | All layers |
+| `availableSources` | `OgcApiSource[]` | Yes | Sources available for selection |
+| `onAdd` | `() => void` | Yes | Called when the user adds a layer |
+| `onRemove` | `(id: string) => void` | Yes | Called when the user removes a layer |
+| `onChange` | `(layer: LayerConfig) => void` | Yes | Called when a layer field changes |
+
+---
+
+## LegendEditor / LegendEntryEditor
+
+Manages `LegendConfig` entries for a layer.
+
+### LegendEditor Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `value` | `LegendConfig \| undefined` | Yes | Current legend config (`undefined` = auto-derive from style) |
+| `onChange` | `(legend: LegendConfig \| undefined) => void` | Yes | Called on change; passes `undefined` to reset to auto-derive |
+
+### LegendEntryEditor Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `value` | `LegendEntry` | Yes | Single legend entry |
+| `onChange` | `(entry: LegendEntry) => void` | Yes | Called on any field change |
+| `onRemove` | `() => void` | Yes | Called when the user removes this entry |
+
+---
+
+## SearchFieldEditor / SearchFieldList
+
+Edits search field configuration for a layer's `SearchConfig`.
+
+### SearchFieldEditor Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `value` | `SearchField` | Yes | The field being edited |
+| `onChange` | `(field: SearchField) => void` | Yes | Called on any field change |
+| `availableProperties` | `AvailableProperty[]` | No | Properties from API metadata for autocomplete |
+
+### SearchFieldList Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `fields` | `SearchField[]` | Yes | All search fields |
+| `availableProperties` | `AvailableProperty[]` | No | Properties for autocomplete hints |
+| `onAdd` | `() => void` | Yes | Called when adding a new field |
+| `onRemove` | `(property: string) => void` | Yes | Called when removing a field |
+| `onChange` | `(field: SearchField) => void` | Yes | Called when a field changes |
+
+---
+
+## BasemapEditor / BasemapList
+
+Edits a single `BasemapConfig` entry.
+
+### BasemapEditor Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `value` | `BasemapConfig` | Yes | The basemap being edited |
+| `onChange` | `(basemap: BasemapConfig) => void` | Yes | Called on any field change |
+
+### BasemapList Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `basemaps` | `BasemapConfig[]` | Yes | All basemaps |
+| `onAdd` | `() => void` | Yes | Called when adding a basemap |
+| `onRemove` | `(id: string) => void` | Yes | Called when removing a basemap |
+| `onChange` | `(basemap: BasemapConfig) => void` | Yes | Called when a basemap changes |
+
+---
+
+## UIConfigEditor
+
+Toggles visibility flags for all UI panels.
+
+### Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `value` | `UIConfig` | Yes | Current UI config |
+| `onChange` | `(config: UIConfig) => void` | Yes | Called when any toggle changes |
+
+---
+
+## ViewEditor
+
+Edits the `ViewConfig` (initial camera position).
+
+### Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `value` | `ViewConfig` | Yes | Current view config |
+| `onChange` | `(view: ViewConfig) => void` | Yes | Called on any field change |
+
+---
+
+## CollectionBrowser
+
+Displays all collections from an OGC API source with selection checkboxes.
+
+### Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `sourceUrl` | `string` | Yes | Base URL of the OGC API server to browse |
+| `selectedCollectionIds` | `string[]` | Yes | Currently selected collection IDs |
+| `onSelect` | `(collectionId: string) => void` | Yes | Called when a collection is checked |
+| `onDeselect` | `(collectionId: string) => void` | Yes | Called when a collection is unchecked |
+
+---
+
+## PropertyDisplayEditor
+
+Manages `PropertyDisplayConfig` — the list of properties to show (and their labels) in `FeatureDetailPanel` and `FeatureTooltip`.
+
+### Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `value` | `PropertyDisplayConfig` | Yes | Current property display config |
+| `onChange` | `(config: PropertyDisplayConfig) => void` | Yes | Called on any change |
+| `availableProperties` | `AvailableProperty[]` | No | Properties from API metadata for suggestions |
+
+---
+
+## ConfigPreview
+
+Validates and displays a `MapConfig` as formatted JSON, showing validation errors when present.
+
+### Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `config` | `unknown` | Yes | The config object to validate and display |
+
+---
+
+## Shared Admin Primitives
+
+### FormField
+
+Wrapper for a labeled form field with optional error message.
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `label` | `string` | Yes | Field label |
+| `children` | `ReactNode` | Yes | The input element |
+| `error` | `string` | No | Validation error message |
+| `required` | `boolean` | No | Shows a required indicator |
+| `htmlFor` | `string` | No | Links label to an input `id` |
+
+### ColorPicker
+
+Native HTML color input with hex value display.
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `value` | `string` | Yes | Hex color value |
+| `onChange` | `(color: string) => void` | Yes | Called on color change |
+| `label` | `string` | No | Accessibility label |
+
+### ConfirmDialog
+
+Modal confirmation dialog.
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `open` | `boolean` | Yes | Whether the dialog is visible |
+| `title` | `string` | Yes | Dialog heading |
+| `description` | `string` | Yes | Dialog body text |
+| `onConfirm` | `() => void` | Yes | Called when confirmed |
+| `onCancel` | `() => void` | Yes | Called when cancelled or dismissed |
