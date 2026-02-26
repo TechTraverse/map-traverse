@@ -40,6 +40,15 @@ const sampleLayers: LayerConfig[] = [
     dataMode: 'vector-tiles',
     style: { type: 'line', paint: { 'line-color': '#2980b9', 'line-width': 2, 'line-opacity': 1 } },
   },
+  {
+    id: 'cities',
+    sourceId: 'tipg',
+    collection: 'ne_110m_populated_places',
+    label: 'Cities',
+    visible: true,
+    dataMode: 'vector-tiles',
+    style: { type: 'circle', paint: { 'circle-color': '#e74c3c', 'circle-radius': 4 } },
+  },
 ];
 
 export const Default: Story = {
@@ -59,6 +68,84 @@ export const Empty: Story = {
     return (
       <div className="mapui:max-w-lg mapui:p-4">
         <LayerList layers={layers} onChange={setLayers} availableSources={sampleSources} />
+      </div>
+    );
+  },
+};
+
+const manyLayers: LayerConfig[] = [
+  {
+    id: 'countries',
+    sourceId: 'tipg',
+    collection: 'ne_110m_admin_0_countries',
+    label: 'Countries',
+    visible: true,
+    dataMode: 'vector-tiles',
+    style: { type: 'fill', paint: { 'fill-color': '#4a90d9', 'fill-opacity': 0.4 } },
+  },
+  {
+    id: 'lakes',
+    sourceId: 'tipg',
+    collection: 'ne_110m_lakes',
+    label: 'Lakes',
+    visible: true,
+    dataMode: 'vector-tiles',
+    style: { type: 'fill', paint: { 'fill-color': '#3498db', 'fill-opacity': 0.7 } },
+  },
+  {
+    id: 'rivers',
+    sourceId: 'tipg',
+    collection: 'ne_110m_rivers_lake_centerlines',
+    label: 'Rivers',
+    visible: true,
+    dataMode: 'vector-tiles',
+    style: { type: 'line', paint: { 'line-color': '#2980b9', 'line-width': 2, 'line-opacity': 1 } },
+  },
+  {
+    id: 'roads',
+    sourceId: 'tipg',
+    collection: 'ne_110m_roads',
+    label: 'Roads',
+    visible: false,
+    dataMode: 'vector-tiles',
+    style: { type: 'line', paint: { 'line-color': '#7f8c8d', 'line-width': 1, 'line-opacity': 0.8 } },
+  },
+  {
+    id: 'cities',
+    sourceId: 'tipg',
+    collection: 'ne_110m_populated_places',
+    label: 'Cities',
+    visible: true,
+    dataMode: 'vector-tiles',
+    style: { type: 'circle', paint: { 'circle-color': '#e74c3c', 'circle-radius': 4 } },
+  },
+  {
+    id: 'airports',
+    sourceId: 'tipg',
+    collection: 'ne_10m_airports',
+    label: 'Airports',
+    visible: true,
+    dataMode: 'geojson',
+    style: { type: 'circle', paint: { 'circle-color': '#f39c12', 'circle-radius': 5 } },
+  },
+];
+
+export const ManyLayers: Story = {
+  render: () => {
+    const [layers, setLayers] = useState<LayerConfig[]>(manyLayers);
+    return (
+      <div className="mapui:flex mapui:gap-6 mapui:p-4">
+        <div className="mapui:w-96">
+          <LayerList layers={layers} onChange={setLayers} availableSources={sampleSources} />
+        </div>
+        <div className="mapui:flex-1">
+          <p className="mapui:m-0 mapui:mb-2 mapui:text-xs mapui:font-semibold mapui:text-gray-500">
+            Current order (index 0 = bottom of map):
+          </p>
+          <pre className="mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs mapui:text-gray-700">
+            {layers.map((l, i) => `${i}: ${l.id} (${l.label})`).join('\n')}
+          </pre>
+        </div>
       </div>
     );
   },
