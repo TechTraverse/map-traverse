@@ -44,16 +44,26 @@ function getVectorTileSourceKey(layerId: string, cql2Filter?: CQL2Expression | n
   return cql2Filter ? `${layerId}--${JSON.stringify(cql2Filter)}` : layerId;
 }
 
+function getBottomLayerId(layer: LayerConfig, cql2Filter?: CQL2Expression | null): string {
+  if (layer.dataMode === 'vector-tiles') {
+    const sourceKey = getVectorTileSourceKey(layer.id, cql2Filter);
+    return layer.style ? sourceKey : `${sourceKey}-fill`;
+  }
+  return layer.style ? layer.id : `${layer.id}-fill`;
+}
+
 function PreviewVectorTileLayer({
   layer,
   sourceUrl,
   tileMatrixSetId,
   cql2Filter,
+  beforeId,
 }: {
   layer: LayerConfig;
   sourceUrl: string;
   tileMatrixSetId?: string;
   cql2Filter?: CQL2Expression | null;
+  beforeId?: string;
 }) {
   const tileUrl = getCql2FilteredVectorTileUrl(sourceUrl, layer.collection, cql2Filter, tileMatrixSetId);
   const sourceKey = getVectorTileSourceKey(layer.id, cql2Filter);
@@ -64,7 +74,7 @@ function PreviewVectorTileLayer({
     return (
       <Source id={sourceKey} key={sourceKey} type="vector" tiles={[tileUrl]}>
         <Layer id={`${sourceKey}-fill`} type="fill" source-layer={sourceLayer}
-          paint={{ 'fill-color': '#4a90d9', 'fill-opacity': 0.6, 'fill-outline-color': 'transparent' }} layout={layout} />
+          paint={{ 'fill-color': '#4a90d9', 'fill-opacity': 0.6, 'fill-outline-color': 'transparent' }} layout={layout} beforeId={beforeId} />
         <Layer id={`${sourceKey}-line`} type="line" source-layer={sourceLayer}
           paint={{ 'line-color': '#4a90d9', 'line-width': 2 }} layout={layout} />
       </Source>
@@ -79,6 +89,7 @@ function PreviewVectorTileLayer({
         source-layer={sourceLayer}
         paint={layer.style.paint as any}
         layout={layout}
+        beforeId={beforeId}
       />
     </Source>
   );
@@ -88,10 +99,12 @@ function PreviewGeoJsonLayer({
   layer,
   sourceUrl,
   cql2Filter,
+  beforeId,
 }: {
   layer: LayerConfig;
   sourceUrl: string;
   cql2Filter?: CQL2Expression | null;
+  beforeId?: string;
 }) {
   const { features } = useOgcFeatures(sourceUrl, layer.collection, { limit: 10000, cql2Filter: cql2Filter ?? undefined });
 
@@ -109,7 +122,7 @@ function PreviewGeoJsonLayer({
     return (
       <Source id={layer.id} key={layer.id} type="geojson" data={featureCollection}>
         <Layer id={`${layer.id}-fill`} type="fill"
-          paint={{ 'fill-color': '#4a90d9', 'fill-opacity': 0.6, 'fill-outline-color': 'transparent' }} layout={layout} />
+          paint={{ 'fill-color': '#4a90d9', 'fill-opacity': 0.6, 'fill-outline-color': 'transparent' }} layout={layout} beforeId={beforeId} />
         <Layer id={`${layer.id}-line`} type="line"
           paint={{ 'line-color': '#4a90d9', 'line-width': 2 }} layout={layout} />
       </Source>
@@ -123,6 +136,7 @@ function PreviewGeoJsonLayer({
         type={layer.style.type}
         paint={layer.style.paint as any}
         layout={layout}
+        beforeId={beforeId}
       />
     </Source>
   );
@@ -203,8 +217,6 @@ export function MapPreview({
   const activeBasemap = basemaps.find(b => b.id === activeBasemapId);
   const mapStyle = activeBasemap?.url ?? basemaps[0]?.url ?? FALLBACK_BASEMAP_URL;
 
-  const vectorTileLayers = layers.filter((l) => l.dataMode === 'vector-tiles');
-  const geojsonLayers = layers.filter((l) => l.dataMode === 'geojson');
 
   const showEmptyState = sources.length === 0 && layers.length === 0;
 
@@ -344,9 +356,30 @@ export function MapPreview({
       >
         <AttributionControl position="bottom-left" />
 
-        {!showEmptyState && vectorTileLayers.map((layer) => {
+        {!showEmptyState && layers.map((layer, index) => {
           const sourceInfo = sourceUrlMap[layer.sourceId];
           if (!sourceInfo) return null;
+
+          let beforeId: string | undefined;
+          for (let j = index + 1; j < layers.length; j++) {
+            if (sourceUrlMap[layers[j].sourceId]) {
+              beforeId = getBottomLayerId(layers[j], activeCql2Filters[layers[j].id]);
+              break;
+            }
+          }
+
+          if (layer.dataMode === 'geojson') {
+            return (
+              <PreviewGeoJsonLayer
+                key={layer.id}
+                layer={layer}
+                sourceUrl={sourceInfo.url}
+                cql2Filter={activeCql2Filters[layer.id]}
+                beforeId={beforeId}
+              />
+            );
+          }
+
           return (
             <PreviewVectorTileLayer
               key={getVectorTileSourceKey(layer.id, activeCql2Filters[layer.id])}
@@ -354,19 +387,7 @@ export function MapPreview({
               sourceUrl={sourceInfo.url}
               tileMatrixSetId={sourceInfo.tileMatrixSetId}
               cql2Filter={activeCql2Filters[layer.id]}
-            />
-          );
-        })}
-
-        {!showEmptyState && geojsonLayers.map((layer) => {
-          const sourceInfo = sourceUrlMap[layer.sourceId];
-          if (!sourceInfo) return null;
-          return (
-            <PreviewGeoJsonLayer
-              key={layer.id}
-              layer={layer}
-              sourceUrl={sourceInfo.url}
-              cql2Filter={activeCql2Filters[layer.id]}
+              beforeId={beforeId}
             />
           );
         })}
