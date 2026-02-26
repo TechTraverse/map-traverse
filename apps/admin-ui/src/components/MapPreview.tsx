@@ -206,7 +206,7 @@ export function MapPreview({
   const vectorTileLayers = layers.filter((l) => l.dataMode === 'vector-tiles');
   const geojsonLayers = layers.filter((l) => l.dataMode === 'geojson');
 
-  const showEmptyState = currentStep === 'metadata' || (sources.length === 0 && layers.length === 0);
+  const showEmptyState = sources.length === 0 && layers.length === 0;
 
   const visibleLayerIds = layers.filter(l => l.visible).map(l => l.id);
 

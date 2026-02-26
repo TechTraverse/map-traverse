@@ -131,7 +131,7 @@ export const SearchConfigSchema = z.object({
 
 export const PropertyDisplaySchema = z.object({
   label: z.string().optional(),
-  visible: z.boolean().default(true),
+  visible: z.boolean().optional().default(true),
 });
 
 export const PropertyDisplayConfigSchema = z.record(z.string(), PropertyDisplaySchema);

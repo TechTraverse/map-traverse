@@ -1,7 +1,7 @@
-import type { PropertyDisplayConfig } from '../types';
+import type { PropertyDisplayConfigInput } from '../types';
 
 export function resolvePropertyDisplay(
-  propertyDisplay: PropertyDisplayConfig | undefined,
+  propertyDisplay: PropertyDisplayConfigInput | undefined,
 ): { fields: string[]; labels: Record<string, string> } | undefined {
   if (!propertyDisplay) return undefined;
   const fields: string[] = [];
