@@ -23,16 +23,17 @@ import type {
 } from '@ogc-maps/storybook-components';
 import { MapPreview } from '../components/MapPreview';
 
-type WizardStep = 'metadata' | 'sources' | 'layers' | 'basemaps' | 'ui' | 'view' | 'review';
+type WizardStep = 'metadata' | 'sources' | 'layer-select' | 'layer-config' | 'basemaps' | 'ui' | 'view' | 'review';
 
 const STEPS: { key: WizardStep; label: string }[] = [
   { key: 'metadata', label: 'Metadata' },
   { key: 'sources', label: 'Sources' },
-  { key: 'layers', label: 'Layers' },
+  { key: 'layer-select', label: 'Layers' },
+  { key: 'layer-config', label: 'Config' },
   { key: 'basemaps', label: 'Basemaps' },
-  { key: 'ui', label: 'UI Options' },
-  { key: 'view', label: 'Initial View' },
-  { key: 'review', label: 'Review & Save' },
+  { key: 'ui', label: 'UI' },
+  { key: 'view', label: 'View' },
+  { key: 'review', label: 'Review' },
 ];
 
 const DEFAULT_UI_CONFIG: UIConfig = {
@@ -201,7 +202,7 @@ export function ConfigWizardPage() {
           <button
             key={step.key}
             onClick={() => setCurrentStep(step.key)}
-            className={`mapui:flex-1 mapui:min-w-0 mapui:py-2 mapui:px-3 mapui:text-sm mapui:rounded mapui:font-medium mapui:truncate ${
+            className={`mapui:flex-1 mapui:py-2 mapui:px-3 mapui:text-sm mapui:rounded mapui:font-medium mapui:whitespace-nowrap ${
               step.key === currentStep
                 ? 'mapui:bg-blue-600 mapui:text-white'
                 : i < currentStepIndex
@@ -275,15 +276,20 @@ export function ConfigWizardPage() {
           </div>
         )}
 
-        {currentStep === 'layers' && (
+        {currentStep === 'layer-select' && (
           <div className="mapui:space-y-6">
-            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">Layers</h2>
+            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">Select Layers</h2>
             {sources.length === 0 ? (
               <div className="mapui:rounded mapui:bg-yellow-50 mapui:border mapui:border-yellow-200 mapui:p-4 mapui:text-sm mapui:text-yellow-800">
                 No sources configured. Go back to the <strong>Sources</strong> step to add at least one OGC API source before adding layers.
               </div>
             ) : (
               <div className="mapui:space-y-4">
+                {layers.length > 0 && (
+                  <p className="mapui:text-sm mapui:text-gray-500">
+                    {layers.length} layer{layers.length !== 1 ? 's' : ''} selected
+                  </p>
+                )}
                 <div className="mapui:rounded mapui:border mapui:border-gray-200 mapui:p-4">
                   <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">Browse Collections</h3>
                   <div className="mapui:mb-3">
@@ -311,8 +317,20 @@ export function ConfigWizardPage() {
                     />
                   )}
                 </div>
-                <LayerList layers={layers} onChange={setLayers} availableSources={sources} />
               </div>
+            )}
+          </div>
+        )}
+
+        {currentStep === 'layer-config' && (
+          <div className="mapui:space-y-4">
+            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">Configure Layers</h2>
+            {layers.length === 0 ? (
+              <div className="mapui:rounded mapui:bg-blue-50 mapui:border mapui:border-blue-200 mapui:p-4 mapui:text-sm mapui:text-blue-800">
+                No layers selected yet. Go back to the <strong>Select Layers</strong> step to choose collections.
+              </div>
+            ) : (
+              <LayerList layers={layers} onChange={setLayers} availableSources={sources} />
             )}
           </div>
         )}
