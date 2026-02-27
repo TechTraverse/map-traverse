@@ -1,5 +1,11 @@
 # @ogc-maps/storybook-components
 
+## 0.5.2
+
+### Patch Changes
+
+- 79b4cf1: fix SearchFieldEditor
+
 ## 0.5.1
 
 ### Patch Changes
