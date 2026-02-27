@@ -64,3 +64,29 @@ export const NewLayer: Story = {
     );
   },
 };
+
+export const SymbolLayer: Story = {
+  render: () => {
+    const [layer, setLayer] = useState<LayerConfig>({
+      id: 'cities',
+      sourceId: 'tipg',
+      collection: 'ne_110m_populated_places',
+      label: 'Cities',
+      visible: true,
+      dataMode: 'vector-tiles',
+      style: {
+        type: 'symbol',
+        paint: { 'text-color': '#1a1a2e', 'text-halo-color': '#ffffff', 'text-halo-width': 1 },
+        layout: { 'text-field': '{name}', 'text-size': 12 },
+      },
+    });
+    return (
+      <div className="mapui:max-w-lg mapui:p-4">
+        <LayerEditor value={layer} onChange={setLayer} availableSources={sampleSources} />
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+          {JSON.stringify(layer, null, 2)}
+        </pre>
+      </div>
+    );
+  },
+};

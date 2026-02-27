@@ -36,7 +36,7 @@ function VectorTileLayer({
         type={layer.style.type}
         source-layer={layer.collection.replace(/^[^.]+\./, '')}
         paint={layer.style.paint as any}
-        layout={{ visibility: layer.visible ? 'visible' : 'none' }}
+        layout={{ ...(layer.style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' }}
       />
     </Source>
   );
@@ -72,7 +72,7 @@ function GeoJsonLayer({ layer, sourceUrl, cql2Filter }: { layer: LayerConfig; so
         id={layer.id}
         type={layer.style.type}
         paint={layer.style.paint as any}
-        layout={{ visibility: layer.visible ? 'visible' : 'none' }}
+        layout={{ ...(layer.style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' }}
       />
     </Source>
   );

@@ -5,9 +5,15 @@ import {
   FillPaintSchema,
   LinePaintSchema,
   CirclePaintSchema,
+  SymbolPaintSchema,
+  FillLayoutSchema,
+  LineLayoutSchema,
+  CircleLayoutSchema,
+  SymbolLayoutSchema,
   FillStyleSchema,
   LineStyleSchema,
   CircleStyleSchema,
+  SymbolStyleSchema,
   StyleConfigSchema,
   LegendEntrySchema,
   LegendConfigSchema,
@@ -34,10 +40,17 @@ export type OgcApiSource = z.infer<typeof OgcApiSourceSchema>;
 export type FillPaint = z.infer<typeof FillPaintSchema>;
 export type LinePaint = z.infer<typeof LinePaintSchema>;
 export type CirclePaint = z.infer<typeof CirclePaintSchema>;
+export type SymbolPaint = z.infer<typeof SymbolPaintSchema>;
+
+export type FillLayout = z.infer<typeof FillLayoutSchema>;
+export type LineLayout = z.infer<typeof LineLayoutSchema>;
+export type CircleLayout = z.infer<typeof CircleLayoutSchema>;
+export type SymbolLayout = z.infer<typeof SymbolLayoutSchema>;
 
 export type FillStyle = z.infer<typeof FillStyleSchema>;
 export type LineStyle = z.infer<typeof LineStyleSchema>;
 export type CircleStyle = z.infer<typeof CircleStyleSchema>;
+export type SymbolStyle = z.infer<typeof SymbolStyleSchema>;
 export type StyleConfig = z.infer<typeof StyleConfigSchema>;
 
 export type LegendEntry = z.infer<typeof LegendEntrySchema>;
@@ -87,9 +100,15 @@ export {
   FillPaintSchema,
   LinePaintSchema,
   CirclePaintSchema,
+  SymbolPaintSchema,
+  FillLayoutSchema,
+  LineLayoutSchema,
+  CircleLayoutSchema,
+  SymbolLayoutSchema,
   FillStyleSchema,
   LineStyleSchema,
   CircleStyleSchema,
+  SymbolStyleSchema,
   StyleConfigSchema,
   LegendEntrySchema,
   LegendConfigSchema,

@@ -21,8 +21,9 @@ export function extractGeometryType(ref: string): string | null {
 /**
  * Maps a GeoJSON geometry type name to a MapLibre style type.
  * Returns null for geometry collection or unrecognised types.
+ * Note: Point maps to 'circle' by default; 'symbol' is a manual choice.
  */
-export function geometryTypeToStyleType(geomType: string): 'fill' | 'line' | 'circle' | null {
+export function geometryTypeToStyleType(geomType: string): 'fill' | 'line' | 'circle' | 'symbol' | null {
   const lower = geomType.toLowerCase();
   if (lower.includes('polygon')) return 'fill';
   if (lower.includes('linestring')) return 'line';
@@ -36,7 +37,7 @@ export function geometryTypeToStyleType(geomType: string): 'fill' | 'line' | 'ci
  */
 export function detectGeometryTypeFromQueryables(
   queryables: OgcQueryables,
-): 'fill' | 'line' | 'circle' | null {
+): 'fill' | 'line' | 'circle' | 'symbol' | null {
   for (const prop of Object.values(queryables.properties)) {
     if (prop.$ref) {
       const geomType = extractGeometryType(prop.$ref);
@@ -71,7 +72,7 @@ export function toAvailableProperties(queryables: OgcQueryables): AvailablePrope
 export async function detectStyleTypeForCollection(
   baseUrl: string,
   collectionId: string,
-): Promise<'fill' | 'line' | 'circle' | null> {
+): Promise<'fill' | 'line' | 'circle' | 'symbol' | null> {
   try {
     const queryables = await fetchQueryables(baseUrl, collectionId);
     const styleType = detectGeometryTypeFromQueryables(queryables);

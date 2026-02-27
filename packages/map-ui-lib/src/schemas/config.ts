@@ -25,6 +25,10 @@ export const FillPaintSchema = z.object({
   'fill-color': z.string().default('#000000'),
   'fill-opacity': z.number().min(0).max(1).default(1),
   'fill-outline-color': z.string().optional(),
+  'fill-antialias': z.boolean().optional(),
+  'fill-translate': z.tuple([z.number(), z.number()]).optional(),
+  'fill-translate-anchor': z.enum(['map', 'viewport']).optional(),
+  'fill-pattern': z.string().optional(),
 });
 
 export const LinePaintSchema = z.object({
@@ -32,6 +36,13 @@ export const LinePaintSchema = z.object({
   'line-width': z.number().min(0).default(1),
   'line-opacity': z.number().min(0).max(1).default(1),
   'line-dasharray': z.array(z.number()).optional(),
+  'line-translate': z.tuple([z.number(), z.number()]).optional(),
+  'line-translate-anchor': z.enum(['map', 'viewport']).optional(),
+  'line-gap-width': z.number().min(0).optional(),
+  'line-offset': z.number().optional(),
+  'line-blur': z.number().min(0).optional(),
+  'line-pattern': z.string().optional(),
+  'line-gradient': z.string().optional(),
 });
 
 export const CirclePaintSchema = z.object({
@@ -40,6 +51,92 @@ export const CirclePaintSchema = z.object({
   'circle-opacity': z.number().min(0).max(1).default(1),
   'circle-stroke-color': z.string().optional(),
   'circle-stroke-width': z.number().min(0).optional(),
+  'circle-blur': z.number().min(0).optional(),
+  'circle-translate': z.tuple([z.number(), z.number()]).optional(),
+  'circle-translate-anchor': z.enum(['map', 'viewport']).optional(),
+  'circle-pitch-scale': z.enum(['map', 'viewport']).optional(),
+  'circle-pitch-alignment': z.enum(['map', 'viewport']).optional(),
+  'circle-stroke-opacity': z.number().min(0).max(1).optional(),
+});
+
+export const SymbolPaintSchema = z.object({
+  'icon-opacity': z.number().min(0).max(1).optional(),
+  'icon-color': z.string().optional(),
+  'icon-halo-color': z.string().optional(),
+  'icon-halo-width': z.number().min(0).optional(),
+  'icon-halo-blur': z.number().min(0).optional(),
+  'icon-translate': z.tuple([z.number(), z.number()]).optional(),
+  'icon-translate-anchor': z.enum(['map', 'viewport']).optional(),
+  'text-opacity': z.number().min(0).max(1).optional(),
+  'text-color': z.string().optional(),
+  'text-halo-color': z.string().optional(),
+  'text-halo-width': z.number().min(0).optional(),
+  'text-halo-blur': z.number().min(0).optional(),
+  'text-translate': z.tuple([z.number(), z.number()]).optional(),
+  'text-translate-anchor': z.enum(['map', 'viewport']).optional(),
+});
+
+// --- Layout Schemas ---
+
+export const FillLayoutSchema = z.object({
+  'fill-sort-key': z.number().optional(),
+  visibility: z.enum(['visible', 'none']).optional(),
+});
+
+export const LineLayoutSchema = z.object({
+  'line-cap': z.enum(['butt', 'round', 'square']).optional(),
+  'line-join': z.enum(['bevel', 'round', 'miter']).optional(),
+  'line-miter-limit': z.number().optional(),
+  'line-round-limit': z.number().optional(),
+  'line-sort-key': z.number().optional(),
+  visibility: z.enum(['visible', 'none']).optional(),
+});
+
+export const CircleLayoutSchema = z.object({
+  'circle-sort-key': z.number().optional(),
+  visibility: z.enum(['visible', 'none']).optional(),
+});
+
+export const SymbolLayoutSchema = z.object({
+  'symbol-placement': z.enum(['point', 'line', 'line-center']).optional(),
+  'symbol-spacing': z.number().min(1).optional(),
+  'symbol-avoid-edges': z.boolean().optional(),
+  'symbol-sort-key': z.number().optional(),
+  'symbol-z-order': z.enum(['auto', 'viewport-y', 'source']).optional(),
+  'icon-allow-overlap': z.boolean().optional(),
+  'icon-ignore-placement': z.boolean().optional(),
+  'icon-optional': z.boolean().optional(),
+  'icon-rotation-alignment': z.enum(['map', 'viewport', 'auto']).optional(),
+  'icon-size': z.number().min(0).optional(),
+  'icon-text-fit': z.enum(['none', 'width', 'height', 'both']).optional(),
+  'icon-text-fit-padding': z.tuple([z.number(), z.number(), z.number(), z.number()]).optional(),
+  'icon-image': z.string().optional(),
+  'icon-rotate': z.number().optional(),
+  'icon-padding': z.number().min(0).optional(),
+  'icon-keep-upright': z.boolean().optional(),
+  'icon-offset': z.tuple([z.number(), z.number()]).optional(),
+  'icon-anchor': z.enum(['center', 'left', 'right', 'top', 'bottom', 'top-left', 'top-right', 'bottom-left', 'bottom-right']).optional(),
+  'icon-pitch-alignment': z.enum(['map', 'viewport', 'auto']).optional(),
+  'text-pitch-alignment': z.enum(['map', 'viewport', 'auto']).optional(),
+  'text-rotation-alignment': z.enum(['map', 'viewport', 'viewport-glyph', 'auto']).optional(),
+  'text-field': z.string().optional(),
+  'text-font': z.array(z.string()).optional(),
+  'text-size': z.number().min(0).optional(),
+  'text-max-width': z.number().min(0).optional(),
+  'text-line-height': z.number().optional(),
+  'text-letter-spacing': z.number().optional(),
+  'text-justify': z.enum(['auto', 'left', 'center', 'right']).optional(),
+  'text-anchor': z.enum(['center', 'left', 'right', 'top', 'bottom', 'top-left', 'top-right', 'bottom-left', 'bottom-right']).optional(),
+  'text-max-angle': z.number().optional(),
+  'text-rotate': z.number().optional(),
+  'text-padding': z.number().min(0).optional(),
+  'text-keep-upright': z.boolean().optional(),
+  'text-transform': z.enum(['none', 'uppercase', 'lowercase']).optional(),
+  'text-offset': z.tuple([z.number(), z.number()]).optional(),
+  'text-allow-overlap': z.boolean().optional(),
+  'text-ignore-placement': z.boolean().optional(),
+  'text-optional': z.boolean().optional(),
+  visibility: z.enum(['visible', 'none']).optional(),
 });
 
 // --- Style Config (Discriminated Union) ---
@@ -47,22 +144,32 @@ export const CirclePaintSchema = z.object({
 export const FillStyleSchema = z.object({
   type: z.literal('fill'),
   paint: FillPaintSchema,
+  layout: FillLayoutSchema.optional(),
 });
 
 export const LineStyleSchema = z.object({
   type: z.literal('line'),
   paint: LinePaintSchema,
+  layout: LineLayoutSchema.optional(),
 });
 
 export const CircleStyleSchema = z.object({
   type: z.literal('circle'),
   paint: CirclePaintSchema,
+  layout: CircleLayoutSchema.optional(),
+});
+
+export const SymbolStyleSchema = z.object({
+  type: z.literal('symbol'),
+  paint: SymbolPaintSchema,
+  layout: SymbolLayoutSchema.optional(),
 });
 
 export const StyleConfigSchema = z.discriminatedUnion('type', [
   FillStyleSchema,
   LineStyleSchema,
   CircleStyleSchema,
+  SymbolStyleSchema,
 ]);
 
 // --- Legend Config ---

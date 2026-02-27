@@ -69,7 +69,7 @@ function PreviewVectorTileLayer({
   const tileUrl = getCql2FilteredVectorTileUrl(sourceUrl, layer.collection, cql2Filter, tileMatrixSetId);
   const sourceKey = getVectorTileSourceKey(layer.id, cql2Filter);
   const sourceLayer = layer.collection.replace(/^[^.]+\./, '');
-  const layout = { visibility: layer.visible ? 'visible' : 'none' } as const;
+  const layout = { ...((layer.style as { layout?: Record<string, unknown> })?.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' } as const;
 
   if (!layer.style) {
     return (
@@ -117,7 +117,7 @@ function PreviewGeoJsonLayer({
     [features],
   );
 
-  const layout = { visibility: layer.visible ? 'visible' : 'none' } as const;
+  const layout = { ...((layer.style as { layout?: Record<string, unknown> })?.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' } as const;
 
   if (!layer.style) {
     return (

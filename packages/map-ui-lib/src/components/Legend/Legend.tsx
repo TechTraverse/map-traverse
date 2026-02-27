@@ -14,6 +14,8 @@ function getColorFromStyle(style: StyleConfig): string {
       return style.paint['line-color'];
     case 'circle':
       return style.paint['circle-color'];
+    case 'symbol':
+      return style.paint['text-color'] ?? style.paint['icon-color'] ?? '#000000';
   }
 }
 
@@ -24,6 +26,7 @@ function getShapeFromStyle(style: StyleConfig): 'square' | 'line' | 'circle' {
     case 'line':
       return 'line';
     case 'circle':
+    case 'symbol':
       return 'circle';
   }
 }

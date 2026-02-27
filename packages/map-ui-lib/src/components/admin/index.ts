@@ -4,3 +4,5 @@ export { ColorPicker } from './ColorPicker';
 export type { ColorPickerProps } from './ColorPicker';
 export { ConfirmDialog } from './ConfirmDialog';
 export type { ConfirmDialogProps } from './ConfirmDialog';
+export { CollapsibleSection } from './CollapsibleSection';
+export type { CollapsibleSectionProps } from './CollapsibleSection';

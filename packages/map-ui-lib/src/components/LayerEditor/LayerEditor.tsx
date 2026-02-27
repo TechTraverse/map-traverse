@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import type { LayerConfig, OgcApiSource, AvailableProperty } from '../../types';
 import { FormField } from '../admin/FormField';
-import { StyleEditor, defaultFill, defaultLine, defaultCircle } from '../StyleEditor/StyleEditor';
+import { CollapsibleSection } from '../admin/CollapsibleSection';
+import { StyleEditor, defaultFill, defaultLine, defaultCircle, defaultSymbol } from '../StyleEditor/StyleEditor';
 import { LegendEditor } from '../LegendEditor/LegendEditor';
 import { SearchFieldList } from '../SearchFieldEditor/SearchFieldList';
 import { PropertyDisplayEditor } from '../PropertyDisplayEditor/PropertyDisplayEditor';
@@ -22,30 +23,6 @@ export interface LayerEditorProps {
 
 const inputClass =
   'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
-
-
-function CollapsibleSection({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="mapui:rounded mapui:border mapui:border-gray-200">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="mapui:flex mapui:w-full mapui:cursor-pointer mapui:items-center mapui:justify-between mapui:rounded mapui:border-none mapui:bg-gray-50 mapui:px-3 mapui:py-2 mapui:text-sm mapui:font-medium mapui:text-gray-700 hover:mapui:bg-gray-100"
-      >
-        <span>{title}</span>
-        <span aria-hidden="true">{open ? '▲' : '▼'}</span>
-      </button>
-      {open && <div className="mapui:p-3">{children}</div>}
-    </div>
-  );
-}
 
 export function LayerEditor({ value, onChange, availableSources }: LayerEditorProps) {
   const update = (patch: Partial<LayerConfig>) => onChange({ ...value, ...patch });
@@ -73,7 +50,7 @@ export function LayerEditor({ value, onChange, availableSources }: LayerEditorPr
     : [];
 
   // Detect suggested style type from queryables; fall back to fetching one feature
-  const [suggestedStyleType, setSuggestedStyleType] = useState<'fill' | 'line' | 'circle' | null>(
+  const [suggestedStyleType, setSuggestedStyleType] = useState<'fill' | 'line' | 'circle' | 'symbol' | null>(
     null,
   );
 
@@ -83,10 +60,14 @@ export function LayerEditor({ value, onChange, availableSources }: LayerEditorPr
       return;
     }
 
-    const applyStyleType = (styleType: 'fill' | 'line' | 'circle' | null) => {
+    const applyStyleType = (styleType: 'fill' | 'line' | 'circle' | 'symbol' | null) => {
       setSuggestedStyleType(styleType);
       if (styleType && !valueRef.current.style) {
-        const style = styleType === 'fill' ? defaultFill : styleType === 'line' ? defaultLine : defaultCircle;
+        const style =
+          styleType === 'fill' ? defaultFill
+          : styleType === 'line' ? defaultLine
+          : styleType === 'symbol' ? defaultSymbol
+          : defaultCircle;
         onChangeRef.current({ ...valueRef.current, style });
       }
     };
