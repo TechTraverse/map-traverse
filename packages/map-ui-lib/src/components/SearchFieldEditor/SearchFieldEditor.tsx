@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import type {
   SearchField,
   TextSearchField,
@@ -7,6 +8,44 @@ import type {
   AvailableProperty,
 } from '../../types';
 import { FormField } from '../admin/FormField';
+
+function CommaSeparatedInput({
+  options,
+  onChange,
+  placeholder,
+  className,
+}: {
+  options: string[] | undefined;
+  onChange: (options: string[] | undefined) => void;
+  placeholder?: string;
+  className?: string;
+}) {
+  const [raw, setRaw] = useState(() => options?.join(', ') ?? '');
+
+  // Sync from parent when options change (value-based, not reference-based)
+  useEffect(() => {
+    setRaw(options?.join(', ') ?? '');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [options?.join(',')]);
+
+  const commit = () => {
+    const trimmed = raw.trim();
+    const parsed = trimmed ? trimmed.split(',').map((s) => s.trim()).filter(Boolean) : undefined;
+    onChange(parsed);
+    setRaw(parsed?.join(', ') ?? '');
+  };
+
+  return (
+    <input
+      type="text"
+      value={raw}
+      onChange={(e) => setRaw(e.target.value)}
+      onBlur={commit}
+      placeholder={placeholder}
+      className={className}
+    />
+  );
+}
 
 export interface SearchFieldEditorProps {
   value: SearchField;
@@ -125,14 +164,9 @@ export function SearchFieldEditor({ value, onChange, availableProperties }: Sear
             </label>
           </div>
           <FormField label="Static Options (comma-separated)">
-            <input
-              type="text"
-              value={(value as TextSearchField).options?.join(', ') ?? ''}
-              onChange={(e) => {
-                const raw = e.target.value.trim();
-                const options = raw ? raw.split(',').map((s) => s.trim()).filter(Boolean) : undefined;
-                onChange({ ...value, options } as TextSearchField);
-              }}
+            <CommaSeparatedInput
+              options={(value as TextSearchField).options}
+              onChange={(options) => onChange({ ...value, options } as TextSearchField)}
               placeholder="option1, option2"
               className={inputClass}
             />
@@ -254,14 +288,9 @@ export function SearchFieldEditor({ value, onChange, availableProperties }: Sear
             </label>
           </div>
           <FormField label="Static Options (comma-separated)">
-            <input
-              type="text"
-              value={(value as SelectSearchField).options?.join(', ') ?? ''}
-              onChange={(e) => {
-                const raw = e.target.value.trim();
-                const options = raw ? raw.split(',').map((s) => s.trim()).filter(Boolean) : undefined;
-                onChange({ ...value, options } as SelectSearchField);
-              }}
+            <CommaSeparatedInput
+              options={(value as SelectSearchField).options}
+              onChange={(options) => onChange({ ...value, options } as SelectSearchField)}
               placeholder="option1, option2"
               className={inputClass}
             />
