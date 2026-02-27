@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Map, Source, Layer, AttributionControl } from 'react-map-gl/maplibre';
 import {
   getCql2FilteredVectorTileUrl,
@@ -6,6 +6,7 @@ import {
   useCsvExport,
   fromStructuredFilters,
   resolvePropertyDisplay,
+  fetchDistinctValues,
 } from '@ogc-maps/storybook-components/hooks';
 import type { CQL2Expression } from '@ogc-maps/storybook-components/hooks';
 import {
@@ -184,6 +185,9 @@ export function MapPreview({
   } | null>(null);
   const [openControl, setOpenControl] = useState<string | null>(null);
   const [cursor, setCursor] = useState<string>('auto');
+  const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<Record<string, string[]>>({});
+  const prefetchedRef = useRef<Set<string>>(new Set());
+  const debounceTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   // Reset viewport when entering the view step or when the prop changes while on that step
   useEffect(() => {
@@ -207,6 +211,52 @@ export function MapPreview({
     });
     return map;
   }, [sources]);
+
+  // Cleanup debounce timers on unmount
+  useEffect(() => {
+    const timers = debounceTimersRef.current;
+    return () => { Object.values(timers).forEach(clearTimeout); };
+  }, []);
+
+  // Clear prefetch cache when layers or sourceUrlMap change so prefetch re-fires
+  useEffect(() => {
+    prefetchedRef.current.clear();
+  }, [layers, sourceUrlMap]);
+
+  const fetchSuggestions = useCallback(
+    (layerId: string, property: string, query: string, options?: { prefetch?: boolean }) => {
+      const layer = layers.find(l => l.id === layerId);
+      if (!layer) return;
+      const sourceInfo = sourceUrlMap[layer.sourceId];
+      if (!sourceInfo) return;
+
+      const key = `${layerId}:${property}`;
+
+      if (options?.prefetch) {
+        if (prefetchedRef.current.has(key)) return;
+        prefetchedRef.current.add(key);
+        fetchDistinctValues(sourceInfo.url, layer.collection, property, { limit: 500 })
+          .then(values => setAutocompleteSuggestions(prev => ({ ...prev, [key]: values })))
+          .catch(() => prefetchedRef.current.delete(key));
+        return;
+      }
+
+      // Debounced text autocomplete — require at least 2 chars
+      const existing = debounceTimersRef.current[key];
+      if (existing) clearTimeout(existing);
+
+      if (query.length < 2) return;
+
+      const timer = setTimeout(() => {
+        delete debounceTimersRef.current[key];
+        fetchDistinctValues(sourceInfo.url, layer.collection, property, { query, limit: 50 })
+          .then(values => setAutocompleteSuggestions(prev => ({ ...prev, [key]: values })))
+          .catch(() => {});
+      }, 300);
+      debounceTimersRef.current[key] = timer;
+    },
+    [layers, sourceUrlMap],
+  );
 
   // Apply a fallback style to layers that have none, so Legend/LayerPanel can render them
   const layersWithDefaults = useMemo(
@@ -447,8 +497,8 @@ export function MapPreview({
                     activeFilters={activeFilters}
                     onFilterChange={handleFilterChange}
                     onClearFilters={handleClearLayerFilters}
-                    autocompleteSuggestions={{}}
-                    onFetchSuggestions={() => {}}
+                    autocompleteSuggestions={autocompleteSuggestions}
+                    onFetchSuggestions={fetchSuggestions}
                     className="p-3 max-w-xs"
                     hideTitle
                   />
