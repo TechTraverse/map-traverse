@@ -1,5 +1,11 @@
 # @ogc-maps/storybook-components
 
+## 0.5.3
+
+### Patch Changes
+
+- 7a40868: support more maplibre style options
+
 ## 0.5.2
 
 ### Patch Changes
