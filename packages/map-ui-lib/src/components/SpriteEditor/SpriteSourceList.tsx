@@ -10,14 +10,18 @@ export interface SpriteSourceListProps {
 
 const defaultSprite = (): SpriteSource => ({ id: '', url: '' });
 
+const isValidUrl = (url: string) => {
+  try { new URL(url); return true; } catch { return false; }
+};
+
 export function SpriteSourceList({ sprites, onChange }: SpriteSourceListProps) {
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [addingNew, setAddingNew] = useState(false);
   const [newSprite, setNewSprite] = useState<SpriteSource>(defaultSprite());
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const handleUpdate = (updated: SpriteSource) => {
-    onChange(sprites.map((s) => (s.id === editingId ? updated : s)));
+    onChange(sprites.map((s, i) => (i === editingIndex ? updated : s)));
   };
 
   const handleSaveNew = () => {
@@ -27,7 +31,15 @@ export function SpriteSourceList({ sprites, onChange }: SpriteSourceListProps) {
   };
 
   const handleDelete = (id: string) => {
+    const idx = sprites.findIndex(s => s.id === id);
     onChange(sprites.filter((s) => s.id !== id));
+    if (editingIndex !== null) {
+      if (idx === editingIndex) {
+        setEditingIndex(null);
+      } else if (idx < editingIndex) {
+        setEditingIndex(editingIndex - 1);
+      }
+    }
     setConfirmDeleteId(null);
   };
 
@@ -53,9 +65,9 @@ export function SpriteSourceList({ sprites, onChange }: SpriteSourceListProps) {
       )}
 
       <ul className="mapui:m-0 mapui:list-none mapui:flex mapui:flex-col mapui:gap-2 mapui:p-0">
-        {sprites.map((sprite) => (
+        {sprites.map((sprite, index) => (
           <li
-            key={sprite.id}
+            key={index}
             className="mapui:rounded-lg mapui:border mapui:border-gray-200 mapui:bg-white"
           >
             <div className="mapui:flex mapui:items-center mapui:gap-3 mapui:px-3 mapui:py-2">
@@ -70,10 +82,10 @@ export function SpriteSourceList({ sprites, onChange }: SpriteSourceListProps) {
               <div className="mapui:flex mapui:shrink-0 mapui:gap-1">
                 <button
                   type="button"
-                  onClick={() => setEditingId(editingId === sprite.id ? null : sprite.id)}
+                  onClick={() => setEditingIndex(editingIndex === index ? null : index)}
                   className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-gray-600 hover:mapui:bg-gray-50"
                 >
-                  {editingId === sprite.id ? 'Close' : 'Edit'}
+                  {editingIndex === index ? 'Close' : 'Edit'}
                 </button>
                 <button
                   type="button"
@@ -85,7 +97,7 @@ export function SpriteSourceList({ sprites, onChange }: SpriteSourceListProps) {
               </div>
             </div>
 
-            {editingId === sprite.id && (
+            {editingIndex === index && (
               <div className="mapui:border-t mapui:border-gray-100 mapui:p-3">
                 <SpriteSourceEditor value={sprite} onChange={handleUpdate} />
               </div>
@@ -104,7 +116,7 @@ export function SpriteSourceList({ sprites, onChange }: SpriteSourceListProps) {
             <button
               type="button"
               onClick={handleSaveNew}
-              disabled={!newSprite.id || !newSprite.url}
+              disabled={!newSprite.id || !newSprite.url || !isValidUrl(newSprite.url) || sprites.some(s => s.id === newSprite.id)}
               className="mapui:cursor-pointer mapui:rounded mapui:bg-blue-600 mapui:px-3 mapui:py-1 mapui:text-xs mapui:font-medium mapui:text-white hover:mapui:bg-blue-700 disabled:mapui:cursor-not-allowed disabled:mapui:opacity-50"
             >
               Save

@@ -24,6 +24,12 @@ import {
   formatDecimal,
   formatDMS,
 } from '@ogc-maps/storybook-components';
+import type { CoordinateFormatOption } from '@ogc-maps/storybook-components';
+
+const coordinateFormats: CoordinateFormatOption[] = [
+  { id: 'decimal', label: 'Decimal', format: formatDecimal },
+  { id: 'dms', label: 'DMS', format: formatDMS },
+];
 import type {
   OgcApiSource,
   LayerConfig,
@@ -31,7 +37,6 @@ import type {
   SpriteSource,
   ViewConfig,
   UIConfig,
-  CoordinateFormatOption,
   ExportableLayer,
 } from '@ogc-maps/storybook-components';
 import type { SearchFilterValue, SearchFilterValues } from '@ogc-maps/storybook-components/types';
@@ -284,17 +289,15 @@ export function MapPreview({
     }
     resolveStyleWithSprites(mapStyleUrl, sprites)
       .then(setResolvedStyle)
-      .catch(() => setResolvedStyle(mapStyleUrl));
+      .catch((err) => {
+        console.warn('Failed to resolve sprite style, using basemap URL:', err);
+        setResolvedStyle(mapStyleUrl);
+      });
   }, [mapStyleUrl, sprites]);
 
   const showEmptyState = sources.length === 0 && layers.length === 0;
 
-  const visibleLayerIds = layers.filter(l => l.visible).map(l => l.id);
-
-  const coordinateFormats: CoordinateFormatOption[] = [
-    { id: 'decimal', label: 'Decimal', format: formatDecimal },
-    { id: 'dms', label: 'DMS', format: formatDMS },
-  ];
+  const visibleLayerIds = useMemo(() => layers.filter(l => l.visible).map(l => l.id), [layers]);
 
   const featureInteractionEnabled = uiConfig && (uiConfig.showFeatureDetail || uiConfig.showFeatureTooltip);
 
@@ -312,9 +315,10 @@ export function MapPreview({
   const exportBaseUrl = sources[0]?.url ?? '';
   const { exportCsv, loading: exportLoading } = useCsvExport({ baseUrl: exportBaseUrl });
 
-  const exportableLayers: ExportableLayer[] = layers
-    .filter(l => l.visible)
-    .map(l => ({ id: l.id, label: l.label, collection: l.collection }));
+  const exportableLayers: ExportableLayer[] = useMemo(
+    () => layers.filter(l => l.visible).map(l => ({ id: l.id, label: l.label, collection: l.collection })),
+    [layers],
+  );
 
   const handleExport = useCallback(
     (layer: ExportableLayer) => {

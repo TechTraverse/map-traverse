@@ -14,7 +14,7 @@ export function InfoTip({ text, id }: InfoTipProps) {
     <span className="mapui:relative mapui:inline-flex mapui:group">
       <span
         tabIndex={0}
-        role="button"
+        aria-label="Info"
         aria-describedby={tooltipId}
         className="mapui:inline-flex mapui:items-center mapui:text-gray-400 mapui:cursor-default hover:mapui:text-gray-600 focus:mapui:text-gray-600 focus:mapui:outline-none"
       >

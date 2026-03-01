@@ -76,7 +76,7 @@ const symbolProperties: PropertyDefinition[] = [
   { key: 'icon-translate', label: 'Icon Translate (X, Y)', widget: 'translate', group: 'Icon Transform', category: 'paint', enableDefault: [0, 0] },
   { key: 'icon-translate-anchor', label: 'Icon Translate Anchor', widget: 'enum', group: 'Icon Transform', category: 'paint', options: ['map', 'viewport'], enableDefault: 'map' },
   // Text Appearance (paint)
-  { key: 'text-color', label: 'Text Color', widget: 'color', group: 'Text Appearance', category: 'paint', enableDefault: '#000000' },
+  { key: 'text-color', label: 'Text Color', widget: 'color', group: 'Text Appearance', category: 'paint', enableDefault: '#333333' },
   { key: 'text-opacity', label: 'Text Opacity', widget: 'opacity', group: 'Text Appearance', category: 'paint', enableDefault: 1 },
   { key: 'text-halo-color', label: 'Text Halo Color', widget: 'color', group: 'Text Appearance', category: 'paint', enableDefault: 'transparent' },
   { key: 'text-halo-width', label: 'Text Halo Width', widget: 'number', group: 'Text Appearance', category: 'paint', min: 0, step: 0.5, enableDefault: 0 },

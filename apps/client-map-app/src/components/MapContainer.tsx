@@ -151,7 +151,10 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
     }
     resolveStyleWithSprites(mapStyleUrl, sprites)
       .then(setResolvedStyle)
-      .catch(() => setResolvedStyle(mapStyleUrl));
+      .catch((err) => {
+        console.warn('Failed to resolve sprite style, using basemap URL:', err);
+        setResolvedStyle(mapStyleUrl);
+      });
   }, [mapStyleUrl, sprites]);
 
   const [cursor, setCursor] = useState<string>('auto');

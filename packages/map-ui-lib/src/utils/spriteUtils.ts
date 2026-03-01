@@ -46,6 +46,7 @@ export async function resolveStyleWithSprites(
   sprites: Array<{ id: string; url: string }>,
 ): Promise<Record<string, unknown>> {
   const res = await fetch(styleUrl);
+  if (!res.ok) throw new Error(`Failed to fetch style: ${res.status}`);
   const style = await res.json() as Record<string, unknown>;
   if (!sprites.length) return style;
 

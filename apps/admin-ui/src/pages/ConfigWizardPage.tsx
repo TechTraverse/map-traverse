@@ -85,8 +85,12 @@ export function ConfigWizardPage() {
 
   // Resolve available icon names from basemap + custom sprites
   useEffect(() => {
+    let stale = false;
     const basemapUrl = basemaps[0]?.url;
-    resolveAvailableIcons(basemapUrl, sprites).then(setAvailableIcons);
+    resolveAvailableIcons(basemapUrl, sprites)
+      .then(icons => { if (!stale) setAvailableIcons(icons); })
+      .catch(() => {});
+    return () => { stale = true; };
   }, [basemaps, sprites]);
 
   // CollectionBrowser source selector state
@@ -133,6 +137,7 @@ export function ConfigWizardPage() {
           setInitialView(data.config.initialView ?? DEFAULT_VIEW);
         }
       })
+      .catch((err) => setError(String(err)))
       .finally(() => setLoading(false));
   }, [id]);
 
