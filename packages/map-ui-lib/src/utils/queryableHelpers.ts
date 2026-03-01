@@ -32,6 +32,19 @@ export function geometryTypeToStyleType(geomType: string): 'fill' | 'line' | 'ci
 }
 
 /**
+ * Maps a GeoJSON geometry type name to all suitable MapLibre style types.
+ * Point returns both 'circle' and 'symbol'; others return a single type.
+ * Returns an empty array for geometry collection or unrecognised types.
+ */
+export function geometryTypeToStyleTypes(geomType: string): ('fill' | 'line' | 'circle' | 'symbol')[] {
+  const lower = geomType.toLowerCase();
+  if (lower.includes('polygon')) return ['fill'];
+  if (lower.includes('linestring')) return ['line'];
+  if (lower.includes('point')) return ['circle', 'symbol'];
+  return [];
+}
+
+/**
  * Scans all properties in a queryables document for a geometry $ref and
  * returns the derived style type, or null if none found.
  */
@@ -45,6 +58,22 @@ export function detectGeometryTypeFromQueryables(
     }
   }
   return null;
+}
+
+/**
+ * Scans all properties in a queryables document for a geometry $ref and
+ * returns all suitable style types, or an empty array if none found.
+ */
+export function detectGeometryStyleTypesFromQueryables(
+  queryables: OgcQueryables,
+): ('fill' | 'line' | 'circle' | 'symbol')[] {
+  for (const prop of Object.values(queryables.properties)) {
+    if (prop.$ref) {
+      const geomType = extractGeometryType(prop.$ref);
+      if (geomType) return geometryTypeToStyleTypes(geomType);
+    }
+  }
+  return [];
 }
 
 /**
@@ -86,6 +115,30 @@ export async function detectStyleTypeForCollection(
   } catch { /* ignore */ }
 
   return null;
+}
+
+/**
+ * Detects all suitable style types for a collection.
+ * Tries queryables first, falls back to fetching one feature.
+ * Returns an empty array if detection fails.
+ */
+export async function detectStyleTypesForCollection(
+  baseUrl: string,
+  collectionId: string,
+): Promise<('fill' | 'line' | 'circle' | 'symbol')[]> {
+  try {
+    const queryables = await fetchQueryables(baseUrl, collectionId);
+    const styleTypes = detectGeometryStyleTypesFromQueryables(queryables);
+    if (styleTypes.length > 0) return styleTypes;
+  } catch { /* fall through */ }
+
+  try {
+    const fc = await fetchFeatures(baseUrl, collectionId, { limit: 1 });
+    const geomType = fc.features[0]?.geometry?.type;
+    if (typeof geomType === 'string') return geometryTypeToStyleTypes(geomType);
+  } catch { /* ignore */ }
+
+  return [];
 }
 
 /**

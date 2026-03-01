@@ -9,6 +9,7 @@ export interface StyleEditorProps {
   value: StyleConfig;
   onChange: (style: StyleConfig) => void;
   suggestedType?: 'fill' | 'line' | 'circle' | 'symbol' | null;
+  suggestedTypes?: StyleConfig['type'][];
   availableIcons?: string[];
 }
 
@@ -63,7 +64,10 @@ const STYLE_TYPE_LABELS: Record<StyleConfig['type'], string> = {
 
 const SYMBOL_MODES: SymbolMode[] = ['text', 'icon', 'both'];
 
-export function StyleEditor({ value, onChange, suggestedType, availableIcons }: StyleEditorProps) {
+export function StyleEditor({ value, onChange, suggestedType, suggestedTypes, availableIcons }: StyleEditorProps) {
+  // Normalise: prefer suggestedTypes array; fall back to legacy suggestedType scalar
+  const resolvedSuggestedTypes: StyleConfig['type'][] =
+    suggestedTypes ?? (suggestedType ? [suggestedType] : []);
   const [symbolMode, setSymbolMode] = useState<SymbolMode>(() => deriveSymbolMode(value));
 
   // Re-derive symbolMode when the style type changes externally
@@ -162,18 +166,30 @@ export function StyleEditor({ value, onChange, suggestedType, availableIcons }: 
 
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-3">
-      {suggestedType && suggestedType !== value.type && (
+      {resolvedSuggestedTypes.length > 0 && !resolvedSuggestedTypes.includes(value.type) && (
         <div className="mapui:flex mapui:items-center mapui:justify-between mapui:rounded mapui:border mapui:border-blue-200 mapui:bg-blue-50 mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-blue-800">
           <span>
-            Detected geometry suggests <strong>{suggestedType}</strong> style.
+            Detected geometry is suitable for{' '}
+            {resolvedSuggestedTypes.map((t, i) => (
+              <span key={t}>
+                {i > 0 && (i === resolvedSuggestedTypes.length - 1 ? ' or ' : ', ')}
+                <strong>{STYLE_TYPE_LABELS[t]}</strong>
+              </span>
+            ))}{' '}
+            style.
           </span>
-          <button
-            type="button"
-            onClick={() => handleTypeChange(suggestedType)}
-            className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-blue-400 mapui:bg-white mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:text-blue-700 hover:mapui:bg-blue-100"
-          >
-            Apply
-          </button>
+          <div className="mapui:flex mapui:gap-1">
+            {resolvedSuggestedTypes.map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => handleTypeChange(t)}
+                className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-blue-400 mapui:bg-white mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:text-blue-700 hover:mapui:bg-blue-100"
+              >
+                {STYLE_TYPE_LABELS[t]}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

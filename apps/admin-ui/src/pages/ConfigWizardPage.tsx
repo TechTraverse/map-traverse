@@ -13,6 +13,7 @@ import {
   defaultFill,
   defaultLine,
   defaultCircle,
+  defaultSymbol,
   resolveAvailableIcons,
 } from '@ogc-maps/storybook-components';
 import { safeValidateMapConfig } from '@ogc-maps/storybook-components/schemas';
@@ -190,7 +191,11 @@ export function ConfigWizardPage() {
 
     detectStyleTypeForCollection(source.url, collectionId).then(styleType => {
       if (!styleType) return;
-      const style = styleType === 'fill' ? defaultFill : styleType === 'line' ? defaultLine : defaultCircle;
+      const style =
+        styleType === 'fill' ? defaultFill
+        : styleType === 'line' ? defaultLine
+        : styleType === 'symbol' ? defaultSymbol
+        : defaultCircle;
       setLayers(prev => prev.map(l => l.id === layerId && !l.style ? { ...l, style } : l));
     });
   };

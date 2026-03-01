@@ -10,8 +10,8 @@ import { useOgcCollections } from '../../hooks/useOgcCollections';
 import { useOgcQueryables } from '../../hooks/useOgcQueryables';
 import { fetchFeatures } from '../../utils/ogcApi';
 import {
-  detectGeometryTypeFromQueryables,
-  geometryTypeToStyleType,
+  detectGeometryStyleTypesFromQueryables,
+  geometryTypeToStyleTypes,
   toAvailableProperties,
 } from '../../utils/queryableHelpers';
 
@@ -50,38 +50,37 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
     ? toAvailableProperties(queryables)
     : [];
 
-  // Detect suggested style type from queryables; fall back to fetching one feature
-  const [suggestedStyleType, setSuggestedStyleType] = useState<'fill' | 'line' | 'circle' | 'symbol' | null>(
-    null,
-  );
+  // Detect suggested style types from queryables; fall back to fetching one feature
+  const [suggestedStyleTypes, setSuggestedStyleTypes] = useState<('fill' | 'line' | 'circle' | 'symbol')[]>([]);
 
   useEffect(() => {
     if (!queryables) {
-      setSuggestedStyleType(null);
+      setSuggestedStyleTypes([]);
       return;
     }
 
-    const applyStyleType = (styleType: 'fill' | 'line' | 'circle' | 'symbol' | null) => {
-      setSuggestedStyleType(styleType);
-      if (styleType && !valueRef.current.style) {
+    const applyStyleTypes = (styleTypes: ('fill' | 'line' | 'circle' | 'symbol')[]) => {
+      setSuggestedStyleTypes(styleTypes);
+      const defaultType = styleTypes[0];
+      if (defaultType && !valueRef.current.style) {
         const style =
-          styleType === 'fill' ? defaultFill
-          : styleType === 'line' ? defaultLine
-          : styleType === 'symbol' ? defaultSymbol
+          defaultType === 'fill' ? defaultFill
+          : defaultType === 'line' ? defaultLine
+          : defaultType === 'symbol' ? defaultSymbol
           : defaultCircle;
         onChangeRef.current({ ...valueRef.current, style });
       }
     };
 
-    const fromQueryables = detectGeometryTypeFromQueryables(queryables);
-    if (fromQueryables) {
-      applyStyleType(fromQueryables);
+    const fromQueryables = detectGeometryStyleTypesFromQueryables(queryables);
+    if (fromQueryables.length > 0) {
+      applyStyleTypes(fromQueryables);
       return;
     }
 
     // Fallback: inspect geometry.type from a single fetched feature
     if (!baseUrl || !collection) {
-      setSuggestedStyleType(null);
+      setSuggestedStyleTypes([]);
       return;
     }
 
@@ -91,13 +90,13 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
         if (cancelled) return;
         const geomType = fc.features[0]?.geometry?.type;
         if (typeof geomType === 'string') {
-          applyStyleType(geometryTypeToStyleType(geomType));
+          applyStyleTypes(geometryTypeToStyleTypes(geomType));
         } else {
-          applyStyleType(null);
+          applyStyleTypes([]);
         }
       })
       .catch(() => {
-        if (!cancelled) setSuggestedStyleType(null);
+        if (!cancelled) setSuggestedStyleTypes([]);
       });
 
     return () => {
@@ -105,9 +104,9 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
     };
   }, [queryables, baseUrl, collection]);
 
-  // Reset suggested type when source/collection changes
+  // Reset suggested types when source/collection changes
   useEffect(() => {
-    setSuggestedStyleType(null);
+    setSuggestedStyleTypes([]);
   }, [baseUrl, collection]);
 
   return (
@@ -213,7 +212,7 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
         <StyleEditor
           value={value.style ?? defaultFill}
           onChange={(style) => update({ style })}
-          suggestedType={suggestedStyleType}
+          suggestedTypes={suggestedStyleTypes}
           availableIcons={availableIcons}
         />
       </CollapsibleSection>
