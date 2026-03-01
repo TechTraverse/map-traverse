@@ -189,6 +189,9 @@ export const LegendEntrySchema = z.object({
 
 export const LegendConfigSchema = z.object({
   entries: z.array(LegendEntrySchema).min(1),
+  displayMode: z.enum(['categorical', 'gradient', 'simple']).optional(),
+  showLabelsCollapsed: z.boolean().optional(),
+  gradientProperty: z.string().optional(),
 });
 
 // --- Search Config ---

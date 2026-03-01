@@ -47,36 +47,6 @@ const placesLayer: LayerConfig = {
   },
 };
 
-const countriesAutoLayer: LayerConfig = {
-  id: 'countries-auto',
-  sourceId: 'naturalearth',
-  collection: 'ne_110m_admin_0_countries',
-  label: 'Countries',
-  visible: true,
-  dataMode: 'vector-tiles',
-  style: { type: 'fill', paint: { 'fill-color': '#27ae60', 'fill-opacity': 0.5 } },
-};
-
-const riversAutoLayer: LayerConfig = {
-  id: 'rivers-auto',
-  sourceId: 'naturalearth',
-  collection: 'ne_110m_rivers_lake_centerlines',
-  label: 'Rivers',
-  visible: true,
-  dataMode: 'vector-tiles',
-  style: { type: 'line', paint: { 'line-color': '#3498db', 'line-width': 2, 'line-opacity': 1 } },
-};
-
-const placesAutoLayer: LayerConfig = {
-  id: 'places-auto',
-  sourceId: 'naturalearth',
-  collection: 'ne_110m_populated_places',
-  label: 'Populated Places',
-  visible: true,
-  dataMode: 'geojson',
-  style: { type: 'circle', paint: { 'circle-color': '#e67e22', 'circle-radius': 4, 'circle-opacity': 1 } },
-};
-
 const multiEntryLayer: LayerConfig = {
   id: 'land-use',
   sourceId: 'naturalearth',
@@ -94,65 +64,17 @@ const multiEntryLayer: LayerConfig = {
   },
 };
 
-const noStyleLayer: LayerConfig = {
+const noLegendLayer: LayerConfig = {
   id: 'unstyled',
   sourceId: 'naturalearth',
   collection: 'ne_110m_admin_0_countries',
-  label: 'Unstyled Layer',
+  label: 'Unstyled Layer (No Legend)',
   visible: true,
   dataMode: 'vector-tiles',
+  style: { type: 'fill', paint: { 'fill-color': '#27ae60', 'fill-opacity': 0.5 } },
 };
 
-const meta: Meta<typeof Legend> = {
-  title: 'Components/Legend',
-  component: Legend,
-  parameters: {
-    docs: {
-      description: {
-        component:
-          'Displays legend entries for visible map layers. Supports explicit legend configuration and auto-derivation from layer styles.',
-      },
-    },
-  },
-};
-
-export default meta;
-
-type Story = StoryObj<typeof Legend>;
-
-/** Default legend with explicit legend entries for all layer types. */
-export const Default: Story = {
-  args: {
-    layers: [countriesLayer, riversLayer, placesLayer],
-    visibleLayerIds: ['countries', 'rivers', 'places'],
-  },
-};
-
-/** Legend entries auto-derived from layer style paint properties. */
-export const AutoDerived: Story = {
-  args: {
-    layers: [countriesAutoLayer, riversAutoLayer, placesAutoLayer],
-    visibleLayerIds: ['countries-auto', 'rivers-auto', 'places-auto'],
-  },
-};
-
-/** Mix of explicit legend entries, auto-derived entries, multi-entry legends, and unstyled layers. */
-export const MixedLegends: Story = {
-  args: {
-    layers: [countriesLayer, riversAutoLayer, multiEntryLayer, noStyleLayer],
-    visibleLayerIds: ['countries', 'rivers-auto', 'land-use', 'unstyled'],
-  },
-};
-
-/** No visible layers — component returns null. */
-export const NoVisibleLayers: Story = {
-  args: {
-    layers: [countriesLayer, riversLayer, placesLayer],
-    visibleLayerIds: [],
-  },
-};
-
-const matchExpressionLayer: LayerConfig = {
+const categoricalLayer: LayerConfig = {
   id: 'countries-by-region',
   sourceId: 'naturalearth',
   collection: 'ne_110m_admin_0_countries',
@@ -175,9 +97,30 @@ const matchExpressionLayer: LayerConfig = {
       'fill-opacity': 0.7,
     },
   },
+  legend: {
+    displayMode: 'categorical',
+    entries: [
+      { label: 'Europe', color: '#4a90d9', shape: 'square' },
+      { label: 'Africa', color: '#e74c3c', shape: 'square' },
+      { label: 'Americas', color: '#2ecc71', shape: 'square' },
+      { label: 'Asia', color: '#f39c12', shape: 'square' },
+      { label: 'Oceania', color: '#9b59b6', shape: 'square' },
+      { label: 'Other', color: '#95a5a6', shape: 'square' },
+    ],
+  },
 };
 
-const interpolateExpressionLayer: LayerConfig = {
+const categoricalWithLabelsLayer: LayerConfig = {
+  ...categoricalLayer,
+  id: 'countries-by-region-labels',
+  label: 'Regions (Labels Visible)',
+  legend: {
+    ...categoricalLayer.legend!,
+    showLabelsCollapsed: true,
+  },
+};
+
+const gradientLayer: LayerConfig = {
   id: 'population-density',
   sourceId: 'naturalearth',
   collection: 'ne_110m_admin_0_countries',
@@ -200,29 +143,16 @@ const interpolateExpressionLayer: LayerConfig = {
       'fill-opacity': 0.8,
     },
   },
-};
-
-/** Fill layer with a match expression (5 categories + fallback). */
-export const MatchExpression: Story = {
-  args: {
-    layers: [matchExpressionLayer],
-    visibleLayerIds: ['countries-by-region'],
-  },
-};
-
-/** Fill layer with an interpolate gradient expression. */
-export const InterpolateExpression: Story = {
-  args: {
-    layers: [interpolateExpressionLayer],
-    visibleLayerIds: ['population-density'],
-  },
-};
-
-/** Mix of match expression, interpolate expression, single-color auto-derived, and manual entries. */
-export const MixedWithExpressions: Story = {
-  args: {
-    layers: [matchExpressionLayer, interpolateExpressionLayer, countriesAutoLayer, multiEntryLayer],
-    visibleLayerIds: ['countries-by-region', 'population-density', 'countries-auto', 'land-use'],
+  legend: {
+    displayMode: 'gradient',
+    gradientProperty: 'POP_EST',
+    entries: [
+      { label: '0', color: '#ffffcc', shape: 'square' },
+      { label: '1M', color: '#a1dab4', shape: 'square' },
+      { label: '10M', color: '#41b6c4', shape: 'square' },
+      { label: '100M', color: '#2c7fb8', shape: 'square' },
+      { label: '1B', color: '#253494', shape: 'square' },
+    ],
   },
 };
 
@@ -255,10 +185,91 @@ const expressionWithOverrideLayer: LayerConfig = {
   },
 };
 
-/** Expression layer with explicit legend.entries — manual entries should win. */
+const meta: Meta<typeof Legend> = {
+  title: 'Components/Legend',
+  component: Legend,
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'Displays legend entries for visible map layers. Only layers with explicit legend configuration are shown. Supports simple, categorical (segmented color bar), and gradient (smooth color bar) display modes.',
+      },
+    },
+  },
+};
+
+export default meta;
+
+type Story = StoryObj<typeof Legend>;
+
+/** Default legend with simple entries for all layer types. */
+export const Default: Story = {
+  args: {
+    layers: [countriesLayer, riversLayer, placesLayer],
+    visibleLayerIds: ['countries', 'rivers', 'places'],
+  },
+};
+
+/** Layers without legend config do not appear. The noLegendLayer is visible but has no legend. */
+export const NoLegendConfig: Story = {
+  args: {
+    layers: [countriesLayer, noLegendLayer, riversLayer],
+    visibleLayerIds: ['countries', 'unstyled', 'rivers'],
+  },
+};
+
+/** Multi-entry simple legend with explicit entries. */
+export const MultiEntry: Story = {
+  args: {
+    layers: [multiEntryLayer],
+    visibleLayerIds: ['land-use'],
+  },
+};
+
+/** Categorical legend with segmented color bar and expandable entry list. */
+export const CategoricalLegend: Story = {
+  args: {
+    layers: [categoricalLayer],
+    visibleLayerIds: ['countries-by-region'],
+  },
+};
+
+/** Categorical legend with showLabelsCollapsed enabled. */
+export const CategoricalWithLabels: Story = {
+  args: {
+    layers: [categoricalWithLabelsLayer],
+    visibleLayerIds: ['countries-by-region-labels'],
+  },
+};
+
+/** Gradient legend with smooth color bar and expandable property/range info. */
+export const GradientLegend: Story = {
+  args: {
+    layers: [gradientLayer],
+    visibleLayerIds: ['population-density'],
+  },
+};
+
+/** Mix of all display modes and a layer without legend config. */
+export const MixedModes: Story = {
+  args: {
+    layers: [countriesLayer, categoricalLayer, gradientLayer, noLegendLayer],
+    visibleLayerIds: ['countries', 'countries-by-region', 'population-density', 'unstyled'],
+  },
+};
+
+/** Expression layer with explicit simple legend entries (override). */
 export const ExpressionWithOverride: Story = {
   args: {
     layers: [expressionWithOverrideLayer],
     visibleLayerIds: ['countries-override'],
+  },
+};
+
+/** No visible layers — component returns null. */
+export const NoVisibleLayers: Story = {
+  args: {
+    layers: [countriesLayer, riversLayer, placesLayer],
+    visibleLayerIds: [],
   },
 };

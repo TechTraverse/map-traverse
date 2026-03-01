@@ -227,6 +227,7 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
         <LegendEditor
           value={value.legend}
           onChange={(legend) => update({ legend })}
+          style={value.style}
         />
       </CollapsibleSection>
 

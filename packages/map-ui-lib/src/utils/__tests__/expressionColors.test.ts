@@ -4,7 +4,11 @@ import {
   expressionType,
   expressionColors,
   expressionEntries,
+  expressionPropertyName,
+  getPrimaryColor,
+  getShapeForStyleType,
 } from '../expressionColors';
+import type { StyleConfig } from '../../types';
 
 describe('isExpression', () => {
   it('returns true for arrays', () => {
@@ -118,5 +122,93 @@ describe('expressionEntries', () => {
 
   it('returns empty array for empty expression', () => {
     expect(expressionEntries([])).toEqual([]);
+  });
+});
+
+describe('expressionPropertyName', () => {
+  it('extracts property from match expression', () => {
+    const expr = ['match', ['get', 'region'], 'Europe', '#4a90d9', '#95a5a6'];
+    expect(expressionPropertyName(expr)).toBe('region');
+  });
+
+  it('extracts property from interpolate expression', () => {
+    const expr = ['interpolate', ['linear'], ['get', 'POP_EST'], 0, '#ffffcc', 1000000, '#253494'];
+    expect(expressionPropertyName(expr)).toBe('POP_EST');
+  });
+
+  it('returns null for unsupported expression types', () => {
+    expect(expressionPropertyName(['case', true, '#fff', '#000'])).toBe(null);
+  });
+
+  it('returns null when get expression is missing', () => {
+    expect(expressionPropertyName(['match', 'not-an-array', 'a', '#fff', '#000'])).toBe(null);
+  });
+
+  it('returns null for empty expression', () => {
+    expect(expressionPropertyName([])).toBe(null);
+  });
+
+  it('returns null when property is not a string', () => {
+    expect(expressionPropertyName(['match', ['get', 42], 'a', '#fff', '#000'])).toBe(null);
+  });
+});
+
+describe('getPrimaryColor', () => {
+  it('returns fill-color for fill style', () => {
+    const style: StyleConfig = { type: 'fill', paint: { 'fill-color': '#ff0000', 'fill-opacity': 1 } };
+    expect(getPrimaryColor(style)).toBe('#ff0000');
+  });
+
+  it('returns line-color for line style', () => {
+    const style: StyleConfig = { type: 'line', paint: { 'line-color': '#00ff00', 'line-width': 1, 'line-opacity': 1 } };
+    expect(getPrimaryColor(style)).toBe('#00ff00');
+  });
+
+  it('returns circle-color for circle style', () => {
+    const style: StyleConfig = { type: 'circle', paint: { 'circle-color': '#0000ff', 'circle-radius': 5, 'circle-opacity': 1 } };
+    expect(getPrimaryColor(style)).toBe('#0000ff');
+  });
+
+  it('returns text-color for symbol style', () => {
+    const style: StyleConfig = { type: 'symbol', paint: { 'text-color': '#abcdef' } };
+    expect(getPrimaryColor(style)).toBe('#abcdef');
+  });
+
+  it('returns icon-color when text-color is absent for symbol style', () => {
+    const style: StyleConfig = { type: 'symbol', paint: { 'icon-color': '#123456' } };
+    expect(getPrimaryColor(style)).toBe('#123456');
+  });
+
+  it('returns expression array when fill-color is an expression', () => {
+    const expr = ['match', ['get', 'type'], 'a', '#fff', '#000'];
+    const style: StyleConfig = { type: 'fill', paint: { 'fill-color': expr, 'fill-opacity': 1 } };
+    expect(getPrimaryColor(style)).toBe(expr);
+  });
+
+  it('returns fallback #000000 when color property is missing', () => {
+    const style: StyleConfig = { type: 'symbol', paint: {} };
+    expect(getPrimaryColor(style)).toBe('#000000');
+  });
+});
+
+describe('getShapeForStyleType', () => {
+  it('returns square for fill style', () => {
+    const style: StyleConfig = { type: 'fill', paint: { 'fill-color': '#000', 'fill-opacity': 1 } };
+    expect(getShapeForStyleType(style)).toBe('square');
+  });
+
+  it('returns line for line style', () => {
+    const style: StyleConfig = { type: 'line', paint: { 'line-color': '#000', 'line-width': 1, 'line-opacity': 1 } };
+    expect(getShapeForStyleType(style)).toBe('line');
+  });
+
+  it('returns circle for circle style', () => {
+    const style: StyleConfig = { type: 'circle', paint: { 'circle-color': '#000', 'circle-radius': 5, 'circle-opacity': 1 } };
+    expect(getShapeForStyleType(style)).toBe('circle');
+  });
+
+  it('returns circle for symbol style', () => {
+    const style: StyleConfig = { type: 'symbol', paint: {} };
+    expect(getShapeForStyleType(style)).toBe('circle');
   });
 });

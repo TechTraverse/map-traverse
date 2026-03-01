@@ -1,28 +1,70 @@
-import type { LegendConfig, LegendEntry } from '../../types';
+import { useMemo } from 'react';
+import type { LegendConfig, LegendEntry, StyleConfig } from '../../types';
 import { LegendEntryEditor } from './LegendEntryEditor';
+import {
+  isExpression,
+  expressionType,
+  expressionEntries,
+  expressionPropertyName,
+  getPrimaryColor,
+  getShapeForStyleType,
+} from '../../utils/expressionColors';
 
 export interface LegendEditorProps {
   value: LegendConfig | undefined;
   onChange: (legend: LegendConfig | undefined) => void;
+  style?: StyleConfig;
 }
 
 const defaultEntry = (): LegendEntry => ({ label: '', color: '#4a90d9', shape: 'square' });
 
-export function LegendEditor({ value, onChange }: LegendEditorProps) {
+const MAX_PREVIEW_SWATCHES = 8;
+
+const inputClass =
+  'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
+
+type ExprInfo = {
+  entries: LegendEntry[];
+  mode: 'categorical' | 'gradient';
+  property: string | null;
+};
+
+export function LegendEditor({ value, onChange, style }: LegendEditorProps) {
   const entries = value?.entries ?? [];
+  const displayMode = value?.displayMode ?? 'simple';
+
+  // Derive legend info from the style's color expression (if any)
+  const styleExprInfo = useMemo((): ExprInfo | null => {
+    if (!style) return null;
+    const raw = getPrimaryColor(style);
+    if (!isExpression(raw)) return null;
+    const type = expressionType(raw);
+    if (!type) return null;
+    const shape = getShapeForStyleType(style);
+    const exprEntries = expressionEntries(raw).map((e) => ({
+      label: e.label,
+      color: e.color,
+      shape,
+    }));
+    return {
+      entries: exprEntries,
+      mode: type === 'interpolate' ? 'gradient' : 'categorical',
+      property: expressionPropertyName(raw),
+    };
+  }, [style]);
 
   const handleAddEntry = () => {
-    onChange({ entries: [...entries, defaultEntry()] });
+    onChange({ ...value, entries: [...entries, defaultEntry()] } as LegendConfig);
   };
 
   const handleUpdateEntry = (index: number, entry: LegendEntry) => {
     const updated = entries.map((e, i) => (i === index ? entry : e));
-    onChange({ entries: updated });
+    onChange({ ...value, entries: updated } as LegendConfig);
   };
 
   const handleRemoveEntry = (index: number) => {
     const updated = entries.filter((_, i) => i !== index);
-    onChange(updated.length > 0 ? { entries: updated } : undefined);
+    onChange(updated.length > 0 ? { ...value, entries: updated } as LegendConfig : undefined);
   };
 
   const handleToggle = (enabled: boolean) => {
@@ -31,6 +73,27 @@ export function LegendEditor({ value, onChange }: LegendEditorProps) {
     } else {
       onChange(undefined);
     }
+  };
+
+  const handleGenerateFromStyle = () => {
+    if (!styleExprInfo) return;
+    onChange({
+      entries: styleExprInfo.entries,
+      displayMode: styleExprInfo.mode,
+      ...(styleExprInfo.mode === 'gradient' && styleExprInfo.property
+        ? { gradientProperty: styleExprInfo.property }
+        : {}),
+      ...(styleExprInfo.mode === 'categorical' ? { showLabelsCollapsed: false } : {}),
+    });
+  };
+
+  const handleDisplayModeChange = (mode: 'categorical' | 'gradient' | 'simple') => {
+    if (!value) return;
+    const updated: LegendConfig = { ...value, displayMode: mode };
+    // Clean up mode-specific fields when switching away
+    if (mode !== 'categorical') delete updated.showLabelsCollapsed;
+    if (mode !== 'gradient') delete updated.gradientProperty;
+    onChange(updated);
   };
 
   return (
@@ -48,8 +111,98 @@ export function LegendEditor({ value, onChange }: LegendEditorProps) {
         </label>
       </div>
 
+      {/* Expression info banner when legend is disabled */}
+      {value === undefined && styleExprInfo && styleExprInfo.entries.length > 0 && (
+        <div className="mapui:rounded mapui:border mapui:border-blue-200 mapui:bg-blue-50 mapui:p-3">
+          <p className="mapui:m-0 mapui:text-sm mapui:text-blue-800">
+            This layer uses data-driven colors ({styleExprInfo.entries.length}{' '}
+            {styleExprInfo.entries.length === 1 ? 'category' : 'categories'})
+          </p>
+          <div className="mapui:mt-2 mapui:flex mapui:flex-wrap mapui:items-center mapui:gap-1.5">
+            {styleExprInfo.entries.slice(0, MAX_PREVIEW_SWATCHES).map((entry, i) => (
+              <div
+                key={`${entry.label}-${i}`}
+                className="mapui:flex mapui:items-center mapui:gap-1"
+                title={entry.label}
+              >
+                <span
+                  className="mapui:inline-block mapui:h-3 mapui:w-3 mapui:rounded-sm mapui:shrink-0"
+                  style={{ backgroundColor: entry.color }}
+                />
+                <span className="mapui:text-xs mapui:text-blue-700 mapui:truncate mapui:max-w-16">
+                  {entry.label}
+                </span>
+              </div>
+            ))}
+            {styleExprInfo.entries.length > MAX_PREVIEW_SWATCHES && (
+              <span className="mapui:text-xs mapui:text-blue-600">
+                +{styleExprInfo.entries.length - MAX_PREVIEW_SWATCHES} more
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={handleGenerateFromStyle}
+            className="mapui:mt-2 mapui:cursor-pointer mapui:rounded mapui:border mapui:border-blue-300 mapui:bg-white mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:font-medium mapui:text-blue-700 hover:mapui:bg-blue-100"
+          >
+            Generate from Style
+          </button>
+        </div>
+      )}
+
       {value !== undefined && (
         <>
+          {/* Display Mode selector */}
+          <div className="mapui:flex mapui:items-center mapui:gap-2">
+            <label htmlFor="legend-display-mode" className="mapui:text-sm mapui:text-gray-700">
+              Display Mode
+            </label>
+            <select
+              id="legend-display-mode"
+              value={displayMode}
+              onChange={(e) => handleDisplayModeChange(e.target.value as 'categorical' | 'gradient' | 'simple')}
+              className={inputClass}
+            >
+              <option value="simple">Simple</option>
+              <option value="categorical">Categorical</option>
+              <option value="gradient">Gradient</option>
+            </select>
+          </div>
+
+          {/* Categorical-specific: Show labels in collapsed view */}
+          {displayMode === 'categorical' && (
+            <div className="mapui:flex mapui:items-center mapui:gap-2">
+              <input
+                type="checkbox"
+                id="legend-show-labels-collapsed"
+                checked={value.showLabelsCollapsed ?? false}
+                onChange={(e) => onChange({ ...value, showLabelsCollapsed: e.target.checked })}
+                className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
+              />
+              <label htmlFor="legend-show-labels-collapsed" className="mapui:text-sm mapui:text-gray-700">
+                Show labels in collapsed view
+              </label>
+            </div>
+          )}
+
+          {/* Gradient-specific: Property name */}
+          {displayMode === 'gradient' && (
+            <div className="mapui:flex mapui:items-center mapui:gap-2">
+              <label htmlFor="legend-gradient-property" className="mapui:text-sm mapui:text-gray-700">
+                Gradient Property
+              </label>
+              <input
+                type="text"
+                id="legend-gradient-property"
+                value={value.gradientProperty ?? ''}
+                onChange={(e) => onChange({ ...value, gradientProperty: e.target.value || undefined })}
+                placeholder="e.g. POP_EST"
+                className={inputClass}
+              />
+            </div>
+          )}
+
+          {/* Entries list */}
           <ul className="mapui:m-0 mapui:list-none mapui:flex mapui:flex-col mapui:gap-2 mapui:p-0">
             {entries.map((entry, index) => (
               <li
@@ -76,13 +229,24 @@ export function LegendEditor({ value, onChange }: LegendEditorProps) {
             ))}
           </ul>
 
-          <button
-            type="button"
-            onClick={handleAddEntry}
-            className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-dashed mapui:border-gray-300 mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-gray-600 hover:mapui:border-blue-400 hover:mapui:text-blue-600"
-          >
-            + Add Entry
-          </button>
+          <div className="mapui:flex mapui:gap-2">
+            <button
+              type="button"
+              onClick={handleAddEntry}
+              className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-dashed mapui:border-gray-300 mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-gray-600 hover:mapui:border-blue-400 hover:mapui:text-blue-600"
+            >
+              + Add Entry
+            </button>
+            {styleExprInfo && styleExprInfo.entries.length > 0 && (
+              <button
+                type="button"
+                onClick={handleGenerateFromStyle}
+                className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-blue-300 mapui:bg-white mapui:px-3 mapui:py-2 mapui:text-sm mapui:font-medium mapui:text-blue-700 hover:mapui:bg-blue-50"
+              >
+                Populate from Style ({styleExprInfo.entries.length} entries)
+              </button>
+            )}
+          </div>
         </>
       )}
     </div>
