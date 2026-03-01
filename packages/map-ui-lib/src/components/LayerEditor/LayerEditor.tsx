@@ -217,7 +217,7 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
           availableProperties={availableProperties}
           onFetchDistinctValues={
             baseUrl && collection
-              ? (property) => fetchDistinctValues(baseUrl, collection, property)
+              ? (property) => fetchDistinctValues(baseUrl, collection, property, { limit: 1000 })
               : undefined
           }
         />
