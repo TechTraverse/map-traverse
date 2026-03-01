@@ -1,32 +1,5 @@
 import type { StyleConfig } from '../../types';
-
-/** Returns true if a paint value is a MapLibre expression array (not a plain color string). */
-function isExpression(value: unknown): value is unknown[] {
-  return Array.isArray(value);
-}
-
-/** Extracts all color strings from a match or interpolate expression for preview. */
-function expressionColors(expr: unknown[]): string[] {
-  if (expr[0] === 'match') {
-    // ["match", ["get", prop], val1, color1, ..., fallback]
-    const colors: string[] = [];
-    for (let i = 3; i < expr.length; i += 2) {
-      if (typeof expr[i] === 'string') colors.push(expr[i] as string);
-    }
-    const fallback = expr[expr.length - 1];
-    if (typeof fallback === 'string') colors.push(fallback);
-    return colors;
-  }
-  if (expr[0] === 'interpolate') {
-    // ["interpolate", ["linear"], ["get", prop], stop1, color1, ...]
-    const colors: string[] = [];
-    for (let i = 4; i < expr.length; i += 2) {
-      if (typeof expr[i] === 'string') colors.push(expr[i] as string);
-    }
-    return colors;
-  }
-  return [];
-}
+import { isExpression, expressionColors } from '../../utils/expressionColors';
 
 /** Renders a gradient/segmented swatch for expression color values. */
 function ExpressionSwatch({ expr, height }: { expr: unknown[]; height?: number }) {

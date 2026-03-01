@@ -151,3 +151,114 @@ export const NoVisibleLayers: Story = {
     visibleLayerIds: [],
   },
 };
+
+const matchExpressionLayer: LayerConfig = {
+  id: 'countries-by-region',
+  sourceId: 'naturalearth',
+  collection: 'ne_110m_admin_0_countries',
+  label: 'Countries by Region',
+  visible: true,
+  dataMode: 'vector-tiles',
+  style: {
+    type: 'fill',
+    paint: {
+      'fill-color': [
+        'match',
+        ['get', 'REGION_UN'],
+        'Europe', '#4a90d9',
+        'Africa', '#e74c3c',
+        'Americas', '#2ecc71',
+        'Asia', '#f39c12',
+        'Oceania', '#9b59b6',
+        '#95a5a6',
+      ],
+      'fill-opacity': 0.7,
+    },
+  },
+};
+
+const interpolateExpressionLayer: LayerConfig = {
+  id: 'population-density',
+  sourceId: 'naturalearth',
+  collection: 'ne_110m_admin_0_countries',
+  label: 'Population Density',
+  visible: true,
+  dataMode: 'vector-tiles',
+  style: {
+    type: 'fill',
+    paint: {
+      'fill-color': [
+        'interpolate',
+        ['linear'],
+        ['get', 'POP_EST'],
+        0, '#ffffcc',
+        1000000, '#a1dab4',
+        10000000, '#41b6c4',
+        100000000, '#2c7fb8',
+        1000000000, '#253494',
+      ],
+      'fill-opacity': 0.8,
+    },
+  },
+};
+
+/** Fill layer with a match expression (5 categories + fallback). */
+export const MatchExpression: Story = {
+  args: {
+    layers: [matchExpressionLayer],
+    visibleLayerIds: ['countries-by-region'],
+  },
+};
+
+/** Fill layer with an interpolate gradient expression. */
+export const InterpolateExpression: Story = {
+  args: {
+    layers: [interpolateExpressionLayer],
+    visibleLayerIds: ['population-density'],
+  },
+};
+
+/** Mix of match expression, interpolate expression, single-color auto-derived, and manual entries. */
+export const MixedWithExpressions: Story = {
+  args: {
+    layers: [matchExpressionLayer, interpolateExpressionLayer, countriesAutoLayer, multiEntryLayer],
+    visibleLayerIds: ['countries-by-region', 'population-density', 'countries-auto', 'land-use'],
+  },
+};
+
+const expressionWithOverrideLayer: LayerConfig = {
+  id: 'countries-override',
+  sourceId: 'naturalearth',
+  collection: 'ne_110m_admin_0_countries',
+  label: 'Countries (Manual Legend)',
+  visible: true,
+  dataMode: 'vector-tiles',
+  style: {
+    type: 'fill',
+    paint: {
+      'fill-color': [
+        'match',
+        ['get', 'REGION_UN'],
+        'Europe', '#4a90d9',
+        'Africa', '#e74c3c',
+        '#95a5a6',
+      ],
+      'fill-opacity': 0.7,
+    },
+  },
+  legend: {
+    entries: [
+      { label: 'European Countries', color: '#4a90d9', shape: 'square' },
+      { label: 'African Countries', color: '#e74c3c', shape: 'square' },
+      { label: 'Other', color: '#95a5a6', shape: 'square' },
+    ],
+  },
+};
+
+/** Expression layer with explicit legend.entries — manual entries should win. */
+export const ExpressionWithOverride: Story = {
+  args: {
+    layers: [expressionWithOverrideLayer],
+    visibleLayerIds: ['countries-override'],
+  },
+};

@@ -5,3 +5,4 @@ export * from './propertyDisplay';
 export * from './queryableHelpers';
 export * from './spriteUtils';
 export * from './colorPalettes';
+export * from './expressionColors';
