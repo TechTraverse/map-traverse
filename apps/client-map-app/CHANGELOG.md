@@ -1,5 +1,12 @@
 # client-map-app
 
+## 0.0.13
+
+### Patch Changes
+
+- Updated dependencies [76e64a3]
+  - @ogc-maps/storybook-components@0.6.0
+
 ## 0.0.12
 
 ### Patch Changes

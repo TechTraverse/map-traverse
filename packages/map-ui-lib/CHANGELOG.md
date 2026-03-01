@@ -1,5 +1,11 @@
 # @ogc-maps/storybook-components
 
+## 0.6.0
+
+### Minor Changes
+
+- 76e64a3: style editor updates and info tip
+
 ## 0.5.3
 
 ### Patch Changes
