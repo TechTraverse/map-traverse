@@ -43,6 +43,8 @@ export { LayerEditor, LayerList } from './LayerEditor';
 export type { LayerEditorProps, LayerListProps } from './LayerEditor';
 export { BasemapEditor, BasemapList } from './BasemapEditor';
 export type { BasemapEditorProps, BasemapListProps } from './BasemapEditor';
+export { SpriteSourceList, SpriteSourceEditor } from './SpriteEditor';
+export type { SpriteSourceListProps, SpriteSourceEditorProps } from './SpriteEditor';
 export { UIConfigEditor } from './UIConfigEditor';
 export type { UIConfigEditorProps } from './UIConfigEditor';
 export { ViewEditor } from './ViewEditor';

@@ -278,6 +278,13 @@ export const BasemapConfigSchema = z.object({
   thumbnail: z.string().url().optional(),
 });
 
+// --- Sprite Source Config ---
+
+export const SpriteSourceSchema = z.object({
+  id: z.string().min(1),
+  url: z.string().url(),
+});
+
 // --- UI Config ---
 
 export const UIConfigSchema = z.object({
@@ -297,6 +304,7 @@ export const MapConfigSchema = z.object({
   sources: z.array(OgcApiSourceSchema).min(1),
   layers: z.array(LayerConfigSchema),
   basemaps: z.array(BasemapConfigSchema).min(1),
+  sprites: z.array(SpriteSourceSchema).optional(),
   ui: UIConfigSchema.default({}),
   initialView: ViewConfigSchema,
 });

@@ -7,6 +7,7 @@ export interface LayerListProps {
   layers: LayerConfig[];
   onChange: (layers: LayerConfig[]) => void;
   availableSources: OgcApiSource[];
+  availableIcons?: string[];
 }
 
 const defaultLayer = (): LayerConfig => ({
@@ -18,7 +19,7 @@ const defaultLayer = (): LayerConfig => ({
   dataMode: 'vector-tiles',
 });
 
-export function LayerList({ layers, onChange, availableSources }: LayerListProps) {
+export function LayerList({ layers, onChange, availableSources, availableIcons }: LayerListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addingNew, setAddingNew] = useState(false);
   const [newLayer, setNewLayer] = useState<LayerConfig>(defaultLayer());
@@ -222,6 +223,7 @@ export function LayerList({ layers, onChange, availableSources }: LayerListProps
                     value={layer}
                     onChange={handleUpdate}
                     availableSources={availableSources}
+                    availableIcons={availableIcons}
                   />
                 </div>
               )}
@@ -239,6 +241,7 @@ export function LayerList({ layers, onChange, availableSources }: LayerListProps
             value={newLayer}
             onChange={setNewLayer}
             availableSources={availableSources}
+            availableIcons={availableIcons}
           />
           <div className="mapui:mt-3 mapui:flex mapui:gap-2">
             <button

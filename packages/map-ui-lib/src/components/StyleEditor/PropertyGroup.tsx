@@ -8,6 +8,7 @@ interface PropertyGroupProps {
   values: Record<string, unknown>;
   onChange: (key: string, value: unknown) => void;
   defaultOpen?: boolean;
+  availableIcons?: string[];
 }
 
 export function PropertyGroup({
@@ -16,6 +17,7 @@ export function PropertyGroup({
   values,
   onChange,
   defaultOpen = false,
+  availableIcons,
 }: PropertyGroupProps) {
   const enabledCount = properties.filter(
     (p) => p.enableDefault !== undefined && values[p.key] !== undefined,
@@ -25,7 +27,7 @@ export function PropertyGroup({
     <CollapsibleSection title={title} defaultOpen={defaultOpen} badge={enabledCount || undefined}>
       <div className="mapui:flex mapui:flex-col mapui:gap-2">
         {properties.map((def) => (
-          <PropertyField key={def.key} def={def} value={values[def.key]} onChange={onChange} />
+          <PropertyField key={def.key} def={def} value={values[def.key]} onChange={onChange} availableIcons={availableIcons} />
         ))}
       </div>
     </CollapsibleSection>

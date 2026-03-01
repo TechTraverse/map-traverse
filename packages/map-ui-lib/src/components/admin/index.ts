@@ -1,5 +1,7 @@
 export { FormField } from './FormField';
 export type { FormFieldProps } from './FormField';
+export { InfoTip } from './InfoTip';
+export type { InfoTipProps } from './InfoTip';
 export { ColorPicker } from './ColorPicker';
 export type { ColorPickerProps } from './ColorPicker';
 export { ConfirmDialog } from './ConfirmDialog';

@@ -19,12 +19,13 @@ export interface LayerEditorProps {
   value: LayerConfig;
   onChange: (layer: LayerConfig) => void;
   availableSources: OgcApiSource[];
+  availableIcons?: string[];
 }
 
 const inputClass =
   'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
-export function LayerEditor({ value, onChange, availableSources }: LayerEditorProps) {
+export function LayerEditor({ value, onChange, availableSources, availableIcons }: LayerEditorProps) {
   const update = (patch: Partial<LayerConfig>) => onChange({ ...value, ...patch });
 
   // Refs to always have latest value/onChange in async callbacks (avoid stale closures)
@@ -213,6 +214,7 @@ export function LayerEditor({ value, onChange, availableSources }: LayerEditorPr
           value={value.style ?? defaultFill}
           onChange={(style) => update({ style })}
           suggestedType={suggestedStyleType}
+          availableIcons={availableIcons}
         />
       </CollapsibleSection>
 

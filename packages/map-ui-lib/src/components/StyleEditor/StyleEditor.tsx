@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import type { StyleConfig, FillStyle, LineStyle, CircleStyle, SymbolStyle } from '../../types';
 import { FormField } from '../admin/FormField';
 import { PropertyGroup } from './PropertyGroup';
@@ -8,11 +9,12 @@ export interface StyleEditorProps {
   value: StyleConfig;
   onChange: (style: StyleConfig) => void;
   suggestedType?: 'fill' | 'line' | 'circle' | 'symbol' | null;
+  availableIcons?: string[];
 }
 
 export const defaultFill: FillStyle = {
   type: 'fill',
-  paint: { 'fill-color': '#4a90d9', 'fill-opacity': 0.6, 'fill-outline-color': 'transparent' },
+  paint: { 'fill-color': '#4a90d9', 'fill-opacity': 0.6, 'fill-outline-color': 'transparent', 'fill-antialias': true },
 };
 
 export const defaultLine: LineStyle = {
@@ -31,6 +33,24 @@ export const defaultSymbol: SymbolStyle = {
   layout: { 'text-field': '{name}', 'text-size': 14 },
 };
 
+const defaultSymbolIcon: SymbolStyle = {
+  type: 'symbol',
+  paint: { 'icon-color': '#000000' },
+  layout: { 'icon-image': '' },
+};
+
+type SymbolMode = 'text' | 'icon' | 'both';
+
+function deriveSymbolMode(value: StyleConfig): SymbolMode {
+  if (value.type !== 'symbol') return 'text';
+  const layout = (value as { layout?: Record<string, unknown> }).layout ?? {};
+  const hasIcon = 'icon-image' in layout;
+  const hasText = 'text-field' in layout;
+  if (hasIcon && hasText) return 'both';
+  if (hasIcon) return 'icon';
+  return 'text';
+}
+
 const inputClass =
   'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
@@ -41,7 +61,16 @@ const STYLE_TYPE_LABELS: Record<StyleConfig['type'], string> = {
   symbol: 'Symbol',
 };
 
-export function StyleEditor({ value, onChange, suggestedType }: StyleEditorProps) {
+const SYMBOL_MODES: SymbolMode[] = ['text', 'icon', 'both'];
+
+export function StyleEditor({ value, onChange, suggestedType, availableIcons }: StyleEditorProps) {
+  const [symbolMode, setSymbolMode] = useState<SymbolMode>(() => deriveSymbolMode(value));
+
+  // Re-derive symbolMode when the style type changes externally
+  useEffect(() => {
+    setSymbolMode(deriveSymbolMode(value));
+  }, [value.type]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleTypeChange = (type: StyleConfig['type']) => {
     if (type === 'fill') onChange(defaultFill);
     else if (type === 'line') onChange(defaultLine);
@@ -49,8 +78,48 @@ export function StyleEditor({ value, onChange, suggestedType }: StyleEditorProps
     else onChange(defaultSymbol);
   };
 
+  const handleSymbolModeChange = (mode: SymbolMode) => {
+    if (mode === symbolMode) return;
+
+    const currentPaint = (value.paint ?? {}) as Record<string, unknown>;
+    const currentLayout = ((value as { layout?: Record<string, unknown> }).layout ?? {}) as Record<string, unknown>;
+
+    let newPaint = { ...currentPaint };
+    let newLayout = { ...currentLayout };
+
+    if (mode === 'icon') {
+      // Remove all text-* properties, keep symbol-* (Placement)
+      newPaint = Object.fromEntries(Object.entries(newPaint).filter(([k]) => !k.startsWith('text-')));
+      newLayout = Object.fromEntries(Object.entries(newLayout).filter(([k]) => !k.startsWith('text-')));
+      // Set icon-image if not already present
+      if (!('icon-image' in newLayout)) {
+        newLayout['icon-image'] = defaultSymbolIcon.layout!['icon-image'];
+      }
+    } else if (mode === 'text') {
+      // Remove all icon-* properties, keep symbol-* (Placement)
+      newPaint = Object.fromEntries(Object.entries(newPaint).filter(([k]) => !k.startsWith('icon-')));
+      newLayout = Object.fromEntries(Object.entries(newLayout).filter(([k]) => !k.startsWith('icon-')));
+      // Set text defaults if not already present
+      if (!('text-field' in newLayout)) newLayout['text-field'] = '{name}';
+      if (!('text-size' in newLayout)) newLayout['text-size'] = 14;
+      if (!('text-color' in newPaint)) newPaint['text-color'] = '#333333';
+    }
+    // mode === 'both': no property cleanup, just show all groups
+
+    setSymbolMode(mode);
+    onChange({
+      ...value,
+      paint: newPaint,
+      layout: Object.keys(newLayout).length > 0 ? newLayout : undefined,
+    } as StyleConfig);
+  };
+
   const handlePaintChange = (key: string, val: unknown) => {
-    onChange({ ...value, paint: { ...value.paint, [key]: val } } as StyleConfig);
+    const newPaint = { ...value.paint, [key]: val } as Record<string, unknown>;
+    for (const k of Object.keys(newPaint)) {
+      if (newPaint[k] === undefined) delete newPaint[k];
+    }
+    onChange({ ...value, paint: newPaint } as StyleConfig);
   };
 
   const handleLayoutChange = (key: string, val: unknown) => {
@@ -66,7 +135,18 @@ export function StyleEditor({ value, onChange, suggestedType }: StyleEditorProps
     } as StyleConfig);
   };
 
-  const allDefs = getPropertyRegistry(value.type);
+  let allDefs = getPropertyRegistry(value.type);
+
+  // Filter property definitions by symbol mode
+  if (value.type === 'symbol') {
+    if (symbolMode === 'text') {
+      allDefs = allDefs.filter((d) => !d.key.startsWith('icon-'));
+    } else if (symbolMode === 'icon') {
+      allDefs = allDefs.filter((d) => !d.key.startsWith('text-'));
+    }
+    // 'both': no filter — symbol-* (Placement) properties are always shown since they don't start with 'icon-' or 'text-'
+  }
+
   const paintDefs = allDefs.filter((d) => d.category === 'paint');
   const layoutDefs = allDefs.filter((d) => d.category === 'layout');
 
@@ -111,42 +191,67 @@ export function StyleEditor({ value, onChange, suggestedType }: StyleEditorProps
         </select>
       </FormField>
 
+      {value.type === 'symbol' && (
+        <FormField label="Symbol Mode">
+          <div className="mapui:flex mapui:overflow-hidden mapui:rounded mapui:border mapui:border-gray-300">
+            {SYMBOL_MODES.map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => handleSymbolModeChange(mode)}
+                className={[
+                  'mapui:flex-1 mapui:cursor-pointer mapui:border-0 mapui:px-3 mapui:py-1 mapui:text-sm mapui:capitalize mapui:outline-none',
+                  'focus:mapui:ring-1 focus:mapui:ring-inset focus:mapui:ring-blue-400',
+                  symbolMode === mode
+                    ? 'mapui:bg-blue-500 mapui:text-white'
+                    : 'mapui:bg-white mapui:text-gray-700 hover:mapui:bg-gray-50',
+                ].join(' ')}
+              >
+                {mode === 'both' ? 'Both' : mode.charAt(0).toUpperCase() + mode.slice(1)}
+              </button>
+            ))}
+          </div>
+        </FormField>
+      )}
+
       <div className="mapui:rounded mapui:border mapui:border-gray-100 mapui:p-2">
         <p className="mapui:m-0 mapui:mb-1 mapui:text-xs mapui:text-gray-500">Preview</p>
         <StylePreview style={value} />
       </div>
-
-      {paintGroupNames.length > 0 && (
-        <div className="mapui:flex mapui:flex-col mapui:gap-2">
-          <p className="mapui:m-0 mapui:text-xs mapui:font-medium mapui:uppercase mapui:tracking-wide mapui:text-gray-500">
-            Paint
-          </p>
-          {paintGroupNames.map((groupName, i) => (
-            <PropertyGroup
-              key={groupName}
-              title={groupName}
-              properties={paintGroups[groupName]}
-              values={paintValues}
-              onChange={handlePaintChange}
-              defaultOpen={i === 0}
-            />
-          ))}
-        </div>
-      )}
 
       {layoutGroupNames.length > 0 && (
         <div className="mapui:flex mapui:flex-col mapui:gap-2">
           <p className="mapui:m-0 mapui:text-xs mapui:font-medium mapui:uppercase mapui:tracking-wide mapui:text-gray-500">
             Layout
           </p>
-          {layoutGroupNames.map((groupName) => (
+          {layoutGroupNames.map((groupName, i) => (
             <PropertyGroup
               key={groupName}
               title={groupName}
               properties={layoutGroups[groupName]}
               values={layoutValues}
               onChange={handleLayoutChange}
+              defaultOpen={i === 0}
+              availableIcons={availableIcons}
+            />
+          ))}
+        </div>
+      )}
+
+      {paintGroupNames.length > 0 && (
+        <div className="mapui:flex mapui:flex-col mapui:gap-2">
+          <p className="mapui:m-0 mapui:text-xs mapui:font-medium mapui:uppercase mapui:tracking-wide mapui:text-gray-500">
+            Paint
+          </p>
+          {paintGroupNames.map((groupName) => (
+            <PropertyGroup
+              key={groupName}
+              title={groupName}
+              properties={paintGroups[groupName]}
+              values={paintValues}
+              onChange={handlePaintChange}
               defaultOpen={false}
+              availableIcons={availableIcons}
             />
           ))}
         </div>

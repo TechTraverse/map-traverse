@@ -5,6 +5,7 @@ import {
   LayerList,
   CollectionBrowser,
   BasemapList,
+  SpriteSourceList,
   UIConfigEditor,
   ViewEditor,
   ConfigPreview,
@@ -12,12 +13,14 @@ import {
   defaultFill,
   defaultLine,
   defaultCircle,
+  resolveAvailableIcons,
 } from '@ogc-maps/storybook-components';
 import { safeValidateMapConfig } from '@ogc-maps/storybook-components/schemas';
 import type {
   OgcApiSource,
   LayerConfig,
   BasemapConfig,
+  SpriteSource,
   UIConfig,
   ViewConfig,
   MapConfig,
@@ -28,10 +31,10 @@ type WizardStep = 'metadata' | 'sources' | 'layer-select' | 'layer-config' | 'ba
 
 const STEPS: { key: WizardStep; label: string }[] = [
   { key: 'metadata', label: 'Metadata' },
+  { key: 'basemaps', label: 'Basemaps' },
   { key: 'sources', label: 'Sources' },
   { key: 'layer-select', label: 'Layers' },
   { key: 'layer-config', label: 'Config' },
-  { key: 'basemaps', label: 'Basemaps' },
   { key: 'ui', label: 'UI' },
   { key: 'view', label: 'View' },
   { key: 'review', label: 'Review' },
@@ -75,8 +78,16 @@ export function ConfigWizardPage() {
   const [sources, setSources] = useState<OgcApiSource[]>([]);
   const [layers, setLayers] = useState<LayerConfig[]>([]);
   const [basemaps, setBasemaps] = useState<BasemapConfig[]>([]);
+  const [sprites, setSprites] = useState<SpriteSource[]>([]);
+  const [availableIcons, setAvailableIcons] = useState<string[]>([]);
   const [uiConfig, setUiConfig] = useState<UIConfig>(DEFAULT_UI_CONFIG);
   const [initialView, setInitialView] = useState<ViewConfig>(DEFAULT_VIEW);
+
+  // Resolve available icon names from basemap + custom sprites
+  useEffect(() => {
+    const basemapUrl = basemaps[0]?.url;
+    resolveAvailableIcons(basemapUrl, sprites).then(setAvailableIcons);
+  }, [basemaps, sprites]);
 
   // CollectionBrowser source selector state
   const [browseSourceId, setBrowseSourceId] = useState('');
@@ -93,7 +104,7 @@ export function ConfigWizardPage() {
   const currentStepIndex = STEPS.findIndex(s => s.key === currentStep);
 
   // Derived config object for save + preview
-  const assembledConfig: MapConfig = { sources, layers, basemaps, ui: uiConfig, initialView };
+  const assembledConfig: MapConfig = { sources, layers, basemaps, sprites: sprites.length > 0 ? sprites : undefined, ui: uiConfig, initialView };
 
   // Sync browseSourceId when sources change
   useEffect(() => {
@@ -117,6 +128,7 @@ export function ConfigWizardPage() {
           setSources(data.config.sources ?? []);
           setLayers(data.config.layers ?? []);
           setBasemaps(data.config.basemaps ?? []);
+          setSprites(data.config.sprites ?? []);
           setUiConfig(data.config.ui ?? DEFAULT_UI_CONFIG);
           setInitialView(data.config.initialView ?? DEFAULT_VIEW);
         }
@@ -341,7 +353,7 @@ export function ConfigWizardPage() {
                 No layers selected yet. Go back to the <strong>Select Layers</strong> step to choose collections.
               </div>
             ) : (
-              <LayerList layers={layers} onChange={setLayers} availableSources={sources} />
+              <LayerList layers={layers} onChange={setLayers} availableSources={sources} availableIcons={availableIcons} />
             )}
           </div>
         )}
@@ -350,6 +362,7 @@ export function ConfigWizardPage() {
           <div className="mapui:space-y-4">
             <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">Basemaps</h2>
             <BasemapList basemaps={basemaps} onChange={setBasemaps} />
+            <SpriteSourceList sprites={sprites} onChange={setSprites} />
           </div>
         )}
 
@@ -462,6 +475,7 @@ export function ConfigWizardPage() {
           sources={sources}
           layers={layers}
           basemaps={basemaps}
+          sprites={sprites}
           viewState={initialView}
           onViewStateChange={currentStep === 'view' ? setInitialView : undefined}
           onLayersChange={setLayers}

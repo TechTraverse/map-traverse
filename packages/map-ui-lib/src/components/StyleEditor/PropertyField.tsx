@@ -1,6 +1,7 @@
 import type { PropertyDefinition } from './propertyMetadata';
 import { ColorPicker } from '../admin/ColorPicker';
 import { FormField } from '../admin/FormField';
+import { IconImagePicker } from './IconImagePicker';
 
 const inputClass =
   'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
@@ -9,6 +10,7 @@ interface PropertyFieldProps {
   def: PropertyDefinition;
   value: unknown;
   onChange: (key: string, value: unknown) => void;
+  availableIcons?: string[];
 }
 
 function TranslateWidget({
@@ -74,10 +76,12 @@ function WidgetContent({
   def,
   value,
   onChange,
+  availableIcons,
 }: {
   def: PropertyDefinition;
   value: unknown;
   onChange: (v: unknown) => void;
+  availableIcons?: string[];
 }) {
   switch (def.widget) {
     case 'color':
@@ -181,18 +185,43 @@ function WidgetContent({
         />
       );
 
+    case 'icon-image':
+      return (
+        <IconImagePicker
+          value={(value as string | undefined) ?? ''}
+          onChange={(v) => onChange(v ?? undefined)}
+          availableIcons={availableIcons}
+        />
+      );
+
     default:
       return null;
   }
 }
 
-export function PropertyField({ def, value, onChange }: PropertyFieldProps) {
+export function PropertyField({ def, value, onChange, availableIcons }: PropertyFieldProps) {
   const isOptional = def.enableDefault !== undefined;
   const isEnabled = value !== undefined;
 
+  if (isOptional && def.widget === 'boolean') {
+    const overrideValue = !def.enableDefault;
+    return (
+      <FormField label={def.label} description={def.description}>
+        <input
+          type="checkbox"
+          checked={value === overrideValue}
+          onChange={(e) => {
+            onChange(def.key, e.target.checked ? overrideValue : undefined);
+          }}
+          className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
+        />
+      </FormField>
+    );
+  }
+
   if (isOptional) {
     return (
-      <FormField label={def.label}>
+      <FormField label={def.label} description={def.description}>
         <div className="mapui:flex mapui:items-center mapui:gap-2">
           <input
             type="checkbox"
@@ -207,6 +236,7 @@ export function PropertyField({ def, value, onChange }: PropertyFieldProps) {
               def={def}
               value={value}
               onChange={(v) => onChange(def.key, v)}
+              availableIcons={availableIcons}
             />
           )}
         </div>
@@ -215,8 +245,8 @@ export function PropertyField({ def, value, onChange }: PropertyFieldProps) {
   }
 
   return (
-    <FormField label={def.label}>
-      <WidgetContent def={def} value={value} onChange={(v) => onChange(def.key, v)} />
+    <FormField label={def.label} description={def.description}>
+      <WidgetContent def={def} value={value} onChange={(v) => onChange(def.key, v)} availableIcons={availableIcons} />
     </FormField>
   );
 }

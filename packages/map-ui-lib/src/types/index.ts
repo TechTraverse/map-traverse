@@ -28,6 +28,7 @@ import {
   PropertyDisplayConfigSchema,
   LayerConfigSchema,
   BasemapConfigSchema,
+  SpriteSourceSchema,
   UIConfigSchema,
   MapConfigSchema,
 } from '../schemas/config';
@@ -79,6 +80,7 @@ export type PropertyDisplayConfig = z.infer<typeof PropertyDisplayConfigSchema>;
 export type PropertyDisplayConfigInput = z.input<typeof PropertyDisplayConfigSchema>;
 export type LayerConfig = z.infer<typeof LayerConfigSchema>;
 export type BasemapConfig = z.infer<typeof BasemapConfigSchema>;
+export type SpriteSource = z.infer<typeof SpriteSourceSchema>;
 export type UIConfig = z.infer<typeof UIConfigSchema>;
 export type MapConfig = z.infer<typeof MapConfigSchema>;
 
@@ -123,6 +125,7 @@ export {
   PropertyDisplayConfigSchema,
   LayerConfigSchema,
   BasemapConfigSchema,
+  SpriteSourceSchema,
   UIConfigSchema,
   MapConfigSchema,
 };

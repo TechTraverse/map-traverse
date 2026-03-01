@@ -8,7 +8,8 @@ export type EditorWidget =
   | 'padding'
   | 'dasharray'
   | 'stringArray'
-  | 'text';
+  | 'text'
+  | 'icon-image';
 
 export interface PropertyDefinition {
   key: string;

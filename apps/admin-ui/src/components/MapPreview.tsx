@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Map, Source, Layer, AttributionControl } from 'react-map-gl/maplibre';
+import maplibregl from 'maplibre-gl';
+import { Map, Source, Layer, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
 import {
   getCql2FilteredVectorTileUrl,
   useOgcFeatures,
@@ -7,6 +8,7 @@ import {
   fromStructuredFilters,
   resolvePropertyDisplay,
   fetchDistinctValues,
+  resolveStyleWithSprites,
 } from '@ogc-maps/storybook-components/hooks';
 import type { CQL2Expression } from '@ogc-maps/storybook-components/hooks';
 import {
@@ -26,6 +28,7 @@ import type {
   OgcApiSource,
   LayerConfig,
   BasemapConfig,
+  SpriteSource,
   ViewConfig,
   UIConfig,
   CoordinateFormatOption,
@@ -147,6 +150,7 @@ export interface MapPreviewProps {
   sources: OgcApiSource[];
   layers: LayerConfig[];
   basemaps: BasemapConfig[];
+  sprites?: SpriteSource[];
   viewState: ViewConfig;
   onViewStateChange?: (view: ViewConfig) => void;
   onLayersChange?: (layers: LayerConfig[]) => void;
@@ -158,6 +162,7 @@ export function MapPreview({
   sources,
   layers,
   basemaps,
+  sprites,
   viewState,
   onViewStateChange,
   onLayersChange,
@@ -166,6 +171,9 @@ export function MapPreview({
 }: MapPreviewProps) {
   const [internalViewState, setInternalViewState] = useState<ViewConfig>(viewState);
   const [activeBasemapId, setActiveBasemapId] = useState<string | undefined>(basemaps[0]?.id);
+  const [resolvedStyle, setResolvedStyle] = useState<string | object>(
+    basemaps[0]?.url ?? FALLBACK_BASEMAP_URL,
+  );
   const [activeFilters, setActiveFilters] = useState<Record<string, SearchFilterValues>>({});
   const [activeCql2Filters, setActiveCql2Filters] = useState<Record<string, CQL2Expression | undefined>>({});
   const [mouseCoords, setMouseCoords] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -188,6 +196,8 @@ export function MapPreview({
   const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<Record<string, string[]>>({});
   const prefetchedRef = useRef<Set<string>>(new Set());
   const debounceTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const [mapInstance, setMapInstance] = useState<maplibregl.Map | null>(null);
+  const mapRef = useRef<MapRef>(null);
 
   // Reset viewport when entering the view step or when the prop changes while on that step
   useEffect(() => {
@@ -265,8 +275,17 @@ export function MapPreview({
   );
 
   const activeBasemap = basemaps.find(b => b.id === activeBasemapId);
-  const mapStyle = activeBasemap?.url ?? basemaps[0]?.url ?? FALLBACK_BASEMAP_URL;
+  const mapStyleUrl = activeBasemap?.url ?? basemaps[0]?.url ?? FALLBACK_BASEMAP_URL;
 
+  useEffect(() => {
+    if (!sprites?.length) {
+      setResolvedStyle(mapStyleUrl);
+      return;
+    }
+    resolveStyleWithSprites(mapStyleUrl, sprites)
+      .then(setResolvedStyle)
+      .catch(() => setResolvedStyle(mapStyleUrl));
+  }, [mapStyleUrl, sprites]);
 
   const showEmptyState = sources.length === 0 && layers.length === 0;
 
@@ -335,6 +354,22 @@ export function MapPreview({
     });
   }, [layers, activeCql2Filters]);
 
+  const handleMapLoad = useCallback(() => {
+    setMapInstance(mapRef.current?.getMap() ?? null);
+  }, []);
+
+  useEffect(() => {
+    if (!mapInstance) return;
+    const handler = (e: { id: string }) => {
+      console.warn(
+        `Missing sprite image: "${e.id}". ` +
+        'Ensure a sprite source containing this image is configured in the Basemaps step.'
+      );
+    };
+    mapInstance.on('styleimagemissing', handler);
+    return () => { mapInstance.off('styleimagemissing', handler); };
+  }, [mapInstance]);
+
   const handleMove = (evt: { viewState: { latitude: number; longitude: number; zoom: number; pitch: number; bearing: number } }) => {
     const next: ViewConfig = {
       latitude: evt.viewState.latitude,
@@ -353,15 +388,17 @@ export function MapPreview({
   return (
     <div className="mapui:relative mapui:w-full mapui:h-full">
       <Map
+        ref={mapRef}
         latitude={internalViewState.latitude}
         longitude={internalViewState.longitude}
         zoom={internalViewState.zoom}
         pitch={internalViewState.pitch}
         bearing={internalViewState.bearing}
         style={{ width: '100%', height: '100%' }}
-        mapStyle={mapStyle}
+        mapStyle={resolvedStyle as any}
         cursor={cursor}
         interactiveLayerIds={interactiveLayerIds}
+        onLoad={handleMapLoad}
         onMove={handleMove}
         onClick={(evt) => {
           if (!featureInteractionEnabled) return;
@@ -421,7 +458,7 @@ export function MapPreview({
           if (layer.dataMode === 'geojson') {
             return (
               <PreviewGeoJsonLayer
-                key={layer.id}
+                key={`${layer.id}--${layer.style?.type ?? 'default'}`}
                 layer={layer}
                 sourceUrl={sourceInfo.url}
                 cql2Filter={activeCql2Filters[layer.id]}
@@ -432,7 +469,7 @@ export function MapPreview({
 
           return (
             <PreviewVectorTileLayer
-              key={getVectorTileSourceKey(layer.id, activeCql2Filters[layer.id])}
+              key={`${getVectorTileSourceKey(layer.id, activeCql2Filters[layer.id])}--${layer.style?.type ?? 'default'}`}
               layer={layer}
               sourceUrl={sourceInfo.url}
               tileMatrixSetId={sourceInfo.tileMatrixSetId}

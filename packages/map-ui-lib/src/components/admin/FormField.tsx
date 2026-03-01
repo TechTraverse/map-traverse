@@ -1,23 +1,26 @@
 import type { ReactNode } from 'react';
+import { InfoTip } from './InfoTip';
 
 export interface FormFieldProps {
   label: string;
   error?: string;
   required?: boolean;
+  description?: string;
   htmlFor?: string;
   children: ReactNode;
 }
 
-export function FormField({ label, error, required, htmlFor, children }: FormFieldProps) {
+export function FormField({ label, error, required, description, htmlFor, children }: FormFieldProps) {
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-1">
-      <label htmlFor={htmlFor} className="mapui:text-xs mapui:font-medium mapui:text-gray-700">
+      <label htmlFor={htmlFor} className="mapui:flex mapui:items-center mapui:gap-1 mapui:text-xs mapui:font-medium mapui:text-gray-700">
         {label}
         {required && (
           <span className="mapui:ml-0.5 mapui:text-red-500" aria-hidden="true">
             *
           </span>
         )}
+        {description && <InfoTip text={description} />}
       </label>
       {children}
       {error && (

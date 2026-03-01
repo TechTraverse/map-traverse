@@ -24,6 +24,7 @@ export type {
   PropertyDisplayConfig,
 } from '../types';
 export { resolvePropertyDisplay } from '../utils/propertyDisplay';
+export { resolveStyleWithSprites } from '../utils/spriteUtils';
 export type SearchFieldType = SearchField['type'];
 export {
   fetchCollections,

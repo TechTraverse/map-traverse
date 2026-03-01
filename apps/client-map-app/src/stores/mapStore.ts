@@ -4,6 +4,7 @@ import type {
   MapConfig,
   LayerConfig,
   BasemapConfig,
+  SpriteSource,
   ViewConfig,
   OgcApiSource,
   UIConfig,
@@ -17,6 +18,7 @@ interface MapState {
   basemaps: BasemapConfig[];
   activeBasemapId: string;
   sources: OgcApiSource[];
+  sprites: SpriteSource[];
   uiConfig: UIConfig;
   /** Form values for the SearchPanel UI and URL serialization. */
   activeFilters: Record<string, SearchFilterValues>;
@@ -46,6 +48,7 @@ export const useMapStore = create<MapState>((set) => ({
   basemaps: [],
   activeBasemapId: '',
   sources: [],
+  sprites: [],
   uiConfig: {
     showLayerPanel: true,
     showLegend: true,
@@ -114,6 +117,7 @@ export const useMapStore = create<MapState>((set) => ({
       basemaps: config.basemaps,
       activeBasemapId: config.basemaps[0]?.id || '',
       sources: config.sources,
+      sprites: config.sprites ?? [],
       uiConfig: config.ui,
       activeFilters: {},
       activeCql2Filters: {},

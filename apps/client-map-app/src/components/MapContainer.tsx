@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
-import { Map, Source, Layer, AttributionControl } from 'react-map-gl/maplibre';
-import { useOgcFeatures, getCql2FilteredVectorTileUrl } from '@ogc-maps/storybook-components/hooks';
+import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
+import { Map, Source, Layer, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
+import { useOgcFeatures, getCql2FilteredVectorTileUrl, resolveStyleWithSprites } from '@ogc-maps/storybook-components/hooks';
 import type { CQL2Expression } from '@ogc-maps/storybook-components/hooks';
 import type { LayerConfig } from '@ogc-maps/storybook-components/types';
 import { useMapStore } from '../stores/mapStore';
@@ -103,8 +103,29 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
   const sources = useMapStore((s) => s.sources);
   const basemaps = useMapStore((s) => s.basemaps);
   const activeBasemapId = useMapStore((s) => s.activeBasemapId);
+  const sprites = useMapStore((s) => s.sprites);
   const activeCql2Filters = useMapStore((s) => s.activeCql2Filters);
   const setViewState = useMapStore((s) => s.setViewState);
+
+  const [mapInstance, setMapInstance] = useState<ReturnType<MapRef['getMap']> | null>(null);
+  const mapRef = useRef<MapRef>(null);
+  const [resolvedStyle, setResolvedStyle] = useState<string | object | undefined>(undefined);
+
+  const handleMapLoad = useCallback(() => {
+    setMapInstance(mapRef.current?.getMap() ?? null);
+  }, []);
+
+  useEffect(() => {
+    if (!mapInstance) return;
+    const handler = (e: { id: string }) => {
+      console.warn(
+        `Missing sprite image: "${e.id}". ` +
+        'Ensure a sprite source containing this image is configured in the Basemaps step.'
+      );
+    };
+    mapInstance.on('styleimagemissing', handler);
+    return () => { mapInstance.off('styleimagemissing', handler); };
+  }, [mapInstance]);
 
   // Build source URL lookup map with tileMatrixSetId
   const sourceUrlMap = useMemo(() => {
@@ -120,7 +141,18 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
 
   // Get active basemap URL
   const activeBasemap = basemaps.find((b) => b.id === activeBasemapId);
-  const mapStyle = activeBasemap?.url || basemaps[0]?.url;
+  const mapStyleUrl = activeBasemap?.url || basemaps[0]?.url;
+
+  useEffect(() => {
+    if (!mapStyleUrl) return;
+    if (!sprites.length) {
+      setResolvedStyle(mapStyleUrl);
+      return;
+    }
+    resolveStyleWithSprites(mapStyleUrl, sprites)
+      .then(setResolvedStyle)
+      .catch(() => setResolvedStyle(mapStyleUrl));
+  }, [mapStyleUrl, sprites]);
 
   const [cursor, setCursor] = useState<string>('auto');
 
@@ -142,11 +174,13 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
 
   return (
     <Map
+      ref={mapRef}
       {...viewState}
       style={{ width: '100%', height: '100%' }}
-      mapStyle={mapStyle}
+      mapStyle={resolvedStyle as any}
       cursor={cursor}
       interactiveLayerIds={interactiveLayerIds}
+      onLoad={handleMapLoad}
       onMove={(evt) => setViewState(evt.viewState)}
       onClick={(evt) => {
         const feature = evt.features?.[0];
@@ -204,7 +238,7 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
         }
         return (
           <VectorTileLayer
-            key={getVectorTileSourceKey(layer.id, activeCql2Filters[layer.id])}
+            key={`${getVectorTileSourceKey(layer.id, activeCql2Filters[layer.id])}--${layer.style?.type}`}
             layer={layer}
             sourceUrl={sourceInfo.url}
             tileMatrixSetId={sourceInfo.tileMatrixSetId}
@@ -220,7 +254,7 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
           console.warn(`Source URL not found for layer ${layer.id}`);
           return null;
         }
-        return <GeoJsonLayer key={layer.id} layer={layer} sourceUrl={sourceInfo.url} cql2Filter={activeCql2Filters[layer.id]} />;
+        return <GeoJsonLayer key={`${layer.id}--${layer.style?.type}`} layer={layer} sourceUrl={sourceInfo.url} cql2Filter={activeCql2Filters[layer.id]} />;
       })}
     </Map>
   );
