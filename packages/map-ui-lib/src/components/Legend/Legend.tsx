@@ -6,16 +6,26 @@ export interface LegendProps {
   className?: string;
 }
 
+function resolveColor(value: string | unknown[] | undefined, fallback: string): string {
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) {
+    // Extract fallback color from expression (last element of match/interpolate)
+    const last = value[value.length - 1];
+    if (typeof last === 'string') return last;
+  }
+  return fallback;
+}
+
 function getColorFromStyle(style: StyleConfig): string {
   switch (style.type) {
     case 'fill':
-      return style.paint['fill-color'];
+      return resolveColor(style.paint['fill-color'], '#000000');
     case 'line':
-      return style.paint['line-color'];
+      return resolveColor(style.paint['line-color'], '#000000');
     case 'circle':
-      return style.paint['circle-color'];
+      return resolveColor(style.paint['circle-color'], '#000000');
     case 'symbol':
-      return style.paint['text-color'] ?? style.paint['icon-color'] ?? '#000000';
+      return resolveColor(style.paint['text-color'] ?? style.paint['icon-color'], '#000000');
   }
 }
 

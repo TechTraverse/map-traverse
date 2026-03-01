@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { StyleConfig, FillStyle, LineStyle, CircleStyle, SymbolStyle } from '../../types';
+import type { StyleConfig, FillStyle, LineStyle, CircleStyle, SymbolStyle, AvailableProperty } from '../../types';
 import { FormField } from '../admin/FormField';
 import { PropertyGroup } from './PropertyGroup';
 import { StylePreview } from './StylePreview';
@@ -11,6 +11,8 @@ export interface StyleEditorProps {
   suggestedType?: 'fill' | 'line' | 'circle' | 'symbol' | null;
   suggestedTypes?: StyleConfig['type'][];
   availableIcons?: string[];
+  availableProperties?: AvailableProperty[];
+  onFetchDistinctValues?: (property: string) => Promise<string[]>;
 }
 
 export const defaultFill: FillStyle = {
@@ -64,7 +66,7 @@ const STYLE_TYPE_LABELS: Record<StyleConfig['type'], string> = {
 
 const SYMBOL_MODES: SymbolMode[] = ['text', 'icon', 'both'];
 
-export function StyleEditor({ value, onChange, suggestedType, suggestedTypes, availableIcons }: StyleEditorProps) {
+export function StyleEditor({ value, onChange, suggestedType, suggestedTypes, availableIcons, availableProperties, onFetchDistinctValues }: StyleEditorProps) {
   // Normalise: prefer suggestedTypes array; fall back to legacy suggestedType scalar
   const resolvedSuggestedTypes: StyleConfig['type'][] =
     suggestedTypes ?? (suggestedType ? [suggestedType] : []);
@@ -249,6 +251,8 @@ export function StyleEditor({ value, onChange, suggestedType, suggestedTypes, av
               onChange={handleLayoutChange}
               defaultOpen={i === 0}
               availableIcons={availableIcons}
+              availableProperties={availableProperties}
+              onFetchDistinctValues={onFetchDistinctValues}
             />
           ))}
         </div>
@@ -268,6 +272,8 @@ export function StyleEditor({ value, onChange, suggestedType, suggestedTypes, av
               onChange={handlePaintChange}
               defaultOpen={false}
               availableIcons={availableIcons}
+              availableProperties={availableProperties}
+              onFetchDistinctValues={onFetchDistinctValues}
             />
           ))}
         </div>

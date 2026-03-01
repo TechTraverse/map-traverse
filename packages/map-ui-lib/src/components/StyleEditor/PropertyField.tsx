@@ -1,7 +1,9 @@
 import type { PropertyDefinition } from './propertyMetadata';
+import type { AvailableProperty } from '../../types';
 import { ColorPicker } from '../admin/ColorPicker';
 import { FormField } from '../admin/FormField';
 import { IconImagePicker } from './IconImagePicker';
+import { DataDrivenColorEditor } from './DataDrivenColorEditor';
 
 const inputClass =
   'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
@@ -11,6 +13,8 @@ interface PropertyFieldProps {
   value: unknown;
   onChange: (key: string, value: unknown) => void;
   availableIcons?: string[];
+  availableProperties?: AvailableProperty[];
+  onFetchDistinctValues?: (property: string) => Promise<string[]>;
 }
 
 function TranslateWidget({
@@ -77,21 +81,63 @@ function WidgetContent({
   value,
   onChange,
   availableIcons,
+  availableProperties,
+  onFetchDistinctValues,
 }: {
   def: PropertyDefinition;
   value: unknown;
   onChange: (v: unknown) => void;
   availableIcons?: string[];
+  availableProperties?: AvailableProperty[];
+  onFetchDistinctValues?: (property: string) => Promise<string[]>;
 }) {
   switch (def.widget) {
-    case 'color':
+    case 'color': {
+      const isExpression = Array.isArray(value);
+      const fallbackColor = isExpression
+        ? ((value as unknown[])[(value as unknown[]).length - 1] as string | undefined) ?? '#000000'
+        : '#000000';
       return (
-        <ColorPicker
-          value={(value as string) ?? '#000000'}
-          onChange={onChange}
-          label={def.label}
-        />
+        <div className="mapui:flex mapui:flex-col mapui:gap-1 mapui:w-full">
+          <div className="mapui:flex mapui:items-center mapui:justify-end">
+            <button
+              type="button"
+              title={isExpression ? 'Switch to static color' : 'Switch to data-driven color'}
+              onClick={() => {
+                if (isExpression) {
+                  onChange(fallbackColor);
+                } else {
+                  onChange(['match', ['get', ''], fallbackColor]);
+                }
+              }}
+              className={[
+                'mapui:cursor-pointer mapui:rounded mapui:border mapui:px-1.5 mapui:py-0.5 mapui:font-mono mapui:text-xs mapui:outline-none',
+                'focus:mapui:ring-1 focus:mapui:ring-blue-400',
+                isExpression
+                  ? 'mapui:border-blue-400 mapui:bg-blue-50 mapui:text-blue-700'
+                  : 'mapui:border-gray-300 mapui:bg-white mapui:text-gray-500 hover:mapui:border-blue-400 hover:mapui:text-blue-600',
+              ].join(' ')}
+            >
+              fx
+            </button>
+          </div>
+          {isExpression ? (
+            <DataDrivenColorEditor
+              value={value as unknown[]}
+              onChange={(expr) => onChange(expr)}
+              availableProperties={availableProperties}
+              onFetchDistinctValues={onFetchDistinctValues}
+            />
+          ) : (
+            <ColorPicker
+              value={(value as string) ?? '#000000'}
+              onChange={onChange}
+              label={def.label}
+            />
+          )}
+        </div>
       );
+    }
 
     case 'opacity':
       return (
@@ -199,7 +245,7 @@ function WidgetContent({
   }
 }
 
-export function PropertyField({ def, value, onChange, availableIcons }: PropertyFieldProps) {
+export function PropertyField({ def, value, onChange, availableIcons, availableProperties, onFetchDistinctValues }: PropertyFieldProps) {
   const isOptional = def.enableDefault !== undefined;
   const isEnabled = value !== undefined;
 
@@ -237,6 +283,8 @@ export function PropertyField({ def, value, onChange, availableIcons }: Property
               value={value}
               onChange={(v) => onChange(def.key, v)}
               availableIcons={availableIcons}
+              availableProperties={availableProperties}
+              onFetchDistinctValues={onFetchDistinctValues}
             />
           )}
         </div>
@@ -246,7 +294,14 @@ export function PropertyField({ def, value, onChange, availableIcons }: Property
 
   return (
     <FormField label={def.label} description={def.description}>
-      <WidgetContent def={def} value={value} onChange={(v) => onChange(def.key, v)} availableIcons={availableIcons} />
+      <WidgetContent
+        def={def}
+        value={value}
+        onChange={(v) => onChange(def.key, v)}
+        availableIcons={availableIcons}
+        availableProperties={availableProperties}
+        onFetchDistinctValues={onFetchDistinctValues}
+      />
     </FormField>
   );
 }

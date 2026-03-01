@@ -8,7 +8,7 @@ import { SearchFieldList } from '../SearchFieldEditor/SearchFieldList';
 import { PropertyDisplayEditor } from '../PropertyDisplayEditor/PropertyDisplayEditor';
 import { useOgcCollections } from '../../hooks/useOgcCollections';
 import { useOgcQueryables } from '../../hooks/useOgcQueryables';
-import { fetchFeatures } from '../../utils/ogcApi';
+import { fetchFeatures, fetchDistinctValues } from '../../utils/ogcApi';
 import {
   detectGeometryStyleTypesFromQueryables,
   geometryTypeToStyleTypes,
@@ -214,6 +214,12 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
           onChange={(style) => update({ style })}
           suggestedTypes={suggestedStyleTypes}
           availableIcons={availableIcons}
+          availableProperties={availableProperties}
+          onFetchDistinctValues={
+            baseUrl && collection
+              ? (property) => fetchDistinctValues(baseUrl, collection, property)
+              : undefined
+          }
         />
       </CollapsibleSection>
 

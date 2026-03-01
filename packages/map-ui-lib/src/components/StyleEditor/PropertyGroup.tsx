@@ -1,4 +1,5 @@
 import type { PropertyDefinition } from './propertyMetadata';
+import type { AvailableProperty } from '../../types';
 import { PropertyField } from './PropertyField';
 import { CollapsibleSection } from '../admin/CollapsibleSection';
 
@@ -9,6 +10,8 @@ interface PropertyGroupProps {
   onChange: (key: string, value: unknown) => void;
   defaultOpen?: boolean;
   availableIcons?: string[];
+  availableProperties?: AvailableProperty[];
+  onFetchDistinctValues?: (property: string) => Promise<string[]>;
 }
 
 export function PropertyGroup({
@@ -18,6 +21,8 @@ export function PropertyGroup({
   onChange,
   defaultOpen = false,
   availableIcons,
+  availableProperties,
+  onFetchDistinctValues,
 }: PropertyGroupProps) {
   const enabledCount = properties.filter(
     (p) => p.enableDefault !== undefined && values[p.key] !== undefined,
@@ -27,7 +32,15 @@ export function PropertyGroup({
     <CollapsibleSection title={title} defaultOpen={defaultOpen} badge={enabledCount || undefined}>
       <div className="mapui:flex mapui:flex-col mapui:gap-2">
         {properties.map((def) => (
-          <PropertyField key={def.key} def={def} value={values[def.key]} onChange={onChange} availableIcons={availableIcons} />
+          <PropertyField
+            key={def.key}
+            def={def}
+            value={values[def.key]}
+            onChange={onChange}
+            availableIcons={availableIcons}
+            availableProperties={availableProperties}
+            onFetchDistinctValues={onFetchDistinctValues}
+          />
         ))}
       </div>
     </CollapsibleSection>

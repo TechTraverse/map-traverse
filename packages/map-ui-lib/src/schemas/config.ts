@@ -1,5 +1,12 @@
 import { z } from 'zod';
 
+// --- Expression Support ---
+
+const ExpressionSchema = z.array(z.unknown());
+const colorOrExpr = (defaultColor: string) =>
+  z.union([z.string(), ExpressionSchema]).default(defaultColor);
+const colorOrExprOptional = () => z.union([z.string(), ExpressionSchema]).optional();
+
 // --- View Configuration ---
 
 export const ViewConfigSchema = z.object({
@@ -22,9 +29,9 @@ export const OgcApiSourceSchema = z.object({
 // --- Paint Schemas (MapLibre GL JS conventions) ---
 
 export const FillPaintSchema = z.object({
-  'fill-color': z.string().default('#000000'),
+  'fill-color': colorOrExpr('#000000'),
   'fill-opacity': z.number().min(0).max(1).default(1),
-  'fill-outline-color': z.string().optional(),
+  'fill-outline-color': colorOrExprOptional(),
   'fill-antialias': z.boolean().optional(),
   'fill-translate': z.tuple([z.number(), z.number()]).optional(),
   'fill-translate-anchor': z.enum(['map', 'viewport']).optional(),
@@ -32,7 +39,7 @@ export const FillPaintSchema = z.object({
 });
 
 export const LinePaintSchema = z.object({
-  'line-color': z.string().default('#000000'),
+  'line-color': colorOrExpr('#000000'),
   'line-width': z.number().min(0).default(1),
   'line-opacity': z.number().min(0).max(1).default(1),
   'line-dasharray': z.array(z.number()).optional(),
@@ -46,10 +53,10 @@ export const LinePaintSchema = z.object({
 });
 
 export const CirclePaintSchema = z.object({
-  'circle-color': z.string().default('#000000'),
+  'circle-color': colorOrExpr('#000000'),
   'circle-radius': z.number().min(0).default(5),
   'circle-opacity': z.number().min(0).max(1).default(1),
-  'circle-stroke-color': z.string().optional(),
+  'circle-stroke-color': colorOrExprOptional(),
   'circle-stroke-width': z.number().min(0).optional(),
   'circle-blur': z.number().min(0).optional(),
   'circle-translate': z.tuple([z.number(), z.number()]).optional(),
@@ -61,15 +68,15 @@ export const CirclePaintSchema = z.object({
 
 export const SymbolPaintSchema = z.object({
   'icon-opacity': z.number().min(0).max(1).optional(),
-  'icon-color': z.string().optional(),
-  'icon-halo-color': z.string().optional(),
+  'icon-color': colorOrExprOptional(),
+  'icon-halo-color': colorOrExprOptional(),
   'icon-halo-width': z.number().min(0).optional(),
   'icon-halo-blur': z.number().min(0).optional(),
   'icon-translate': z.tuple([z.number(), z.number()]).optional(),
   'icon-translate-anchor': z.enum(['map', 'viewport']).optional(),
   'text-opacity': z.number().min(0).max(1).optional(),
-  'text-color': z.string().optional(),
-  'text-halo-color': z.string().optional(),
+  'text-color': colorOrExprOptional(),
+  'text-halo-color': colorOrExprOptional(),
   'text-halo-width': z.number().min(0).optional(),
   'text-halo-blur': z.number().min(0).optional(),
   'text-translate': z.tuple([z.number(), z.number()]).optional(),
