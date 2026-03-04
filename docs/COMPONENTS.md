@@ -83,28 +83,28 @@ Displays a legend for visible layers, auto-derived from layer styles when no exp
 |---|---|---|---|
 | `layers` | `LayerConfig[]` | Yes | All layers (only visible ones are shown) |
 | `visibleLayerIds` | `string[]` | Yes | IDs of layers to include in the legend |
+| `onOpacityChange` | `(layerId: string, opacity: number) => void` | No | When provided, adds an expand/collapse button and per-layer opacity sliders |
 | `className` | `string` | No | Additional CSS classes |
 
 ### Behavior
 
-- Renders `null` when no visible layers have legend entries or styles.
-- For each visible layer, uses `layer.legend.entries` if present; otherwise auto-derives a single entry from `layer.style` (color and shape are inferred from style type).
-- Layers with multiple entries render a sub-list under the layer label.
-
-### Style-to-Legend Auto-Derivation
-
-| Style type | Derived shape | Derived color |
-|---|---|---|
-| `fill` | `square` | `fill-color` |
-| `line` | `line` | `line-color` |
-| `circle` | `circle` | `circle-color` |
+- Renders `null` when no visible layers have an explicit `legend` config set.
+- Supports three display modes controlled by `LegendConfig.displayMode`:
+  - **`simple`** (default): Shows a color swatch per entry, or a sub-list when multiple entries.
+  - **`categorical`**: Shows a segmented color bar with a collapsible full entry list.
+  - **`gradient`**: Shows a smooth color ramp with min/max labels when expanded.
+- When `onOpacityChange` is provided, an expand/collapse icon appears in the legend header. Expanding reveals per-layer opacity range sliders (0–100%).
 
 ### Example
 
 ```tsx
 import { Legend } from '@ogc-maps/storybook-components/components/Legend';
 
-<Legend layers={mapConfig.layers} visibleLayerIds={['countries', 'rivers']} />
+<Legend
+  layers={mapConfig.layers}
+  visibleLayerIds={['countries', 'rivers']}
+  onOpacityChange={(layerId, opacity) => updateLayerOpacity(layerId, opacity)}
+/>
 ```
 
 ---
@@ -547,7 +547,7 @@ Edits a single `OgcApiSource` entry. `SourceList` renders a list of sources with
 
 ## StyleEditor
 
-Configures the visual style for a layer (`fill`, `line`, or `circle`).
+Configures the visual style for a layer (`fill`, `line`, `circle`, or `symbol`). Includes a live preview swatch, data-driven color editors, and 70+ MapLibre paint/layout properties organized in collapsible property groups.
 
 ### Props
 
@@ -555,7 +555,19 @@ Configures the visual style for a layer (`fill`, `line`, or `circle`).
 |---|---|---|---|
 | `value` | `StyleConfig` | Yes | Current style config |
 | `onChange` | `(style: StyleConfig) => void` | Yes | Called on any style change |
-| `suggestedType` | `'fill' \| 'line' \| 'circle' \| null` | No | Geometry-based hint for the default style type |
+| `suggestedType` | `'fill' \| 'line' \| 'circle' \| 'symbol' \| null` | No | Geometry-based hint (legacy scalar; prefer `suggestedTypes`) |
+| `suggestedTypes` | `StyleConfig['type'][]` | No | Geometry-based hints shown as a banner with quick-switch buttons |
+| `availableIcons` | `string[]` | No | Icon names from loaded sprites, shown in the icon picker |
+| `availableProperties` | `AvailableProperty[]` | No | Collection properties used to populate data-driven color editors |
+| `onFetchDistinctValues` | `(property: string) => Promise<string[]>` | No | Called to load distinct values for a property when building categorical expressions |
+
+### Behavior
+
+- **Type selector**: Dropdown to switch between fill, line, circle, and symbol.
+- **Symbol mode** (symbol only): Toggle between Text, Icon, and Both sub-modes. Switching cleans up irrelevant paint/layout keys.
+- **Live preview**: A small swatch above the property groups reflects the current style.
+- **Property groups**: Paint and layout properties are organized in collapsible accordion groups (e.g., Appearance, Stroke, Placement).
+- **"fx" toggle**: On color properties, clicking the `fx` button opens a `DataDrivenColorEditor` to build `match` (categorical) or `interpolate` (gradient) expressions using `availableProperties` and `onFetchDistinctValues`.
 
 ---
 
@@ -593,6 +605,7 @@ Manages `LegendConfig` entries for a layer.
 |---|---|---|---|
 | `value` | `LegendConfig \| undefined` | Yes | Current legend config (`undefined` = auto-derive from style) |
 | `onChange` | `(legend: LegendConfig \| undefined) => void` | Yes | Called on change; passes `undefined` to reset to auto-derive |
+| `style` | `StyleConfig` | No | When provided, enables a "Generate from Style" button that auto-populates entries from the style's color expression (`match` → categorical entries, `interpolate` → gradient entries) |
 
 ### LegendEntryEditor Props
 
@@ -721,7 +734,7 @@ Validates and displays a `MapConfig` as formatted JSON, showing validation error
 
 ### FormField
 
-Wrapper for a labeled form field with optional error message.
+Wrapper for a labeled form field with optional error message and description tooltip.
 
 | Prop | Type | Required | Description |
 |---|---|---|---|
@@ -729,7 +742,17 @@ Wrapper for a labeled form field with optional error message.
 | `children` | `ReactNode` | Yes | The input element |
 | `error` | `string` | No | Validation error message |
 | `required` | `boolean` | No | Shows a required indicator |
+| `description` | `string` | No | Help text shown as an `InfoTip` tooltip next to the label |
 | `htmlFor` | `string` | No | Links label to an input `id` |
+
+### InfoTip
+
+Accessible CSS-only tooltip icon. Auto-used by `FormField` via the `description` prop; can also be used standalone.
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `text` | `string` | Yes | Tooltip content |
+| `id` | `string` | No | Custom `id` for the tooltip element (auto-generated if omitted) |
 
 ### ColorPicker
 

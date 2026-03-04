@@ -601,7 +601,7 @@ Converts an array of GeoJSON features to a CSV string.
 | Option | Type | Description |
 |---|---|---|
 | `fields` | `string[]` | Property keys to include as columns; auto-discovers all keys if omitted |
-| `includeGeometry` | `boolean` | Append a `geometry` column with serialised GeoJSON geometry (default: `false`) |
+| `includeGeometry` | `boolean` | Append a `geometry` column with geometry in WKT (Well-Known Text) format (default: `true`). Supports Point, MultiPoint, LineString, MultiLineString, Polygon, MultiPolygon, GeometryCollection. |
 | `delimiter` | `string` | Column delimiter (default: `','`) |
 
 **Behavior:**

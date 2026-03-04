@@ -21,6 +21,7 @@ import { MapConfigSchema, validateMapConfig, safeValidateMapConfig } from '@ogc-
 | `sources` | `OgcApiSource[]` | Yes (min 1) | OGC API data sources |
 | `layers` | `LayerConfig[]` | Yes | Map layers (can be empty) |
 | `basemaps` | `BasemapConfig[]` | Yes (min 1) | Background map styles |
+| `sprites` | `SpriteSource[]` | No | Icon sprite definitions for symbol layers |
 | `ui` | `UIConfig` | No (has defaults) | UI panel visibility flags |
 | `initialView` | `ViewConfig` | Yes | Starting camera position |
 
@@ -60,7 +61,7 @@ Defines a single map layer.
 | `label` | `string` | Yes | Display name in UI |
 | `visible` | `boolean` | No (default `true`) | Initial visibility |
 | `dataMode` | `"vector-tiles" \| "geojson"` | Yes | How the layer fetches data |
-| `style` | `StyleConfig` | No | Visual style (fill/line/circle) |
+| `style` | `StyleConfig` | No | Visual style (fill/line/circle/symbol) |
 | `legend` | `LegendConfig` | No | Legend entries (auto-derived from style if omitted) |
 | `filters` | `FilterConfig` | No | Initial/static filter state |
 | `search` | `SearchConfig` | No | Search fields for the SearchPanel |
@@ -86,9 +87,13 @@ A discriminated union on `type`. The `paint` properties follow MapLibre GL JS co
 
 | Paint Property | Type | Default | Description |
 |---|---|---|---|
-| `fill-color` | `string` | `'#000000'` | Fill color (CSS color or hex) |
+| `fill-color` | `string \| Expression` | `'#000000'` | Fill color (CSS color, hex, or data-driven expression) |
 | `fill-opacity` | `number` (0–1) | `1` | Fill transparency |
-| `fill-outline-color` | `string` | — | Outline color (optional) |
+| `fill-outline-color` | `string \| Expression` | — | Outline color (optional) |
+| `fill-antialias` | `boolean` | — | Enable antialiasing |
+| `fill-translate` | `[number, number]` | — | Pixel offset `[x, y]` |
+| `fill-translate-anchor` | `"map" \| "viewport"` | — | Translation reference frame |
+| `fill-pattern` | `string` | — | Image pattern name from sprite |
 
 ### Line Style
 
@@ -106,10 +111,23 @@ A discriminated union on `type`. The `paint` properties follow MapLibre GL JS co
 
 | Paint Property | Type | Default | Description |
 |---|---|---|---|
-| `line-color` | `string` | `'#000000'` | Line color |
+| `line-color` | `string \| Expression` | `'#000000'` | Line color |
 | `line-width` | `number` (≥0) | `1` | Line width in pixels |
 | `line-opacity` | `number` (0–1) | `1` | Line transparency |
 | `line-dasharray` | `number[]` | — | Dash pattern (e.g., `[2, 4]`) |
+| `line-translate` | `[number, number]` | — | Pixel offset `[x, y]` |
+| `line-translate-anchor` | `"map" \| "viewport"` | — | Translation reference frame |
+| `line-gap-width` | `number` (≥0) | — | Inner gap width in pixels |
+| `line-offset` | `number` | — | Line offset (positive = left, negative = right) |
+| `line-blur` | `number` (≥0) | — | Blur in pixels |
+| `line-pattern` | `string` | — | Image pattern name from sprite |
+
+| Layout Property | Type | Default | Description |
+|---|---|---|---|
+| `line-cap` | `"butt" \| "round" \| "square"` | — | Line cap style |
+| `line-join` | `"bevel" \| "round" \| "miter"` | — | Line join style |
+| `line-miter-limit` | `number` | — | Miter limit for miter joins |
+| `line-round-limit` | `number` | — | Round limit for round joins |
 
 ### Circle Style
 
@@ -128,11 +146,107 @@ A discriminated union on `type`. The `paint` properties follow MapLibre GL JS co
 
 | Paint Property | Type | Default | Description |
 |---|---|---|---|
-| `circle-color` | `string` | `'#000000'` | Circle fill color |
+| `circle-color` | `string \| Expression` | `'#000000'` | Circle fill color |
 | `circle-radius` | `number` (≥0) | `5` | Radius in pixels |
 | `circle-opacity` | `number` (0–1) | `1` | Circle transparency |
-| `circle-stroke-color` | `string` | — | Stroke color (optional) |
+| `circle-stroke-color` | `string \| Expression` | — | Stroke color (optional) |
 | `circle-stroke-width` | `number` (≥0) | — | Stroke width (optional) |
+| `circle-stroke-opacity` | `number` (0–1) | — | Stroke opacity |
+| `circle-blur` | `number` (≥0) | — | Blur in pixels |
+| `circle-translate` | `[number, number]` | — | Pixel offset `[x, y]` |
+| `circle-translate-anchor` | `"map" \| "viewport"` | — | Translation reference frame |
+| `circle-pitch-scale` | `"map" \| "viewport"` | — | Scale relative to map or viewport |
+| `circle-pitch-alignment` | `"map" \| "viewport"` | — | Alignment in pitched maps |
+
+### Symbol Style
+
+```ts
+{
+  type: 'symbol',
+  paint: {
+    'text-color': '#333333',
+    'text-halo-color': '#ffffff',
+    'text-halo-width': 1,
+  },
+  layout: {
+    'text-field': '{name}',
+    'text-size': 14,
+    'text-anchor': 'top',
+    // or for icon-based symbols:
+    'icon-image': 'marker',
+    'icon-size': 1.5,
+  }
+}
+```
+
+**Symbol Paint Properties:**
+
+| Paint Property | Type | Default | Description |
+|---|---|---|---|
+| `icon-opacity` | `number` (0–1) | — | Icon opacity |
+| `icon-color` | `string \| Expression` | — | Icon color (SDF icons only) |
+| `icon-halo-color` | `string \| Expression` | — | Icon halo color |
+| `icon-halo-width` | `number` (≥0) | — | Icon halo width in pixels |
+| `icon-halo-blur` | `number` (≥0) | — | Icon halo blur in pixels |
+| `icon-translate` | `[number, number]` | — | Icon pixel offset `[x, y]` |
+| `icon-translate-anchor` | `"map" \| "viewport"` | — | Icon translation reference frame |
+| `text-opacity` | `number` (0–1) | — | Text opacity |
+| `text-color` | `string \| Expression` | — | Text color |
+| `text-halo-color` | `string \| Expression` | — | Text halo color |
+| `text-halo-width` | `number` (≥0) | — | Text halo width in pixels |
+| `text-halo-blur` | `number` (≥0) | — | Text halo blur in pixels |
+| `text-translate` | `[number, number]` | — | Text pixel offset `[x, y]` |
+| `text-translate-anchor` | `"map" \| "viewport"` | — | Text translation reference frame |
+
+**Symbol Layout Properties (selection):**
+
+| Layout Property | Type | Description |
+|---|---|---|
+| `symbol-placement` | `"point" \| "line" \| "line-center"` | Symbol placement along geometry |
+| `symbol-spacing` | `number` (≥1) | Spacing between repeated symbols |
+| `symbol-avoid-edges` | `boolean` | Avoid tile edges when placing symbols |
+| `symbol-sort-key` | `number` | Render order key |
+| `icon-image` | `string` | Sprite image name |
+| `icon-size` | `number` (≥0) | Icon scale factor |
+| `icon-rotate` | `number` | Icon rotation in degrees |
+| `icon-allow-overlap` | `boolean` | Allow overlapping icons |
+| `icon-anchor` | `"center" \| "left" \| "right" \| "top" \| "bottom" \| ...` | Icon anchor position |
+| `text-field` | `string` | Text content (use `{property}` placeholders) |
+| `text-font` | `string[]` | Font stack (e.g., `["Open Sans Regular"]`) |
+| `text-size` | `number` (≥0) | Text size in pixels |
+| `text-max-width` | `number` (≥0) | Max line width in ems |
+| `text-justify` | `"auto" \| "left" \| "center" \| "right"` | Text alignment |
+| `text-anchor` | `"center" \| "left" \| "right" \| "top" \| "bottom" \| ...` | Text anchor position |
+| `text-transform` | `"none" \| "uppercase" \| "lowercase"` | Text transform |
+| `text-allow-overlap` | `boolean` | Allow overlapping text |
+
+### Data-Driven Color Expressions
+
+Color properties that accept `string | Expression` (marked above) support MapLibre expressions for data-driven styling. Expressions are passed as plain arrays validated by the schema.
+
+**`match` expression** — categorical coloring:
+
+```ts
+'fill-color': ["match", ["get", "continent"],
+  "Africa",        "#e8a838",
+  "Asia",          "#d15b5b",
+  "Europe",        "#5b8dd1",
+  "North America", "#5bb85b",
+  "#aaaaaa"  // fallback
+]
+```
+
+**`interpolate` expression** — continuous/gradient coloring:
+
+```ts
+'fill-color': ["interpolate", ["linear"], ["get", "pop_est"],
+  0,           "#ffffcc",
+  500000000,   "#fd8d3c",
+  1500000000,  "#800026"
+]
+```
+
+Both expression types are recognized by the StyleEditor's "fx" toggle to build the visual categorical/gradient editors.
 
 ---
 
@@ -152,6 +266,9 @@ Explicit legend entries for a layer. If omitted and `style` is set, entries are 
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `entries` | `LegendEntry[]` | Yes (min 1) | List of legend items |
+| `displayMode` | `"simple" \| "categorical" \| "gradient"` | No (default `"simple"`) | Legend display mode |
+| `showLabelsCollapsed` | `boolean` | No | Show first/last entry labels when collapsed (categorical mode only) |
+| `gradientProperty` | `string` | No | Property name shown above gradient stops when expanded (gradient mode only) |
 
 **LegendEntry:**
 
@@ -276,6 +393,21 @@ A background map style.
 
 ---
 
+## SpriteSource
+
+An icon sprite definition used by symbol layers.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Unique identifier |
+| `url` | `string` (URL) | Yes | Base URL of the sprite sheet (without `.json`/`.png` extension) |
+
+```ts
+{ id: 'my-icons', url: 'https://example.com/sprites/icons' }
+```
+
+---
+
 ## UIConfig
 
 Controls which UI panels are visible. All fields default to shown, except `showSearchPanel`.
@@ -290,6 +422,7 @@ Controls which UI panels are visible. All fields default to shown, except `showS
 | `showFeatureDetail` | `boolean` | `true` | Show/hide `FeatureDetailPanel` |
 | `showFeatureTooltip` | `boolean` | `true` | Show/hide `FeatureTooltip` |
 | `showExportButton` | `boolean` | `true` | Show/hide `ExportButton` |
+| `showLegendOpacity` | `boolean` | `false` | Show per-layer opacity sliders in `Legend` (requires `onOpacityChange` prop) |
 
 ---
 
