@@ -1,5 +1,11 @@
 # @ogc-maps/storybook-components
 
+## 0.6.2
+
+### Patch Changes
+
+- e9c7bc9: export geom, update docs
+
 ## 0.6.1
 
 ### Patch Changes
