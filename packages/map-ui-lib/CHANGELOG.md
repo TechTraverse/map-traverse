@@ -1,5 +1,11 @@
 # @ogc-maps/storybook-components
 
+## 0.6.1
+
+### Patch Changes
+
+- 8132a8d: expanded legend with opacity filter
+
 ## 0.6.0
 
 ### Minor Changes
