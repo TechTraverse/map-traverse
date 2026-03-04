@@ -1,4 +1,5 @@
 import type { GeoJsonFeature } from './ogcApi';
+import { geojsonGeometryToWkt } from './wkt';
 
 export interface CsvExportOptions {
   fields?: string[];
@@ -24,7 +25,7 @@ export function featuresToCsv(
   features: GeoJsonFeature[],
   options: CsvExportOptions = {},
 ): string {
-  const { fields, includeGeometry = false, delimiter = ',' } = options;
+  const { fields, includeGeometry = true, delimiter = ',' } = options;
 
   if (features.length === 0) return '';
 
@@ -38,7 +39,7 @@ export function featuresToCsv(
       escapeCell(featurePropertyValue(feature, key), delimiter),
     );
     if (includeGeometry) {
-      cells.push(escapeCell(JSON.stringify(feature.geometry), delimiter));
+      cells.push(escapeCell(geojsonGeometryToWkt(feature.geometry), delimiter));
     }
     return cells.join(delimiter);
   });

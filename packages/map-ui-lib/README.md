@@ -9,6 +9,8 @@ A reusable, config-driven map component library built on OGC API standards. Desi
 - **OGC Standards**: Native support for OGC API Features and Tiles (e.g., via `tipg`).
 - **Controlled Components**: Fully controlled UI components for seamless state management.
 - **TypeScript**: Comprehensive type definitions inferred from Zod schemas.
+- **Data-Driven Styling**: Visual editors for categorical and gradient color expressions.
+- **Geometry Export**: CSV export with WKT geometry support.
 
 ## Installation
 

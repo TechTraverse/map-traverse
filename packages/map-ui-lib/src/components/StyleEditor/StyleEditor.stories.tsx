@@ -86,3 +86,81 @@ export const SymbolStyle: Story = {
     );
   },
 };
+
+export const DataDrivenCategorical: Story = {
+  render: () => {
+    const [style, setStyle] = useState<StyleConfig>({
+      type: 'fill',
+      paint: {
+        'fill-color': [
+          'match',
+          ['get', 'continent'],
+          'Africa', '#e8a838',
+          'Asia', '#d15b5b',
+          'Europe', '#5b8dd1',
+          'North America', '#5bb85b',
+          'South America', '#b85bb8',
+          '#aaaaaa',
+        ],
+        'fill-opacity': 0.7,
+      },
+    });
+    return (
+      <div className="mapui:max-w-sm mapui:p-4">
+        <StyleEditor
+          value={style}
+          onChange={setStyle}
+          availableProperties={[
+            { name: 'continent', type: 'string' },
+            { name: 'name', type: 'string' },
+            { name: 'sovereignt', type: 'string' },
+          ]}
+          onFetchDistinctValues={async (property) => {
+            if (property === 'continent') {
+              return ['Africa', 'Asia', 'Europe', 'North America', 'Oceania', 'South America'];
+            }
+            return [];
+          }}
+        />
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+          {JSON.stringify(style, null, 2)}
+        </pre>
+      </div>
+    );
+  },
+};
+
+export const DataDrivenGradient: Story = {
+  render: () => {
+    const [style, setStyle] = useState<StyleConfig>({
+      type: 'fill',
+      paint: {
+        'fill-color': [
+          'interpolate',
+          ['linear'],
+          ['get', 'pop_est'],
+          0, '#ffffcc',
+          500000000, '#fd8d3c',
+          1500000000, '#800026',
+        ],
+        'fill-opacity': 0.8,
+      },
+    });
+    return (
+      <div className="mapui:max-w-sm mapui:p-4">
+        <StyleEditor
+          value={style}
+          onChange={setStyle}
+          availableProperties={[
+            { name: 'pop_est', type: 'number' },
+            { name: 'gdp_md', type: 'number' },
+            { name: 'area', type: 'number' },
+          ]}
+        />
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+          {JSON.stringify(style, null, 2)}
+        </pre>
+      </div>
+    );
+  },
+};

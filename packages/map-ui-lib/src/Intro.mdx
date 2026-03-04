@@ -29,10 +29,24 @@ Import styles in your app root:
 import '@ogc-maps/storybook-components/dist/style.css';
 ```
 
-## core Components
+## Core Components
 
 Explore the components in the sidebar:
 
 - **LayerPanel**: Manage layer visibility, opacity, and ordering.
-- **Legend**: Display legends for active layers.
+- **Legend**: Display legends for active layers, with simple, categorical, and gradient display modes; optional per-layer opacity slider.
 - **BasemapSwitcher**: Switch between different base maps.
+- **SearchPanel**: Search and filter layer features by text, number, datetime, and select fields with CQL2 output.
+- **FeatureDetailPanel**: Show properties of a selected map feature (panel or modal variant).
+- **FeatureTooltip**: Compact property preview tooltip, positioned by the caller.
+- **ExportButton**: Trigger CSV export of one or more layers (single button or dropdown).
+- **CoordinateDisplay**: Mouse cursor coordinates with cycling format selector (decimal / DMS).
+- **CollapsibleControl**: Collapsible icon-button wrapper for placing controls as map overlays.
+
+## Admin Components
+
+Used by the admin UI to build the visual config wizard. Can also be used in custom admin interfaces.
+
+- **StyleEditor**: Visual property editor for fill, line, circle, and symbol styles. Supports symbol mode (text/icon/both), "fx" toggle for data-driven categorical/gradient color expressions, and 70+ MapLibre paint/layout properties with live preview.
+- **LegendEditor**: Manage legend entries with a "Generate from Style" button when a style with a color expression is provided.
+- **InfoTip**: Accessible CSS-only tooltip icon; auto-used by `FormField`'s `description` prop.
