@@ -1,2 +1,37 @@
 @import "tailwindcss" prefix(mapui);
 @source "./src/**/*.tsx";
+
+@layer components {
+  .range-sm {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+  }
+  .range-sm::-webkit-slider-runnable-track {
+    height: 2px;
+    background: #9ca3af;
+    border-radius: 1px;
+  }
+  .range-sm::-moz-range-track {
+    height: 2px;
+    background: #9ca3af;
+    border-radius: 1px;
+  }
+  .range-sm::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #9ca3af;
+    margin-top: -4px;
+  }
+  .range-sm::-moz-range-thumb {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #9ca3af;
+    border: none;
+  }
+}

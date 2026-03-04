@@ -30,6 +30,7 @@ interface MapState {
   setLayerVisibility: (layerId: string, visible: boolean) => void;
   reorderLayers: (layerIds: string[]) => void;
   setActiveBasemap: (basemapId: string) => void;
+  setLayerOpacity: (layerId: string, opacity: number) => void;
   setLayerFilters: (layerId: string, filters: SearchFilterValues) => void;
   setLayerCql2Filter: (layerId: string, cql2: CQL2Expression | null) => void;
   clearLayerFilters: (layerId: string) => void;
@@ -58,6 +59,7 @@ export const useMapStore = create<MapState>((set) => ({
     showFeatureDetail: true,
     showFeatureTooltip: true,
     showExportButton: true,
+    showLegendOpacity: false,
   },
   activeFilters: {},
   activeCql2Filters: {},
@@ -92,6 +94,30 @@ export const useMapStore = create<MapState>((set) => ({
 
   setActiveBasemap: (basemapId) =>
     set({ activeBasemapId: basemapId }),
+
+  setLayerOpacity: (layerId, opacity) =>
+    set((state) => {
+      const opacityKeys: Record<string, string> = {
+        fill: 'fill-opacity',
+        line: 'line-opacity',
+        circle: 'circle-opacity',
+        symbol: 'icon-opacity',
+      };
+      return {
+        layers: state.layers.map((layer) => {
+          if (layer.id !== layerId || !layer.style) return layer;
+          const key = opacityKeys[layer.style.type];
+          if (!key) return layer;
+          return {
+            ...layer,
+            style: {
+              ...layer.style,
+              paint: { ...layer.style.paint, [key]: opacity },
+            },
+          } as typeof layer;
+        }),
+      };
+    }),
 
   setLayerFilters: (layerId, filters) =>
     set((state) => ({

@@ -50,6 +50,7 @@ const DEFAULT_UI_CONFIG: UIConfig = {
   showFeatureDetail: true,
   showFeatureTooltip: true,
   showExportButton: true,
+  showLegendOpacity: false,
 };
 
 const DEFAULT_VIEW: ViewConfig = {

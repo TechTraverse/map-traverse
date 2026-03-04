@@ -61,6 +61,7 @@ export function MapOverlay({
   const setActiveBasemap = useMapStore((s) => s.setActiveBasemap);
   const setLayerFilters = useMapStore((s) => s.setLayerFilters);
   const setLayerCql2Filter = useMapStore((s) => s.setLayerCql2Filter);
+  const setLayerOpacity = useMapStore((s) => s.setLayerOpacity);
   const clearLayerFilters = useMapStore((s) => s.clearLayerFilters);
   const activeLayerIds = useActiveLayerIds();
 
@@ -134,7 +135,7 @@ export function MapOverlay({
       <div className="absolute top-4 right-4 flex flex-col gap-4 items-end">
         {uiConfig.showLegend && (
           <div className="pointer-events-auto">
-            <Legend layers={layers} visibleLayerIds={activeLayerIds} />
+            <Legend layers={layers} visibleLayerIds={activeLayerIds} onOpacityChange={uiConfig.showLegendOpacity ? setLayerOpacity : undefined} />
           </div>
         )}
 

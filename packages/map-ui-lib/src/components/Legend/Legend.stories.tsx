@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { fn } from '@storybook/test';
 import { Legend } from './Legend';
 import type { LayerConfig } from '../../types';
 
@@ -271,5 +272,14 @@ export const NoVisibleLayers: Story = {
   args: {
     layers: [countriesLayer, riversLayer, placesLayer],
     visibleLayerIds: [],
+  },
+};
+
+/** Legend with expand button and opacity sliders. Click the expand icon to reveal sliders. */
+export const Expanded: Story = {
+  args: {
+    layers: [countriesLayer, riversLayer, placesLayer, categoricalLayer, gradientLayer],
+    visibleLayerIds: ['countries', 'rivers', 'places', 'countries-by-region', 'population-density'],
+    onOpacityChange: fn(),
   },
 };

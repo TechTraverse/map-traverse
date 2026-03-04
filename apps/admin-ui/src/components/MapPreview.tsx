@@ -274,10 +274,23 @@ export function MapPreview({
   );
 
   // Apply a fallback style to layers that have none, so Legend/LayerPanel can render them
+  const [opacityOverrides, setOpacityOverrides] = useState<Record<string, number>>({});
   const layersWithDefaults = useMemo(
-    () => layers.map(l => l.style ? l : { ...l, style: DEFAULT_STYLE }),
-    [layers],
+    () => layers.map(l => {
+      const base = l.style ? l : { ...l, style: DEFAULT_STYLE };
+      const opacity = opacityOverrides[l.id];
+      if (opacity === undefined || !base.style) return base;
+      const opKey: Record<string, string> = { fill: 'fill-opacity', line: 'line-opacity', circle: 'circle-opacity', symbol: 'icon-opacity' };
+      const key = opKey[base.style.type];
+      if (!key) return base;
+      return { ...base, style: { ...base.style, paint: { ...base.style.paint, [key]: opacity } } as typeof base.style };
+    }),
+    [layers, opacityOverrides],
   );
+
+  const handleLayerOpacity = useCallback((layerId: string, opacity: number) => {
+    setOpacityOverrides(prev => ({ ...prev, [layerId]: opacity }));
+  }, []);
 
   const activeBasemap = basemaps.find(b => b.id === activeBasemapId);
   const mapStyleUrl = activeBasemap?.url ?? basemaps[0]?.url ?? FALLBACK_BASEMAP_URL;
@@ -373,6 +386,25 @@ export function MapPreview({
     mapInstance.on('styleimagemissing', handler);
     return () => { mapInstance.off('styleimagemissing', handler); };
   }, [mapInstance]);
+
+  useEffect(() => {
+    if (!mapInstance) return;
+    for (const layer of layersWithDefaults) {
+      if (!layer.style?.paint) continue;
+      const layerId =
+        layer.dataMode === 'vector-tiles'
+          ? getVectorTileSourceKey(layer.id, activeCql2Filters[layer.id])
+          : layer.id;
+      if (!mapInstance.getLayer(layerId)) continue;
+      for (const [prop, value] of Object.entries(layer.style.paint)) {
+        try {
+          mapInstance.setPaintProperty(layerId, prop, value);
+        } catch {
+          // Layer may not be added yet
+        }
+      }
+    }
+  }, [mapInstance, layersWithDefaults, activeCql2Filters]);
 
   const handleMove = (evt: { viewState: { latitude: number; longitude: number; zoom: number; pitch: number; bearing: number } }) => {
     const next: ViewConfig = {
@@ -521,7 +553,7 @@ export function MapPreview({
           <div className="mapui:absolute mapui:top-4 mapui:right-4 mapui:flex mapui:flex-col mapui:gap-4 mapui:items-end">
             {uiConfig.showLegend && (
               <div className="mapui:pointer-events-auto">
-                <Legend layers={layersWithDefaults} visibleLayerIds={visibleLayerIds} />
+                <Legend layers={layersWithDefaults} visibleLayerIds={visibleLayerIds} onOpacityChange={uiConfig.showLegendOpacity ? handleLayerOpacity : undefined} />
               </div>
             )}
 

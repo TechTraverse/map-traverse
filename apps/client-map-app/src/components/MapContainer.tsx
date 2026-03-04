@@ -127,6 +127,25 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
     return () => { mapInstance.off('styleimagemissing', handler); };
   }, [mapInstance]);
 
+  useEffect(() => {
+    if (!mapInstance) return;
+    for (const layer of layers) {
+      if (!layer.style?.paint) continue;
+      const layerId =
+        layer.dataMode === 'vector-tiles'
+          ? getVectorTileSourceKey(layer.id, activeCql2Filters[layer.id])
+          : layer.id;
+      if (!mapInstance.getLayer(layerId)) continue;
+      for (const [prop, value] of Object.entries(layer.style.paint)) {
+        try {
+          mapInstance.setPaintProperty(layerId, prop, value);
+        } catch {
+          // Layer may not be added yet
+        }
+      }
+    }
+  }, [mapInstance, layers, activeCql2Filters]);
+
   // Build source URL lookup map with tileMatrixSetId
   const sourceUrlMap = useMemo(() => {
     const urlMap: Record<string, { url: string; tileMatrixSetId?: string }> = {};

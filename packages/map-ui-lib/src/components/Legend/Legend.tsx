@@ -1,10 +1,28 @@
 import { useState } from 'react';
+import { BsArrowsAngleExpand, BsArrowsAngleContract } from 'react-icons/bs';
 import type { LayerConfig, LegendConfig, LegendEntry } from '../../types';
 
 export interface LegendProps {
   layers: LayerConfig[];
   visibleLayerIds: string[];
+  onOpacityChange?: (layerId: string, opacity: number) => void;
   className?: string;
+}
+
+const OPACITY_KEY: Record<string, string> = {
+  fill: 'fill-opacity',
+  line: 'line-opacity',
+  circle: 'circle-opacity',
+  symbol: 'icon-opacity',
+};
+
+function getLayerOpacity(layer: LayerConfig): number {
+  const style = layer.style;
+  if (!style) return 1;
+  const key = OPACITY_KEY[style.type];
+  if (!key) return 1;
+  const val = (style.paint as Record<string, unknown>)?.[key];
+  return typeof val === 'number' ? val : 1;
 }
 
 function Swatch({ color, shape }: { color: string; shape?: string }) {
@@ -185,8 +203,36 @@ function GradientLegend({
   );
 }
 
-export function Legend({ layers, visibleLayerIds, className }: LegendProps) {
+function OpacitySlider({
+  layerId,
+  opacity,
+  onChange,
+}: {
+  layerId: string;
+  opacity: number;
+  onChange: (layerId: string, opacity: number) => void;
+}) {
+  return (
+    <div className="mapui:flex mapui:items-center mapui:gap-1.5 mapui:mt-0.5 mapui:ml-1">
+      <input
+        type="range"
+        min={0}
+        max={1}
+        step={0.01}
+        value={opacity}
+        onChange={(e) => onChange(layerId, parseFloat(e.target.value))}
+        className="range-sm mapui:w-14"
+      />
+      <span className="mapui:text-[9px] mapui:text-gray-400 mapui:w-6 mapui:text-right mapui:tabular-nums">
+        {Math.round(opacity * 100)}%
+      </span>
+    </div>
+  );
+}
+
+export function Legend({ layers, visibleLayerIds, onOpacityChange, className }: LegendProps) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [expanded, setExpanded] = useState(false);
   const visibleLayers = layers.filter((l) => visibleLayerIds.includes(l.id));
 
   function toggleExpand(id: string) {
@@ -209,13 +255,26 @@ export function Legend({ layers, visibleLayerIds, className }: LegendProps) {
     <div
       className={`mapui:rounded-lg mapui:bg-white mapui:p-3 mapui:shadow-md mapui:text-sm${className ? ` ${className}` : ''}`}
     >
-      <h3 className="mapui:m-0 mapui:mb-2 mapui:text-xs mapui:font-semibold mapui:uppercase mapui:tracking-wide mapui:text-gray-500">
-        Legend
-      </h3>
-      <ul className="mapui:m-0 mapui:list-none mapui:space-y-2 mapui:p-0">
+      <div className="mapui:flex mapui:items-center mapui:justify-between mapui:mb-2">
+        <h3 className="mapui:m-0 mapui:text-xs mapui:font-semibold mapui:uppercase mapui:tracking-wide mapui:text-gray-500">
+          Legend
+        </h3>
+        {onOpacityChange && (
+          <button
+            type="button"
+            className="mapui:bg-transparent mapui:border-none mapui:p-0 mapui:cursor-pointer mapui:text-gray-400 hover:mapui:text-gray-600 mapui:text-sm"
+            onClick={() => setExpanded((v) => !v)}
+            aria-label={expanded ? 'Collapse legend' : 'Expand legend'}
+          >
+            {expanded ? <BsArrowsAngleContract /> : <BsArrowsAngleExpand />}
+          </button>
+        )}
+      </div>
+      <ul className={`mapui:m-0 mapui:list-none mapui:p-0 ${expanded ? 'mapui:space-y-1.5' : 'mapui:space-y-2'}`}>
         {legendLayers.map((layer) => {
           const legend = layer.legend!;
           const mode = legend.displayMode ?? 'simple';
+          const isEntryExpanded = expanded || expandedIds.has(layer.id);
 
           return (
             <li key={layer.id}>
@@ -223,18 +282,25 @@ export function Legend({ layers, visibleLayerIds, className }: LegendProps) {
                 <CategoricalLegend
                   legend={legend}
                   label={layer.label}
-                  expanded={expandedIds.has(layer.id)}
+                  expanded={isEntryExpanded}
                   onToggle={() => toggleExpand(layer.id)}
                 />
               ) : mode === 'gradient' ? (
                 <GradientLegend
                   legend={legend}
                   label={layer.label}
-                  expanded={expandedIds.has(layer.id)}
+                  expanded={isEntryExpanded}
                   onToggle={() => toggleExpand(layer.id)}
                 />
               ) : (
                 <SimpleLegend legend={legend} label={layer.label} />
+              )}
+              {expanded && onOpacityChange && (
+                <OpacitySlider
+                  layerId={layer.id}
+                  opacity={getLayerOpacity(layer)}
+                  onChange={onOpacityChange}
+                />
               )}
             </li>
           );

@@ -206,6 +206,7 @@ export const mapConfig: MapConfig = {
     showFeatureDetail: true,
     showFeatureTooltip: true,
     showExportButton: true,
+    showLegendOpacity: false,
   },
   initialView: {
     latitude: 0,
