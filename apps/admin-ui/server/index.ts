@@ -154,6 +154,9 @@ app.get('/api/environments', (_req, res) => {
   res.json(getEnvironments());
 });
 
+const NAME_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-/;
+
 // --- Config endpoints ---
 
 // GET /api/configs — list all configs (optional ?env= filter)
@@ -175,33 +178,44 @@ app.get('/api/configs', async (req, res) => {
   }
 });
 
-// GET /api/configs/published — get the published config for an environment
+// GET /api/configs/published — list published configs for an environment
 app.get('/api/configs/published', async (req, res) => {
   try {
     const env = (req.query.env as string | undefined) ?? 'production';
     const result = await pool.query(
-      'SELECT id, name, config FROM map_configs WHERE is_published = true AND environment = $1 LIMIT 1',
+      'SELECT id, name, description FROM map_configs WHERE is_published = true AND environment = $1 ORDER BY name',
       [env],
     );
-    if (result.rows.length === 0) {
-      res.status(404).json({ error: 'No published config found' });
-      return;
-    }
-    res.json((result.rows[0] as { config: unknown }).config);
+    res.json(result.rows);
   } catch (err) {
     handleServerError(res, err);
   }
 });
 
-// GET /api/configs/:id — get a specific config
+// GET /api/configs/:id — get by UUID or by published name
 app.get('/api/configs/:id', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM map_configs WHERE id = $1', [req.params.id]);
-    if (result.rows.length === 0) {
-      res.status(404).json({ error: 'Config not found' });
-      return;
+    if (UUID_REGEX.test(req.params.id)) {
+      // UUID lookup — return full config row
+      const result = await pool.query('SELECT * FROM map_configs WHERE id = $1', [req.params.id]);
+      if (result.rows.length === 0) {
+        res.status(404).json({ error: 'Config not found' });
+        return;
+      }
+      res.json(result.rows[0]);
+    } else {
+      // Name lookup — return just the config JSON for published configs
+      const env = (req.query.env as string | undefined) ?? 'production';
+      const result = await pool.query(
+        'SELECT config FROM map_configs WHERE name = $1 AND is_published = true AND environment = $2',
+        [req.params.id, env],
+      );
+      if (result.rows.length === 0) {
+        res.status(404).json({ error: 'Config not found' });
+        return;
+      }
+      res.json((result.rows[0] as { config: unknown }).config);
     }
-    res.json(result.rows[0]);
   } catch (err) {
     handleServerError(res, err);
   }
@@ -217,6 +231,10 @@ app.post('/api/configs', requireAuth, async (req, res) => {
   };
   if (!name) {
     res.status(400).json({ error: 'name is required' });
+    return;
+  }
+  if (!NAME_REGEX.test(name)) {
+    res.status(400).json({ error: 'name must be a slug (lowercase letters, numbers, hyphens only, e.g. "my-config")' });
     return;
   }
 
@@ -248,11 +266,25 @@ app.post('/api/configs', requireAuth, async (req, res) => {
 
 // PUT /api/configs/:id — update config, snapshot current state as a version (protected)
 app.put('/api/configs/:id', requireAuth, async (req, res) => {
-  const { name, description, config } = req.body as {
+  const { name, description, config, environment } = req.body as {
     name?: string;
     description?: string;
     config?: unknown;
+    environment?: string;
   };
+
+  if (name !== undefined && !NAME_REGEX.test(name)) {
+    res.status(400).json({ error: 'name must be a slug (lowercase letters, numbers, hyphens only, e.g. "my-config")' });
+    return;
+  }
+
+  if (environment !== undefined) {
+    const environments = getEnvironments();
+    if (!environments.includes(environment)) {
+      res.status(400).json({ error: `Invalid environment: ${environment}. Valid: ${environments.join(', ')}` });
+      return;
+    }
+  }
 
   if (config) {
     const validation = safeValidateMapConfig(config);
@@ -273,6 +305,7 @@ app.put('/api/configs/:id', requireAuth, async (req, res) => {
       name: string;
       description: string | null;
       config: unknown;
+      environment: string;
     };
 
     const client = await pool.connect();
@@ -298,11 +331,12 @@ app.put('/api/configs/:id', requireAuth, async (req, res) => {
         ],
       );
       result = await client.query(
-        'UPDATE map_configs SET name = $1, description = $2, config = $3, updated_at = now() WHERE id = $4 RETURNING *',
+        'UPDATE map_configs SET name = $1, description = $2, config = $3, environment = $4, updated_at = now() WHERE id = $5 RETURNING *',
         [
           name ?? row.name,
           description ?? row.description,
           JSON.stringify(config ?? row.config),
+          environment ?? row.environment,
           req.params.id,
         ],
       );
@@ -339,30 +373,45 @@ app.delete('/api/configs/:id', requireAuth, async (req, res) => {
 app.post('/api/configs/:id/publish', requireAuth, async (req, res) => {
   try {
     const configResult = await pool.query(
-      'SELECT environment FROM map_configs WHERE id = $1',
+      'SELECT name, environment FROM map_configs WHERE id = $1',
       [req.params.id],
     );
     if (configResult.rows.length === 0) {
       res.status(404).json({ error: 'Config not found' });
       return;
     }
-    const env = (configResult.rows[0] as { environment: string }).environment;
-    const client = await pool.connect();
-    let result;
-    try {
-      await client.query('BEGIN');
-      // Unpublish others in same environment only
-      await client.query('UPDATE map_configs SET is_published = false WHERE environment = $1', [env]);
-      result = await client.query(
-        'UPDATE map_configs SET is_published = true, updated_at = now() WHERE id = $1 RETURNING *',
-        [req.params.id],
-      );
-      await client.query('COMMIT');
-    } catch (txErr) {
-      await client.query('ROLLBACK');
-      throw txErr;
-    } finally {
-      client.release();
+    const { name, environment: env } = configResult.rows[0] as { name: string; environment: string };
+
+    // Check for name conflict among published configs in same environment
+    const conflict = await pool.query(
+      'SELECT id FROM map_configs WHERE name = $1 AND environment = $2 AND is_published = true AND id != $3',
+      [name, env, req.params.id],
+    );
+    if (conflict.rows.length > 0) {
+      res.status(409).json({ error: `A published config named "${name}" already exists in the "${env}" environment` });
+      return;
+    }
+
+    const result = await pool.query(
+      'UPDATE map_configs SET is_published = true, updated_at = now() WHERE id = $1 RETURNING *',
+      [req.params.id],
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    handleServerError(res, err);
+  }
+});
+
+// POST /api/configs/:id/unpublish — unpublish a config (protected)
+app.post('/api/configs/:id/unpublish', requireAuth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'UPDATE map_configs SET is_published = false, updated_at = now() WHERE id = $1 RETURNING *',
+      [req.params.id],
+    );
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
     }
     res.json(result.rows[0]);
   } catch (err) {

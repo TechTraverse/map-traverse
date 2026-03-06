@@ -261,10 +261,13 @@ export function ConfigWizardPage() {
               <input
                 type="text"
                 value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="My Map Configuration"
-                className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
+                onChange={e => setName(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, ''))}
+                placeholder="my-map-config"
+                className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:font-mono mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
               />
+              <p className="mapui:text-xs mapui:text-gray-400 mapui:mt-1">
+                Slug format: lowercase letters, numbers, and hyphens (e.g. &quot;my-map-config&quot;)
+              </p>
             </div>
             <div>
               <label className="mapui:block mapui:text-sm mapui:font-medium mapui:text-gray-700 mapui:mb-1">
@@ -286,18 +289,12 @@ export function ConfigWizardPage() {
                 <select
                   value={environment}
                   onChange={e => setEnvironment(e.target.value)}
-                  disabled={isEditing}
-                  className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500 mapui:disabled:bg-gray-50 mapui:disabled:text-gray-500"
+                  className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
                 >
                   {environments.map(env => (
                     <option key={env} value={env}>{env}</option>
                   ))}
                 </select>
-                {isEditing && (
-                  <p className="mapui:text-xs mapui:text-gray-400 mapui:mt-1">
-                    Environment cannot be changed after creation.
-                  </p>
-                )}
               </div>
             )}
           </div>

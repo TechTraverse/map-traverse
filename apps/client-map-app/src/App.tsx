@@ -16,10 +16,40 @@ function App() {
   const hydrate = useMapStore((s) => s.hydrate);
 
   const loadConfig = useCallback(async () => {
-    const configUrl = import.meta.env.VITE_CONFIG_URL || '/config.json';
+    const configApiUrl = import.meta.env.VITE_CONFIG_API_URL;
+
+    // Extract config name from URL path (e.g., /demo → "demo", / → "default")
+    const pathSegment = window.location.pathname.replace(/^\//, '').split('/')[0];
+    const configName = pathSegment || 'default';
+
+    // Determine fetch URL: use admin API if configured, otherwise fall back to static file
+    const configUrl = configApiUrl
+      ? `${configApiUrl}/api/configs/${configName}`
+      : '/config.json';
 
     try {
       const res = await fetch(configUrl);
+
+      // For "default" name via admin API, fall back to local config.json on 404
+      if (!res.ok && configApiUrl && configName === 'default') {
+        const fallbackRes = await fetch('/config.json');
+        if (!fallbackRes.ok) throw new Error(`HTTP ${fallbackRes.status} ${fallbackRes.statusText}`);
+        const raw: unknown = await fallbackRes.json();
+        const result = safeValidateMapConfig(raw);
+        if (!result.success) {
+          setValidationError(
+            `Config validation failed: ${result.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ')}`
+          );
+          return;
+        }
+        localStorage.setItem(CACHE_KEY, JSON.stringify(raw));
+        localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
+        hydrate(result.data);
+        setUsingCachedConfig(false);
+        setIsReady(true);
+        return;
+      }
+
       if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
       const raw: unknown = await res.json();
 
@@ -60,7 +90,7 @@ function App() {
       }
 
       setValidationError(
-        `Failed to load config from ${configUrl} and no cached config is available.`
+        `Failed to load config "${configName}" and no cached config is available.`
       );
     }
   }, [hydrate]);

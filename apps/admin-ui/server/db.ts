@@ -28,11 +28,21 @@ export async function initDb(): Promise<void> {
     ALTER TABLE map_configs ADD COLUMN IF NOT EXISTS environment TEXT NOT NULL DEFAULT 'production'
   `);
 
-  // Replace old single-published index with per-environment unique index
+  // Replace old single-published-per-env index with multi-publish index (unique name per env)
   await pool.query(`DROP INDEX IF EXISTS map_configs_is_published_idx`);
+  await pool.query(`DROP INDEX IF EXISTS map_configs_published_per_env_idx`);
   await pool.query(`
-    CREATE UNIQUE INDEX IF NOT EXISTS map_configs_published_per_env_idx
-      ON map_configs (environment) WHERE is_published = true
+    CREATE UNIQUE INDEX IF NOT EXISTS map_configs_published_name_env_idx
+      ON map_configs (name, environment) WHERE is_published = true
+  `);
+
+  // Enforce slug format for config names
+  await pool.query(`
+    DO $$ BEGIN
+      ALTER TABLE map_configs ADD CONSTRAINT map_configs_name_slug_check
+        CHECK (name ~ '^[a-z0-9]+(-[a-z0-9]+)*$');
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END $$
   `);
 
   // Version history table

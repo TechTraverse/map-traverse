@@ -75,6 +75,25 @@ export function ConfigListPage() {
     }
   };
 
+  const handleUnpublish = async (id: string) => {
+    setPublishingId(id);
+    setActionError(null);
+    try {
+      const res = await fetch(`/api/configs/${id}/unpublish`, { method: 'POST', credentials: 'include' });
+      if (!res.ok) {
+        setActionError(`Unpublish failed: ${await res.text()}`);
+        return;
+      }
+      const url = envFilter ? `/api/configs?env=${encodeURIComponent(envFilter)}` : '/api/configs';
+      const listRes = await fetch(url);
+      setConfigs(await listRes.json() as ConfigSummary[]);
+    } catch (err) {
+      setActionError(`Unpublish failed: ${String(err)}`);
+    } finally {
+      setPublishingId(null);
+    }
+  };
+
   if (loading) return <div className="mapui:p-8 mapui:text-center mapui:text-gray-500">Loading...</div>;
 
   return (
@@ -187,7 +206,15 @@ export function ConfigListPage() {
                       >
                         History
                       </Link>
-                      {!config.is_published && (
+                      {config.is_published ? (
+                        <button
+                          onClick={() => handleUnpublish(config.id)}
+                          disabled={publishingId === config.id}
+                          className="mapui:text-orange-600 mapui:hover:underline mapui:text-sm mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
+                        >
+                          {publishingId === config.id ? 'Unpublishing...' : 'Unpublish'}
+                        </button>
+                      ) : (
                         <button
                           onClick={() => handlePublish(config.id)}
                           disabled={publishingId === config.id}

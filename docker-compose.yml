@@ -69,11 +69,27 @@ services:
       PORT: 3001
       SESSION_SECRET: change-me-in-production
       ADMIN_ENVIRONMENTS: development,staging,production
+      CORS_ORIGINS: http://localhost:3000
       # Set ADMIN_USERNAME and ADMIN_PASSWORD_HASH to enable authentication
       # ADMIN_USERNAME: admin
       # ADMIN_PASSWORD_HASH: <bcrypt hash>
     ports:
       - "3001:3001"
+
+  client-map-app:
+    build:
+      context: .
+      dockerfile: apps/client-map-app/Dockerfile
+      args:
+        VITE_CONFIG_API_URL: http://localhost:3001
+    container_name: storybook-components-client-map-app
+    depends_on:
+      tipg:
+        condition: service_started
+      seed:
+        condition: service_completed_successfully
+    ports:
+      - "3000:80"
 
 volumes:
   postgis_data:
