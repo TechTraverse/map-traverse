@@ -44,21 +44,8 @@ import { LuLayers3, LuMap, LuSearch } from 'react-icons/lu';
 
 const FALLBACK_BASEMAP_URL = 'https://demotiles.maplibre.org/style.json';
 
-const DEFAULT_STYLE = {
-  type: 'circle' as const,
-  paint: { 'circle-radius': 4, 'circle-color': '#4a90d9', 'circle-opacity': 1 },
-};
-
 function getVectorTileSourceKey(layerId: string, cql2Filter?: CQL2Expression | null): string {
   return cql2Filter ? `${layerId}--${JSON.stringify(cql2Filter)}` : layerId;
-}
-
-function getBottomLayerId(layer: LayerConfig, cql2Filter?: CQL2Expression | null): string {
-  if (layer.dataMode === 'vector-tiles') {
-    const sourceKey = getVectorTileSourceKey(layer.id, cql2Filter);
-    return layer.style ? sourceKey : `${sourceKey}-fill`;
-  }
-  return layer.style ? layer.id : `${layer.id}-fill`;
 }
 
 function PreviewVectorTileLayer({
@@ -66,29 +53,18 @@ function PreviewVectorTileLayer({
   sourceUrl,
   tileMatrixSetId,
   cql2Filter,
-  beforeId,
 }: {
   layer: LayerConfig;
   sourceUrl: string;
   tileMatrixSetId?: string;
   cql2Filter?: CQL2Expression | null;
-  beforeId?: string;
 }) {
   const tileUrl = getCql2FilteredVectorTileUrl(sourceUrl, layer.collection, cql2Filter, tileMatrixSetId);
   const sourceKey = getVectorTileSourceKey(layer.id, cql2Filter);
   const sourceLayer = layer.collection.replace(/^[^.]+\./, '');
   const layout = { ...((layer.style as { layout?: Record<string, unknown> })?.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' } as const;
 
-  if (!layer.style) {
-    return (
-      <Source id={sourceKey} key={sourceKey} type="vector" tiles={[tileUrl]}>
-        <Layer id={`${sourceKey}-fill`} type="fill" source-layer={sourceLayer}
-          paint={{ 'fill-color': '#4a90d9', 'fill-opacity': 0.6, 'fill-outline-color': 'transparent' }} layout={layout} beforeId={beforeId} />
-        <Layer id={`${sourceKey}-line`} type="line" source-layer={sourceLayer}
-          paint={{ 'line-color': '#4a90d9', 'line-width': 2 }} layout={layout} />
-      </Source>
-    );
-  }
+  if (!layer.style) return null;
 
   return (
     <Source id={sourceKey} key={sourceKey} type="vector" tiles={[tileUrl]}>
@@ -98,7 +74,6 @@ function PreviewVectorTileLayer({
         source-layer={sourceLayer}
         paint={layer.style.paint as any}
         layout={layout}
-        beforeId={beforeId}
       />
     </Source>
   );
@@ -108,12 +83,10 @@ function PreviewGeoJsonLayer({
   layer,
   sourceUrl,
   cql2Filter,
-  beforeId,
 }: {
   layer: LayerConfig;
   sourceUrl: string;
   cql2Filter?: CQL2Expression | null;
-  beforeId?: string;
 }) {
   const { features } = useOgcFeatures(sourceUrl, layer.collection, { limit: 10000, cql2Filter: cql2Filter ?? undefined });
 
@@ -127,16 +100,7 @@ function PreviewGeoJsonLayer({
 
   const layout = { ...((layer.style as { layout?: Record<string, unknown> })?.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' } as const;
 
-  if (!layer.style) {
-    return (
-      <Source id={layer.id} key={layer.id} type="geojson" data={featureCollection}>
-        <Layer id={`${layer.id}-fill`} type="fill"
-          paint={{ 'fill-color': '#4a90d9', 'fill-opacity': 0.6, 'fill-outline-color': 'transparent' }} layout={layout} beforeId={beforeId} />
-        <Layer id={`${layer.id}-line`} type="line"
-          paint={{ 'line-color': '#4a90d9', 'line-width': 2 }} layout={layout} />
-      </Source>
-    );
-  }
+  if (!layer.style) return null;
 
   return (
     <Source id={layer.id} key={layer.id} type="geojson" data={featureCollection}>
@@ -145,7 +109,6 @@ function PreviewGeoJsonLayer({
         type={layer.style.type}
         paint={layer.style.paint as any}
         layout={layout}
-        beforeId={beforeId}
       />
     </Source>
   );
@@ -273,17 +236,16 @@ export function MapPreview({
     [layers, sourceUrlMap],
   );
 
-  // Apply a fallback style to layers that have none, so Legend/LayerPanel can render them
+  // Apply opacity overrides to layers that have a style
   const [opacityOverrides, setOpacityOverrides] = useState<Record<string, number>>({});
   const layersWithDefaults = useMemo(
     () => layers.map(l => {
-      const base = l.style ? l : { ...l, style: DEFAULT_STYLE };
       const opacity = opacityOverrides[l.id];
-      if (opacity === undefined || !base.style) return base;
+      if (opacity === undefined || !l.style) return l;
       const opKey: Record<string, string> = { fill: 'fill-opacity', line: 'line-opacity', circle: 'circle-opacity', symbol: 'icon-opacity' };
-      const key = opKey[base.style.type];
-      if (!key) return base;
-      return { ...base, style: { ...base.style, paint: { ...base.style.paint, [key]: opacity } } as typeof base.style };
+      const key = opKey[l.style.type];
+      if (!key) return l;
+      return { ...l, style: { ...l.style, paint: { ...l.style.paint, [key]: opacity } } as typeof l.style };
     }),
     [layers, opacityOverrides],
   );
@@ -320,7 +282,7 @@ export function MapPreview({
       const sourceKey = l.dataMode === 'vector-tiles'
         ? getVectorTileSourceKey(l.id, activeCql2Filters[l.id])
         : l.id;
-      return l.style ? sourceKey : `${sourceKey}-fill`;
+      return sourceKey;
     });
   }, [featureInteractionEnabled, layers, activeCql2Filters]);
 
@@ -406,6 +368,33 @@ export function MapPreview({
     }
   }, [mapInstance, layersWithDefaults, activeCql2Filters]);
 
+  // Reorder MapLibre layers to match the desired layersWithDefaults order
+  useEffect(() => {
+    if (!mapInstance) return;
+
+    const frame = requestAnimationFrame(() => {
+      const desiredOrder = layersWithDefaults
+        .filter(l => sourceUrlMap[l.sourceId] && l.style)
+        .map(l =>
+          l.dataMode === 'vector-tiles'
+            ? getVectorTileSourceKey(l.id, activeCql2Filters[l.id])
+            : l.id
+        )
+        .filter(id => mapInstance.getLayer(id));
+
+      // Move each layer before the one above it, from bottom to top
+      for (let i = desiredOrder.length - 2; i >= 0; i--) {
+        try {
+          mapInstance.moveLayer(desiredOrder[i], desiredOrder[i + 1]);
+        } catch {
+          // Layer may not be on the map yet
+        }
+      }
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [mapInstance, layersWithDefaults, sourceUrlMap, activeCql2Filters]);
+
   const handleMove = (evt: { viewState: { latitude: number; longitude: number; zoom: number; pitch: number; bearing: number } }) => {
     const next: ViewConfig = {
       latitude: evt.viewState.latitude,
@@ -479,38 +468,28 @@ export function MapPreview({
       >
         <AttributionControl position="bottom-left" />
 
-        {!showEmptyState && layers.map((layer, index) => {
+        {!showEmptyState && layersWithDefaults.map((layer) => {
           const sourceInfo = sourceUrlMap[layer.sourceId];
-          if (!sourceInfo) return null;
-
-          let beforeId: string | undefined;
-          for (let j = index + 1; j < layers.length; j++) {
-            if (sourceUrlMap[layers[j].sourceId]) {
-              beforeId = getBottomLayerId(layers[j], activeCql2Filters[layers[j].id]);
-              break;
-            }
-          }
+          if (!sourceInfo || !layer.style) return null;
 
           if (layer.dataMode === 'geojson') {
             return (
               <PreviewGeoJsonLayer
-                key={`${layer.id}--${layer.style?.type ?? 'default'}`}
+                key={layer.id}
                 layer={layer}
                 sourceUrl={sourceInfo.url}
                 cql2Filter={activeCql2Filters[layer.id]}
-                beforeId={beforeId}
               />
             );
           }
 
           return (
             <PreviewVectorTileLayer
-              key={`${getVectorTileSourceKey(layer.id, activeCql2Filters[layer.id])}--${layer.style?.type ?? 'default'}`}
+              key={getVectorTileSourceKey(layer.id, activeCql2Filters[layer.id])}
               layer={layer}
               sourceUrl={sourceInfo.url}
               tileMatrixSetId={sourceInfo.tileMatrixSetId}
               cql2Filter={activeCql2Filters[layer.id]}
-              beforeId={beforeId}
             />
           );
         })}
