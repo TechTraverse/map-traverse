@@ -120,7 +120,7 @@ export function NumberInput({ field, value, onChange, className = '', id }: Numb
       : '';
 
   return (
-    <div className={`mapui:flex mapui:flex-col mapui:gap-1 ${className}`.trim()}>
+    <div className={`mapui:flex mapui:flex-col mapui:gap-1.5 ${className}`.trim()}>
       {/* Operator dropdown — always shown so user can switch operators */}
       <select
         value={localOperator}

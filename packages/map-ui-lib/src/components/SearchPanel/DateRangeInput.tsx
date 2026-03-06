@@ -26,7 +26,7 @@ export function DateRangeInput({
     'mapui:flex-1 mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
   return (
-    <div className={`mapui:flex mapui:flex-col mapui:gap-1 ${className}`.trim()}>
+    <div className={`mapui:flex mapui:flex-col mapui:gap-1.5 ${className}`.trim()}>
       <div className="mapui:flex mapui:items-center mapui:gap-2">
         <label htmlFor={startId} className="mapui:text-xs mapui:text-gray-400 mapui:w-8">From</label>
         <input

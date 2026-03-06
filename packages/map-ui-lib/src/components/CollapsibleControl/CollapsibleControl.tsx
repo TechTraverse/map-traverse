@@ -70,7 +70,7 @@ export function CollapsibleControl({
 
       {/* Expanded panel - absolutely positioned to the left of the icon button */}
       {!isCollapsed && (
-        <div className="mapui:absolute mapui:top-0 mapui:right-full mapui:mr-2 mapui:z-10 mapui:bg-white mapui:rounded-lg mapui:shadow-lg mapui:overflow-hidden">
+        <div className="mapui:absolute mapui:top-0 mapui:right-full mapui:mr-2 mapui:z-10 mapui:bg-white mapui:rounded-lg mapui:shadow-lg">
           {/* Header with icon and close button */}
           <div className="mapui:flex mapui:items-center mapui:justify-between mapui:p-2 mapui:border-b mapui:border-gray-200">
             <div className="mapui:flex mapui:items-center mapui:gap-2">

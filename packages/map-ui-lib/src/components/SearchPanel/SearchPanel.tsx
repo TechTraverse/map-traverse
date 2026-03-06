@@ -81,9 +81,9 @@ export function SearchPanel({
         const hasActiveFilters = Object.values(layerFilters).some(isFilterActive);
 
         return (
-          <div key={layer.id} className="mapui:flex mapui:flex-col mapui:gap-2 mapui:border-b mapui:border-gray-100 mapui:pb-2 last:mapui:border-0">
+          <div key={layer.id} className="mapui:flex mapui:flex-col mapui:gap-3 mapui:border-b mapui:border-gray-100 mapui:pb-3 last:mapui:border-0">
             <div className="mapui:flex mapui:items-center mapui:justify-between">
-              <span className="mapui:text-xs mapui:font-medium mapui:text-gray-600">
+              <span className="mapui:text-sm mapui:font-medium mapui:text-gray-600">
                 {layer.label}
               </span>
               {hasActiveFilters && (
@@ -102,7 +102,7 @@ export function SearchPanel({
               const fieldId = `search-${layer.id}-${field.property}`;
 
               return (
-                <div key={field.property} className="mapui:flex mapui:flex-col mapui:gap-0.5">
+                <div key={field.property} className="mapui:flex mapui:flex-col mapui:gap-1">
                   <label htmlFor={fieldId} className="mapui:text-xs mapui:text-gray-500">{field.label}</label>
 
                   {field.type === 'text' && (field as TextSearchField).autocomplete ? (
