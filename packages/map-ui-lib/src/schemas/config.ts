@@ -1,5 +1,13 @@
 import { z } from 'zod';
 
+// --- Geometry Type ---
+
+export const GeometryTypeSchema = z.enum([
+  'Point', 'MultiPoint',
+  'LineString', 'MultiLineString',
+  'Polygon', 'MultiPolygon',
+]);
+
 // --- Expression Support ---
 
 const ExpressionSchema = z.array(z.unknown());
@@ -152,24 +160,28 @@ export const FillStyleSchema = z.object({
   type: z.literal('fill'),
   paint: FillPaintSchema,
   layout: FillLayoutSchema.optional(),
+  geometryFilter: z.array(GeometryTypeSchema).optional(),
 });
 
 export const LineStyleSchema = z.object({
   type: z.literal('line'),
   paint: LinePaintSchema,
   layout: LineLayoutSchema.optional(),
+  geometryFilter: z.array(GeometryTypeSchema).optional(),
 });
 
 export const CircleStyleSchema = z.object({
   type: z.literal('circle'),
   paint: CirclePaintSchema,
   layout: CircleLayoutSchema.optional(),
+  geometryFilter: z.array(GeometryTypeSchema).optional(),
 });
 
 export const SymbolStyleSchema = z.object({
   type: z.literal('symbol'),
   paint: SymbolPaintSchema,
   layout: SymbolLayoutSchema.optional(),
+  geometryFilter: z.array(GeometryTypeSchema).optional(),
 });
 
 export const StyleConfigSchema = z.discriminatedUnion('type', [
@@ -265,19 +277,30 @@ export const FilterConfigSchema = z.object({
 
 // --- Layer Config ---
 
-export const LayerConfigSchema = z.object({
+const layerConfigFields = {
   id: z.string().min(1),
   sourceId: z.string().min(1),
   collection: z.string().min(1),
   label: z.string(),
   visible: z.boolean().default(true),
   dataMode: z.enum(['vector-tiles', 'geojson']),
-  style: StyleConfigSchema.optional(),
+  styles: z.array(StyleConfigSchema).optional(),
   legend: LegendConfigSchema.optional(),
   filters: FilterConfigSchema.optional(),
   search: SearchConfigSchema.optional(),
   propertyDisplay: PropertyDisplayConfigSchema.optional(),
-});
+};
+
+export const LayerConfigSchema = z.preprocess(
+  (data) => {
+    if (data && typeof data === 'object' && 'style' in data && !('styles' in data)) {
+      const { style, ...rest } = data as Record<string, unknown>;
+      return { ...rest, styles: style ? [style] : undefined };
+    }
+    return data;
+  },
+  z.object(layerConfigFields),
+);
 
 // --- Basemap Config ---
 

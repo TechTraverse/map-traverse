@@ -1,5 +1,6 @@
 import type { z } from 'zod';
 import {
+  GeometryTypeSchema,
   ViewConfigSchema,
   OgcApiSourceSchema,
   FillPaintSchema,
@@ -34,7 +35,7 @@ import {
 } from '../schemas/config';
 
 // Inferred types from Zod schemas
-// Inferred types from Zod schemas
+export type GeometryType = z.infer<typeof GeometryTypeSchema>;
 export type ViewConfig = z.infer<typeof ViewConfigSchema>;
 export type OgcApiSource = z.infer<typeof OgcApiSourceSchema>;
 
@@ -97,6 +98,7 @@ export interface AvailableProperty {
 
 // Re-export schemas for convenience
 export {
+  GeometryTypeSchema,
   ViewConfigSchema,
   OgcApiSourceSchema,
   FillPaintSchema,

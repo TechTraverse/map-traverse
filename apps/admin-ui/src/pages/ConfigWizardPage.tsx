@@ -197,7 +197,7 @@ export function ConfigWizardPage() {
         : styleType === 'line' ? defaultLine
         : styleType === 'symbol' ? defaultSymbol
         : defaultCircle;
-      setLayers(prev => prev.map(l => l.id === layerId && !l.style ? { ...l, style } : l));
+      setLayers(prev => prev.map(l => l.id === layerId && !l.styles?.length ? { ...l, styles: [style] } : l));
     });
   };
 

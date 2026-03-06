@@ -17,14 +17,14 @@ export const mapConfig: MapConfig = {
       label: 'Countries',
       visible: true,
       dataMode: 'vector-tiles',
-      style: {
+      styles: [{
         type: 'fill',
         paint: {
           'fill-color': '#4a90d9',
           'fill-opacity': 0.6,
           'fill-outline-color': '#2c5f8a',
         },
-      },
+      }],
       legend: {
         entries: [{ label: 'Countries', color: '#4a90d9', shape: 'square' }],
       },
@@ -96,7 +96,7 @@ export const mapConfig: MapConfig = {
       label: 'Cities',
       visible: true,
       dataMode: 'geojson',
-      style: {
+      styles: [{
         type: 'circle',
         paint: {
           'circle-color': '#e74c3c',
@@ -105,7 +105,7 @@ export const mapConfig: MapConfig = {
           'circle-stroke-color': '#ffffff',
           'circle-stroke-width': 1,
         },
-      },
+      }],
       legend: {
         entries: [{ label: 'Cities', color: '#e74c3c', shape: 'circle' }],
       },
@@ -161,14 +161,14 @@ export const mapConfig: MapConfig = {
       label: 'Rivers',
       visible: true,
       dataMode: 'vector-tiles',
-      style: {
+      styles: [{
         type: 'line',
         paint: {
           'line-color': '#00bcd4',
           'line-width': 2,
           'line-opacity': 0.8,
         },
-      },
+      }],
       legend: {
         entries: [{ label: 'Rivers', color: '#00bcd4', shape: 'line' }],
       },

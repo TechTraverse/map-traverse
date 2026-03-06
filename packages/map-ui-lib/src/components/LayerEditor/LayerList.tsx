@@ -176,9 +176,9 @@ export function LayerList({ layers, onChange, availableSources, availableIcons }
                       <span className="mapui:rounded mapui:bg-slate-100 mapui:px-1.5 mapui:py-0.5 mapui:text-[10px] mapui:font-medium mapui:text-slate-700">
                         {layer.dataMode}
                       </span>
-                      {layer.style && (
+                      {(layer.styles?.length ?? 0) > 0 && (
                         <span className="mapui:rounded mapui:bg-purple-100 mapui:px-1.5 mapui:py-0.5 mapui:text-[10px] mapui:font-medium mapui:text-purple-700">
-                          {layer.style.type}
+                          {layer.styles!.map((s) => s.type).join(' · ')}
                         </span>
                       )}
                       {layer.visible === false && (

@@ -5,6 +5,12 @@ import type { CQL2Expression } from '@ogc-maps/storybook-components/hooks';
 import type { LayerConfig } from '@ogc-maps/storybook-components/types';
 import { useMapStore } from '../stores/mapStore';
 
+function buildGeometryFilter(types: string[]): any {
+  return types.length === 1
+    ? ['==', ['geometry-type'], types[0]]
+    : ['in', ['geometry-type'], ['literal', types]];
+}
+
 function getVectorTileSourceKey(layerId: string, cql2Filter?: CQL2Expression | null): string {
   return cql2Filter ? `${layerId}--${JSON.stringify(cql2Filter)}` : layerId;
 }
@@ -23,21 +29,26 @@ function VectorTileLayer({
 }) {
   const tileUrl = getCql2FilteredVectorTileUrl(sourceUrl, layer.collection, cql2Filter, tileMatrixSetId);
   const sourceKey = getVectorTileSourceKey(layer.id, cql2Filter);
+  const sourceLayer = layer.collection.replace(/^[^.]+\./, '');
 
-  if (!layer.style) {
+  if (!layer.styles?.length) {
     console.warn(`Layer ${layer.id} has no style configuration`);
     return null;
   }
 
   return (
     <Source id={sourceKey} key={sourceKey} type="vector" tiles={[tileUrl]}>
-      <Layer
-        id={sourceKey}
-        type={layer.style.type}
-        source-layer={layer.collection.replace(/^[^.]+\./, '')}
-        paint={layer.style.paint as any}
-        layout={{ ...(layer.style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' }}
-      />
+      {layer.styles.map((style, i) => (
+        <Layer
+          key={`${style.type}--${i}`}
+          id={`${sourceKey}--${style.type}--${i}`}
+          type={style.type}
+          source-layer={sourceLayer}
+          paint={style.paint as any}
+          layout={{ ...(style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' }}
+          {...(style.geometryFilter ? { filter: buildGeometryFilter(style.geometryFilter) } : {})}
+        />
+      ))}
     </Source>
   );
 }
@@ -61,19 +72,23 @@ function GeoJsonLayer({ layer, sourceUrl, cql2Filter }: { layer: LayerConfig; so
     console.error(`Error loading GeoJSON for layer ${layer.id}:`, error);
   }
 
-  if (!layer.style) {
+  if (!layer.styles?.length) {
     console.warn(`Layer ${layer.id} has no style configuration`);
     return null;
   }
 
   return (
     <Source id={layer.id} key={layer.id} type="geojson" data={featureCollection}>
-      <Layer
-        id={layer.id}
-        type={layer.style.type}
-        paint={layer.style.paint as any}
-        layout={{ ...(layer.style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' }}
-      />
+      {layer.styles.map((style, i) => (
+        <Layer
+          key={`${style.type}--${i}`}
+          id={`${layer.id}--${style.type}--${i}`}
+          type={style.type}
+          paint={style.paint as any}
+          layout={{ ...(style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' }}
+          {...(style.geometryFilter ? { filter: buildGeometryFilter(style.geometryFilter) } : {})}
+        />
+      ))}
     </Source>
   );
 }
@@ -130,19 +145,22 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
   useEffect(() => {
     if (!mapInstance) return;
     for (const layer of layers) {
-      if (!layer.style?.paint) continue;
-      const layerId =
+      if (!layer.styles?.length) continue;
+      const sourceKey =
         layer.dataMode === 'vector-tiles'
           ? getVectorTileSourceKey(layer.id, activeCql2Filters[layer.id])
           : layer.id;
-      if (!mapInstance.getLayer(layerId)) continue;
-      for (const [prop, value] of Object.entries(layer.style.paint)) {
-        try {
-          mapInstance.setPaintProperty(layerId, prop, value);
-        } catch {
-          // Layer may not be added yet
+      layer.styles.forEach((style, i) => {
+        const subLayerId = `${sourceKey}--${style.type}--${i}`;
+        if (!mapInstance.getLayer(subLayerId)) return;
+        for (const [prop, value] of Object.entries(style.paint)) {
+          try {
+            mapInstance.setPaintProperty(subLayerId, prop, value);
+          } catch {
+            // Layer may not be added yet
+          }
         }
-      }
+      });
     }
   }, [mapInstance, layers, activeCql2Filters]);
 
@@ -182,17 +200,33 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
   const vectorTileLayers = layers.filter((l) => l.dataMode === 'vector-tiles');
   const geojsonLayers = layers.filter((l) => l.dataMode === 'geojson');
 
-  // IDs of visible layers for feature querying
+  // IDs of visible layers for feature querying (one per sub-layer)
   const interactiveLayerIds = useMemo(
     () =>
-      layers.filter((l) => l.visible).map((l) => {
-        if (l.dataMode === 'vector-tiles') {
-          return getVectorTileSourceKey(l.id, activeCql2Filters[l.id]);
-        }
-        return l.id;
+      layers.filter((l) => l.visible).flatMap((l) => {
+        const sourceKey =
+          l.dataMode === 'vector-tiles'
+            ? getVectorTileSourceKey(l.id, activeCql2Filters[l.id])
+            : l.id;
+        return (l.styles ?? []).map((s, i) => `${sourceKey}--${s.type}--${i}`);
       }),
     [layers, activeCql2Filters],
   );
+
+  // Map from sub-layer ID → parent layer ID for click/hover handlers
+  const subLayerToLayerId = useMemo(() => {
+    const map: Record<string, string> = {};
+    layers.forEach((l) => {
+      const sourceKey =
+        l.dataMode === 'vector-tiles'
+          ? getVectorTileSourceKey(l.id, activeCql2Filters[l.id])
+          : l.id;
+      (l.styles ?? []).forEach((s, i) => {
+        map[`${sourceKey}--${s.type}--${i}`] = l.id;
+      });
+    });
+    return map;
+  }, [layers, activeCql2Filters]);
 
   return (
     <Map
@@ -208,7 +242,7 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
         const feature = evt.features?.[0];
         if (feature && onFeatureClick) {
           onFeatureClick({
-            layerId: feature.layer.id,
+            layerId: subLayerToLayerId[feature.layer.id] ?? feature.layer.id,
             properties: (feature.properties ?? {}) as Record<string, unknown>,
             lngLat: { lat: evt.lngLat.lat, lng: evt.lngLat.lng },
           });
@@ -226,7 +260,7 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
           setCursor('pointer');
           if (onFeatureHover) {
             onFeatureHover({
-              layerId: feature.layer.id,
+              layerId: subLayerToLayerId[feature.layer.id] ?? feature.layer.id,
               properties: (feature.properties ?? {}) as Record<string, unknown>,
               point: { x: evt.point.x, y: evt.point.y },
             });
@@ -260,7 +294,7 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
         }
         return (
           <VectorTileLayer
-            key={`${getVectorTileSourceKey(layer.id, activeCql2Filters[layer.id])}--${layer.style?.type}`}
+            key={`${getVectorTileSourceKey(layer.id, activeCql2Filters[layer.id])}--${layer.styles?.length ?? 0}`}
             layer={layer}
             sourceUrl={sourceInfo.url}
             tileMatrixSetId={sourceInfo.tileMatrixSetId}
@@ -276,7 +310,7 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
           console.warn(`Source URL not found for layer ${layer.id}`);
           return null;
         }
-        return <GeoJsonLayer key={`${layer.id}--${layer.style?.type}`} layer={layer} sourceUrl={sourceInfo.url} cql2Filter={activeCql2Filters[layer.id]} />;
+        return <GeoJsonLayer key={`${layer.id}--${layer.styles?.length ?? 0}`} layer={layer} sourceUrl={sourceInfo.url} cql2Filter={activeCql2Filters[layer.id]} />;
       })}
     </Map>
   );

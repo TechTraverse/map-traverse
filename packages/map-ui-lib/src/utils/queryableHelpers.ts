@@ -1,6 +1,6 @@
 import type { OgcQueryables, QueryableProperty } from './ogcApi';
 import { fetchQueryables, fetchFeatures } from './ogcApi';
-import type { AvailableProperty } from '../types';
+import type { AvailableProperty, StyleConfig } from '../types';
 
 const GEOMETRY_REF_PATTERN = /geojson\.org\/schema\/(\w+)\.json/;
 
@@ -94,6 +94,63 @@ export function toAvailableProperties(queryables: OgcQueryables): AvailablePrope
 }
 
 /**
+ * Scans a feature array and returns distinct canonical geometry types found.
+ */
+export function detectGeometryTypesFromFeatures(
+  features: { geometry?: { type?: string } | null }[],
+): string[] {
+  const types = new Set<string>();
+  for (const f of features) {
+    if (f.geometry?.type) {
+      types.add(f.geometry.type);
+    }
+  }
+  return Array.from(types);
+}
+
+/**
+ * Builds default StyleConfig objects for the given geometry type names.
+ * For mixed collections (multiple geometry families), each style gets a
+ * `geometryFilter` so MapLibre only renders matching features.
+ */
+export function buildDefaultStylesForGeometryTypes(geomTypes: string[]): StyleConfig[] {
+  const families = new Set<'point' | 'line' | 'polygon'>();
+  for (const t of geomTypes) {
+    const lower = t.toLowerCase();
+    if (lower.includes('polygon')) families.add('polygon');
+    else if (lower.includes('linestring')) families.add('line');
+    else if (lower.includes('point')) families.add('point');
+  }
+
+  const needsFilter = families.size > 1;
+  const styles: StyleConfig[] = [];
+
+  if (families.has('polygon')) {
+    styles.push({
+      type: 'fill',
+      paint: { 'fill-color': '#4a90d9', 'fill-opacity': 0.6, 'fill-outline-color': 'transparent', 'fill-antialias': true },
+      ...(needsFilter ? { geometryFilter: ['Polygon', 'MultiPolygon'] } : {}),
+    });
+  }
+  if (families.has('line')) {
+    styles.push({
+      type: 'line',
+      paint: { 'line-color': '#2980b9', 'line-width': 2, 'line-opacity': 1 },
+      ...(needsFilter ? { geometryFilter: ['LineString', 'MultiLineString'] } : {}),
+    });
+  }
+  if (families.has('point')) {
+    styles.push({
+      type: 'circle',
+      paint: { 'circle-color': '#e74c3c', 'circle-radius': 5, 'circle-opacity': 0.9 },
+      ...(needsFilter ? { geometryFilter: ['Point', 'MultiPoint'] } : {}),
+    });
+  }
+
+  return styles;
+}
+
+/**
  * Detects the geometry type for a collection and returns the corresponding
  * MapLibre style type. Tries queryables first, falls back to fetching one feature.
  * Returns null if detection fails.
@@ -119,7 +176,7 @@ export async function detectStyleTypeForCollection(
 
 /**
  * Detects all suitable style types for a collection.
- * Tries queryables first, falls back to fetching one feature.
+ * Tries queryables first, falls back to fetching 20 features to detect mixed geometry.
  * Returns an empty array if detection fails.
  */
 export async function detectStyleTypesForCollection(
@@ -133,9 +190,15 @@ export async function detectStyleTypesForCollection(
   } catch { /* fall through */ }
 
   try {
-    const fc = await fetchFeatures(baseUrl, collectionId, { limit: 1 });
-    const geomType = fc.features[0]?.geometry?.type;
-    if (typeof geomType === 'string') return geometryTypeToStyleTypes(geomType);
+    const fc = await fetchFeatures(baseUrl, collectionId, { limit: 20 });
+    const geomTypes = detectGeometryTypesFromFeatures(fc.features);
+    const allTypes = new Set<'fill' | 'line' | 'circle' | 'symbol'>();
+    for (const gt of geomTypes) {
+      for (const st of geometryTypeToStyleTypes(gt)) {
+        allTypes.add(st);
+      }
+    }
+    return Array.from(allTypes);
   } catch { /* ignore */ }
 
   return [];

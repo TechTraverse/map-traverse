@@ -105,16 +105,15 @@ export const useMapStore = create<MapState>((set) => ({
       };
       return {
         layers: state.layers.map((layer) => {
-          if (layer.id !== layerId || !layer.style) return layer;
-          const key = opacityKeys[layer.style.type];
-          if (!key) return layer;
+          if (layer.id !== layerId || !layer.styles?.length) return layer;
           return {
             ...layer,
-            style: {
-              ...layer.style,
-              paint: { ...layer.style.paint, [key]: opacity },
-            },
-          } as typeof layer;
+            styles: layer.styles.map((style) => {
+              const key = opacityKeys[style.type];
+              if (!key) return style;
+              return { ...style, paint: { ...style.paint, [key]: opacity } } as typeof style;
+            }),
+          };
         }),
       };
     }),

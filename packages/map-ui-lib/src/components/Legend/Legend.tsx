@@ -17,7 +17,7 @@ const OPACITY_KEY: Record<string, string> = {
 };
 
 function getLayerOpacity(layer: LayerConfig): number {
-  const style = layer.style;
+  const style = layer.styles?.[0];
   if (!style) return 1;
   const key = OPACITY_KEY[style.type];
   if (!key) return 1;

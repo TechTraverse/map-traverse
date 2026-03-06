@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import type { LayerConfig, OgcApiSource, AvailableProperty } from '../../types';
+import type { LayerConfig, OgcApiSource, AvailableProperty, StyleConfig } from '../../types';
 import { FormField } from '../admin/FormField';
 import { CollapsibleSection } from '../admin/CollapsibleSection';
-import { StyleEditor, defaultFill, defaultLine, defaultCircle, defaultSymbol } from '../StyleEditor/StyleEditor';
+import { StyleEditor, defaultFill, defaultCircle } from '../StyleEditor/StyleEditor';
 import { LegendEditor } from '../LegendEditor/LegendEditor';
 import { SearchFieldList } from '../SearchFieldEditor/SearchFieldList';
 import { PropertyDisplayEditor } from '../PropertyDisplayEditor/PropertyDisplayEditor';
@@ -11,9 +11,20 @@ import { useOgcQueryables } from '../../hooks/useOgcQueryables';
 import { fetchFeatures, fetchDistinctValues } from '../../utils/ogcApi';
 import {
   detectGeometryStyleTypesFromQueryables,
-  geometryTypeToStyleTypes,
+  detectGeometryTypesFromFeatures,
+  buildDefaultStylesForGeometryTypes,
   toAvailableProperties,
 } from '../../utils/queryableHelpers';
+
+function replaceAt<T>(arr: T[] | undefined, index: number, value: T): T[] {
+  const next = [...(arr ?? [])];
+  next[index] = value;
+  return next;
+}
+
+function removeAt<T>(arr: T[] | undefined, index: number): T[] {
+  return (arr ?? []).filter((_, i) => i !== index);
+}
 
 export interface LayerEditorProps {
   value: LayerConfig;
@@ -50,53 +61,55 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
     ? toAvailableProperties(queryables)
     : [];
 
-  // Detect suggested style types from queryables; fall back to fetching one feature
-  const [suggestedStyleTypes, setSuggestedStyleTypes] = useState<('fill' | 'line' | 'circle' | 'symbol')[]>([]);
+  // Detect suggested styles from queryables; fall back to fetching features
+  const [suggestedStyles, setSuggestedStyles] = useState<StyleConfig[]>([]);
 
   useEffect(() => {
     if (!queryables) {
-      setSuggestedStyleTypes([]);
+      setSuggestedStyles([]);
       return;
     }
 
-    const applyStyleTypes = (styleTypes: ('fill' | 'line' | 'circle' | 'symbol')[]) => {
-      setSuggestedStyleTypes(styleTypes);
-      const defaultType = styleTypes[0];
-      if (defaultType && !valueRef.current.style) {
-        const style =
-          defaultType === 'fill' ? defaultFill
-          : defaultType === 'line' ? defaultLine
-          : defaultType === 'symbol' ? defaultSymbol
-          : defaultCircle;
-        onChangeRef.current({ ...valueRef.current, style });
+    const applyGeomTypes = (geomTypes: string[]) => {
+      const styles = buildDefaultStylesForGeometryTypes(geomTypes);
+      setSuggestedStyles(styles);
+      if (styles.length > 0 && !valueRef.current.styles?.length) {
+        onChangeRef.current({ ...valueRef.current, styles });
       }
     };
 
     const fromQueryables = detectGeometryStyleTypesFromQueryables(queryables);
     if (fromQueryables.length > 0) {
-      applyStyleTypes(fromQueryables);
+      // Map style type names back to geometry type families for buildDefaultStylesForGeometryTypes
+      const geomTypes: string[] = [];
+      for (const st of fromQueryables) {
+        if (st === 'fill') geomTypes.push('Polygon');
+        else if (st === 'line') geomTypes.push('LineString');
+        else if (st === 'circle' || st === 'symbol') geomTypes.push('Point');
+      }
+      applyGeomTypes(geomTypes);
       return;
     }
 
-    // Fallback: inspect geometry.type from a single fetched feature
+    // Fallback: inspect geometry types from fetched features
     if (!baseUrl || !collection) {
-      setSuggestedStyleTypes([]);
+      setSuggestedStyles([]);
       return;
     }
 
     let cancelled = false;
-    fetchFeatures(baseUrl, collection, { limit: 1 })
+    fetchFeatures(baseUrl, collection, { limit: 20 })
       .then((fc) => {
         if (cancelled) return;
-        const geomType = fc.features[0]?.geometry?.type;
-        if (typeof geomType === 'string') {
-          applyStyleTypes(geometryTypeToStyleTypes(geomType));
+        const geomTypes = detectGeometryTypesFromFeatures(fc.features);
+        if (geomTypes.length > 0) {
+          applyGeomTypes(geomTypes);
         } else {
-          applyStyleTypes([]);
+          setSuggestedStyles([]);
         }
       })
       .catch(() => {
-        if (!cancelled) setSuggestedStyleTypes([]);
+        if (!cancelled) setSuggestedStyles([]);
       });
 
     return () => {
@@ -104,9 +117,9 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
     };
   }, [queryables, baseUrl, collection]);
 
-  // Reset suggested types when source/collection changes
+  // Reset suggested styles when source/collection changes
   useEffect(() => {
-    setSuggestedStyleTypes([]);
+    setSuggestedStyles([]);
   }, [baseUrl, collection]);
 
   return (
@@ -209,25 +222,59 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
       </div>
 
       <CollapsibleSection title="Style">
-        <StyleEditor
-          value={value.style ?? defaultFill}
-          onChange={(style) => update({ style })}
-          suggestedTypes={suggestedStyleTypes}
-          availableIcons={availableIcons}
-          availableProperties={availableProperties}
-          onFetchDistinctValues={
-            baseUrl && collection
-              ? (property) => fetchDistinctValues(baseUrl, collection, property, { limit: 1000 })
-              : undefined
-          }
-        />
+        <div className="mapui:flex mapui:flex-col mapui:gap-4">
+          {(value.styles ?? [defaultFill]).map((style, i) => (
+            <div key={i} className="mapui:flex mapui:flex-col mapui:gap-2">
+              {style.geometryFilter && style.geometryFilter.length > 0 && (
+                <div className="mapui:flex mapui:flex-wrap mapui:gap-1">
+                  {style.geometryFilter.map((g) => (
+                    <span
+                      key={g}
+                      className="mapui:rounded mapui:bg-indigo-100 mapui:px-1.5 mapui:py-0.5 mapui:text-[10px] mapui:font-medium mapui:text-indigo-700"
+                    >
+                      {g}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <StyleEditor
+                value={style}
+                onChange={(s) => update({ styles: replaceAt(value.styles, i, s) })}
+                suggestedTypes={suggestedStyles.map((s) => s.type)}
+                availableIcons={availableIcons}
+                availableProperties={availableProperties}
+                onFetchDistinctValues={
+                  baseUrl && collection
+                    ? (property) => fetchDistinctValues(baseUrl, collection, property, { limit: 1000 })
+                    : undefined
+                }
+              />
+              {(value.styles?.length ?? 0) > 1 && (
+                <button
+                  type="button"
+                  onClick={() => update({ styles: removeAt(value.styles, i) })}
+                  className="mapui:cursor-pointer mapui:self-start mapui:rounded mapui:border mapui:border-red-200 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-red-600 hover:mapui:bg-red-50"
+                >
+                  Remove style
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => update({ styles: [...(value.styles ?? [defaultFill]), defaultCircle] })}
+            className="mapui:cursor-pointer mapui:self-start mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-gray-700 hover:mapui:bg-gray-50"
+          >
+            + Add style
+          </button>
+        </div>
       </CollapsibleSection>
 
       <CollapsibleSection title="Legend">
         <LegendEditor
           value={value.legend}
           onChange={(legend) => update({ legend })}
-          style={value.style}
+          style={value.styles?.[0]}
         />
       </CollapsibleSection>
 

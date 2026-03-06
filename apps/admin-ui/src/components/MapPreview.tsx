@@ -48,6 +48,12 @@ function getVectorTileSourceKey(layerId: string, cql2Filter?: CQL2Expression | n
   return cql2Filter ? `${layerId}--${JSON.stringify(cql2Filter)}` : layerId;
 }
 
+function buildGeometryFilter(types: string[]) {
+  return types.length === 1
+    ? ['==', ['geometry-type'], types[0]]
+    : ['in', ['geometry-type'], ['literal', types]];
+}
+
 function PreviewVectorTileLayer({
   layer,
   sourceUrl,
@@ -62,19 +68,22 @@ function PreviewVectorTileLayer({
   const tileUrl = getCql2FilteredVectorTileUrl(sourceUrl, layer.collection, cql2Filter, tileMatrixSetId);
   const sourceKey = getVectorTileSourceKey(layer.id, cql2Filter);
   const sourceLayer = layer.collection.replace(/^[^.]+\./, '');
-  const layout = { ...((layer.style as { layout?: Record<string, unknown> })?.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' } as const;
 
-  if (!layer.style) return null;
+  if (!layer.styles?.length) return null;
 
   return (
     <Source id={sourceKey} key={sourceKey} type="vector" tiles={[tileUrl]}>
-      <Layer
-        id={sourceKey}
-        type={layer.style.type}
-        source-layer={sourceLayer}
-        paint={layer.style.paint as any}
-        layout={layout}
-      />
+      {layer.styles.map((style, i) => (
+        <Layer
+          key={`${style.type}--${i}`}
+          id={`${sourceKey}--${style.type}--${i}`}
+          type={style.type}
+          source-layer={sourceLayer}
+          paint={style.paint as any}
+          layout={{ ...(style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' } as any}
+          {...(style.geometryFilter ? { filter: buildGeometryFilter(style.geometryFilter) as any } : {})}
+        />
+      ))}
     </Source>
   );
 }
@@ -98,18 +107,20 @@ function PreviewGeoJsonLayer({
     [features],
   );
 
-  const layout = { ...((layer.style as { layout?: Record<string, unknown> })?.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' } as const;
-
-  if (!layer.style) return null;
+  if (!layer.styles?.length) return null;
 
   return (
     <Source id={layer.id} key={layer.id} type="geojson" data={featureCollection}>
-      <Layer
-        id={layer.id}
-        type={layer.style.type}
-        paint={layer.style.paint as any}
-        layout={layout}
-      />
+      {layer.styles.map((style, i) => (
+        <Layer
+          key={`${style.type}--${i}`}
+          id={`${layer.id}--${style.type}--${i}`}
+          type={style.type}
+          paint={style.paint as any}
+          layout={{ ...(style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' } as any}
+          {...(style.geometryFilter ? { filter: buildGeometryFilter(style.geometryFilter) as any } : {})}
+        />
+      ))}
     </Source>
   );
 }
@@ -236,16 +247,21 @@ export function MapPreview({
     [layers, sourceUrlMap],
   );
 
-  // Apply opacity overrides to layers that have a style
+  // Apply opacity overrides to layers that have styles
   const [opacityOverrides, setOpacityOverrides] = useState<Record<string, number>>({});
   const layersWithDefaults = useMemo(
     () => layers.map(l => {
       const opacity = opacityOverrides[l.id];
-      if (opacity === undefined || !l.style) return l;
+      if (opacity === undefined || !l.styles?.length) return l;
       const opKey: Record<string, string> = { fill: 'fill-opacity', line: 'line-opacity', circle: 'circle-opacity', symbol: 'icon-opacity' };
-      const key = opKey[l.style.type];
-      if (!key) return l;
-      return { ...l, style: { ...l.style, paint: { ...l.style.paint, [key]: opacity } } as typeof l.style };
+      return {
+        ...l,
+        styles: l.styles.map(style => {
+          const key = opKey[style.type];
+          if (!key) return style;
+          return { ...style, paint: { ...style.paint, [key]: opacity } } as typeof style;
+        }),
+      } as LayerConfig;
     }),
     [layers, opacityOverrides],
   );
@@ -278,11 +294,11 @@ export function MapPreview({
 
   const interactiveLayerIds = useMemo(() => {
     if (!featureInteractionEnabled) return undefined;
-    return layers.filter(l => l.visible).map(l => {
+    return layers.filter(l => l.visible).flatMap(l => {
       const sourceKey = l.dataMode === 'vector-tiles'
         ? getVectorTileSourceKey(l.id, activeCql2Filters[l.id])
         : l.id;
-      return sourceKey;
+      return (l.styles ?? []).map((s, i) => `${sourceKey}--${s.type}--${i}`);
     });
   }, [featureInteractionEnabled, layers, activeCql2Filters]);
 
@@ -327,9 +343,9 @@ export function MapPreview({
       const sourceKey = l.dataMode === 'vector-tiles'
         ? getVectorTileSourceKey(l.id, activeCql2Filters[l.id])
         : l.id;
+      // Match either the parent source key or any sub-layer ID (sourceKey--type--i)
       return featureLayerId === sourceKey ||
-        featureLayerId === `${sourceKey}-fill` ||
-        featureLayerId === `${sourceKey}-line`;
+        featureLayerId.startsWith(`${sourceKey}--`);
     });
   }, [layers, activeCql2Filters]);
 
@@ -352,19 +368,22 @@ export function MapPreview({
   useEffect(() => {
     if (!mapInstance) return;
     for (const layer of layersWithDefaults) {
-      if (!layer.style?.paint) continue;
-      const layerId =
+      if (!layer.styles?.length) continue;
+      const sourceKey =
         layer.dataMode === 'vector-tiles'
           ? getVectorTileSourceKey(layer.id, activeCql2Filters[layer.id])
           : layer.id;
-      if (!mapInstance.getLayer(layerId)) continue;
-      for (const [prop, value] of Object.entries(layer.style.paint)) {
-        try {
-          mapInstance.setPaintProperty(layerId, prop, value);
-        } catch {
-          // Layer may not be added yet
+      layer.styles.forEach((style, i) => {
+        const subLayerId = `${sourceKey}--${style.type}--${i}`;
+        if (!mapInstance.getLayer(subLayerId)) return;
+        for (const [prop, value] of Object.entries(style.paint)) {
+          try {
+            mapInstance.setPaintProperty(subLayerId, prop, value);
+          } catch {
+            // Layer may not be added yet
+          }
         }
-      }
+      });
     }
   }, [mapInstance, layersWithDefaults, activeCql2Filters]);
 
@@ -374,12 +393,13 @@ export function MapPreview({
 
     const frame = requestAnimationFrame(() => {
       const desiredOrder = layersWithDefaults
-        .filter(l => sourceUrlMap[l.sourceId] && l.style)
-        .map(l =>
-          l.dataMode === 'vector-tiles'
+        .filter(l => sourceUrlMap[l.sourceId] && l.styles?.length)
+        .flatMap(l => {
+          const sourceKey = l.dataMode === 'vector-tiles'
             ? getVectorTileSourceKey(l.id, activeCql2Filters[l.id])
-            : l.id
-        )
+            : l.id;
+          return (l.styles ?? []).map((s, i) => `${sourceKey}--${s.type}--${i}`);
+        })
         .filter(id => mapInstance.getLayer(id));
 
       // Move each layer before the one above it, from bottom to top
@@ -470,7 +490,7 @@ export function MapPreview({
 
         {!showEmptyState && layersWithDefaults.map((layer) => {
           const sourceInfo = sourceUrlMap[layer.sourceId];
-          if (!sourceInfo || !layer.style) return null;
+          if (!sourceInfo || !layer.styles?.length) return null;
 
           if (layer.dataMode === 'geojson') {
             return (
