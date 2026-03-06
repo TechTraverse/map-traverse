@@ -1,5 +1,11 @@
 # @ogc-maps/storybook-components
 
+## 0.7.0
+
+### Minor Changes
+
+- 3aaf019: multi style support
+
 ## 0.6.2
 
 ### Patch Changes
