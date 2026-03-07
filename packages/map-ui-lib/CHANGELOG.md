@@ -1,5 +1,11 @@
 # @ogc-maps/storybook-components
 
+## 0.8.0
+
+### Minor Changes
+
+- f082fcd: legend editor improvements and autostyle
+
 ## 0.7.0
 
 ### Minor Changes
