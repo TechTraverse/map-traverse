@@ -3,7 +3,7 @@
 All components are fully controlled — no internal state for data. The library exports two categories of components:
 
 - **Map UI Components** (9): Consumer-facing UI overlays for interactive maps.
-- **Admin/Editor Components** (13+): Configuration editors used by the `admin-ui` app and any custom admin interfaces.
+- **Admin/Editor Components** (13+): Configuration editors used by the `admin-app` app and any custom admin interfaces.
 
 Import them individually by sub-path to enable tree-shaking:
 
@@ -506,7 +506,7 @@ function App() {
 
 # Admin / Editor Components
 
-These components are used by the `admin-ui` app to build a visual config wizard for `MapConfig`. They are exported from the main components entry point and can be used to build custom admin interfaces.
+These components are used by the `admin-app` app to build a visual config wizard for `MapConfig`. They are exported from the main components entry point and can be used to build custom admin interfaces.
 
 Import via the main components sub-path:
 

@@ -38,7 +38,7 @@ A reusable, config-driven map component ecosystem built on OGC API standards (ti
           ┌───────────┴───────────┐
           ▼                       ▼
 ┌──────────────────┐    ┌──────────────────────┐
-│   map-ui-lib     │    │   client-map-app     │
+│   map-ui-lib     │    │   map-client         │
 │                  │    │                      │
 │ • UI Components  │───▶│ • Zustand Stores     │
 │ • Data Hooks     │    │ • MapLibre GL JS     │
@@ -50,7 +50,7 @@ A reusable, config-driven map component ecosystem built on OGC API standards (ti
 
 ```
 storybook-components/
-├── docker-compose.yml           # PostGIS + tipg + seed + admin-ui
+├── docker-compose.yml           # PostGIS + tipg + seed + admin-app
 ├── packages/
 │   └── map-ui-lib/              # Reusable component library
 │       ├── src/
@@ -65,14 +65,14 @@ storybook-components/
 │       └── .storybook/          # Storybook configuration
 │
 ├── apps/
-│   ├── client-map-app/          # Demo map application
+│   ├── map-client/              # Demo map application
 │   │   └── src/
 │   │       ├── config/          # Map configuration
 │   │       ├── stores/          # Zustand state management
 │   │       ├── hooks/           # URL sync hooks
 │   │       └── components/      # Map containers
 │   │
-│   └── admin-ui/                # Map config admin panel
+│   └── admin-app/               # Map config admin panel
 │       ├── src/                 # React frontend (config wizard, version history)
 │       └── server/              # Express API + PostgreSQL backend
 │
@@ -202,7 +202,7 @@ pnpm build:app
 
 1. Modify Zod schema in `schemas/config.ts`
 2. TypeScript types auto-infer from schema
-3. Update example config in `apps/client-map-app/src/config/`
+3. Update example config in `apps/map-client/src/config/`
 4. Validation errors show at runtime
 
 ## Project Status

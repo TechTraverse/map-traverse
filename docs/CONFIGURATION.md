@@ -477,7 +477,7 @@ if (result.success) {
 
 ## Full Example
 
-Based on the reference app (`apps/client-map-app/src/config/map-config.ts`):
+Based on the reference app (`apps/map-client/src/config/map-config.ts`):
 
 ```ts
 import type { MapConfig } from '@ogc-maps/storybook-components/types';

@@ -1,4 +1,4 @@
-# client-map-app
+# map-client
 
 ## 0.0.16
 

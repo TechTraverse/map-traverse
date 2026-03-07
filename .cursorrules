@@ -3,7 +3,7 @@
 
 ## Separation of Concerns
 - **`packages/map-ui-lib`**: MUST be framework-agnostic. NEVER import MapLibre or map-specific rendering code.
-- **`apps/client-map-app`**: Integrates the library with MapLibre GL JS, Zustand, and nuqs.
+- **`apps/map-client`**: Integrates the library with MapLibre GL JS, Zustand, and nuqs.
 
 ## Component Library (`map-ui-lib`)
 - **Controlled Components**: All UI components must be fully controlled. They accept data via props and communicate changes via callbacks. NO internal state for data.
@@ -11,7 +11,7 @@
 - **Data Flow**: Components receive data from props. Data fetching is handled by hooks (`useOgcCollections`, `useOgcFeatures`).
 - **Exports**: Export components from their specific index files and the main entry point.
 
-## Client App (`client-map-app`)
+## Client App (`map-client`)
 - **State Management**: Use Zustand for app state.
 - **URL Sync**: Use `nuqs` to sync Zustand state with URL query parameters.
 - **Map Integration**: Use `react-map-gl/maplibre` in controlled mode.

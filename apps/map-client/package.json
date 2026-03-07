@@ -1,5 +1,5 @@
 {
-  "name": "client-map-app",
+  "name": "map-client",
   "version": "0.0.16",
   "private": true,
   "type": "module",

@@ -50,11 +50,11 @@ services:
       - ./docker/seed:/scripts
     command: sh /scripts/seed.sh
 
-  admin-ui:
+  admin-app:
     build:
       context: .
-      dockerfile: apps/admin-ui/Dockerfile
-    container_name: storybook-components-admin-ui
+      dockerfile: apps/admin-app/Dockerfile
+    container_name: storybook-components-admin-app
     depends_on:
       postgis:
         condition: service_healthy
@@ -76,13 +76,13 @@ services:
     ports:
       - "3001:3001"
 
-  client-map-app:
+  map-client:
     build:
       context: .
-      dockerfile: apps/client-map-app/Dockerfile
+      dockerfile: apps/map-client/Dockerfile
       args:
         VITE_CONFIG_API_URL: http://localhost:3001
-    container_name: storybook-components-client-map-app
+    container_name: storybook-components-map-client
     depends_on:
       tipg:
         condition: service_started

@@ -6,10 +6,10 @@
   "scripts": {
     "build": "pnpm -r build",
     "dev:lib": "pnpm --filter @ogc-maps/storybook-components dev",
-    "dev:app": "pnpm --filter client-map-app dev",
+    "dev:app": "pnpm --filter map-client dev",
     "storybook": "pnpm --filter @ogc-maps/storybook-components storybook",
     "build:lib": "pnpm --filter @ogc-maps/storybook-components build",
-    "build:app": "pnpm --filter client-map-app build",
+    "build:app": "pnpm --filter map-client build",
     "release": "pnpm build && changeset publish",
     "changeset": "changeset",
     "test": "pnpm --filter @ogc-maps/storybook-components test"

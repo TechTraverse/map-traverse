@@ -1,4 +1,4 @@
-# admin-ui
+# admin-app
 
 ## 0.0.8
 

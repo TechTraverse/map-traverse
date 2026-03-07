@@ -7,19 +7,19 @@ WORKDIR /app
 # Copy workspace manifest files for dependency resolution
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
 COPY packages/map-ui-lib/package.json ./packages/map-ui-lib/
-COPY apps/admin-ui/package.json ./apps/admin-ui/
+COPY apps/admin-app/package.json ./apps/admin-app/
 
 # Install all dependencies
 RUN pnpm install --frozen-lockfile
 
 # Copy source files
 COPY packages/map-ui-lib/ ./packages/map-ui-lib/
-COPY apps/admin-ui/ ./apps/admin-ui/
+COPY apps/admin-app/ ./apps/admin-app/
 
 # Build lib then admin-ui SPA then server
 RUN pnpm --filter @ogc-maps/storybook-components build
-RUN pnpm --filter admin-ui build
-RUN pnpm --filter admin-ui build:server
+RUN pnpm --filter admin-app build
+RUN pnpm --filter admin-app build:server
 
 # Stage 2: Runtime
 FROM node:20-alpine AS runtime
@@ -30,17 +30,17 @@ WORKDIR /app
 # Copy workspace manifest files
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY packages/map-ui-lib/package.json ./packages/map-ui-lib/
-COPY apps/admin-ui/package.json ./apps/admin-ui/
+COPY apps/admin-app/package.json ./apps/admin-app/
 
 # Install production deps only
 RUN pnpm install --frozen-lockfile --prod
 
 # Copy built SPA + server from builder
 COPY --from=builder /app/packages/map-ui-lib/dist/ ./packages/map-ui-lib/dist/
-COPY --from=builder /app/apps/admin-ui/dist/ ./apps/admin-ui/dist/
-COPY --from=builder /app/apps/admin-ui/dist-server/ ./apps/admin-ui/dist-server/
+COPY --from=builder /app/apps/admin-app/dist/ ./apps/admin-app/dist/
+COPY --from=builder /app/apps/admin-app/dist-server/ ./apps/admin-app/dist-server/
 
-WORKDIR /app/apps/admin-ui
+WORKDIR /app/apps/admin-app
 
 EXPOSE 3001
 

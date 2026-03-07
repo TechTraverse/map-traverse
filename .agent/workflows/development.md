@@ -14,7 +14,7 @@ description: Development workflows for Ogc Maps
    ```bash
    pnpm install
    ```
-2. Start backend services (PostGIS + tipg + seed + admin-ui):
+2. Start backend services (PostGIS + tipg + seed + admin-app):
    ```bash
    docker compose up -d
    ```
@@ -38,11 +38,11 @@ description: Development workflows for Ogc Maps
 ### Client App
 - `pnpm dev:app`: Run client app (http://localhost:5173)
 - `pnpm build:app`: Build client app only
-- `pnpm --filter client-map-app preview`: Preview client app production build
+- `pnpm --filter map-client preview`: Preview client app production build
 
 ### Admin UI
-- `pnpm --filter admin-ui dev`: Run admin UI + Express server (http://localhost:5174)
-- `pnpm --filter admin-ui build`: Build admin UI
+- `pnpm --filter admin-app dev`: Run admin UI + Express server (http://localhost:5174)
+- `pnpm --filter admin-app build`: Build admin UI
 
 ## Docker Troubleshooting
 - **Restart tipg**: `docker restart storybook-components-tipg` (if collections don't appear)

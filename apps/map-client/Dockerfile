@@ -10,27 +10,27 @@ WORKDIR /app
 # Copy workspace manifest files for dependency resolution
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
 COPY packages/map-ui-lib/package.json ./packages/map-ui-lib/
-COPY apps/client-map-app/package.json ./apps/client-map-app/
+COPY apps/map-client/package.json ./apps/map-client/
 
 # Install all dependencies
 RUN pnpm install --frozen-lockfile
 
 # Copy source files
 COPY packages/map-ui-lib/ ./packages/map-ui-lib/
-COPY apps/client-map-app/ ./apps/client-map-app/
+COPY apps/map-client/ ./apps/map-client/
 
 # Build lib then app
 RUN pnpm --filter @ogc-maps/storybook-components build
-RUN pnpm --filter client-map-app build
+RUN pnpm --filter map-client build
 
 # Stage 2: Runtime
 FROM nginx:alpine AS runtime
 
 # Copy SPA fallback nginx config
-COPY apps/client-map-app/nginx.conf /etc/nginx/conf.d/default.conf
+COPY apps/map-client/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy built SPA from builder
-COPY --from=builder /app/apps/client-map-app/dist/ /usr/share/nginx/html/
+COPY --from=builder /app/apps/map-client/dist/ /usr/share/nginx/html/
 
 EXPOSE 80
 

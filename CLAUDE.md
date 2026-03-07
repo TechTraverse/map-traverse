@@ -2,7 +2,7 @@
 
 ## Commands
 - **Install**: `pnpm install`
-- **Dev**: `pnpm storybook` (Lib), `pnpm dev:app` (App), `pnpm dev:lib` (Lib watch), `pnpm --filter admin-ui dev` (Admin UI)
+- **Dev**: `pnpm storybook` (Lib), `pnpm dev:app` (App), `pnpm dev:lib` (Lib watch), `pnpm --filter admin-app dev` (Admin UI)
 - **Build**: `pnpm build` (All), `pnpm build:lib`, `pnpm build:app`
 - **Test**: `pnpm test`
 - **Docker**: `docker compose up -d` (Start all services), `docker restart storybook-components-tipg` (Refresh tipg)
@@ -17,9 +17,9 @@
 
 ## Project Structure
 - `packages/map-ui-lib`: UI library (React, Zod, Hooks). Published as `@ogc-maps/storybook-components`.
-- `apps/client-map-app`: Main map app (MapLibre, Zustand, nuqs).
-- `apps/admin-ui`: Admin UI for managing map configs (Express + React, PostgreSQL, auth).
-- `docker-compose.yml`: Four services — PostGIS, tipg (OGC API), seed (Natural Earth data), admin-ui.
+- `apps/map-client`: Main map app (MapLibre, Zustand, nuqs).
+- `apps/admin-app`: Admin UI for managing map configs (Express + React, PostgreSQL, auth).
+- `docker-compose.yml`: Four services — PostGIS, tipg (OGC API), seed (Natural Earth data), admin-app.
 
 ## Workflows
 - See `.agent/workflows/development.md` for detailed setup and troubleshooting.

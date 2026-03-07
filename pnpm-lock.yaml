@@ -18,7 +18,7 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  apps/admin-ui:
+  apps/admin-app:
     dependencies:
       '@ogc-maps/storybook-components':
         specifier: workspace:*
@@ -109,7 +109,7 @@ importers:
         specifier: ^6.0.7
         version: 6.4.1(@types/node@12.20.55)(jiti@2.6.1)(lightningcss@1.30.2)
 
-  apps/client-map-app:
+  apps/map-client:
     dependencies:
       '@ogc-maps/storybook-components':
         specifier: workspace:*
