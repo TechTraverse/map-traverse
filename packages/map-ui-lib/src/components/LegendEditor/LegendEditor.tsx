@@ -13,7 +13,7 @@ import {
 export interface LegendEditorProps {
   value: LegendConfig | undefined;
   onChange: (legend: LegendConfig | undefined) => void;
-  style?: StyleConfig;
+  styles?: StyleConfig[];
 }
 
 const defaultEntry = (): LegendEntry => ({ label: '', color: '#4a90d9', shape: 'square' });
@@ -23,35 +23,43 @@ const MAX_PREVIEW_SWATCHES = 8;
 const inputClass =
   'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
-type ExprInfo = {
+type StyleEntries = {
   entries: LegendEntry[];
-  mode: 'categorical' | 'gradient';
+  mode: 'categorical' | 'gradient' | 'simple';
   property: string | null;
 };
 
-export function LegendEditor({ value, onChange, style }: LegendEditorProps) {
+export function LegendEditor({ value, onChange, styles }: LegendEditorProps) {
   const entries = value?.entries ?? [];
   const displayMode = value?.displayMode ?? 'simple';
 
-  // Derive legend info from the style's color expression (if any)
-  const styleExprInfo = useMemo((): ExprInfo | null => {
-    if (!style) return null;
-    const raw = getPrimaryColor(style);
-    if (!isExpression(raw)) return null;
-    const type = expressionType(raw);
-    if (!type) return null;
-    const shape = getShapeForStyleType(style);
-    const exprEntries = expressionEntries(raw).map((e) => ({
-      label: e.label,
-      color: e.color,
-      shape,
-    }));
-    return {
-      entries: exprEntries,
-      mode: type === 'interpolate' ? 'gradient' : 'categorical',
-      property: expressionPropertyName(raw),
-    };
-  }, [style]);
+  // Derive legend entries from all styles (expressions and plain colors)
+  const styleEntries = useMemo((): StyleEntries | null => {
+    if (!styles || styles.length === 0) return null;
+    const allEntries: LegendEntry[] = [];
+    let mode: 'categorical' | 'gradient' | 'simple' = 'simple';
+    let gradientProperty: string | null = null;
+    for (const style of styles) {
+      const raw = getPrimaryColor(style);
+      const shape = getShapeForStyleType(style);
+      if (isExpression(raw)) {
+        const type = expressionType(raw);
+        if (!type) continue;
+        const exprEntries = expressionEntries(raw).map((e) => ({ label: e.label, color: e.color, shape }));
+        allEntries.push(...exprEntries);
+        if (type === 'interpolate') {
+          mode = 'gradient';
+          if (!gradientProperty) gradientProperty = expressionPropertyName(raw);
+        } else if (mode === 'simple') {
+          mode = 'categorical';
+        }
+      } else if (typeof raw === 'string') {
+        allEntries.push({ label: style.type, color: raw, shape });
+      }
+    }
+    if (allEntries.length === 0) return null;
+    return { entries: allEntries, mode, property: gradientProperty };
+  }, [styles]);
 
   const handleAddEntry = () => {
     onChange({ ...value, entries: [...entries, defaultEntry()] } as LegendConfig);
@@ -76,14 +84,14 @@ export function LegendEditor({ value, onChange, style }: LegendEditorProps) {
   };
 
   const handleGenerateFromStyle = () => {
-    if (!styleExprInfo) return;
+    if (!styleEntries) return;
     onChange({
-      entries: styleExprInfo.entries,
-      displayMode: styleExprInfo.mode,
-      ...(styleExprInfo.mode === 'gradient' && styleExprInfo.property
-        ? { gradientProperty: styleExprInfo.property }
+      entries: styleEntries.entries,
+      displayMode: styleEntries.mode,
+      ...(styleEntries.mode === 'gradient' && styleEntries.property
+        ? { gradientProperty: styleEntries.property }
         : {}),
-      ...(styleExprInfo.mode === 'categorical' ? { showLabelsCollapsed: false } : {}),
+      ...(styleEntries.mode === 'categorical' ? { showLabelsCollapsed: false } : {}),
     });
   };
 
@@ -111,15 +119,16 @@ export function LegendEditor({ value, onChange, style }: LegendEditorProps) {
         </label>
       </div>
 
-      {/* Expression info banner when legend is disabled */}
-      {value === undefined && styleExprInfo && styleExprInfo.entries.length > 0 && (
+      {/* Style info banner when legend is disabled */}
+      {value === undefined && styleEntries && styleEntries.entries.length > 0 && (
         <div className="mapui:rounded mapui:border mapui:border-blue-200 mapui:bg-blue-50 mapui:p-3">
           <p className="mapui:m-0 mapui:text-sm mapui:text-blue-800">
-            This layer uses data-driven colors ({styleExprInfo.entries.length}{' '}
-            {styleExprInfo.entries.length === 1 ? 'category' : 'categories'})
+            {styleEntries.mode !== 'simple'
+              ? `This layer uses data-driven colors (${styleEntries.entries.length} ${styleEntries.entries.length === 1 ? 'category' : 'categories'})`
+              : `This layer has ${styleEntries.entries.length} style ${styleEntries.entries.length === 1 ? 'color' : 'colors'}`}
           </p>
           <div className="mapui:mt-2 mapui:flex mapui:flex-wrap mapui:items-center mapui:gap-1.5">
-            {styleExprInfo.entries.slice(0, MAX_PREVIEW_SWATCHES).map((entry, i) => (
+            {styleEntries.entries.slice(0, MAX_PREVIEW_SWATCHES).map((entry, i) => (
               <div
                 key={`${entry.label}-${i}`}
                 className="mapui:flex mapui:items-center mapui:gap-1"
@@ -134,9 +143,9 @@ export function LegendEditor({ value, onChange, style }: LegendEditorProps) {
                 </span>
               </div>
             ))}
-            {styleExprInfo.entries.length > MAX_PREVIEW_SWATCHES && (
+            {styleEntries.entries.length > MAX_PREVIEW_SWATCHES && (
               <span className="mapui:text-xs mapui:text-blue-600">
-                +{styleExprInfo.entries.length - MAX_PREVIEW_SWATCHES} more
+                +{styleEntries.entries.length - MAX_PREVIEW_SWATCHES} more
               </span>
             )}
           </div>
@@ -237,13 +246,13 @@ export function LegendEditor({ value, onChange, style }: LegendEditorProps) {
             >
               + Add Entry
             </button>
-            {styleExprInfo && styleExprInfo.entries.length > 0 && (
+            {styleEntries && styleEntries.entries.length > 0 && (
               <button
                 type="button"
                 onClick={handleGenerateFromStyle}
                 className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-blue-300 mapui:bg-white mapui:px-3 mapui:py-2 mapui:text-sm mapui:font-medium mapui:text-blue-700 hover:mapui:bg-blue-50"
               >
-                Populate from Style ({styleExprInfo.entries.length} entries)
+                Populate from Style ({styleEntries.entries.length} entries)
               </button>
             )}
           </div>

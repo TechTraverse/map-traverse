@@ -125,7 +125,7 @@ function CategoricalLegend({
       <div className="mapui:mt-1 mapui:ml-4">
         <div
           className="mapui:h-3 mapui:min-w-12 mapui:max-w-32 mapui:rounded-sm"
-          style={{ background: segmentedGradient(entries) }}
+          style={{ background: segmentedGradient(entries.filter((e, i, arr) => arr.findIndex((x) => x.color === e.color) === i)) }}
         />
         {showLabelsCollapsed && !expanded && (
           <div className="mapui:mt-1 mapui:flex mapui:justify-between mapui:text-[10px] mapui:text-gray-500 mapui:max-w-32">
