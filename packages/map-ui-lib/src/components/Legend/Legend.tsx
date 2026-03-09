@@ -284,17 +284,26 @@ function GradientLegend({
         />
       </div>
       {expanded && (
-        <div className={`mapui:mt-1 mapui:text-xs mapui:text-gray-600${showArrow ? ' mapui:ml-7' : ''}`}>
-          {gradientProperty && (
-            <div className="mapui:font-medium mapui:mb-1">{gradientProperty}</div>
-          )}
-          {entries.length >= 2 && (
-            <div className="mapui:flex mapui:justify-between mapui:max-w-32">
-              <span>{entries[0].label}</span>
-              <span>{entries[entries.length - 1].label}</span>
-            </div>
-          )}
-        </div>
+        <>
+        {gradientProperty && (
+          <div className={`mapui:mt-1 mapui:text-xs mapui:font-medium mapui:text-gray-600${showArrow ? ' mapui:ml-7' : ''}`}>
+            {gradientProperty}
+          </div>
+        )}
+        <ul className={`mapui:m-0 mapui:mt-1 mapui:list-none mapui:space-y-1 mapui:p-0${showArrow ? ' mapui:ml-7' : ''}`}>
+          {entries.map((entry, i) => (
+            <li
+              key={`${entry.label}-${i}`}
+              className="mapui:flex mapui:items-center mapui:gap-2 mapui:min-w-0"
+            >
+              <Swatch color={entry.color} shape={entry.shape} />
+              <span className="mapui:text-gray-700 mapui:truncate mapui:text-xs">
+                {entry.label}
+              </span>
+            </li>
+          ))}
+        </ul>
+        </>
       )}
     </div>
   );

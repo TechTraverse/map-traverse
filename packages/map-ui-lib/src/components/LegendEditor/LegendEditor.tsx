@@ -232,14 +232,14 @@ export function LegendEditor({ value, onChange, styles }: LegendEditorProps) {
           {displayMode === 'gradient' && (
             <div className="mapui:flex mapui:items-center mapui:gap-2">
               <label htmlFor="legend-gradient-property" className="mapui:text-sm mapui:text-gray-700">
-                Gradient Property
+                Gradient Label
               </label>
               <input
                 type="text"
                 id="legend-gradient-property"
                 value={value.gradientProperty ?? ''}
                 onChange={(e) => onChange({ ...value, gradientProperty: e.target.value || undefined })}
-                placeholder="e.g. POP_EST"
+                placeholder="e.g. Population"
                 className={inputClass}
               />
             </div>
