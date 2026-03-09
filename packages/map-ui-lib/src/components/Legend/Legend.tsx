@@ -239,6 +239,7 @@ function GradientLegend({
   hasArrowColumn?: boolean;
 }) {
   const { entries, gradientProperty } = legend;
+  const showColorBar = legend.showColorBar !== false;
   const showArrow = legend.showDisclosureArrow !== false;
 
   const arrowElement = (
@@ -253,11 +254,17 @@ function GradientLegend({
     <>
       {/* Col 1: arrow column — only when hasArrowColumn */}
       {hasArrowColumn && (showArrow ? arrowElement : <span className="mapui:w-5 mapui:shrink-0" />)}
-      {/* Col 2: inline gradient bar (gradient always has a bar) */}
-      <div
-        className="mapui:h-3 mapui:w-5 mapui:rounded-sm mapui:shrink-0"
-        style={{ background: smoothGradient(entries) }}
-      />
+      {/* Col 2: inline gradient bar (conditional on showColorBar) */}
+      {showColorBar ? (
+        <div
+          className="mapui:h-3 mapui:w-5 mapui:rounded-sm mapui:shrink-0"
+          style={{ background: smoothGradient(entries) }}
+        />
+      ) : !hasArrowColumn && showArrow ? (
+        arrowElement
+      ) : (
+        <span className="mapui:w-5 mapui:shrink-0" />
+      )}
       <span className="mapui:truncate">{label}</span>
     </>
   );
@@ -277,12 +284,6 @@ function GradientLegend({
           {header}
         </div>
       )}
-      <div className={showArrow ? 'mapui:mt-1 mapui:ml-7' : 'mapui:mt-1'}>
-        <div
-          className="mapui:h-3 mapui:min-w-12 mapui:max-w-32 mapui:rounded-sm"
-          style={{ background: smoothGradient(entries) }}
-        />
-      </div>
       {expanded && (
         <>
         {gradientProperty && (
@@ -365,7 +366,7 @@ export function Legend({ layers, visibleLayerIds, onOpacityChange, className }: 
     const legend = l.legend!;
     const mode = legend.displayMode ?? 'simple';
     const hasArrow = legend.showDisclosureArrow !== false;
-    if (mode === 'gradient') return hasArrow; // gradient always has inline bar
+    if (mode === 'gradient') return hasArrow && legend.showColorBar !== false;
     if (mode === 'categorical') return hasArrow && legend.showColorBar !== false;
     return false;
   });

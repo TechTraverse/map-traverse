@@ -53,7 +53,7 @@ export function LegendEditor({ value, onChange, styles }: LegendEditorProps) {
         } else if (mode === 'simple') {
           mode = 'categorical';
         }
-      } else if (typeof raw === 'string') {
+      } else if (typeof raw === 'string' && allEntries.length === 0) {
         allEntries.push({ label: style.type, color: raw, shape });
       }
     }
@@ -100,7 +100,7 @@ export function LegendEditor({ value, onChange, styles }: LegendEditorProps) {
     const updated: LegendConfig = { ...value, displayMode: mode };
     // Clean up mode-specific fields when switching away
     if (mode !== 'categorical') delete updated.showLabelsCollapsed;
-    if (mode !== 'categorical') delete updated.showColorBar;
+    if (mode !== 'categorical' && mode !== 'gradient') delete updated.showColorBar;
     if (mode !== 'gradient') delete updated.gradientProperty;
     if (mode === 'simple') delete updated.showDisclosureArrow;
     onChange(updated);
@@ -196,8 +196,8 @@ export function LegendEditor({ value, onChange, styles }: LegendEditorProps) {
             </div>
           )}
 
-          {/* Categorical-specific: Show color bar */}
-          {displayMode === 'categorical' && (
+          {/* Categorical/Gradient-specific: Show color bar */}
+          {(displayMode === 'categorical' || displayMode === 'gradient') && (
             <div className="mapui:flex mapui:items-center mapui:gap-2">
               <input
                 type="checkbox"
