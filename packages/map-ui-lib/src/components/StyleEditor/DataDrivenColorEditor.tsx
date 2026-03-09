@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { AvailableProperty } from '../../types';
 import { ColorPicker } from '../admin/ColorPicker';
 import { getColorFromPalette } from '../../utils/colorPalettes';
@@ -19,6 +19,11 @@ interface MatchPair {
 
 interface InterpolateStop {
   stop: number;
+  color: string;
+}
+
+interface EditableStop {
+  stopText: string;
   color: string;
 }
 
@@ -47,8 +52,16 @@ function buildMatchExpr(property: string, pairs: MatchPair[], fallback: string):
 }
 
 function parseInterpolateExpr(expr: unknown[]): { property: string; stops: InterpolateStop[] } {
-  // ["interpolate", ["linear"], ["get", prop], stop1, color1, ...]
-  const property = Array.isArray(expr[2]) ? (expr[2][1] as string) ?? '' : '';
+  // ["interpolate", ["linear"], ["get", prop] | ["to-number", ["get", prop]], stop1, color1, ...]
+  const getter = expr[2];
+  let property = '';
+  if (Array.isArray(getter)) {
+    if (getter[0] === 'to-number' && Array.isArray(getter[1])) {
+      property = (getter[1][1] as string) ?? '';
+    } else {
+      property = (getter[1] as string) ?? '';
+    }
+  }
   const stops: InterpolateStop[] = [];
   for (let i = 3; i < expr.length; i += 2) {
     stops.push({ stop: Number(expr[i] ?? 0), color: (expr[i + 1] as string) ?? '#000000' });
@@ -57,11 +70,38 @@ function parseInterpolateExpr(expr: unknown[]): { property: string; stops: Inter
 }
 
 function buildInterpolateExpr(property: string, stops: InterpolateStop[]): unknown[] {
-  const flat: unknown[] = ['interpolate', ['linear'], ['get', property]];
+  const flat: unknown[] = ['interpolate', ['linear'], ['to-number', ['get', property]]];
   for (const s of stops) {
     flat.push(s.stop, s.color);
   }
   return flat;
+}
+
+function stopsToEditable(stops: InterpolateStop[]): EditableStop[] {
+  return stops.map((s) => ({ stopText: String(s.stop), color: s.color }));
+}
+
+function validateStops(stops: EditableStop[]): string[] {
+  return stops.map((s, i) => {
+    if (s.stopText.trim() === '') return 'Value required';
+    const num = parseFloat(s.stopText);
+    if (isNaN(num)) return 'Must be a number';
+    if (i > 0) {
+      const prev = parseFloat(stops[i - 1].stopText);
+      if (!isNaN(prev) && num <= prev) return 'Must be greater than previous stop';
+    }
+    return '';
+  });
+}
+
+function editableToInterpolateStops(stops: EditableStop[]): InterpolateStop[] | null {
+  const result: InterpolateStop[] = [];
+  for (const s of stops) {
+    const num = parseFloat(s.stopText);
+    if (isNaN(num)) return null;
+    result.push({ stop: num, color: s.color });
+  }
+  return result;
 }
 
 const inputClass =
@@ -84,14 +124,32 @@ export function DataDrivenColorEditor({
 
   // Match state
   const parsed = parseMatchExpr(value);
-  const interpolated = parseInterpolateExpr(value);
 
   const matchProperty = mode === 'match' ? parsed.property : '';
   const matchPairs = mode === 'match' ? parsed.pairs : [];
   const matchFallback = mode === 'match' ? parsed.fallback : '#000000';
 
-  const interpolateProperty = mode === 'interpolate' ? interpolated.property : '';
-  const interpolateStops = mode === 'interpolate' ? interpolated.stops : [];
+  // Interpolate: local editable state
+  const [editableStops, setEditableStops] = useState<EditableStop[]>(() => {
+    const interpolated = parseInterpolateExpr(value);
+    return stopsToEditable(interpolated.stops);
+  });
+  const [interpolateProperty, setInterpolateProperty] = useState<string>(() => {
+    return mode === 'interpolate' ? parseInterpolateExpr(value).property : '';
+  });
+  const [stopErrors, setStopErrors] = useState<string[]>([]);
+
+  // Sync from prop when value changes externally (mode switch, property change from parent)
+  const prevValueRef = useRef(value);
+  useEffect(() => {
+    if (prevValueRef.current !== value && mode === 'interpolate') {
+      const interpolated = parseInterpolateExpr(value);
+      setEditableStops(stopsToEditable(interpolated.stops));
+      setInterpolateProperty(interpolated.property);
+      setStopErrors([]);
+    }
+    prevValueRef.current = value;
+  }, [value, mode]);
 
   const stringProperties = availableProperties.filter(
     (p) => !p.type || p.type === 'string',
@@ -153,33 +211,45 @@ export function DataDrivenColorEditor({
   };
 
   // --- Interpolate handlers ---
-  const updateInterpolate = (property: string, stops: InterpolateStop[]) => {
-    onChange(buildInterpolateExpr(property, stops));
+  const propagateIfValid = (property: string, stops: EditableStop[]) => {
+    const errors = validateStops(stops);
+    setStopErrors(errors);
+    if (property && stops.length >= 2 && errors.every((e) => !e)) {
+      const parsed = editableToInterpolateStops(stops);
+      if (parsed) onChange(buildInterpolateExpr(property, parsed));
+    }
   };
 
   const handleInterpolatePropertyChange = (property: string) => {
-    updateInterpolate(property, interpolateStops);
+    setInterpolateProperty(property);
+    propagateIfValid(property, editableStops);
   };
 
-  const handleInterpolateStopValueChange = (index: number, stop: number) => {
-    const next = interpolateStops.map((s, i) => (i === index ? { ...s, stop } : s));
-    updateInterpolate(interpolateProperty, next);
+  const handleEditableStopChange = (index: number, text: string) => {
+    const next = editableStops.map((s, i) => (i === index ? { ...s, stopText: text } : s));
+    setEditableStops(next);
+    propagateIfValid(interpolateProperty, next);
   };
 
   const handleInterpolateStopColorChange = (index: number, color: string) => {
-    const next = interpolateStops.map((s, i) => (i === index ? { ...s, color } : s));
-    updateInterpolate(interpolateProperty, next);
+    const next = editableStops.map((s, i) => (i === index ? { ...s, color } : s));
+    setEditableStops(next);
+    propagateIfValid(interpolateProperty, next);
   };
 
   const handleInterpolateStopRemove = (index: number) => {
-    const next = interpolateStops.filter((_, i) => i !== index);
-    updateInterpolate(interpolateProperty, next);
+    const next = editableStops.filter((_, i) => i !== index);
+    setEditableStops(next);
+    propagateIfValid(interpolateProperty, next);
   };
 
   const handleInterpolateStopAdd = () => {
-    const lastStop = interpolateStops[interpolateStops.length - 1]?.stop ?? 0;
-    const next = [...interpolateStops, { stop: lastStop + 10, color: getColorFromPalette(interpolateStops.length) }];
-    updateInterpolate(interpolateProperty, next);
+    const lastText = editableStops[editableStops.length - 1]?.stopText ?? '0';
+    const lastNum = parseFloat(lastText);
+    const nextStop = isNaN(lastNum) ? 0 : lastNum + 10;
+    const next = [...editableStops, { stopText: String(nextStop), color: getColorFromPalette(editableStops.length) }];
+    setEditableStops(next);
+    propagateIfValid(interpolateProperty, next);
   };
 
   // --- Mode switch ---
@@ -188,6 +258,9 @@ export function DataDrivenColorEditor({
     if (newMode === 'match') {
       onChange(buildMatchExpr('', [], '#000000'));
     } else {
+      setEditableStops([]);
+      setInterpolateProperty('');
+      setStopErrors([]);
       onChange(buildInterpolateExpr('', []));
     }
   };
@@ -297,27 +370,34 @@ export function DataDrivenColorEditor({
           </select>
 
           {/* Stops */}
-          {interpolateStops.length > 0 && (
+          {editableStops.length > 0 && (
             <div className="mapui:flex mapui:flex-col mapui:gap-1">
-              {interpolateStops.map((s, i) => (
-                <div key={i} className="mapui:flex mapui:items-center mapui:gap-2">
-                  <input
-                    type="number"
-                    value={s.stop}
-                    onChange={(e) => handleInterpolateStopValueChange(i, parseFloat(e.target.value) || 0)}
-                    placeholder="stop"
-                    className={`${inputClass} mapui:w-24`}
-                  />
-                  <ColorPicker
-                    value={s.color}
-                    onChange={(c) => handleInterpolateStopColorChange(i, c)}
-                    label={`Color at stop ${s.stop}`}
-                  />
-                  <button type="button" onClick={() => handleInterpolateStopRemove(i)} className={dangerBtnClass}>
-                    ×
-                  </button>
-                </div>
-              ))}
+              {editableStops.map((s, i) => {
+                const error = stopErrors[i];
+                return (
+                  <div key={i} className="mapui:flex mapui:flex-col mapui:gap-0.5">
+                    <div className="mapui:flex mapui:items-center mapui:gap-2">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={s.stopText}
+                        onChange={(e) => handleEditableStopChange(i, e.target.value)}
+                        placeholder="stop"
+                        className={`${inputClass} mapui:w-24`}
+                      />
+                      <ColorPicker
+                        value={s.color}
+                        onChange={(c) => handleInterpolateStopColorChange(i, c)}
+                        label={`Color at stop ${s.stopText}`}
+                      />
+                      <button type="button" onClick={() => handleInterpolateStopRemove(i)} className={dangerBtnClass}>
+                        ×
+                      </button>
+                    </div>
+                    {error && <span className="mapui:text-xs mapui:text-red-500">{error}</span>}
+                  </div>
+                );
+              })}
             </div>
           )}
 

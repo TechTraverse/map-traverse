@@ -76,10 +76,13 @@ export function expressionEntries(expr: unknown[]): ExpressionColorEntry[] {
 /** Extracts the property name from a match or interpolate expression. */
 export function expressionPropertyName(expr: unknown[]): string | null {
   // match: ["match", ["get", prop], ...]
-  // interpolate: ["interpolate", [...], ["get", prop], ...]
+  // interpolate: ["interpolate", [...], ["get", prop] | ["to-number", ["get", prop]], ...]
   const getExpr = expr[0] === 'match' ? expr[1] : expr[0] === 'interpolate' ? expr[2] : null;
-  if (Array.isArray(getExpr) && getExpr[0] === 'get' && typeof getExpr[1] === 'string') {
-    return getExpr[1];
+  if (Array.isArray(getExpr)) {
+    if (getExpr[0] === 'get' && typeof getExpr[1] === 'string') return getExpr[1];
+    if (getExpr[0] === 'to-number' && Array.isArray(getExpr[1]) && getExpr[1][0] === 'get') {
+      return (getExpr[1][1] as string) ?? null;
+    }
   }
   return null;
 }
