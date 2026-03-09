@@ -1,5 +1,11 @@
 # @ogc-maps/storybook-components
 
+## 0.9.0
+
+### Minor Changes
+
+- c5c4a66: legend enhancements
+
 ## 0.8.0
 
 ### Minor Changes
