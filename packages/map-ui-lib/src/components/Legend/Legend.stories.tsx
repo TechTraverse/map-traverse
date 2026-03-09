@@ -243,6 +243,24 @@ export const CategoricalWithLabels: Story = {
   },
 };
 
+/** Categorical legend with showColorBar: false — no color bar in collapsed state. */
+export const CategoricalNoColorBar: Story = {
+  args: {
+    layers: [
+      {
+        ...categoricalLayer,
+        id: 'countries-no-bar',
+        label: 'Countries (No Color Bar)',
+        legend: {
+          ...categoricalLayer.legend!,
+          showColorBar: false,
+        },
+      },
+    ],
+    visibleLayerIds: ['countries-no-bar'],
+  },
+};
+
 /** Gradient legend with smooth color bar and expandable property/range info. */
 export const GradientLegend: Story = {
   args: {
@@ -251,11 +269,48 @@ export const GradientLegend: Story = {
   },
 };
 
-/** Mix of all display modes and a layer without legend config. */
+/** Categorical legend with showDisclosureArrow: true and showColorBar: false — arrow visible, no color bar. */
+export const CategoricalArrowNoColorBar: Story = {
+  args: {
+    layers: [
+      {
+        ...categoricalLayer,
+        id: 'countries-arrow-no-bar',
+        label: 'Countries (Arrow, No Color Bar)',
+        legend: {
+          ...categoricalLayer.legend!,
+          showColorBar: false,
+          showDisclosureArrow: true,
+        },
+      },
+    ],
+    visibleLayerIds: ['countries-arrow-no-bar'],
+  },
+};
+
+/** Categorical legend with showDisclosureArrow: false — no arrow, narrow color bar, aligns with simple rows. */
+export const CategoricalNoArrow: Story = {
+  args: {
+    layers: [
+      {
+        ...categoricalLayer,
+        id: 'countries-no-arrow',
+        label: 'Countries (No Arrow)',
+        legend: {
+          ...categoricalLayer.legend!,
+          showDisclosureArrow: false,
+        },
+      },
+    ],
+    visibleLayerIds: ['countries-no-arrow'],
+  },
+};
+
+/** Mix of all display modes — simple rows indent to align with arrow-offset rows. */
 export const MixedModes: Story = {
   args: {
-    layers: [countriesLayer, categoricalLayer, gradientLayer, noLegendLayer],
-    visibleLayerIds: ['countries', 'countries-by-region', 'population-density', 'unstyled'],
+    layers: [countriesLayer, riversLayer, placesLayer, categoricalLayer, gradientLayer, noLegendLayer],
+    visibleLayerIds: ['countries', 'rivers', 'places', 'countries-by-region', 'population-density', 'unstyled'],
   },
 };
 

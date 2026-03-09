@@ -203,6 +203,8 @@ export const LegendConfigSchema = z.object({
   entries: z.array(LegendEntrySchema).min(1),
   displayMode: z.enum(['categorical', 'gradient', 'simple']).optional(),
   showLabelsCollapsed: z.boolean().optional(),
+  showColorBar: z.boolean().optional(),
+  showDisclosureArrow: z.boolean().optional(),
   gradientProperty: z.string().optional(),
 });
 

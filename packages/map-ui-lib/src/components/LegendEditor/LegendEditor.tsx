@@ -100,7 +100,9 @@ export function LegendEditor({ value, onChange, styles }: LegendEditorProps) {
     const updated: LegendConfig = { ...value, displayMode: mode };
     // Clean up mode-specific fields when switching away
     if (mode !== 'categorical') delete updated.showLabelsCollapsed;
+    if (mode !== 'categorical') delete updated.showColorBar;
     if (mode !== 'gradient') delete updated.gradientProperty;
+    if (mode === 'simple') delete updated.showDisclosureArrow;
     onChange(updated);
   };
 
@@ -190,6 +192,38 @@ export function LegendEditor({ value, onChange, styles }: LegendEditorProps) {
               />
               <label htmlFor="legend-show-labels-collapsed" className="mapui:text-sm mapui:text-gray-700">
                 Show labels in collapsed view
+              </label>
+            </div>
+          )}
+
+          {/* Categorical-specific: Show color bar */}
+          {displayMode === 'categorical' && (
+            <div className="mapui:flex mapui:items-center mapui:gap-2">
+              <input
+                type="checkbox"
+                id="legend-show-color-bar"
+                checked={value.showColorBar !== false}
+                onChange={(e) => onChange({ ...value, showColorBar: e.target.checked })}
+                className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
+              />
+              <label htmlFor="legend-show-color-bar" className="mapui:text-sm mapui:text-gray-700">
+                Show color bar
+              </label>
+            </div>
+          )}
+
+          {/* Categorical/Gradient-specific: Show disclosure arrow */}
+          {(displayMode === 'categorical' || displayMode === 'gradient') && (
+            <div className="mapui:flex mapui:items-center mapui:gap-2">
+              <input
+                type="checkbox"
+                id="legend-show-disclosure-arrow"
+                checked={value.showDisclosureArrow !== false}
+                onChange={(e) => onChange({ ...value, showDisclosureArrow: e.target.checked })}
+                className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
+              />
+              <label htmlFor="legend-show-disclosure-arrow" className="mapui:text-sm mapui:text-gray-700">
+                Show disclosure arrow
               </label>
             </div>
           )}
