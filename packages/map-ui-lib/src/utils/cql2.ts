@@ -63,7 +63,8 @@ export function lte(property: string, value: number | CQL2Date | CQL2Timestamp):
 }
 
 export function between(property: string, lower: number, upper: number): CQL2Expression {
-  return { op: 'between', args: [{ property }, lower, upper] };
+  // Use gte+lte instead of the 'between' op — tipg/pygeofilter doesn't handle 'between' correctly
+  return { op: 'and', args: [gte(property, lower), lte(property, upper)] };
 }
 
 // ---------------------------------------------------------------------------

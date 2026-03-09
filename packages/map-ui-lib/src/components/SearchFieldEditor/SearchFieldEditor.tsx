@@ -210,6 +210,35 @@ export function SearchFieldEditor({ value, onChange, availableProperties }: Sear
               <option value="between">Between</option>
             </select>
           </FormField>
+          <FormField label="Operator Labels">
+            <select
+              value={(value as NumberSearchField).operatorLabelStyle ?? 'symbol'}
+              onChange={(e) =>
+                onChange({
+                  ...value,
+                  operatorLabelStyle: e.target.value as 'symbol' | 'word',
+                } as NumberSearchField)
+              }
+              className={inputClass}
+            >
+              <option value="symbol">Symbols (=, &gt;, &lt;)</option>
+              <option value="word">Words (equal to, greater than)</option>
+            </select>
+          </FormField>
+          <div className="mapui:flex mapui:items-center mapui:gap-2">
+            <input
+              type="checkbox"
+              id="number-show-range"
+              checked={(value as NumberSearchField).showRange ?? false}
+              onChange={(e) =>
+                onChange({ ...value, showRange: e.target.checked } as NumberSearchField)
+              }
+              className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
+            />
+            <label htmlFor="number-show-range" className="mapui:text-sm mapui:text-gray-700">
+              Show Range on Slider
+            </label>
+          </div>
           <div className="mapui:grid mapui:grid-cols-3 mapui:gap-2">
             <FormField label="Min">
               <input

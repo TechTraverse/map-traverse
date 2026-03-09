@@ -229,6 +229,8 @@ export const NumberSearchFieldSchema = z.object({
   type: z.literal('number'),
   inputMode: z.enum(['input', 'slider']).default('input'),
   operator: z.enum(['eq', 'gt', 'lt', 'gte', 'lte', 'between']).default('eq'),
+  operatorLabelStyle: z.enum(['symbol', 'word']).optional(),
+  showRange: z.boolean().optional(),
   min: z.number().optional(),
   max: z.number().optional(),
   step: z.number().optional(),

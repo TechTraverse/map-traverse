@@ -9,12 +9,21 @@ interface NumberInputProps {
   id?: string;
 }
 
-const OPERATOR_LABELS: Record<string, string> = {
+const OPERATOR_SYMBOL_LABELS: Record<string, string> = {
   eq: '=',
   gt: '>',
   lt: '<',
   gte: '>=',
   lte: '<=',
+  between: 'between',
+};
+
+const OPERATOR_WORD_LABELS: Record<string, string> = {
+  eq: 'equal to',
+  gt: 'greater than',
+  lt: 'less than',
+  gte: 'greater than or equal to',
+  lte: 'less than or equal to',
   between: 'between',
 };
 
@@ -130,7 +139,7 @@ export function NumberInput({ field, value, onChange, className = '', id }: Numb
       >
         {availableOperators.map((op) => (
           <option key={op} value={op}>
-            {OPERATOR_LABELS[op]}
+            {(field.operatorLabelStyle === 'word' ? OPERATOR_WORD_LABELS : OPERATOR_SYMBOL_LABELS)[op]}
           </option>
         ))}
       </select>
@@ -163,21 +172,47 @@ export function NumberInput({ field, value, onChange, className = '', id }: Numb
         </div>
       ) : field.inputMode === 'slider' ? (
         /* Slider */
-        <div className="mapui:flex mapui:items-center mapui:gap-2">
-          <input
-            type="range"
-            value={singleNumValue !== '' ? singleNumValue : (field.min ?? 0)}
-            min={field.min ?? 0}
-            max={field.max ?? 100}
-            step={field.step ?? 1}
-            onChange={(e) => handleSingleValueChange(e.target.value)}
-            aria-label={field.label}
-            className="mapui:flex-1"
-          />
-          <span className="mapui:text-xs mapui:text-gray-600 mapui:min-w-12 mapui:whitespace-nowrap mapui:text-right">
-            {singleNumValue !== '' ? singleNumValue : (field.min ?? 0)}
-          </span>
-        </div>
+        field.showRange ? (
+          <div className="mapui:flex mapui:flex-col mapui:gap-0.5">
+            <div className="mapui:flex mapui:items-center mapui:gap-2">
+              <span className="mapui:text-xs mapui:text-gray-400 mapui:whitespace-nowrap">
+                {field.min ?? 0}
+              </span>
+              <input
+                type="range"
+                value={singleNumValue !== '' ? singleNumValue : (field.min ?? 0)}
+                min={field.min ?? 0}
+                max={field.max ?? 100}
+                step={field.step ?? 1}
+                onChange={(e) => handleSingleValueChange(e.target.value)}
+                aria-label={field.label}
+                className="mapui:flex-1"
+              />
+              <span className="mapui:text-xs mapui:text-gray-400 mapui:whitespace-nowrap">
+                {field.max ?? 100}
+              </span>
+            </div>
+            <span className="mapui:text-xs mapui:text-gray-600 mapui:text-center">
+              {singleNumValue !== '' ? singleNumValue : (field.min ?? 0)}
+            </span>
+          </div>
+        ) : (
+          <div className="mapui:flex mapui:items-center mapui:gap-2">
+            <input
+              type="range"
+              value={singleNumValue !== '' ? singleNumValue : (field.min ?? 0)}
+              min={field.min ?? 0}
+              max={field.max ?? 100}
+              step={field.step ?? 1}
+              onChange={(e) => handleSingleValueChange(e.target.value)}
+              aria-label={field.label}
+              className="mapui:flex-1"
+            />
+            <span className="mapui:text-xs mapui:text-gray-600 mapui:min-w-12 mapui:whitespace-nowrap mapui:text-right">
+              {singleNumValue !== '' ? singleNumValue : (field.min ?? 0)}
+            </span>
+          </div>
+        )
       ) : (
         /* Number input */
         <input

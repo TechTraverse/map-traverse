@@ -91,7 +91,7 @@ export function CollapsibleControl({
           </div>
 
           {/* Content */}
-          <div>{children}</div>
+          <div className="mapui:p-2">{children}</div>
         </div>
       )}
     </div>
