@@ -38,7 +38,7 @@ export function geometryTypeToStyleType(geomType: string): 'fill' | 'line' | 'ci
  */
 export function geometryTypeToStyleTypes(geomType: string): ('fill' | 'line' | 'circle' | 'symbol')[] {
   const lower = geomType.toLowerCase();
-  if (lower.includes('polygon')) return ['fill'];
+  if (lower.includes('polygon')) return ['fill', 'line'];
   if (lower.includes('linestring')) return ['line'];
   if (lower.includes('point')) return ['circle', 'symbol'];
   return [];

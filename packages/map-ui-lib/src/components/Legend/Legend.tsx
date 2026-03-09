@@ -160,6 +160,7 @@ function CategoricalLegend({
   const { entries } = legend;
   const showColorBar = legend.showColorBar !== false;
   const showArrow = legend.showDisclosureArrow !== false;
+  const showLabelsCollapsed = legend.showLabelsCollapsed ?? false;
   const uniqueColorEntries = entries.filter((e, i, arr) => arr.findIndex((x) => x.color === e.color) === i);
   const sortedEntries = sortByHue(uniqueColorEntries);
 
@@ -205,7 +206,7 @@ function CategoricalLegend({
           {header}
         </div>
       )}
-      {expanded && (
+      {(expanded || showLabelsCollapsed) && (
         <ul className={`mapui:m-0 mapui:mt-1 mapui:list-none mapui:space-y-1 mapui:p-0 mapui:max-h-48 mapui:overflow-y-auto${showArrow ? ' mapui:ml-7' : ''}`}>
           {entries.map((entry, i) => (
             <li
@@ -303,13 +304,15 @@ function OpacitySlider({
   layerId,
   opacity,
   onChange,
+  hasArrowColumn,
 }: {
   layerId: string;
   opacity: number;
   onChange: (layerId: string, opacity: number) => void;
+  hasArrowColumn?: boolean;
 }) {
   return (
-    <div className="mapui:flex mapui:items-center mapui:gap-1.5 mapui:mt-0.5 mapui:ml-1">
+    <div className={`mapui:flex mapui:items-center mapui:gap-1.5 mapui:mt-0.5 ${hasArrowColumn ? 'mapui:ml-14' : 'mapui:ml-7'}`}>
       <input
         type="range"
         min={0}
@@ -409,6 +412,7 @@ export function Legend({ layers, visibleLayerIds, onOpacityChange, className }: 
                   layerId={layer.id}
                   opacity={getLayerOpacity(layer)}
                   onChange={onOpacityChange}
+                  hasArrowColumn={hasArrowColumn}
                 />
               )}
             </li>
