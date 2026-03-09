@@ -12,7 +12,7 @@ import {
   type CoordinateFormatOption,
   type ExportableLayer,
 } from '@ogc-maps/storybook-components';
-import { useCsvExport, fromStructuredFilters } from '@ogc-maps/storybook-components/hooks';
+import { useCsvExport, fromStructuredFilters, fetchFeatures, eq, bboxFromGeometry } from '@ogc-maps/storybook-components/hooks';
 import type { UIConfig, SearchFilterValue, SearchFilterValues } from '@ogc-maps/storybook-components/types';
 import { useMapStore, useActiveLayerIds } from '../stores/mapStore';
 import { useAutocompleteSuggestions } from '../hooks/useAutocompleteSuggestions';
@@ -81,6 +81,23 @@ export function MapOverlay({
       exportCsv(layer.collection, `${layer.label}.csv`, cql2Filter);
     },
     [exportCsv, activeCql2Filters],
+  );
+
+  const handleZoomToFeature = useCallback(
+    async (layerId: string, property: string, value: string) => {
+      const layer = useMapStore.getState().layers.find((l) => l.id === layerId);
+      if (!layer) return;
+      const source = useMapStore.getState().sources.find((s) => s.id === layer.sourceId);
+      if (!source) return;
+
+      const cql2Filter = eq(property, value);
+      const data = await fetchFeatures(source.url, layer.collection, { cql2Filter, limit: 1 });
+      if (!data.features.length) return;
+
+      const bbox = bboxFromGeometry(data.features[0].geometry as Record<string, unknown>);
+      if (bbox) useMapStore.getState().fitBounds(bbox);
+    },
+    [],
   );
 
   // Accordion state: track which control is currently open
@@ -154,6 +171,7 @@ export function MapOverlay({
                 onClearFilters={clearLayerFilters}
                 autocompleteSuggestions={autocompleteSuggestions}
                 onFetchSuggestions={fetchSuggestions}
+                onZoomToFeature={handleZoomToFeature}
                 className="p-3 max-w-xs"
                 hideTitle
               />

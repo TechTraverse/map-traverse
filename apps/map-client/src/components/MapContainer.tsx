@@ -120,6 +120,8 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
   const activeBasemapId = useMapStore((s) => s.activeBasemapId);
   const sprites = useMapStore((s) => s.sprites);
   const activeCql2Filters = useMapStore((s) => s.activeCql2Filters);
+  const pendingFitBounds = useMapStore((s) => s.pendingFitBounds);
+  const clearPendingFitBounds = useMapStore((s) => s.clearPendingFitBounds);
   const setViewState = useMapStore((s) => s.setViewState);
 
   const [mapInstance, setMapInstance] = useState<ReturnType<MapRef['getMap']> | null>(null);
@@ -163,6 +165,13 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
       });
     }
   }, [mapInstance, layers, activeCql2Filters]);
+
+  // Zoom to pending fit bounds
+  useEffect(() => {
+    if (!pendingFitBounds || !mapRef.current) return;
+    mapRef.current.fitBounds(pendingFitBounds, { padding: 50, maxZoom: 12 });
+    clearPendingFitBounds();
+  }, [pendingFitBounds, clearPendingFitBounds]);
 
   // Build source URL lookup map with tileMatrixSetId
   const sourceUrlMap = useMemo(() => {

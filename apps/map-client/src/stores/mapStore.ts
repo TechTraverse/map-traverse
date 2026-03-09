@@ -10,7 +10,7 @@ import type {
   UIConfig,
   SearchFilterValues,
 } from '@ogc-maps/storybook-components/types';
-import type { CQL2Expression } from '@ogc-maps/storybook-components/hooks';
+import type { CQL2Expression, BBox } from '@ogc-maps/storybook-components/hooks';
 
 interface MapState {
   viewState: ViewConfig;
@@ -24,6 +24,7 @@ interface MapState {
   activeFilters: Record<string, SearchFilterValues>;
   /** Derived CQL2 expressions for API calls. Kept in sync with activeFilters. */
   activeCql2Filters: Record<string, CQL2Expression | null>;
+  pendingFitBounds: BBox | null;
 
   setViewState: (vs: Partial<ViewConfig>) => void;
   toggleLayerVisibility: (layerId: string) => void;
@@ -34,6 +35,8 @@ interface MapState {
   setLayerFilters: (layerId: string, filters: SearchFilterValues) => void;
   setLayerCql2Filter: (layerId: string, cql2: CQL2Expression | null) => void;
   clearLayerFilters: (layerId: string) => void;
+  fitBounds: (bbox: BBox) => void;
+  clearPendingFitBounds: () => void;
   hydrate: (config: MapConfig) => void;
 }
 
@@ -63,6 +66,7 @@ export const useMapStore = create<MapState>((set) => ({
   },
   activeFilters: {},
   activeCql2Filters: {},
+  pendingFitBounds: null,
 
   setViewState: (vs) =>
     set((state) => ({
@@ -134,6 +138,9 @@ export const useMapStore = create<MapState>((set) => ({
       const { [layerId]: _c, ...restCql2 } = state.activeCql2Filters;
       return { activeFilters: restFilters, activeCql2Filters: restCql2 };
     }),
+
+  fitBounds: (bbox) => set({ pendingFitBounds: bbox }),
+  clearPendingFitBounds: () => set({ pendingFitBounds: null }),
 
   hydrate: (config) =>
     set({

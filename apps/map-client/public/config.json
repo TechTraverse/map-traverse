@@ -41,6 +41,7 @@
             "label": "Country Name",
             "type": "text",
             "autocomplete": true,
+            "zoomTo": true,
             "placeholder": "Search countries..."
           },
           {
@@ -114,6 +115,7 @@
             "type": "text",
             "autocomplete": true,
             "prefetch": true,
+            "zoomTo": true,
             "placeholder": "Search cities..."
           },
           {

@@ -11,6 +11,7 @@ export interface SearchPanelProps {
   onClearFilters: (layerId: string) => void;
   autocompleteSuggestions?: Record<string, string[]>;
   onFetchSuggestions?: (layerId: string, property: string, query: string, options?: { prefetch?: boolean }) => void;
+  onZoomToFeature?: (layerId: string, property: string, value: string) => void;
   className?: string;
   hideTitle?: boolean;
 }
@@ -33,6 +34,7 @@ export function SearchPanel({
   onFilterChange,
   onClearFilters,
   autocompleteSuggestions = {},
+  onZoomToFeature,
   onFetchSuggestions,
   className = '',
   hideTitle,
@@ -109,7 +111,12 @@ export function SearchPanel({
                     <AutocompleteInput
                       id={fieldId}
                       value={(value as string) ?? ''}
-                      onChange={(v) => onFilterChange(layer.id, field.property, v || undefined)}
+                      onChange={(v) => {
+                        onFilterChange(layer.id, field.property, v || undefined);
+                        if (v && (field as TextSearchField).zoomTo) {
+                          onZoomToFeature?.(layer.id, field.property, v);
+                        }
+                      }}
                       suggestions={[...new Set([
                         ...(autocompleteSuggestions[suggestionKey] ?? []),
                         ...((field as TextSearchField).options ?? []),
@@ -126,6 +133,16 @@ export function SearchPanel({
                       onChange={(e) =>
                         onFilterChange(layer.id, field.property, e.target.value || undefined)
                       }
+                      onBlur={(e) => {
+                        if (e.target.value && (field as TextSearchField).zoomTo) {
+                          onZoomToFeature?.(layer.id, field.property, e.target.value);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && (e.target as HTMLInputElement).value && (field as TextSearchField).zoomTo) {
+                          onZoomToFeature?.(layer.id, field.property, (e.target as HTMLInputElement).value);
+                        }
+                      }}
                       className="mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
                     />
                   ) : field.type === 'datetime' && (field as DatetimeSearchField).range ? (

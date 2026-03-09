@@ -222,6 +222,7 @@ export const TextSearchFieldSchema = z.object({
   autocomplete: z.boolean().default(false),
   prefetch: z.boolean().optional(),
   options: z.array(z.string()).optional(),
+  zoomTo: z.boolean().optional(),
 });
 
 export const NumberSearchFieldSchema = z.object({

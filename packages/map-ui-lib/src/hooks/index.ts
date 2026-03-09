@@ -75,3 +75,4 @@ export {
   type CQL2Timestamp,
   type CQL2Interval,
 } from '../utils/cql2';
+export { bboxFromGeometry, type BBox } from '../utils/geo';

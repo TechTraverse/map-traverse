@@ -163,6 +163,20 @@ export function SearchFieldEditor({ value, onChange, availableProperties }: Sear
               Prefetch Options
             </label>
           </div>
+          <div className="mapui:flex mapui:items-center mapui:gap-2">
+            <input
+              type="checkbox"
+              id="text-zoomTo"
+              checked={(value as TextSearchField).zoomTo ?? false}
+              onChange={(e) =>
+                onChange({ ...value, zoomTo: e.target.checked } as TextSearchField)
+              }
+              className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
+            />
+            <label htmlFor="text-zoomTo" className="mapui:text-sm mapui:text-gray-700">
+              Zoom to Result
+            </label>
+          </div>
           <FormField label="Static Options (comma-separated)">
             <CommaSeparatedInput
               options={(value as TextSearchField).options}
