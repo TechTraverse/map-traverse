@@ -203,9 +203,13 @@ export function SearchPanel({
                       <select
                         id={fieldId}
                         value={(value as string) ?? ''}
-                        onChange={(e) =>
-                          onFilterChange(layer.id, field.property, e.target.value || undefined)
-                        }
+                        onChange={(e) => {
+                          const newValue = e.target.value || undefined;
+                          onFilterChange(layer.id, field.property, newValue);
+                          if (newValue && (field as SelectSearchField).zoomTo) {
+                            onZoomToFeature?.(layer.id, field.property, newValue);
+                          }
+                        }}
                         className="mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
                       >
                         <option value="">{field.placeholder ?? 'Select...'}</option>

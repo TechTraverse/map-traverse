@@ -248,6 +248,7 @@ export const SelectSearchFieldSchema = z.object({
   type: z.literal('select'),
   options: z.array(z.string()).optional(),
   prefetch: z.boolean().optional(),
+  zoomTo: z.boolean().optional(),
 });
 
 export const SearchFieldSchema = z.discriminatedUnion('type', [

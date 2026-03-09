@@ -9,9 +9,6 @@ import {
   resolvePropertyDisplay,
   fetchDistinctValues,
   resolveStyleWithSprites,
-  fetchFeatures,
-  eq,
-  bboxFromGeometry,
 } from '@ogc-maps/storybook-components/hooks';
 import type { CQL2Expression } from '@ogc-maps/storybook-components/hooks';
 import {

@@ -48,7 +48,8 @@
             "property": "continent",
             "label": "Continent",
             "type": "select",
-            "prefetch": true
+            "prefetch": true,
+            "zoomTo": true
           },
           {
             "property": "economy",
