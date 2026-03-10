@@ -8,6 +8,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  define: {
+    'process.browser': 'true',
+  },
   resolve: {
     alias: {
       '@ogc-maps/storybook-components/tailwind.css': path.resolve(__dirname, '../../packages/map-ui-lib/tailwind.css'),

@@ -64,7 +64,8 @@ export const flatgeobufConverter: FormatConverter = async (features, collectionI
 };
 
 export const geopackageConverter: FormatConverter = async (features, collectionId) => {
-  const { GeoPackageAPI } = await import('@ngageoint/geopackage');
+  const { GeoPackageAPI, setSqljsWasmLocateFile } = await import('@ngageoint/geopackage');
+  setSqljsWasmLocateFile((filename: string) => `/${filename}`);
   const geoPackage = await GeoPackageAPI.create();
 
   const allKeys = [...new Set(features.flatMap((f) => Object.keys(f.properties ?? {})))];
