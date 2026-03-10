@@ -9,14 +9,27 @@ import {
   FeatureDetailPanel,
   FeatureTooltip,
   ExportButton,
+  ExportModal,
   type CoordinateFormatOption,
   type ExportableLayer,
+  type ExportFormatOption,
+  type ExportRequest,
 } from '@ogc-maps/storybook-components';
-import { useCsvExport, fromStructuredFilters, fetchFeatures, eq, bboxFromGeometry } from '@ogc-maps/storybook-components/hooks';
+import { useExport, fromStructuredFilters, fetchFeatures, eq, bboxFromGeometry } from '@ogc-maps/storybook-components/hooks';
 import type { UIConfig, SearchFilterValue, SearchFilterValues } from '@ogc-maps/storybook-components/types';
 import { useMapStore, useActiveLayerIds } from '../stores/mapStore';
 import { useAutocompleteSuggestions } from '../hooks/useAutocompleteSuggestions';
+import { exportConverters } from '../utils/exportConverters';
 import { LuLayers3, LuMap, LuSearch } from 'react-icons/lu';
+
+const availableFormats: ExportFormatOption[] = [
+  { id: 'csv', label: 'CSV', extension: '.csv', description: 'Comma-separated values' },
+  { id: 'geojson', label: 'GeoJSON', extension: '.geojson', description: 'GeoJSON format' },
+  { id: 'kml', label: 'KML', extension: '.kml', description: 'Google Earth' },
+  { id: 'shapefile', label: 'Shapefile', extension: '.zip', description: 'Esri Shapefile' },
+  { id: 'flatgeobuf', label: 'FlatGeobuf', extension: '.fgb', description: 'FlatGeobuf' },
+  { id: 'geopackage', label: 'GeoPackage', extension: '.gpkg', description: 'OGC GeoPackage' },
+];
 
 interface MapOverlayProps {
   uiConfig: UIConfig;
@@ -67,20 +80,26 @@ export function MapOverlay({
 
   const { autocompleteSuggestions, fetchSuggestions } = useAutocompleteSuggestions();
 
-  // CSV export: use the first source's base URL (all layers in this app share one source)
+  // Export: use the first source's base URL (all layers in this app share one source)
   const exportBaseUrl = sources[0]?.url ?? '';
-  const { exportCsv, loading: exportLoading } = useCsvExport({ baseUrl: exportBaseUrl });
+  const { runExport, loading: exportLoading, progress: exportProgress, error: exportError } = useExport({
+    baseUrl: exportBaseUrl,
+    converters: exportConverters,
+  });
+
+  const [exportModalOpen, setExportModalOpen] = useState(false);
 
   const exportableLayers: ExportableLayer[] = layers
     .filter((l) => l.visible)
     .map((l) => ({ id: l.id, label: l.label, collection: l.collection }));
 
-  const handleExport = useCallback(
-    (layer: ExportableLayer) => {
-      const cql2Filter = activeCql2Filters[layer.id] ?? undefined;
-      exportCsv(layer.collection, `${layer.label}.csv`, cql2Filter);
+  const handleExportRequest = useCallback(
+    (request: ExportRequest) => {
+      const cql2Filter = request.filtered ? (activeCql2Filters[request.layer.id] ?? undefined) : undefined;
+      const filename = `${request.layer.label}${request.format.extension}`;
+      runExport(request.layer.collection, request.format.id, filename, cql2Filter);
     },
-    [exportCsv, activeCql2Filters],
+    [runExport, activeCql2Filters],
   );
 
   const handleZoomToFeature = useCallback(
@@ -220,12 +239,26 @@ export function MapOverlay({
       {uiConfig.showExportButton && (
         <div className="absolute bottom-8 right-4 pointer-events-auto">
           <ExportButton
-            layers={exportableLayers}
-            onExport={handleExport}
+            onExport={() => setExportModalOpen(true)}
             loading={exportLoading}
           />
         </div>
       )}
+
+      {/* Export modal */}
+      <div className="pointer-events-auto">
+        <ExportModal
+        open={exportModalOpen}
+        layers={exportableLayers}
+        availableFormats={availableFormats}
+        hasActiveFilter={(layerId) => activeCql2Filters[layerId] != null}
+        loading={exportLoading}
+        progress={exportProgress}
+        error={exportError?.message}
+        onExport={handleExportRequest}
+        onClose={() => setExportModalOpen(false)}
+        />
+      </div>
 
       {/* Bottom-center: Coordinate Display */}
       {uiConfig.showCoordinateDisplay && (

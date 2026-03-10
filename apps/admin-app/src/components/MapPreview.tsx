@@ -312,10 +312,12 @@ export function MapPreview({
   );
 
   const handleExport = useCallback(
-    (layer: ExportableLayer) => {
+    () => {
+      const layer = exportableLayers[0];
+      if (!layer) return;
       exportCsv(layer.collection, `${layer.label}.csv`, activeCql2Filters[layer.id] ?? undefined);
     },
-    [exportCsv, activeCql2Filters],
+    [exportCsv, activeCql2Filters, exportableLayers],
   );
 
   const handleFilterChange = useCallback(
@@ -620,7 +622,6 @@ export function MapPreview({
           {uiConfig.showExportButton && (
             <div className="mapui:absolute mapui:bottom-8 mapui:right-4 mapui:pointer-events-auto">
               <ExportButton
-                layers={exportableLayers}
                 onExport={handleExport}
                 loading={exportLoading}
               />

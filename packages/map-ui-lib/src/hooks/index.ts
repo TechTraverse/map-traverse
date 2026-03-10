@@ -2,6 +2,9 @@ import type { SearchField } from '../types';
 export { useOgcCollections, type UseOgcCollectionsResult } from './useOgcCollections';
 export { useOgcFeatures, type UseOgcFeaturesResult } from './useOgcFeatures';
 export { useCsvExport, type UseCsvExportOptions, type UseCsvExportResult } from './useCsvExport';
+export { useExport, type UseExportOptions, type UseExportResult, type FormatConverter } from './useExport';
+export { featuresToCsv, type CsvExportOptions } from '../utils/csvExport';
+export { downloadBlob } from '../utils/download';
 export { useOgcQueryables, type UseOgcQueryablesResult } from './useOgcQueryables';
 export { useOgcCollectionDetail, type UseOgcCollectionDetailResult } from './useOgcCollectionDetail';
 

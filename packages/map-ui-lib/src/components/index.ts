@@ -12,7 +12,9 @@ export type {
   CoordinateFormatOption,
 } from './CoordinateDisplay';
 export { ExportButton } from './ExportButton';
-export type { ExportButtonProps, ExportableLayer } from './ExportButton';
+export type { ExportButtonProps } from './ExportButton';
+export { ExportModal } from './ExportModal';
+export type { ExportModalProps, ExportFormatOption, ExportRequest, ExportableLayer } from './ExportModal';
 export { FeatureDetailPanel } from './FeatureDetailPanel';
 export type { FeatureDetailPanelProps } from './FeatureDetailPanel';
 export { FeatureTooltip } from './FeatureTooltip';

@@ -1,12 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { ExportButton } from './ExportButton';
-import type { ExportButtonProps, ExportableLayer } from './ExportButton';
-
-const sampleLayers: ExportableLayer[] = [
-  { id: 'countries', label: 'Countries', collection: 'ne_110m_admin_0_countries' },
-  { id: 'rivers', label: 'Rivers', collection: 'ne_110m_rivers_lake_centerlines' },
-  { id: 'cities', label: 'Populated Places', collection: 'ne_110m_populated_places' },
-];
+import type { ExportButtonProps } from './ExportButton';
 
 const meta: Meta<ExportButtonProps> = {
   title: 'Components/ExportButton',
@@ -15,7 +9,7 @@ const meta: Meta<ExportButtonProps> = {
     docs: {
       description: {
         component:
-          'Triggers CSV export for one or more layers. Single layer → direct button click. Multiple layers → dropdown menu. Pair with the useCsvExport hook for data fetching.',
+          'A simple trigger button that opens the ExportModal. Shows loading state while an export is in progress.',
       },
     },
   },
@@ -28,24 +22,12 @@ export default meta;
 
 type Story = StoryObj<ExportButtonProps>;
 
-/** Single layer — clicking directly triggers the export action. */
-export const SingleLayer: Story = {
-  args: {
-    layers: [sampleLayers[0]],
-  },
-};
-
-/** Multiple layers — opens a dropdown to select which layer to export. */
-export const MultipleLayers: Story = {
-  args: {
-    layers: sampleLayers,
-  },
-};
+/** Default state — clicking triggers the export action (typically opens ExportModal). */
+export const Default: Story = {};
 
 /** Loading state — shows "Exporting..." and disables the button. */
 export const Loading: Story = {
   args: {
-    layers: sampleLayers,
     loading: true,
   },
 };
@@ -53,7 +35,6 @@ export const Loading: Story = {
 /** Disabled state — button is non-interactive. */
 export const Disabled: Story = {
   args: {
-    layers: sampleLayers,
     disabled: true,
   },
 };
