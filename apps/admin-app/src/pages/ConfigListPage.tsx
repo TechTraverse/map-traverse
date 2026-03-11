@@ -6,43 +6,30 @@ interface ConfigSummary {
   name: string;
   description: string | null;
   is_published: boolean;
-  environment: string;
+  is_default: boolean;
   created_at: string;
   updated_at: string;
 }
 
 export function ConfigListPage() {
   const [configs, setConfigs] = useState<ConfigSummary[]>([]);
-  const [environments, setEnvironments] = useState<string[]>([]);
-  const [envFilter, setEnvFilter] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [publishingId, setPublishingId] = useState<string | null>(null);
 
-  // Load available environments
-  useEffect(() => {
-    fetch('/api/environments')
-      .then(r => r.json())
-      .then(data => setEnvironments(data as string[]))
-      .catch(() => setEnvironments(['production']));
-  }, []);
+  const fetchConfigs = async () => {
+    const res = await fetch('/api/configs');
+    setConfigs(await res.json() as ConfigSummary[]);
+  };
 
-  // Load configs whenever env filter changes
+  // Load configs on mount
   useEffect(() => {
     setLoading(true);
-    const url = envFilter ? `/api/configs?env=${encodeURIComponent(envFilter)}` : '/api/configs';
-    fetch(url)
-      .then(res => res.json())
-      .then(data => {
-        setConfigs(data as ConfigSummary[]);
-        setLoading(false);
-      })
-      .catch(err => {
-        setError(String(err));
-        setLoading(false);
-      });
-  }, [envFilter]);
+    fetchConfigs()
+      .catch(err => setError(String(err)))
+      .finally(() => setLoading(false));
+  }, []);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this configuration?')) return;
@@ -64,10 +51,7 @@ export function ConfigListPage() {
         setActionError(`Publish failed: ${await res.text()}`);
         return;
       }
-      // Re-fetch to reflect updated published state per environment
-      const url = envFilter ? `/api/configs?env=${encodeURIComponent(envFilter)}` : '/api/configs';
-      const listRes = await fetch(url);
-      setConfigs(await listRes.json() as ConfigSummary[]);
+      await fetchConfigs();
     } catch (err) {
       setActionError(`Publish failed: ${String(err)}`);
     } finally {
@@ -84,11 +68,43 @@ export function ConfigListPage() {
         setActionError(`Unpublish failed: ${await res.text()}`);
         return;
       }
-      const url = envFilter ? `/api/configs?env=${encodeURIComponent(envFilter)}` : '/api/configs';
-      const listRes = await fetch(url);
-      setConfigs(await listRes.json() as ConfigSummary[]);
+      await fetchConfigs();
     } catch (err) {
       setActionError(`Unpublish failed: ${String(err)}`);
+    } finally {
+      setPublishingId(null);
+    }
+  };
+
+  const handleSetDefault = async (id: string) => {
+    setPublishingId(id);
+    setActionError(null);
+    try {
+      const res = await fetch(`/api/configs/${id}/set-default`, { method: 'POST', credentials: 'include' });
+      if (!res.ok) {
+        setActionError(`Set default failed: ${await res.text()}`);
+        return;
+      }
+      await fetchConfigs();
+    } catch (err) {
+      setActionError(`Set default failed: ${String(err)}`);
+    } finally {
+      setPublishingId(null);
+    }
+  };
+
+  const handleUnsetDefault = async (id: string) => {
+    setPublishingId(id);
+    setActionError(null);
+    try {
+      const res = await fetch(`/api/configs/${id}/unset-default`, { method: 'POST', credentials: 'include' });
+      if (!res.ok) {
+        setActionError(`Remove default failed: ${await res.text()}`);
+        return;
+      }
+      await fetchConfigs();
+    } catch (err) {
+      setActionError(`Remove default failed: ${String(err)}`);
     } finally {
       setPublishingId(null);
     }
@@ -122,25 +138,6 @@ export function ConfigListPage() {
         </div>
       )}
 
-      {/* Environment filter */}
-      {environments.length > 1 && (
-        <div className="mapui:mb-4 mapui:flex mapui:items-center mapui:gap-3">
-          <label className="mapui:text-sm mapui:font-medium mapui:text-gray-600">
-            Environment:
-          </label>
-          <select
-            value={envFilter}
-            onChange={e => setEnvFilter(e.target.value)}
-            className="mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
-          >
-            <option value="">All</option>
-            {environments.map(env => (
-              <option key={env} value={env}>{env}</option>
-            ))}
-          </select>
-        </div>
-      )}
-
       {configs.length === 0 ? (
         <div className="mapui:text-center mapui:text-gray-500 mapui:py-12">
           No configurations yet.{' '}
@@ -156,7 +153,6 @@ export function ConfigListPage() {
               <tr>
                 <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Name</th>
                 <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Description</th>
-                <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Environment</th>
                 <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Status</th>
                 <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Updated</th>
                 <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Actions</th>
@@ -168,20 +164,22 @@ export function ConfigListPage() {
                   <td className="mapui:px-6 mapui:py-4 mapui:font-medium mapui:text-gray-900">{config.name}</td>
                   <td className="mapui:px-6 mapui:py-4 mapui:text-gray-500 mapui:text-sm">{config.description ?? '—'}</td>
                   <td className="mapui:px-6 mapui:py-4">
-                    <span className="mapui:bg-slate-100 mapui:text-slate-600 mapui:px-2 mapui:py-1 mapui:rounded mapui:text-xs mapui:font-mono">
-                      {config.environment}
-                    </span>
-                  </td>
-                  <td className="mapui:px-6 mapui:py-4">
-                    {config.is_published ? (
-                      <span className="mapui:bg-green-100 mapui:text-green-700 mapui:px-2 mapui:py-1 mapui:rounded mapui:text-xs mapui:font-medium">
-                        Published
-                      </span>
-                    ) : (
-                      <span className="mapui:bg-gray-100 mapui:text-gray-600 mapui:px-2 mapui:py-1 mapui:rounded mapui:text-xs mapui:font-medium">
-                        Draft
-                      </span>
-                    )}
+                    <div className="mapui:flex mapui:gap-1">
+                      {config.is_published ? (
+                        <span className="mapui:bg-green-100 mapui:text-green-700 mapui:px-2 mapui:py-1 mapui:rounded mapui:text-xs mapui:font-medium">
+                          Published
+                        </span>
+                      ) : (
+                        <span className="mapui:bg-gray-100 mapui:text-gray-600 mapui:px-2 mapui:py-1 mapui:rounded mapui:text-xs mapui:font-medium">
+                          Draft
+                        </span>
+                      )}
+                      {config.is_default && (
+                        <span className="mapui:bg-blue-100 mapui:text-blue-700 mapui:px-2 mapui:py-1 mapui:rounded mapui:text-xs mapui:font-medium">
+                          Default
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="mapui:px-6 mapui:py-4 mapui:text-gray-500 mapui:text-sm">
                     {new Date(config.updated_at).toLocaleDateString()}
@@ -221,6 +219,24 @@ export function ConfigListPage() {
                           className="mapui:text-green-600 mapui:hover:underline mapui:text-sm mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
                         >
                           {publishingId === config.id ? 'Publishing...' : 'Publish'}
+                        </button>
+                      )}
+                      {config.is_published && !config.is_default && (
+                        <button
+                          onClick={() => handleSetDefault(config.id)}
+                          disabled={publishingId === config.id}
+                          className="mapui:text-blue-600 mapui:hover:underline mapui:text-sm mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
+                        >
+                          Set Default
+                        </button>
+                      )}
+                      {config.is_default && (
+                        <button
+                          onClick={() => handleUnsetDefault(config.id)}
+                          disabled={publishingId === config.id}
+                          className="mapui:text-blue-600 mapui:hover:underline mapui:text-sm mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
+                        >
+                          Remove Default
                         </button>
                       )}
                       <button

@@ -23,17 +23,16 @@ export async function initDb(): Promise<void> {
     )
   `);
 
-  // Add environment column if upgrading from earlier schema
-  await pool.query(`
-    ALTER TABLE map_configs ADD COLUMN IF NOT EXISTS environment TEXT NOT NULL DEFAULT 'production'
-  `);
-
-  // Replace old single-published-per-env index with multi-publish index (unique name per env)
+  // Drop legacy environment-scoped indexes
   await pool.query(`DROP INDEX IF EXISTS map_configs_is_published_idx`);
   await pool.query(`DROP INDEX IF EXISTS map_configs_published_per_env_idx`);
+  await pool.query(`DROP INDEX IF EXISTS map_configs_published_name_env_idx`);
+  await pool.query(`DROP INDEX IF EXISTS map_configs_default_per_env_idx`);
+
+  // Unique published names (global, no environment scoping)
   await pool.query(`
-    CREATE UNIQUE INDEX IF NOT EXISTS map_configs_published_name_env_idx
-      ON map_configs (name, environment) WHERE is_published = true
+    CREATE UNIQUE INDEX IF NOT EXISTS map_configs_published_name_idx
+      ON map_configs (name) WHERE is_published = true
   `);
 
   // Enforce slug format for config names
@@ -70,5 +69,14 @@ export async function initDb(): Promise<void> {
   `);
   await pool.query(`
     ALTER TABLE config_versions ADD CONSTRAINT config_versions_config_id_version_number_key UNIQUE (config_id, version_number)
+  `);
+
+  // Add is_default column (at most one default globally)
+  await pool.query(`
+    ALTER TABLE map_configs ADD COLUMN IF NOT EXISTS is_default BOOLEAN NOT NULL DEFAULT false
+  `);
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS map_configs_default_idx
+      ON map_configs ((true)) WHERE is_default = true
   `);
 }

@@ -67,8 +67,6 @@ export function ConfigWizardPage() {
   const [currentStep, setCurrentStep] = useState<WizardStep>('metadata');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [environment, setEnvironment] = useState('production');
-  const [environments, setEnvironments] = useState<string[]>(['production']);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -98,14 +96,6 @@ export function ConfigWizardPage() {
   // CollectionBrowser source selector state
   const [browseSourceId, setBrowseSourceId] = useState('');
 
-  // Load available environments
-  useEffect(() => {
-    fetch('/api/environments')
-      .then(r => r.json())
-      .then(data => setEnvironments(data as string[]))
-      .catch(() => setEnvironments(['production']));
-  }, []);
-
   const isEditing = !!id;
   const currentStepIndex = STEPS.findIndex(s => s.key === currentStep);
 
@@ -127,9 +117,6 @@ export function ConfigWizardPage() {
       .then((data: { name?: string; description?: string; config?: MapConfig }) => {
         setName(data.name ?? '');
         setDescription(data.description ?? '');
-        if ((data as { environment?: string }).environment) {
-          setEnvironment((data as { environment: string }).environment);
-        }
         if (data.config) {
           setSources(data.config.sources ?? []);
           setLayers(data.config.layers ?? []);
@@ -156,7 +143,7 @@ export function ConfigWizardPage() {
     }
 
     try {
-      const body = { name, description, config: assembledConfig, environment };
+      const body = { name, description, config: assembledConfig };
       const url = isEditing ? `/api/configs/${id}` : '/api/configs';
       const method = isEditing ? 'PUT' : 'POST';
       const res = await fetch(url, {
@@ -281,22 +268,6 @@ export function ConfigWizardPage() {
                 className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
               />
             </div>
-            {environments.length > 1 && (
-              <div>
-                <label className="mapui:block mapui:text-sm mapui:font-medium mapui:text-gray-700 mapui:mb-1">
-                  Environment
-                </label>
-                <select
-                  value={environment}
-                  onChange={e => setEnvironment(e.target.value)}
-                  className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
-                >
-                  {environments.map(env => (
-                    <option key={env} value={env}>{env}</option>
-                  ))}
-                </select>
-              </div>
-            )}
           </div>
         )}
 

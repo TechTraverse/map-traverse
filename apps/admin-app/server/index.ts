@@ -53,13 +53,6 @@ function handleServerError(res: express.Response, err: unknown): void {
   res.status(500).json({ error: 'Internal server error' });
 }
 
-function getEnvironments(): string[] {
-  return (process.env.ADMIN_ENVIRONMENTS ?? 'production')
-    .split(',')
-    .map(e => e.trim())
-    .filter(Boolean);
-}
-
 // --- Auth middleware ---
 
 function requireAuth(
@@ -148,43 +141,28 @@ app.get('/api/health', async (_req, res) => {
   }
 });
 
-// --- Environments ---
-
-app.get('/api/environments', (_req, res) => {
-  res.json(getEnvironments());
-});
-
 const NAME_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-/;
 
 // --- Config endpoints ---
 
-// GET /api/configs — list all configs (optional ?env= filter)
-app.get('/api/configs', async (req, res) => {
+// GET /api/configs — list all configs
+app.get('/api/configs', async (_req, res) => {
   try {
-    const env = req.query.env as string | undefined;
-    let query =
-      'SELECT id, name, description, is_published, environment, created_at, updated_at FROM map_configs';
-    const params: string[] = [];
-    if (env) {
-      query += ' WHERE environment = $1';
-      params.push(env);
-    }
-    query += ' ORDER BY updated_at DESC';
-    const result = await pool.query(query, params);
+    const result = await pool.query(
+      'SELECT id, name, description, is_published, is_default, created_at, updated_at FROM map_configs ORDER BY updated_at DESC',
+    );
     res.json(result.rows);
   } catch (err) {
     handleServerError(res, err);
   }
 });
 
-// GET /api/configs/published — list published configs for an environment
-app.get('/api/configs/published', async (req, res) => {
+// GET /api/configs/published — list published configs
+app.get('/api/configs/published', async (_req, res) => {
   try {
-    const env = (req.query.env as string | undefined) ?? 'production';
     const result = await pool.query(
-      'SELECT id, name, description FROM map_configs WHERE is_published = true AND environment = $1 ORDER BY name',
-      [env],
+      'SELECT id, name, description, is_default FROM map_configs WHERE is_published = true ORDER BY name',
     );
     res.json(result.rows);
   } catch (err) {
@@ -205,11 +183,18 @@ app.get('/api/configs/:id', async (req, res) => {
       res.json(result.rows[0]);
     } else {
       // Name lookup — return just the config JSON for published configs
-      const env = (req.query.env as string | undefined) ?? 'production';
-      const result = await pool.query(
-        'SELECT config FROM map_configs WHERE name = $1 AND is_published = true AND environment = $2',
-        [req.params.id, env],
-      );
+      let result;
+      if (req.params.id === 'default') {
+        // Resolve "default" to the config marked as default
+        result = await pool.query(
+          'SELECT config FROM map_configs WHERE is_default = true AND is_published = true',
+        );
+      } else {
+        result = await pool.query(
+          'SELECT config FROM map_configs WHERE name = $1 AND is_published = true',
+          [req.params.id],
+        );
+      }
       if (result.rows.length === 0) {
         res.status(404).json({ error: 'Config not found' });
         return;
@@ -223,11 +208,10 @@ app.get('/api/configs/:id', async (req, res) => {
 
 // POST /api/configs — create new config (protected)
 app.post('/api/configs', requireAuth, async (req, res) => {
-  const { name, description, config, environment } = req.body as {
+  const { name, description, config } = req.body as {
     name: string;
     description?: string;
     config?: unknown;
-    environment?: string;
   };
   if (!name) {
     res.status(400).json({ error: 'name is required' });
@@ -246,17 +230,10 @@ app.post('/api/configs', requireAuth, async (req, res) => {
     }
   }
 
-  const env = environment ?? 'production';
-  const environments = getEnvironments();
-  if (!environments.includes(env)) {
-    res.status(400).json({ error: `Invalid environment: ${env}. Valid: ${environments.join(', ')}` });
-    return;
-  }
-
   try {
     const result = await pool.query(
-      'INSERT INTO map_configs (name, description, config, environment) VALUES ($1, $2, $3, $4) RETURNING *',
-      [name, description ?? null, JSON.stringify(config ?? {}), env],
+      'INSERT INTO map_configs (name, description, config) VALUES ($1, $2, $3) RETURNING *',
+      [name, description ?? null, JSON.stringify(config ?? {})],
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -266,24 +243,15 @@ app.post('/api/configs', requireAuth, async (req, res) => {
 
 // PUT /api/configs/:id — update config, snapshot current state as a version (protected)
 app.put('/api/configs/:id', requireAuth, async (req, res) => {
-  const { name, description, config, environment } = req.body as {
+  const { name, description, config } = req.body as {
     name?: string;
     description?: string;
     config?: unknown;
-    environment?: string;
   };
 
   if (name !== undefined && !NAME_REGEX.test(name)) {
     res.status(400).json({ error: 'name must be a slug (lowercase letters, numbers, hyphens only, e.g. "my-config")' });
     return;
-  }
-
-  if (environment !== undefined) {
-    const environments = getEnvironments();
-    if (!environments.includes(environment)) {
-      res.status(400).json({ error: `Invalid environment: ${environment}. Valid: ${environments.join(', ')}` });
-      return;
-    }
   }
 
   if (config) {
@@ -305,7 +273,6 @@ app.put('/api/configs/:id', requireAuth, async (req, res) => {
       name: string;
       description: string | null;
       config: unknown;
-      environment: string;
     };
 
     const client = await pool.connect();
@@ -331,12 +298,11 @@ app.put('/api/configs/:id', requireAuth, async (req, res) => {
         ],
       );
       result = await client.query(
-        'UPDATE map_configs SET name = $1, description = $2, config = $3, environment = $4, updated_at = now() WHERE id = $5 RETURNING *',
+        'UPDATE map_configs SET name = $1, description = $2, config = $3, updated_at = now() WHERE id = $4 RETURNING *',
         [
           name ?? row.name,
           description ?? row.description,
           JSON.stringify(config ?? row.config),
-          environment ?? row.environment,
           req.params.id,
         ],
       );
@@ -369,26 +335,26 @@ app.delete('/api/configs/:id', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/configs/:id/publish — publish within the config's environment (protected)
+// POST /api/configs/:id/publish (protected)
 app.post('/api/configs/:id/publish', requireAuth, async (req, res) => {
   try {
     const configResult = await pool.query(
-      'SELECT name, environment FROM map_configs WHERE id = $1',
+      'SELECT name FROM map_configs WHERE id = $1',
       [req.params.id],
     );
     if (configResult.rows.length === 0) {
       res.status(404).json({ error: 'Config not found' });
       return;
     }
-    const { name, environment: env } = configResult.rows[0] as { name: string; environment: string };
+    const { name } = configResult.rows[0] as { name: string };
 
-    // Check for name conflict among published configs in same environment
+    // Check for name conflict among published configs
     const conflict = await pool.query(
-      'SELECT id FROM map_configs WHERE name = $1 AND environment = $2 AND is_published = true AND id != $3',
-      [name, env, req.params.id],
+      'SELECT id FROM map_configs WHERE name = $1 AND is_published = true AND id != $2',
+      [name, req.params.id],
     );
     if (conflict.rows.length > 0) {
-      res.status(409).json({ error: `A published config named "${name}" already exists in the "${env}" environment` });
+      res.status(409).json({ error: `A published config named "${name}" already exists` });
       return;
     }
 
@@ -406,7 +372,66 @@ app.post('/api/configs/:id/publish', requireAuth, async (req, res) => {
 app.post('/api/configs/:id/unpublish', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
-      'UPDATE map_configs SET is_published = false, updated_at = now() WHERE id = $1 RETURNING *',
+      'UPDATE map_configs SET is_published = false, is_default = false, updated_at = now() WHERE id = $1 RETURNING *',
+      [req.params.id],
+    );
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    handleServerError(res, err);
+  }
+});
+
+// POST /api/configs/:id/set-default — mark a published config as the default (protected)
+app.post('/api/configs/:id/set-default', requireAuth, async (req, res) => {
+  try {
+    const configResult = await pool.query(
+      'SELECT id, is_published FROM map_configs WHERE id = $1',
+      [req.params.id],
+    );
+    if (configResult.rows.length === 0) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const { is_published } = configResult.rows[0] as { is_published: boolean };
+    if (!is_published) {
+      res.status(400).json({ error: 'Config must be published before setting as default' });
+      return;
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      // Unset any existing default
+      await client.query(
+        'UPDATE map_configs SET is_default = false, updated_at = now() WHERE is_default = true',
+      );
+      // Set the new default
+      const result = await client.query(
+        'UPDATE map_configs SET is_default = true, updated_at = now() WHERE id = $1 RETURNING *',
+        [req.params.id],
+      );
+      await client.query('COMMIT');
+      res.json(result.rows[0]);
+    } catch (txErr) {
+      await client.query('ROLLBACK');
+      throw txErr;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    handleServerError(res, err);
+  }
+});
+
+// POST /api/configs/:id/unset-default — remove default flag (protected)
+app.post('/api/configs/:id/unset-default', requireAuth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'UPDATE map_configs SET is_default = false, updated_at = now() WHERE id = $1 RETURNING *',
       [req.params.id],
     );
     if (result.rows.length === 0) {
