@@ -378,13 +378,6 @@ export function ConfigWizardPage() {
               </div>
             )}
             {error && <p className="mapui:text-red-600 mapui:text-sm">{error}</p>}
-            <button
-              onClick={handleSave}
-              disabled={saving || !name}
-              className="mapui:bg-blue-600 mapui:text-white mapui:px-6 mapui:py-2 mapui:rounded mapui:hover:bg-blue-700 mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
-            >
-              {saving ? 'Saving...' : isEditing ? 'Update Configuration' : 'Create Configuration'}
-            </button>
           </div>
         )}
       </div>
@@ -428,22 +421,23 @@ export function ConfigWizardPage() {
             </button>
           </div>
         </div>
-        {currentStepIndex < STEPS.length - 1 ? (
-          <button
-            onClick={() => setCurrentStep(STEPS[currentStepIndex + 1].key)}
-            className="mapui:bg-blue-600 mapui:text-white mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:hover:bg-blue-700"
-          >
-            Next
-          </button>
-        ) : (
+        <div className="mapui:flex mapui:gap-2">
+          {currentStepIndex < STEPS.length - 1 && (
+            <button
+              onClick={() => setCurrentStep(STEPS[currentStepIndex + 1].key)}
+              className="mapui:bg-blue-600 mapui:text-white mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:hover:bg-blue-700"
+            >
+              Next
+            </button>
+          )}
           <button
             onClick={handleSave}
             disabled={saving || !name}
-            className="mapui:bg-green-600 mapui:text-white mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:hover:bg-green-700 mapui:disabled:opacity-50"
+            className="mapui:bg-green-600 mapui:text-white mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:hover:bg-green-700 mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
           >
-            {saving ? 'Saving...' : 'Save Configuration'}
+            {saving ? 'Saving...' : 'Save'}
           </button>
-        )}
+        </div>
       </div>
         </div>
       </div>
