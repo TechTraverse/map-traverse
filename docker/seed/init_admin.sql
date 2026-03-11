@@ -5,18 +5,18 @@ CREATE TABLE IF NOT EXISTS map_configs (
   description TEXT,
   config JSONB NOT NULL DEFAULT '{}',
   is_published BOOLEAN NOT NULL DEFAULT false,
-  environment TEXT NOT NULL DEFAULT 'production',
+  is_default BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Add environment column if upgrading from earlier schema
-ALTER TABLE map_configs ADD COLUMN IF NOT EXISTS environment TEXT NOT NULL DEFAULT 'production';
+-- Unique published names
+CREATE UNIQUE INDEX IF NOT EXISTS map_configs_published_name_idx
+  ON map_configs (name) WHERE is_published = true;
 
--- Replace old single-published index with per-environment unique constraint
-DROP INDEX IF EXISTS map_configs_is_published_idx;
-CREATE UNIQUE INDEX IF NOT EXISTS map_configs_published_per_env_idx
-  ON map_configs (environment) WHERE is_published = true;
+-- At most one default config
+CREATE UNIQUE INDEX IF NOT EXISTS map_configs_default_idx
+  ON map_configs ((true)) WHERE is_default = true;
 
 -- Version history table (one row per snapshot)
 CREATE TABLE IF NOT EXISTS config_versions (

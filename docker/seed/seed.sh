@@ -13,11 +13,14 @@ echo "PostgreSQL is ready!"
 
 # Check if data already exists
 DATA_EXISTS=$(psql -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" -tAc \
-  "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'ne_110m_admin_0_countries');")
+  "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'example' AND table_name = 'ne_110m_admin_0_countries');")
 
 echo "Running admin UI migrations..."
 psql -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" -f /scripts/init_admin.sql
 echo "Admin UI migrations completed!"
+
+echo "Creating example schema..."
+psql -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" -c "CREATE SCHEMA IF NOT EXISTS example;"
 
 if [ "$DATA_EXISTS" = "t" ]; then
   echo "Data already exists. Skipping seed."
@@ -52,7 +55,8 @@ ogr2ogr -f PostgreSQL \
   -nln ne_110m_admin_0_countries \
   -nlt PROMOTE_TO_MULTI \
   -lco GEOMETRY_NAME=geom \
-  -lco FID=gid
+  -lco FID=gid \
+  -lco SCHEMA=example
 
 # Load cities
 ogr2ogr -f PostgreSQL \
@@ -60,7 +64,8 @@ ogr2ogr -f PostgreSQL \
   ne_110m_populated_places.shp \
   -nln ne_110m_populated_places \
   -lco GEOMETRY_NAME=geom \
-  -lco FID=gid
+  -lco FID=gid \
+  -lco SCHEMA=example
 
 # Load rivers
 ogr2ogr -f PostgreSQL \
@@ -69,13 +74,14 @@ ogr2ogr -f PostgreSQL \
   -nln ne_110m_rivers_lake_centerlines \
   -nlt PROMOTE_TO_MULTI \
   -lco GEOMETRY_NAME=geom \
-  -lco FID=gid
+  -lco FID=gid \
+  -lco SCHEMA=example
 
 echo "Creating spatial indexes..."
 psql -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" <<-EOSQL
-  CREATE INDEX IF NOT EXISTS idx_countries_geom ON ne_110m_admin_0_countries USING GIST (geom);
-  CREATE INDEX IF NOT EXISTS idx_cities_geom ON ne_110m_populated_places USING GIST (geom);
-  CREATE INDEX IF NOT EXISTS idx_rivers_geom ON ne_110m_rivers_lake_centerlines USING GIST (geom);
+  CREATE INDEX IF NOT EXISTS idx_countries_geom ON example.ne_110m_admin_0_countries USING GIST (geom);
+  CREATE INDEX IF NOT EXISTS idx_cities_geom ON example.ne_110m_populated_places USING GIST (geom);
+  CREATE INDEX IF NOT EXISTS idx_rivers_geom ON example.ne_110m_rivers_lake_centerlines USING GIST (geom);
 EOSQL
 
 echo "Seed completed successfully!"
