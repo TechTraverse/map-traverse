@@ -34,8 +34,8 @@ const STEPS: { key: WizardStep; label: string }[] = [
   { key: 'metadata', label: 'Metadata' },
   { key: 'basemaps', label: 'Basemaps' },
   { key: 'sources', label: 'Sources' },
-  { key: 'layer-select', label: 'Layers' },
-  { key: 'layer-config', label: 'Config' },
+  { key: 'layer-select', label: 'Layer selection' },
+  { key: 'layer-config', label: 'Layer configuration' },
   { key: 'ui', label: 'UI' },
   { key: 'view', label: 'View' },
   { key: 'review', label: 'Review' },
@@ -218,7 +218,7 @@ export function ConfigWizardPage() {
       </h1>
 
       {/* Step progress */}
-      <div className="mapui:flex mapui:gap-1 mapui:mb-8 mapui:overflow-x-auto">
+      <div className="mapui:flex mapui:gap-1 mapui:mb-8 mapui:overflow-x-auto mapui:pb-3">
         {STEPS.map((step, i) => (
           <button
             key={step.key}

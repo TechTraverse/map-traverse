@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ActionMenu } from '../components/ActionMenu';
 
 interface ConfigSummary {
   id: string;
@@ -147,15 +148,16 @@ export function ConfigListPage() {
           .
         </div>
       ) : (
-        <div className="mapui:bg-white mapui:rounded-lg mapui:shadow mapui:overflow-hidden">
+        <div className="mapui:bg-white mapui:rounded-lg mapui:shadow mapui:overflow-visible">
           <table className="mapui:w-full">
             <thead className="mapui:bg-gray-50 mapui:text-left">
               <tr>
                 <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Name</th>
                 <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Description</th>
-                <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Status</th>
+                <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600 mapui:text-center">Published</th>
+                <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600 mapui:text-center">Default</th>
                 <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Updated</th>
-                <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Actions</th>
+                <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600"></th>
               </tr>
             </thead>
             <tbody className="mapui:divide-y mapui:divide-gray-200">
@@ -163,89 +165,33 @@ export function ConfigListPage() {
                 <tr key={config.id} className="mapui:hover:bg-gray-50">
                   <td className="mapui:px-6 mapui:py-4 mapui:font-medium mapui:text-gray-900">{config.name}</td>
                   <td className="mapui:px-6 mapui:py-4 mapui:text-gray-500 mapui:text-sm">{config.description ?? '—'}</td>
-                  <td className="mapui:px-6 mapui:py-4">
-                    <div className="mapui:flex mapui:gap-1">
-                      {config.is_published ? (
-                        <span className="mapui:bg-green-100 mapui:text-green-700 mapui:px-2 mapui:py-1 mapui:rounded mapui:text-xs mapui:font-medium">
-                          Published
-                        </span>
-                      ) : (
-                        <span className="mapui:bg-gray-100 mapui:text-gray-600 mapui:px-2 mapui:py-1 mapui:rounded mapui:text-xs mapui:font-medium">
-                          Draft
-                        </span>
-                      )}
-                      {config.is_default && (
-                        <span className="mapui:bg-blue-100 mapui:text-blue-700 mapui:px-2 mapui:py-1 mapui:rounded mapui:text-xs mapui:font-medium">
-                          Default
-                        </span>
-                      )}
-                    </div>
+                  <td className="mapui:px-6 mapui:py-4 mapui:text-center">
+                    <button
+                      role="switch"
+                      aria-checked={config.is_published}
+                      disabled={publishingId === config.id}
+                      onClick={() => config.is_published ? handleUnpublish(config.id) : handlePublish(config.id)}
+                      className={`mapui:relative mapui:inline-flex mapui:h-5 mapui:w-9 mapui:shrink-0 mapui:rounded-full mapui:transition-colors mapui:duration-200 mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed ${config.is_published ? 'mapui:bg-green-500' : 'mapui:bg-gray-300'}`}
+                    >
+                      <span className={`mapui:pointer-events-none mapui:inline-block mapui:h-4 mapui:w-4 mapui:rounded-full mapui:bg-white mapui:shadow mapui:transition-transform mapui:duration-200 mapui:translate-y-0.5 ${config.is_published ? 'mapui:translate-x-4.5' : 'mapui:translate-x-0.5'}`} />
+                    </button>
+                  </td>
+                  <td className="mapui:px-6 mapui:py-4 mapui:text-center">
+                    <button
+                      role="switch"
+                      aria-checked={config.is_default}
+                      disabled={!config.is_published || publishingId === config.id}
+                      onClick={() => config.is_default ? handleUnsetDefault(config.id) : handleSetDefault(config.id)}
+                      className={`mapui:relative mapui:inline-flex mapui:h-5 mapui:w-9 mapui:shrink-0 mapui:rounded-full mapui:transition-colors mapui:duration-200 mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed ${config.is_default ? 'mapui:bg-blue-500' : 'mapui:bg-gray-300'}`}
+                    >
+                      <span className={`mapui:pointer-events-none mapui:inline-block mapui:h-4 mapui:w-4 mapui:rounded-full mapui:bg-white mapui:shadow mapui:transition-transform mapui:duration-200 mapui:translate-y-0.5 ${config.is_default ? 'mapui:translate-x-4.5' : 'mapui:translate-x-0.5'}`} />
+                    </button>
                   </td>
                   <td className="mapui:px-6 mapui:py-4 mapui:text-gray-500 mapui:text-sm">
                     {new Date(config.updated_at).toLocaleDateString()}
                   </td>
                   <td className="mapui:px-6 mapui:py-4">
-                    <div className="mapui:flex mapui:gap-2">
-                      <Link
-                        to={`/configs/${config.id}/edit`}
-                        className="mapui:text-blue-600 mapui:hover:underline mapui:text-sm"
-                      >
-                        Edit
-                      </Link>
-                      <Link
-                        to={`/configs/${config.id}/preview`}
-                        className="mapui:text-indigo-600 mapui:hover:underline mapui:text-sm"
-                      >
-                        Preview
-                      </Link>
-                      <Link
-                        to={`/configs/${config.id}/versions`}
-                        className="mapui:text-purple-600 mapui:hover:underline mapui:text-sm"
-                      >
-                        History
-                      </Link>
-                      {config.is_published ? (
-                        <button
-                          onClick={() => handleUnpublish(config.id)}
-                          disabled={publishingId === config.id}
-                          className="mapui:text-orange-600 mapui:hover:underline mapui:text-sm mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
-                        >
-                          {publishingId === config.id ? 'Unpublishing...' : 'Unpublish'}
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handlePublish(config.id)}
-                          disabled={publishingId === config.id}
-                          className="mapui:text-green-600 mapui:hover:underline mapui:text-sm mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
-                        >
-                          {publishingId === config.id ? 'Publishing...' : 'Publish'}
-                        </button>
-                      )}
-                      {config.is_published && !config.is_default && (
-                        <button
-                          onClick={() => handleSetDefault(config.id)}
-                          disabled={publishingId === config.id}
-                          className="mapui:text-blue-600 mapui:hover:underline mapui:text-sm mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
-                        >
-                          Set Default
-                        </button>
-                      )}
-                      {config.is_default && (
-                        <button
-                          onClick={() => handleUnsetDefault(config.id)}
-                          disabled={publishingId === config.id}
-                          className="mapui:text-blue-600 mapui:hover:underline mapui:text-sm mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
-                        >
-                          Remove Default
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleDelete(config.id)}
-                        className="mapui:text-red-600 mapui:hover:underline mapui:text-sm"
-                      >
-                        Delete
-                      </button>
-                    </div>
+                    <ActionMenu configId={config.id} onDelete={() => handleDelete(config.id)} />
                   </td>
                 </tr>
               ))}
