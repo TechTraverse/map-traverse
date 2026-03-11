@@ -13,6 +13,7 @@ import {
   detectGeometryStyleTypesFromQueryables,
   detectGeometryTypesFromFeatures,
   buildDefaultStylesForGeometryTypes,
+  geometryTypeToStyleTypes,
   toAvailableProperties,
 } from '../../utils/queryableHelpers';
 
@@ -63,16 +64,20 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
 
   // Detect suggested styles from queryables; fall back to fetching features
   const [suggestedStyles, setSuggestedStyles] = useState<StyleConfig[]>([]);
+  // All suitable style types for the detected geometry (e.g. ['circle', 'symbol'] for Point)
+  const [suitableStyleTypes, setSuitableStyleTypes] = useState<StyleConfig['type'][]>([]);
 
   useEffect(() => {
     if (!queryables) {
       setSuggestedStyles([]);
+      setSuitableStyleTypes([]);
       return;
     }
 
-    const applyGeomTypes = (geomTypes: string[]) => {
+    const applyGeomTypes = (geomTypes: string[], styleTypes: StyleConfig['type'][]) => {
       const styles = buildDefaultStylesForGeometryTypes(geomTypes);
       setSuggestedStyles(styles);
+      setSuitableStyleTypes(styleTypes);
       if (styles.length > 0 && !valueRef.current.styles?.length) {
         onChangeRef.current({ ...valueRef.current, styles });
       }
@@ -87,13 +92,14 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
         else if (st === 'line') geomTypes.push('LineString');
         else if (st === 'circle' || st === 'symbol') geomTypes.push('Point');
       }
-      applyGeomTypes(geomTypes);
+      applyGeomTypes(geomTypes, fromQueryables);
       return;
     }
 
     // Fallback: inspect geometry types from fetched features
     if (!baseUrl || !collection) {
       setSuggestedStyles([]);
+      setSuitableStyleTypes([]);
       return;
     }
 
@@ -103,13 +109,21 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
         if (cancelled) return;
         const geomTypes = detectGeometryTypesFromFeatures(fc.features);
         if (geomTypes.length > 0) {
-          applyGeomTypes(geomTypes);
+          const allTypes = new Set<StyleConfig['type']>();
+          for (const gt of geomTypes) {
+            for (const st of geometryTypeToStyleTypes(gt)) allTypes.add(st);
+          }
+          applyGeomTypes(geomTypes, Array.from(allTypes));
         } else {
           setSuggestedStyles([]);
+          setSuitableStyleTypes([]);
         }
       })
       .catch(() => {
-        if (!cancelled) setSuggestedStyles([]);
+        if (!cancelled) {
+          setSuggestedStyles([]);
+          setSuitableStyleTypes([]);
+        }
       });
 
     return () => {
@@ -120,6 +134,7 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
   // Reset suggested styles when source/collection changes
   useEffect(() => {
     setSuggestedStyles([]);
+    setSuitableStyleTypes([]);
   }, [baseUrl, collection]);
 
   return (
@@ -240,7 +255,7 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
               <StyleEditor
                 value={style}
                 onChange={(s) => update({ styles: replaceAt(value.styles, i, s) })}
-                suggestedTypes={suggestedStyles.map((s) => s.type)}
+                suggestedTypes={suitableStyleTypes}
                 availableIcons={availableIcons}
                 availableProperties={availableProperties}
                 onFetchDistinctValues={
