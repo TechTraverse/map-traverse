@@ -63,6 +63,7 @@ export const useMapStore = create<MapState>((set) => ({
     showFeatureTooltip: true,
     showExportButton: true,
     showLegendOpacity: false,
+    showMeasureTool: false,
   },
   activeFilters: {},
   activeCql2Filters: {},

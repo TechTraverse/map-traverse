@@ -51,6 +51,7 @@ const DEFAULT_UI_CONFIG: UIConfig = {
   showFeatureTooltip: true,
   showExportButton: true,
   showLegendOpacity: false,
+  showMeasureTool: false,
 };
 
 const DEFAULT_VIEW: ViewConfig = {

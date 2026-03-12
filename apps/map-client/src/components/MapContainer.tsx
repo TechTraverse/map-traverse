@@ -3,6 +3,7 @@ import { Map, Source, Layer, AttributionControl, type MapRef } from 'react-map-g
 import { useOgcFeatures, getCql2FilteredVectorTileUrl, resolveStyleWithSprites } from '@ogc-maps/storybook-components/hooks';
 import type { CQL2Expression } from '@ogc-maps/storybook-components/hooks';
 import type { LayerConfig } from '@ogc-maps/storybook-components/types';
+import type { MeasureMode } from '@ogc-maps/storybook-components';
 import { useMapStore } from '../stores/mapStore';
 
 function buildGeometryFilter(types: string[]): any {
@@ -110,9 +111,14 @@ interface MapContainerProps {
   onMouseLeave?: () => void;
   onFeatureClick?: (info: FeatureClickInfo) => void;
   onFeatureHover?: (info: FeatureHoverInfo | null) => void;
+  measureMode?: MeasureMode | null;
+  measurePoints?: [number, number][];
+  measureGeometryData?: GeoJSON.Feature | null;
+  measurePointsData?: GeoJSON.FeatureCollection | null;
+  onMeasureClick?: (point: [number, number]) => void;
 }
 
-export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeatureHover }: MapContainerProps = {}) {
+export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeatureHover, measureMode, measurePoints = [], measureGeometryData, measurePointsData, onMeasureClick }: MapContainerProps = {}) {
   const viewState = useMapStore((s) => s.viewState);
   const layers = useMapStore((s) => s.layers);
   const sources = useMapStore((s) => s.sources);
@@ -243,11 +249,16 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
       {...viewState}
       style={{ width: '100%', height: '100%' }}
       mapStyle={resolvedStyle as any}
-      cursor={cursor}
-      interactiveLayerIds={interactiveLayerIds}
+      cursor={measureMode ? 'crosshair' : cursor}
+      interactiveLayerIds={measureMode ? undefined : interactiveLayerIds}
+      doubleClickZoom={!measureMode}
       onLoad={handleMapLoad}
       onMove={(evt) => setViewState(evt.viewState)}
       onClick={(evt) => {
+        if (measureMode && onMeasureClick) {
+          onMeasureClick([evt.lngLat.lng, evt.lngLat.lat]);
+          return;
+        }
         const feature = evt.features?.[0];
         if (feature && onFeatureClick) {
           onFeatureClick({
@@ -255,6 +266,11 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
             properties: (feature.properties ?? {}) as Record<string, unknown>,
             lngLat: { lat: evt.lngLat.lat, lng: evt.lngLat.lng },
           });
+        }
+      }}
+      onDblClick={(evt) => {
+        if (measureMode) {
+          evt.preventDefault();
         }
       }}
       onMouseMove={(evt) => {
@@ -321,6 +337,33 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
         }
         return <GeoJsonLayer key={`${layer.id}--${layer.styles?.length ?? 0}`} layer={layer} sourceUrl={sourceInfo.url} cql2Filter={activeCql2Filters[layer.id]} />;
       })}
+
+      {/* Measure tool GeoJSON */}
+      {measureGeometryData && (
+        <Source id="measure-geometry" type="geojson" data={measureGeometryData}>
+          <Layer
+            id="measure-line-layer"
+            type="line"
+            paint={{ 'line-color': '#3b82f6', 'line-width': 2, 'line-dasharray': [2, 2] }}
+          />
+          {measureMode === 'area' && measurePoints.length >= 3 && (
+            <Layer
+              id="measure-fill-layer"
+              type="fill"
+              paint={{ 'fill-color': '#3b82f6', 'fill-opacity': 0.1 }}
+            />
+          )}
+        </Source>
+      )}
+      {measurePointsData && (
+        <Source id="measure-points" type="geojson" data={measurePointsData}>
+          <Layer
+            id="measure-points-layer"
+            type="circle"
+            paint={{ 'circle-color': '#3b82f6', 'circle-radius': 5, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 }}
+          />
+        </Source>
+      )}
     </Map>
   );
 }

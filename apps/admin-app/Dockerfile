@@ -5,9 +5,10 @@ RUN corepack enable
 WORKDIR /app
 
 # Copy workspace manifest files for dependency resolution
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json .npmrc ./
 COPY packages/map-ui-lib/package.json ./packages/map-ui-lib/
 COPY apps/admin-app/package.json ./apps/admin-app/
+COPY apps/map-client/package.json ./apps/map-client/
 
 # Install all dependencies
 RUN pnpm install --frozen-lockfile

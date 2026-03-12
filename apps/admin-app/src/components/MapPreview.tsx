@@ -21,10 +21,12 @@ import {
   FeatureDetailPanel,
   FeatureTooltip,
   ExportButton,
+  MeasurePanel,
   formatDecimal,
   formatDMS,
 } from '@ogc-maps/storybook-components';
 import type { CoordinateFormatOption } from '@ogc-maps/storybook-components';
+import { useMeasure } from '@ogc-maps/storybook-components/hooks';
 
 const coordinateFormats: CoordinateFormatOption[] = [
   { id: 'decimal', label: 'Decimal', format: formatDecimal },
@@ -40,7 +42,7 @@ import type {
   ExportableLayer,
 } from '@ogc-maps/storybook-components';
 import type { SearchFilterValue, SearchFilterValues } from '@ogc-maps/storybook-components/types';
-import { LuLayers3, LuMap, LuSearch } from 'react-icons/lu';
+import { LuLayers3, LuMap, LuRuler, LuSearch } from 'react-icons/lu';
 
 const FALLBACK_BASEMAP_URL = 'https://demotiles.maplibre.org/style.json';
 
@@ -177,6 +179,7 @@ export function MapPreview({
   const debounceTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const [mapInstance, setMapInstance] = useState<maplibregl.Map | null>(null);
   const mapRef = useRef<MapRef>(null);
+  const measure = useMeasure();
 
   // Reset viewport when entering the view step or when the prop changes while on that step
   useEffect(() => {
@@ -443,11 +446,16 @@ export function MapPreview({
         bearing={internalViewState.bearing}
         style={{ width: '100%', height: '100%' }}
         mapStyle={resolvedStyle as any}
-        cursor={cursor}
-        interactiveLayerIds={interactiveLayerIds}
+        cursor={measure.mode ? 'crosshair' : cursor}
+        interactiveLayerIds={measure.mode ? undefined : interactiveLayerIds}
+        doubleClickZoom={!measure.mode}
         onLoad={handleMapLoad}
         onMove={handleMove}
         onClick={(evt) => {
+          if (measure.mode) {
+            measure.addPoint([evt.lngLat.lng, evt.lngLat.lat]);
+            return;
+          }
           if (!featureInteractionEnabled) return;
           const feature = evt.features?.[0];
           if (feature) {
@@ -459,6 +467,11 @@ export function MapPreview({
               fields: resolved?.fields,
               labels: resolved?.labels,
             });
+          }
+        }}
+        onDblClick={(evt) => {
+          if (measure.mode) {
+            evt.preventDefault();
           }
         }}
         onMouseMove={(evt) => {
@@ -515,6 +528,33 @@ export function MapPreview({
             />
           );
         })}
+
+        {/* Measure tool GeoJSON */}
+        {measure.geometryData && (
+          <Source id="measure-geometry" type="geojson" data={measure.geometryData}>
+            <Layer
+              id="measure-line-layer"
+              type="line"
+              paint={{ 'line-color': '#3b82f6', 'line-width': 2, 'line-dasharray': [2, 2] }}
+            />
+            {measure.mode === 'area' && measure.points.length >= 3 && (
+              <Layer
+                id="measure-fill-layer"
+                type="fill"
+                paint={{ 'fill-color': '#3b82f6', 'fill-opacity': 0.1 }}
+              />
+            )}
+          </Source>
+        )}
+        {measure.pointsData && (
+          <Source id="measure-points" type="geojson" data={measure.pointsData}>
+            <Layer
+              id="measure-points-layer"
+              type="circle"
+              paint={{ 'circle-color': '#3b82f6', 'circle-radius': 5, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 }}
+            />
+          </Source>
+        )}
       </Map>
 
       {/* Full overlay when uiConfig is provided */}
@@ -595,6 +635,33 @@ export function MapPreview({
                       onLayersChange?.(layers.map(l => l.id === layerId ? { ...l, visible: !l.visible } : l));
                     }}
                     hideTitle
+                  />
+                </CollapsibleControl>
+              </div>
+            )}
+
+            {uiConfig.showMeasureTool && (
+              <div className="mapui:pointer-events-auto">
+                <CollapsibleControl
+                  icon={LuRuler}
+                  label="Measure"
+                  collapsed={openControl !== 'measure'}
+                  onToggle={(collapsed) => {
+                    setOpenControl(collapsed ? null : 'measure');
+                    if (collapsed) {
+                      measure.setMode(null);
+                    }
+                  }}
+                >
+                  <MeasurePanel
+                    mode={measure.mode}
+                    onModeChange={measure.setMode}
+                    points={measure.points}
+                    measurement={measure.measurement}
+                    unit={measure.unit}
+                    onUnitChange={measure.setUnit}
+                    onClear={measure.clear}
+                    className="mapui:p-3 mapui:max-w-xs"
                   />
                 </CollapsibleControl>
               </div>

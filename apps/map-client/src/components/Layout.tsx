@@ -6,6 +6,7 @@ import {
   formatDMS,
   type CoordinateFormatOption,
 } from '@ogc-maps/storybook-components';
+import { useMeasure } from '@ogc-maps/storybook-components/hooks';
 import { resolvePropertyDisplay } from '@ogc-maps/storybook-components/hooks';
 import { useMapStore } from '../stores/mapStore';
 import { MapContainer } from './MapContainer';
@@ -39,6 +40,9 @@ export function Layout({ uiConfig }: LayoutProps) {
     point: { x: number; y: number };
   } | null>(null);
 
+  // Measure tool state
+  const measure = useMeasure();
+
   // Define coordinate formats including projected CRS
   const coordinateFormats: CoordinateFormatOption[] = [
     { id: 'decimal', label: 'Decimal', format: formatDecimal },
@@ -62,6 +66,11 @@ export function Layout({ uiConfig }: LayoutProps) {
       </header>
       <div className="relative flex-grow w-full">
         <MapContainer
+          measureMode={measure.mode}
+          measurePoints={measure.points}
+          measureGeometryData={measure.geometryData}
+          measurePointsData={measure.pointsData}
+          onMeasureClick={measure.addPoint}
           onMouseMove={(coords) =>
             setMouseCoords({
               latitude: coords.latitude,
@@ -110,6 +119,13 @@ export function Layout({ uiConfig }: LayoutProps) {
           selectedFeature={selectedFeature}
           onCloseFeatureDetail={() => setSelectedFeature(null)}
           hoveredFeature={hoveredFeature}
+          measureMode={measure.mode}
+          onMeasureModeChange={measure.setMode}
+          measurePoints={measure.points}
+          measurement={measure.measurement}
+          measureUnit={measure.unit}
+          onMeasureUnitChange={measure.setUnit}
+          onMeasureClear={measure.clear}
         />
       </div>
     </>

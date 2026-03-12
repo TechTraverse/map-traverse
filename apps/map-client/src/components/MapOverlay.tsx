@@ -10,17 +10,19 @@ import {
   FeatureTooltip,
   ExportButton,
   ExportModal,
+  MeasurePanel,
   type CoordinateFormatOption,
   type ExportableLayer,
   type ExportFormatOption,
   type ExportRequest,
 } from '@ogc-maps/storybook-components';
+import type { MeasureMode, MeasureUnit, Measurement } from '@ogc-maps/storybook-components';
 import { useExport, fromStructuredFilters, fetchFeatures, eq, bboxFromGeometry } from '@ogc-maps/storybook-components/hooks';
 import type { UIConfig, SearchFilterValue, SearchFilterValues } from '@ogc-maps/storybook-components/types';
 import { useMapStore, useActiveLayerIds } from '../stores/mapStore';
 import { useAutocompleteSuggestions } from '../hooks/useAutocompleteSuggestions';
 import { exportConverters } from '../utils/exportConverters';
-import { LuLayers3, LuMap, LuSearch } from 'react-icons/lu';
+import { LuLayers3, LuMap, LuRuler, LuSearch } from 'react-icons/lu';
 
 const availableFormats: ExportFormatOption[] = [
   { id: 'csv', label: 'CSV', extension: '.csv', description: 'Comma-separated values' },
@@ -51,6 +53,13 @@ interface MapOverlayProps {
     labels?: Record<string, string>;
     point: { x: number; y: number };
   } | null;
+  measureMode: MeasureMode | null;
+  onMeasureModeChange: (mode: MeasureMode | null) => void;
+  measurePoints: [number, number][];
+  measurement: Measurement | null;
+  measureUnit: MeasureUnit;
+  onMeasureUnitChange: (unit: MeasureUnit) => void;
+  onMeasureClear: () => void;
 }
 
 export function MapOverlay({
@@ -62,6 +71,13 @@ export function MapOverlay({
   selectedFeature,
   onCloseFeatureDetail,
   hoveredFeature,
+  measureMode,
+  onMeasureModeChange,
+  measurePoints,
+  measurement,
+  measureUnit,
+  onMeasureUnitChange,
+  onMeasureClear,
 }: MapOverlayProps) {
   const layers = useMapStore((s) => s.layers);
   const basemaps = useMapStore((s) => s.basemaps);
@@ -212,6 +228,34 @@ export function MapOverlay({
                 onToggleVisibility={toggleLayerVisibility}
                 onReorder={reorderLayers}
                 hideTitle
+              />
+            </CollapsibleControl>
+          </div>
+        )}
+
+        {uiConfig.showMeasureTool && (
+          <div className="pointer-events-auto">
+            <CollapsibleControl
+              icon={LuRuler}
+              label="Measure"
+              collapsed={openControl !== 'measure'}
+              onToggle={(collapsed) => {
+                setOpenControl(collapsed ? null : 'measure');
+                if (collapsed) {
+                  onMeasureModeChange(null);
+                  onMeasureClear();
+                }
+              }}
+            >
+              <MeasurePanel
+                mode={measureMode}
+                onModeChange={onMeasureModeChange}
+                points={measurePoints}
+                measurement={measurement}
+                unit={measureUnit}
+                onUnitChange={onMeasureUnitChange}
+                onClear={onMeasureClear}
+                className="p-3 max-w-xs"
               />
             </CollapsibleControl>
           </div>
