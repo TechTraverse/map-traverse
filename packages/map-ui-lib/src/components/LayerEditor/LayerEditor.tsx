@@ -264,7 +264,7 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
                     : undefined
                 }
               />
-              {(value.styles?.length ?? 0) > 1 && (
+              {(value.styles?.length ?? 0) > 0 && (
                 <button
                   type="button"
                   onClick={() => update({ styles: removeAt(value.styles, i) })}
