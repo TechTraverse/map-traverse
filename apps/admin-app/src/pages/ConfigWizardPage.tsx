@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   SourceList,
@@ -118,6 +118,11 @@ export function ConfigWizardPage() {
 
   // Derived config object for save + preview
   const assembledConfig: MapConfig = { sources, layers, basemaps, sprites: sprites.length > 0 ? sprites : undefined, ui: uiConfig, initialView };
+
+  const isConfigValid = useMemo(() => {
+    if (!name) return false;
+    return safeValidateMapConfig(assembledConfig).success;
+  }, [name, assembledConfig]);
 
   // Sync browseSourceId when sources change
   useEffect(() => {
@@ -538,13 +543,15 @@ export function ConfigWizardPage() {
               Next
             </button>
           )}
-          <button
-            onClick={handleSave}
-            disabled={saving || !name}
-            className="mapui:bg-green-600 mapui:text-white mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:hover:bg-green-700 mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
-          >
-            {saving ? 'Saving...' : 'Save'}
-          </button>
+          {isConfigValid && (
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="mapui:bg-green-600 mapui:text-white mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:hover:bg-green-700 mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
+            >
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+          )}
         </div>
       </div>
         </div>

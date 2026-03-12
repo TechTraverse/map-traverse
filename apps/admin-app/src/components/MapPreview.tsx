@@ -9,6 +9,9 @@ import {
   resolvePropertyDisplay,
   fetchDistinctValues,
   resolveStyleWithSprites,
+  fetchFeatures,
+  eq,
+  bboxFromGeometry,
 } from '@ogc-maps/storybook-components/hooks';
 import type { CQL2Expression } from '@ogc-maps/storybook-components/hooks';
 import {
@@ -343,6 +346,23 @@ export function MapPreview({
     setActiveCql2Filters(prev => { const next = { ...prev }; delete next[layerId]; return next; });
   }, []);
 
+  const handleZoomToFeature = useCallback(
+    async (layerId: string, property: string, value: string) => {
+      const layer = layers.find(l => l.id === layerId);
+      if (!layer) return;
+      const sourceInfo = sourceUrlMap[layer.sourceId];
+      if (!sourceInfo) return;
+
+      const cql2Filter = eq(property, value);
+      const data = await fetchFeatures(sourceInfo.url, layer.collection, { cql2Filter, limit: 1 });
+      if (!data.features.length) return;
+
+      const bbox = bboxFromGeometry(data.features[0].geometry as Record<string, unknown>);
+      if (bbox) mapRef.current?.fitBounds(bbox, { padding: 50, maxZoom: 12 });
+    },
+    [layers, sourceUrlMap],
+  );
+
   const findLayerForFeature = useCallback((featureLayerId: string) => {
     return layers.find(l => {
       const sourceKey = l.dataMode === 'vector-tiles'
@@ -611,6 +631,7 @@ export function MapPreview({
                     activeFilters={activeFilters}
                     onFilterChange={handleFilterChange}
                     onClearFilters={handleClearLayerFilters}
+                    onZoomToFeature={handleZoomToFeature}
                     autocompleteSuggestions={autocompleteSuggestions}
                     onFetchSuggestions={fetchSuggestions}
                     className="p-3 max-w-xs"
