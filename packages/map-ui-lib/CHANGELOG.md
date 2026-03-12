@@ -1,5 +1,11 @@
 # @ogc-maps/storybook-components
 
+## 0.10.0
+
+### Minor Changes
+
+- df8611e: measure tool panel
+
 ## 0.9.0
 
 ### Minor Changes

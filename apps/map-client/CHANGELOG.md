@@ -1,5 +1,12 @@
 # map-client
 
+## 0.0.19
+
+### Patch Changes
+
+- Updated dependencies [df8611e]
+  - @ogc-maps/storybook-components@0.10.0
+
 ## 0.0.18
 
 ### Patch Changes
