@@ -61,6 +61,22 @@ const DEFAULT_VIEW: ViewConfig = {
   bearing: 0,
 };
 
+const PRESET_BASEMAPS: BasemapConfig[] = [
+  { id: 'carto-positron', url: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json', label: 'Positron (Light)' },
+  { id: 'carto-dark-matter', url: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json', label: 'Dark Matter (Dark)' },
+  { id: 'carto-voyager', url: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json', label: 'Voyager (Streets)' },
+];
+
+const PRESET_SPRITES: (SpriteSource & { displayLabel: string })[] = [
+  { id: 'maplibre-osm-bright', url: 'https://demotiles.maplibre.org/styles/osm-bright-gl-style/sprite', displayLabel: 'MapLibre OSM Bright' },
+];
+
+const BASEMAP_SWATCHES: Record<string, string> = {
+  'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json': 'mapui:bg-gray-200',
+  'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json': 'mapui:bg-gray-800',
+  'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json': 'mapui:bg-amber-200',
+};
+
 export function ConfigWizardPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -191,6 +207,28 @@ export function ConfigWizardPage() {
   const handleCollectionDeselect = (collectionId: string) => {
     setLayers(prev =>
       prev.filter(l => !(l.sourceId === browseSourceId && l.collection === collectionId)),
+    );
+  };
+
+  const isBasemapSelected = (preset: BasemapConfig) =>
+    basemaps.some(b => b.url === preset.url);
+
+  const toggleBasemapPreset = (preset: BasemapConfig) => {
+    setBasemaps(prev =>
+      prev.some(b => b.url === preset.url)
+        ? prev.filter(b => b.url !== preset.url)
+        : [...prev, preset],
+    );
+  };
+
+  const isSpriteSelected = (preset: { id: string; url: string }) =>
+    sprites.some(s => s.url === preset.url);
+
+  const toggleSpritePreset = (preset: { id: string; url: string }) => {
+    setSprites(prev =>
+      prev.some(s => s.url === preset.url)
+        ? prev.filter(s => s.url !== preset.url)
+        : [...prev, { id: preset.id, url: preset.url }],
     );
   };
 
@@ -338,10 +376,79 @@ export function ConfigWizardPage() {
         )}
 
         {currentStep === 'basemaps' && (
-          <div className="mapui:space-y-4">
+          <div className="mapui:space-y-6">
             <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">Basemaps</h2>
-            <BasemapList basemaps={basemaps} onChange={setBasemaps} />
-            <SpriteSourceList sprites={sprites} onChange={setSprites} />
+
+            {/* Preset Basemaps */}
+            <div>
+              <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">Preset Basemaps</h3>
+              <div className="mapui:grid mapui:grid-cols-3 mapui:gap-3">
+                {PRESET_BASEMAPS.map(preset => {
+                  const selected = isBasemapSelected(preset);
+                  return (
+                    <button
+                      key={preset.url}
+                      type="button"
+                      onClick={() => toggleBasemapPreset(preset)}
+                      className={`mapui:relative mapui:flex mapui:flex-col mapui:items-center mapui:gap-2 mapui:rounded-lg mapui:border-2 mapui:p-4 mapui:text-sm mapui:transition-colors ${
+                        selected
+                          ? 'mapui:border-blue-500 mapui:bg-blue-50'
+                          : 'mapui:border-gray-200 mapui:bg-white mapui:hover:border-gray-300'
+                      }`}
+                    >
+                      {selected && (
+                        <span className="mapui:absolute mapui:top-2 mapui:right-2 mapui:text-blue-600">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        </span>
+                      )}
+                      <span className={`mapui:w-10 mapui:h-10 mapui:rounded-full ${BASEMAP_SWATCHES[preset.url] ?? 'mapui:bg-gray-300'}`} />
+                      <span className="mapui:font-medium mapui:text-gray-700">{preset.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Custom Basemaps */}
+            <div>
+              <BasemapList basemaps={basemaps} onChange={setBasemaps} />
+            </div>
+
+            {/* Preset Sprite Sheets */}
+            <div>
+              <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">Preset Sprite Sheets</h3>
+              <div className="mapui:flex mapui:flex-wrap mapui:gap-2">
+                {PRESET_SPRITES.map(preset => {
+                  const selected = isSpriteSelected(preset);
+                  return (
+                    <button
+                      key={preset.url}
+                      type="button"
+                      onClick={() => toggleSpritePreset(preset)}
+                      className={`mapui:inline-flex mapui:items-center mapui:gap-1.5 mapui:rounded-full mapui:border mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:transition-colors ${
+                        selected
+                          ? 'mapui:border-blue-500 mapui:bg-blue-50 mapui:text-blue-700'
+                          : 'mapui:border-gray-300 mapui:bg-white mapui:text-gray-600 mapui:hover:border-gray-400'
+                      }`}
+                    >
+                      {selected && (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      )}
+                      {preset.displayLabel}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Custom Sprite Sheets */}
+            <div>
+              <SpriteSourceList sprites={sprites} onChange={setSprites} />
+            </div>
           </div>
         )}
 
