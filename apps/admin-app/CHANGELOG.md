@@ -1,5 +1,12 @@
 # admin-app
 
+## 0.0.11
+
+### Patch Changes
+
+- Updated dependencies [df8611e]
+  - @ogc-maps/storybook-components@0.10.0
+
 ## 0.0.10
 
 ### Patch Changes
