@@ -23,6 +23,8 @@ export { LayerPanel } from './LayerPanel';
 export type { LayerPanelProps } from './LayerPanel';
 export { Legend } from './Legend';
 export type { LegendProps } from './Legend';
+export { MeasurePanel } from './MeasurePanel';
+export type { MeasurePanelProps } from './MeasurePanel';
 export { SearchPanel } from './SearchPanel';
 export type { SearchPanelProps } from './SearchPanel';
 

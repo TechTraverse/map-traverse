@@ -80,10 +80,12 @@
     "react-icons": "^5.0.0"
   },
   "dependencies": {
+    "@turf/area": "^7.3.4",
+    "@turf/helpers": "^7.3.4",
+    "@turf/length": "^7.3.4",
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "vitest": "^2.1.0",
     "@chromatic-com/storybook": "^3.2.2",
     "@storybook/addon-essentials": "^8.5.0",
     "@storybook/addon-interactions": "^8.5.0",
@@ -104,6 +106,7 @@
     "typescript": "^5.7.3",
     "vite": "^6.0.7",
     "vite-plugin-dts": "^4.3.0",
-    "vite-plugin-lib-inject-css": "^2.1.1"
+    "vite-plugin-lib-inject-css": "^2.1.1",
+    "vitest": "^2.1.0"
   }
 }

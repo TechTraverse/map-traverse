@@ -7,6 +7,7 @@ export { featuresToCsv, type CsvExportOptions } from '../utils/csvExport';
 export { downloadBlob } from '../utils/download';
 export { useOgcQueryables, type UseOgcQueryablesResult } from './useOgcQueryables';
 export { useOgcCollectionDetail, type UseOgcCollectionDetailResult } from './useOgcCollectionDetail';
+export { useMeasure, type UseMeasureResult } from './useMeasure';
 
 export type {
   OgcApiSource,
