@@ -483,7 +483,7 @@ export function MapPreview({
             const resolved = resolvePropertyDisplay(layer?.propertyDisplay);
             setSelectedFeature({
               properties: (feature.properties ?? {}) as Record<string, unknown>,
-              title: (feature.properties?.['name'] as string) ?? feature.layer.id,
+              title: layer?.label ?? (feature.properties?.['name'] as string) ?? feature.layer.id,
               fields: resolved?.fields,
               labels: resolved?.labels,
             });
@@ -504,7 +504,7 @@ export function MapPreview({
             const resolved = resolvePropertyDisplay(layer?.propertyDisplay);
             setHoveredFeature({
               properties: (feature.properties ?? {}) as Record<string, unknown>,
-              title: (feature.properties?.['name'] as string) ?? undefined,
+              title: layer?.label ?? (feature.properties?.['name'] as string),
               fields: resolved?.fields,
               labels: resolved?.labels,
               point: { x: evt.point.x, y: evt.point.y },

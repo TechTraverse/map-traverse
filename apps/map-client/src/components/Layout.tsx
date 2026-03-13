@@ -85,7 +85,7 @@ export function Layout({ uiConfig }: LayoutProps) {
             const resolved = resolvePropertyDisplay(layer?.propertyDisplay);
             setSelectedFeature({
               properties: info.properties,
-              title: (info.properties['name'] as string) ?? info.layerId,
+              title: layer?.label ?? (info.properties['name'] as string) ?? info.layerId,
               fields: resolved?.fields,
               labels: resolved?.labels,
             });
@@ -100,7 +100,7 @@ export function Layout({ uiConfig }: LayoutProps) {
                     const resolved = resolvePropertyDisplay(layer?.propertyDisplay);
                     return {
                       properties: info.properties,
-                      title: (info.properties['name'] as string) ?? undefined,
+                      title: layer?.label ?? (info.properties['name'] as string),
                       fields: resolved?.fields,
                       labels: resolved?.labels,
                       point: info.point,
