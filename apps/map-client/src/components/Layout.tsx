@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import proj4 from 'proj4';
 import type { UIConfig } from '@ogc-maps/storybook-components/types';
 import {
@@ -39,6 +39,9 @@ export function Layout({ uiConfig }: LayoutProps) {
     labels?: Record<string, string>;
     point: { x: number; y: number };
   } | null>(null);
+
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => clearTimeout(hoverTimerRef.current), []);
 
   // Measure tool state
   const measure = useMeasure();
@@ -90,25 +93,26 @@ export function Layout({ uiConfig }: LayoutProps) {
               labels: resolved?.labels,
             });
           }}
-          onFeatureHover={(info) =>
-            setHoveredFeature(
-              info
-                ? (() => {
-                    const layer = layers.find(
-                      (l) => info.layerId === l.id || info.layerId.startsWith(l.id + '--'),
-                    );
-                    const resolved = resolvePropertyDisplay(layer?.propertyDisplay);
-                    return {
-                      properties: info.properties,
-                      title: layer?.label ?? (info.properties['name'] as string),
-                      fields: resolved?.fields,
-                      labels: resolved?.labels,
-                      point: info.point,
-                    };
-                  })()
-                : null,
-            )
-          }
+          onFeatureHover={(info) => {
+            clearTimeout(hoverTimerRef.current);
+            if (!info) {
+              setHoveredFeature(null);
+              return;
+            }
+            hoverTimerRef.current = setTimeout(() => {
+              const layer = layers.find(
+                (l) => info.layerId === l.id || info.layerId.startsWith(l.id + '--'),
+              );
+              const resolved = resolvePropertyDisplay(layer?.propertyDisplay);
+              setHoveredFeature({
+                properties: info.properties,
+                title: layer?.label ?? (info.properties['name'] as string),
+                fields: resolved?.fields,
+                labels: resolved?.labels,
+                point: info.point,
+              });
+            }, 1000);
+          }}
         />
         <MapOverlay
           uiConfig={uiConfig}

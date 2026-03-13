@@ -180,6 +180,8 @@ export function MapPreview({
   const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<Record<string, string[]>>({});
   const prefetchedRef = useRef<Set<string>>(new Set());
   const debounceTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => clearTimeout(hoverTimerRef.current), []);
   const [mapInstance, setMapInstance] = useState<maplibregl.Map | null>(null);
   const mapRef = useRef<MapRef>(null);
   const measure = useMeasure();
@@ -497,18 +499,21 @@ export function MapPreview({
         onMouseMove={(evt) => {
           setMouseCoords({ latitude: evt.lngLat.lat, longitude: evt.lngLat.lng });
           if (!featureInteractionEnabled) return;
+          clearTimeout(hoverTimerRef.current);
           const feature = evt.features?.[0];
           if (feature) {
             setCursor('pointer');
             const layer = findLayerForFeature(feature.layer.id);
             const resolved = resolvePropertyDisplay(layer?.propertyDisplay);
-            setHoveredFeature({
-              properties: (feature.properties ?? {}) as Record<string, unknown>,
-              title: layer?.label ?? (feature.properties?.['name'] as string),
-              fields: resolved?.fields,
-              labels: resolved?.labels,
-              point: { x: evt.point.x, y: evt.point.y },
-            });
+            hoverTimerRef.current = setTimeout(() => {
+              setHoveredFeature({
+                properties: (feature.properties ?? {}) as Record<string, unknown>,
+                title: layer?.label ?? (feature.properties?.['name'] as string),
+                fields: resolved?.fields,
+                labels: resolved?.labels,
+                point: { x: evt.point.x, y: evt.point.y },
+              });
+            }, 1000);
           } else {
             setCursor('auto');
             setHoveredFeature(null);
