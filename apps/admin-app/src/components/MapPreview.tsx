@@ -162,19 +162,19 @@ export function MapPreview({
   const [activeCql2Filters, setActiveCql2Filters] = useState<Record<string, CQL2Expression | undefined>>({});
   const [mouseCoords, setMouseCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [coordFormat, setCoordFormat] = useState<string>('decimal');
-  const [selectedFeature, setSelectedFeature] = useState<{
+  const [selectedFeatures, setSelectedFeatures] = useState<{
     properties: Record<string, unknown>;
     title?: string;
     fields?: string[];
     labels?: Record<string, string>;
-  } | null>(null);
-  const [hoveredFeature, setHoveredFeature] = useState<{
+  }[]>([]);
+  const [hoveredFeatures, setHoveredFeatures] = useState<{
     properties: Record<string, unknown>;
     title?: string;
     fields?: string[];
     labels?: Record<string, string>;
-    point: { x: number; y: number };
-  } | null>(null);
+  }[]>([]);
+  const [hoveredPoint, setHoveredPoint] = useState<{ x: number; y: number } | null>(null);
   const [openControl, setOpenControl] = useState<string | null>(null);
   const [cursor, setCursor] = useState<string>('auto');
   const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<Record<string, string[]>>({});
@@ -479,16 +479,24 @@ export function MapPreview({
             return;
           }
           if (!featureInteractionEnabled) return;
-          const feature = evt.features?.[0];
-          if (feature) {
-            const layer = findLayerForFeature(feature.layer.id);
-            const resolved = resolvePropertyDisplay(layer?.propertyDisplay);
-            setSelectedFeature({
-              properties: (feature.properties ?? {}) as Record<string, unknown>,
-              title: layer?.label ?? (feature.properties?.['name'] as string) ?? feature.layer.id,
-              fields: resolved?.fields,
-              labels: resolved?.labels,
-            });
+          const features = evt.features ?? [];
+          if (features.length > 0) {
+            const seen = new Set<string>();
+            const infos: typeof selectedFeatures = [];
+            for (const f of features) {
+              const layer = findLayerForFeature(f.layer.id);
+              const layerId = layer?.id ?? f.layer.id;
+              if (seen.has(layerId)) continue;
+              seen.add(layerId);
+              const resolved = resolvePropertyDisplay(layer?.propertyDisplay);
+              infos.push({
+                properties: (f.properties ?? {}) as Record<string, unknown>,
+                title: layer?.label ?? (f.properties?.['name'] as string) ?? f.layer.id,
+                fields: resolved?.fields,
+                labels: resolved?.labels,
+              });
+            }
+            setSelectedFeatures(infos);
           }
         }}
         onDblClick={(evt) => {
@@ -500,29 +508,40 @@ export function MapPreview({
           setMouseCoords({ latitude: evt.lngLat.lat, longitude: evt.lngLat.lng });
           if (!featureInteractionEnabled) return;
           clearTimeout(hoverTimerRef.current);
-          const feature = evt.features?.[0];
-          if (feature) {
+          const features = evt.features ?? [];
+          if (features.length > 0) {
             setCursor('pointer');
-            const layer = findLayerForFeature(feature.layer.id);
-            const resolved = resolvePropertyDisplay(layer?.propertyDisplay);
+            const point = { x: evt.point.x, y: evt.point.y };
             hoverTimerRef.current = setTimeout(() => {
-              setHoveredFeature({
-                properties: (feature.properties ?? {}) as Record<string, unknown>,
-                title: layer?.label ?? (feature.properties?.['name'] as string),
-                fields: resolved?.fields,
-                labels: resolved?.labels,
-                point: { x: evt.point.x, y: evt.point.y },
-              });
+              const seen = new Set<string>();
+              const infos: typeof hoveredFeatures = [];
+              for (const f of features) {
+                const layer = findLayerForFeature(f.layer.id);
+                const layerId = layer?.id ?? f.layer.id;
+                if (seen.has(layerId)) continue;
+                seen.add(layerId);
+                const resolved = resolvePropertyDisplay(layer?.propertyDisplay);
+                infos.push({
+                  properties: (f.properties ?? {}) as Record<string, unknown>,
+                  title: layer?.label ?? (f.properties?.['name'] as string),
+                  fields: resolved?.fields,
+                  labels: resolved?.labels,
+                });
+              }
+              setHoveredFeatures(infos);
+              setHoveredPoint(point);
             }, 1000);
           } else {
             setCursor('auto');
-            setHoveredFeature(null);
+            setHoveredFeatures([]);
+            setHoveredPoint(null);
           }
         }}
         onMouseOut={() => {
           setCursor('auto');
           setMouseCoords(null);
-          setHoveredFeature(null);
+          setHoveredFeatures([]);
+          setHoveredPoint(null);
         }}
         attributionControl={false}
       >
@@ -586,32 +605,30 @@ export function MapPreview({
       {!showEmptyState && uiConfig && (
         <div className="mapui:absolute mapui:inset-0 mapui:pointer-events-none">
           {/* Tooltip: follows cursor */}
-          {uiConfig.showFeatureTooltip && hoveredFeature && (
+          {uiConfig.showFeatureTooltip && hoveredFeatures.length > 0 && hoveredPoint && (
             <div
               className="mapui:absolute mapui:z-20"
-              style={{ left: hoveredFeature.point.x + 12, top: hoveredFeature.point.y + 12 }}
+              style={{ left: hoveredPoint.x + 12, top: hoveredPoint.y + 12 }}
             >
-              <FeatureTooltip
-                title={hoveredFeature.title}
-                properties={hoveredFeature.properties}
-                fields={hoveredFeature.fields}
-                labels={hoveredFeature.labels}
-              />
+              <FeatureTooltip features={hoveredFeatures} />
             </div>
           )}
 
-          {/* Top-left: Feature detail panel */}
-          {uiConfig.showFeatureDetail && (
-            <div className="mapui:absolute mapui:top-4 mapui:left-4 mapui:pointer-events-auto mapui:z-10">
-              <FeatureDetailPanel
-                isOpen={selectedFeature !== null}
-                onClose={() => setSelectedFeature(null)}
-                properties={selectedFeature?.properties ?? null}
-                title={selectedFeature?.title ?? 'Feature Properties'}
-                fields={selectedFeature?.fields}
-                labels={selectedFeature?.labels}
-                variant="panel"
-              />
+          {/* Top-left: Feature detail panels */}
+          {uiConfig.showFeatureDetail && selectedFeatures.length > 0 && (
+            <div className="mapui:absolute mapui:top-4 mapui:left-4 mapui:pointer-events-auto mapui:z-10 mapui:flex mapui:flex-col mapui:gap-2 mapui:max-h-[calc(100vh-4rem)] mapui:overflow-y-auto">
+              {selectedFeatures.map((feature, i) => (
+                <FeatureDetailPanel
+                  key={i}
+                  isOpen
+                  onClose={() => setSelectedFeatures((prev) => prev.filter((_, j) => j !== i))}
+                  properties={feature.properties}
+                  title={feature.title ?? 'Feature Properties'}
+                  fields={feature.fields}
+                  labels={feature.labels}
+                  variant="panel"
+                />
+              ))}
             </div>
           )}
 

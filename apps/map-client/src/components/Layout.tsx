@@ -16,6 +16,13 @@ interface LayoutProps {
   uiConfig: UIConfig;
 }
 
+interface FeatureInfo {
+  properties: Record<string, unknown>;
+  title?: string;
+  fields?: string[];
+  labels?: Record<string, string>;
+}
+
 export function Layout({ uiConfig }: LayoutProps) {
   const layers = useMapStore((s) => s.layers);
 
@@ -25,20 +32,10 @@ export function Layout({ uiConfig }: LayoutProps) {
   } | null>(null);
   const [coordFormat, setCoordFormat] = useState<string>('decimal');
 
-  const [selectedFeature, setSelectedFeature] = useState<{
-    properties: Record<string, unknown>;
-    title?: string;
-    fields?: string[];
-    labels?: Record<string, string>;
-  } | null>(null);
+  const [selectedFeatures, setSelectedFeatures] = useState<FeatureInfo[]>([]);
 
-  const [hoveredFeature, setHoveredFeature] = useState<{
-    properties: Record<string, unknown>;
-    title?: string;
-    fields?: string[];
-    labels?: Record<string, string>;
-    point: { x: number; y: number };
-  } | null>(null);
+  const [hoveredFeatures, setHoveredFeatures] = useState<FeatureInfo[]>([]);
+  const [hoveredPoint, setHoveredPoint] = useState<{ x: number; y: number } | null>(null);
 
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => () => clearTimeout(hoverTimerRef.current), []);
@@ -81,36 +78,45 @@ export function Layout({ uiConfig }: LayoutProps) {
             })
           }
           onMouseLeave={() => setMouseCoords(null)}
-          onFeatureClick={(info) => {
-            const layer = layers.find(
-              (l) => info.layerId === l.id || info.layerId.startsWith(l.id + '--'),
+          onFeatureClick={(infos) => {
+            setSelectedFeatures(
+              infos.map((info) => {
+                const layer = layers.find(
+                  (l) => info.layerId === l.id || info.layerId.startsWith(l.id + '--'),
+                );
+                const resolved = resolvePropertyDisplay(layer?.propertyDisplay);
+                return {
+                  properties: info.properties,
+                  title: layer?.label ?? (info.properties['name'] as string) ?? info.layerId,
+                  fields: resolved?.fields,
+                  labels: resolved?.labels,
+                };
+              }),
             );
-            const resolved = resolvePropertyDisplay(layer?.propertyDisplay);
-            setSelectedFeature({
-              properties: info.properties,
-              title: layer?.label ?? (info.properties['name'] as string) ?? info.layerId,
-              fields: resolved?.fields,
-              labels: resolved?.labels,
-            });
           }}
-          onFeatureHover={(info) => {
+          onFeatureHover={(infos) => {
             clearTimeout(hoverTimerRef.current);
-            if (!info) {
-              setHoveredFeature(null);
+            if (!infos) {
+              setHoveredFeatures([]);
+              setHoveredPoint(null);
               return;
             }
             hoverTimerRef.current = setTimeout(() => {
-              const layer = layers.find(
-                (l) => info.layerId === l.id || info.layerId.startsWith(l.id + '--'),
+              setHoveredPoint(infos[0]?.point ?? null);
+              setHoveredFeatures(
+                infos.map((info) => {
+                  const layer = layers.find(
+                    (l) => info.layerId === l.id || info.layerId.startsWith(l.id + '--'),
+                  );
+                  const resolved = resolvePropertyDisplay(layer?.propertyDisplay);
+                  return {
+                    properties: info.properties,
+                    title: layer?.label ?? (info.properties['name'] as string),
+                    fields: resolved?.fields,
+                    labels: resolved?.labels,
+                  };
+                }),
               );
-              const resolved = resolvePropertyDisplay(layer?.propertyDisplay);
-              setHoveredFeature({
-                properties: info.properties,
-                title: layer?.label ?? (info.properties['name'] as string),
-                fields: resolved?.fields,
-                labels: resolved?.labels,
-                point: info.point,
-              });
             }, 1000);
           }}
         />
@@ -120,9 +126,12 @@ export function Layout({ uiConfig }: LayoutProps) {
           activeCoordFormat={coordFormat}
           coordinateFormats={coordinateFormats}
           onCoordFormatChange={setCoordFormat}
-          selectedFeature={selectedFeature}
-          onCloseFeatureDetail={() => setSelectedFeature(null)}
-          hoveredFeature={hoveredFeature}
+          selectedFeatures={selectedFeatures}
+          onCloseFeatureDetail={(index) =>
+            setSelectedFeatures((prev) => prev.filter((_, i) => i !== index))
+          }
+          hoveredFeatures={hoveredFeatures}
+          hoveredPoint={hoveredPoint}
           measureMode={measure.mode}
           onMeasureModeChange={measure.setMode}
           measurePoints={measure.points}

@@ -109,8 +109,8 @@ interface FeatureHoverInfo {
 interface MapContainerProps {
   onMouseMove?: (coords: { latitude: number; longitude: number }) => void;
   onMouseLeave?: () => void;
-  onFeatureClick?: (info: FeatureClickInfo) => void;
-  onFeatureHover?: (info: FeatureHoverInfo | null) => void;
+  onFeatureClick?: (infos: FeatureClickInfo[]) => void;
+  onFeatureHover?: (infos: FeatureHoverInfo[] | null) => void;
   measureMode?: MeasureMode | null;
   measurePoints?: [number, number][];
   measureGeometryData?: GeoJSON.Feature | null;
@@ -259,13 +259,21 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
           onMeasureClick([evt.lngLat.lng, evt.lngLat.lat]);
           return;
         }
-        const feature = evt.features?.[0];
-        if (feature && onFeatureClick) {
-          onFeatureClick({
-            layerId: subLayerToLayerId[feature.layer.id] ?? feature.layer.id,
-            properties: (feature.properties ?? {}) as Record<string, unknown>,
-            lngLat: { lat: evt.lngLat.lat, lng: evt.lngLat.lng },
-          });
+        const features = evt.features ?? [];
+        if (features.length > 0 && onFeatureClick) {
+          const seen = new Set<string>();
+          const infos: FeatureClickInfo[] = [];
+          for (const f of features) {
+            const layerId = subLayerToLayerId[f.layer.id] ?? f.layer.id;
+            if (seen.has(layerId)) continue;
+            seen.add(layerId);
+            infos.push({
+              layerId,
+              properties: (f.properties ?? {}) as Record<string, unknown>,
+              lngLat: { lat: evt.lngLat.lat, lng: evt.lngLat.lng },
+            });
+          }
+          onFeatureClick(infos);
         }
       }}
       onDblClick={(evt) => {
@@ -280,15 +288,23 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
             longitude: evt.lngLat.lng,
           });
         }
-        const feature = evt.features?.[0];
-        if (feature) {
+        const features = evt.features ?? [];
+        if (features.length > 0) {
           setCursor('pointer');
           if (onFeatureHover) {
-            onFeatureHover({
-              layerId: subLayerToLayerId[feature.layer.id] ?? feature.layer.id,
-              properties: (feature.properties ?? {}) as Record<string, unknown>,
-              point: { x: evt.point.x, y: evt.point.y },
-            });
+            const seen = new Set<string>();
+            const infos: FeatureHoverInfo[] = [];
+            for (const f of features) {
+              const layerId = subLayerToLayerId[f.layer.id] ?? f.layer.id;
+              if (seen.has(layerId)) continue;
+              seen.add(layerId);
+              infos.push({
+                layerId,
+                properties: (f.properties ?? {}) as Record<string, unknown>,
+                point: { x: evt.point.x, y: evt.point.y },
+              });
+            }
+            onFeatureHover(infos);
           }
         } else {
           setCursor('auto');

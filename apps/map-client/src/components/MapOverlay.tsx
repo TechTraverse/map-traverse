@@ -39,20 +39,20 @@ interface MapOverlayProps {
   activeCoordFormat: string;
   coordinateFormats: CoordinateFormatOption[];
   onCoordFormatChange: (formatId: string) => void;
-  selectedFeature: {
+  selectedFeatures: {
     properties: Record<string, unknown>;
     title?: string;
     fields?: string[];
     labels?: Record<string, string>;
-  } | null;
-  onCloseFeatureDetail: () => void;
-  hoveredFeature: {
+  }[];
+  onCloseFeatureDetail: (index: number) => void;
+  hoveredFeatures: {
     properties: Record<string, unknown>;
     title?: string;
     fields?: string[];
     labels?: Record<string, string>;
-    point: { x: number; y: number };
-  } | null;
+  }[];
+  hoveredPoint: { x: number; y: number } | null;
   measureMode: MeasureMode | null;
   onMeasureModeChange: (mode: MeasureMode | null) => void;
   measurePoints: [number, number][];
@@ -68,9 +68,10 @@ export function MapOverlay({
   activeCoordFormat,
   coordinateFormats,
   onCoordFormatChange,
-  selectedFeature,
+  selectedFeatures,
   onCloseFeatureDetail,
-  hoveredFeature,
+  hoveredFeatures,
+  hoveredPoint,
   measureMode,
   onMeasureModeChange,
   measurePoints,
@@ -154,32 +155,30 @@ export function MapOverlay({
   return (
     <div className="absolute inset-0 pointer-events-none">
       {/* Tooltip: follows cursor, pointer-events-none so it doesn't block map */}
-      {uiConfig.showFeatureTooltip && hoveredFeature && (
+      {uiConfig.showFeatureTooltip && hoveredFeatures.length > 0 && hoveredPoint && (
         <div
           className="absolute z-20"
-          style={{ left: hoveredFeature.point.x + 12, top: hoveredFeature.point.y + 12 }}
+          style={{ left: hoveredPoint.x + 12, top: hoveredPoint.y + 12 }}
         >
-          <FeatureTooltip
-            title={hoveredFeature.title}
-            properties={hoveredFeature.properties}
-            fields={hoveredFeature.fields}
-            labels={hoveredFeature.labels}
-          />
+          <FeatureTooltip features={hoveredFeatures} />
         </div>
       )}
 
-      {/* Top-left: Feature detail panel */}
-      {uiConfig.showFeatureDetail && (
-        <div className="absolute top-4 left-4 pointer-events-auto z-10">
-          <FeatureDetailPanel
-            isOpen={selectedFeature !== null}
-            onClose={onCloseFeatureDetail}
-            properties={selectedFeature?.properties ?? null}
-            title={selectedFeature?.title ?? 'Feature Properties'}
-            fields={selectedFeature?.fields}
-            labels={selectedFeature?.labels}
-            variant="panel"
-          />
+      {/* Top-left: Feature detail panels */}
+      {uiConfig.showFeatureDetail && selectedFeatures.length > 0 && (
+        <div className="absolute top-4 left-4 pointer-events-auto z-10 flex flex-col gap-2 max-h-[calc(100vh-4rem)] overflow-y-auto">
+          {selectedFeatures.map((feature, i) => (
+            <FeatureDetailPanel
+              key={i}
+              isOpen
+              onClose={() => onCloseFeatureDetail(i)}
+              properties={feature.properties}
+              title={feature.title ?? 'Feature Properties'}
+              fields={feature.fields}
+              labels={feature.labels}
+              variant="panel"
+            />
+          ))}
         </div>
       )}
 
