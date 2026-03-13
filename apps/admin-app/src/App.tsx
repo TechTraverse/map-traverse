@@ -3,6 +3,7 @@ import { ConfigListPage } from './pages/ConfigListPage';
 import { ConfigWizardPage } from './pages/ConfigWizardPage';
 import { ConfigPreviewPage } from './pages/ConfigPreviewPage';
 import { VersionHistoryPage } from './pages/VersionHistoryPage';
+import { SourcesPage } from './pages/SourcesPage';
 import { LoginPage } from './pages/LoginPage';
 import { RequireAuth } from './components/RequireAuth';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -23,9 +24,15 @@ function Header() {
           <nav className="mapui:flex mapui:gap-4 mapui:text-sm">
             <Link
               to="/configs"
-              className={`mapui:hover:text-slate-300 ${location.pathname === '/configs' ? 'mapui:text-white mapui:font-medium' : 'mapui:text-slate-400'}`}
+              className={`mapui:hover:text-slate-300 ${location.pathname.startsWith('/configs') ? 'mapui:text-white mapui:font-medium' : 'mapui:text-slate-400'}`}
             >
               Configurations
+            </Link>
+            <Link
+              to="/sources"
+              className={`mapui:hover:text-slate-300 ${location.pathname === '/sources' ? 'mapui:text-white mapui:font-medium' : 'mapui:text-slate-400'}`}
+            >
+              Sources
             </Link>
           </nav>
           {showLogout && (
@@ -62,6 +69,7 @@ export default function App() {
                   <Routes>
                     <Route path="/" element={<Navigate to="/configs" replace />} />
                     <Route path="/configs" element={<ConfigListPage />} />
+                    <Route path="/sources" element={<SourcesPage />} />
                     <Route path="/configs/new" element={<ConfigWizardPage />} />
                     <Route path="/configs/:id/edit" element={<ConfigWizardPage />} />
                     <Route path="/configs/:id/versions" element={<VersionHistoryPage />} />

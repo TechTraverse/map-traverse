@@ -28,6 +28,8 @@ import type {
 } from '@ogc-maps/storybook-components';
 import { MapPreview } from '../components/MapPreview';
 
+interface SavedSourceSummary { id: string; source_id: string; url: string; label: string | null; tile_matrix_set_id: string }
+
 type WizardStep = 'metadata' | 'sources' | 'layer-select' | 'layer-config' | 'basemaps' | 'ui' | 'view' | 'review';
 
 const STEPS: { key: WizardStep; label: string }[] = [
@@ -109,6 +111,16 @@ export function ConfigWizardPage() {
       .catch(() => {});
     return () => { stale = true; };
   }, [basemaps, sprites]);
+
+  // Saved sources from the sources catalog
+  const [savedSources, setSavedSources] = useState<SavedSourceSummary[]>([]);
+
+  useEffect(() => {
+    fetch('/api/sources')
+      .then(res => res.json())
+      .then(data => setSavedSources(data as SavedSourceSummary[]))
+      .catch(() => {});
+  }, []);
 
   // CollectionBrowser source selector state
   const [browseSourceId, setBrowseSourceId] = useState('');
@@ -316,9 +328,56 @@ export function ConfigWizardPage() {
         )}
 
         {currentStep === 'sources' && (
-          <div className="mapui:space-y-4">
+          <div className="mapui:space-y-6">
             <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">OGC API Sources</h2>
-            <SourceList sources={sources} onChange={setSources} />
+
+            {/* Saved sources picker */}
+            {savedSources.length > 0 && (
+              <div>
+                <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">Saved Sources</h3>
+                <div className="mapui:flex mapui:flex-wrap mapui:gap-2">
+                  {savedSources.map(saved => {
+                    const alreadyAdded = sources.some(s => s.id === saved.source_id);
+                    return (
+                      <button
+                        key={saved.id}
+                        type="button"
+                        onClick={() => {
+                          if (alreadyAdded) return;
+                          setSources(prev => [...prev, {
+                            id: saved.source_id,
+                            url: saved.url,
+                            label: saved.label ?? undefined,
+                            tileMatrixSetId: saved.tile_matrix_set_id,
+                          }]);
+                        }}
+                        disabled={alreadyAdded}
+                        className={`mapui:inline-flex mapui:items-center mapui:gap-1.5 mapui:rounded-full mapui:border mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:transition-colors ${
+                          alreadyAdded
+                            ? 'mapui:border-blue-500 mapui:bg-blue-50 mapui:text-blue-700 mapui:cursor-default'
+                            : 'mapui:border-gray-300 mapui:bg-white mapui:text-gray-600 mapui:hover:border-blue-400 mapui:hover:bg-blue-50 mapui:cursor-pointer'
+                        }`}
+                      >
+                        {alreadyAdded && (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
+                        {saved.label ?? saved.source_id}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Inline source editor */}
+            <div>
+              {savedSources.length > 0 && (
+                <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">All Sources</h3>
+              )}
+              <SourceList sources={sources} onChange={setSources} />
+            </div>
           </div>
         )}
 

@@ -29,8 +29,8 @@ export { SearchPanel } from './SearchPanel';
 export type { SearchPanelProps } from './SearchPanel';
 
 // Admin components
-export { FormField, ColorPicker, ConfirmDialog } from './admin';
-export type { FormFieldProps, ColorPickerProps, ConfirmDialogProps } from './admin';
+export { FormField, ColorPicker, ConfirmDialog, CollapsibleSection } from './admin';
+export type { FormFieldProps, ColorPickerProps, ConfirmDialogProps, CollapsibleSectionProps } from './admin';
 export { SourceEditor, SourceList } from './SourceEditor';
 export type { SourceEditorProps, SourceListProps } from './SourceEditor';
 export { CollectionBrowser } from './CollectionBrowser';

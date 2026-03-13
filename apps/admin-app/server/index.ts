@@ -6,6 +6,7 @@ import session from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 import bcrypt from 'bcryptjs';
 import { pool, initDb } from './db.js';
+import { inspectOgcSource, normalizeUrl } from './inspect.js';
 import { safeValidateMapConfig } from '@ogc-maps/storybook-components/schemas';
 
 // Augment session with our custom fields
@@ -542,6 +543,337 @@ app.post('/api/configs/:id/restore/:versionId', requireAuth, async (req, res) =>
       client.release();
     }
     res.json(result.rows[0]);
+  } catch (err) {
+    handleServerError(res, err);
+  }
+});
+
+// --- Source endpoints ---
+
+const SOURCE_ID_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+// GET /api/sources — list all saved sources
+app.get('/api/sources', async (_req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM ogc_sources ORDER BY updated_at DESC',
+    );
+    res.json(result.rows);
+  } catch (err) {
+    handleServerError(res, err);
+  }
+});
+
+// GET /api/sources/:id — get single source by UUID
+app.get('/api/sources/:id', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM ogc_sources WHERE id = $1', [req.params.id]);
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'Source not found' });
+      return;
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    handleServerError(res, err);
+  }
+});
+
+// GET /api/sources/:id/usage — list configs using this source
+app.get('/api/sources/:id/usage', async (req, res) => {
+  try {
+    const sourceResult = await pool.query('SELECT source_id FROM ogc_sources WHERE id = $1', [req.params.id]);
+    if (sourceResult.rows.length === 0) {
+      res.status(404).json({ error: 'Source not found' });
+      return;
+    }
+    const sourceId = (sourceResult.rows[0] as { source_id: string }).source_id;
+    const result = await pool.query(
+      `SELECT id, name FROM map_configs
+       WHERE EXISTS (
+         SELECT 1 FROM jsonb_array_elements(config->'sources') AS s
+         WHERE s->>'id' = $1
+       )`,
+      [sourceId],
+    );
+    res.json({ configs: result.rows });
+  } catch (err) {
+    handleServerError(res, err);
+  }
+});
+
+// POST /api/sources/test-connection — server-side connection test (protected)
+app.post('/api/sources/test-connection', requireAuth, async (req, res) => {
+  const { url } = req.body as { url?: string };
+  if (!url) {
+    res.status(400).json({ error: 'url is required' });
+    return;
+  }
+  try {
+    const testUrl = normalizeUrl(url).replace(/\/$/, '');
+    const response = await fetch(`${testUrl}/conformance?f=json`, {
+      signal: AbortSignal.timeout(10_000),
+      headers: { 'Accept': 'application/json' },
+    });
+    if (response.ok) {
+      res.json({ status: 'success' });
+    } else {
+      res.json({ status: 'error', error: `HTTP ${response.status} ${response.statusText}` });
+    }
+  } catch (err) {
+    res.json({ status: 'error', error: err instanceof Error ? err.message : 'Network error' });
+  }
+});
+
+// POST /api/sources — create a new source (protected)
+app.post('/api/sources', requireAuth, async (req, res) => {
+  const { source_id, url, label, tile_matrix_set_id, metadata } = req.body as {
+    source_id?: string;
+    url?: string;
+    label?: string;
+    tile_matrix_set_id?: string;
+    metadata?: unknown;
+  };
+
+  if (!source_id || !url) {
+    res.status(400).json({ error: 'source_id and url are required' });
+    return;
+  }
+  if (!SOURCE_ID_REGEX.test(source_id)) {
+    res.status(400).json({ error: 'source_id must be a slug (lowercase letters, numbers, hyphens only)' });
+    return;
+  }
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO ogc_sources (source_id, url, label, tile_matrix_set_id)
+       VALUES ($1, $2, $3, $4) RETURNING *`,
+      [source_id, url, label ?? null, tile_matrix_set_id ?? 'WebMercatorQuad'],
+    );
+    const row = result.rows[0] as { id: string };
+
+    if (metadata) {
+      // Client provided metadata (client-side inspection) — save directly
+      const updated = await pool.query(
+        'UPDATE ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
+        [JSON.stringify(metadata), row.id],
+      );
+      res.status(201).json(updated.rows[0]);
+    } else {
+      // No metadata provided — auto-inspect server-side (fallback)
+      try {
+        const inspected = await inspectOgcSource(url);
+        const updated = await pool.query(
+          'UPDATE ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
+          [JSON.stringify(inspected), row.id],
+        );
+        res.status(201).json(updated.rows[0]);
+      } catch {
+        // Inspection failed — return source without metadata
+        res.status(201).json(result.rows[0]);
+      }
+    }
+  } catch (err: unknown) {
+    if (err instanceof Error && 'code' in err && (err as { code: string }).code === '23505') {
+      res.status(409).json({ error: `A source with id "${source_id}" already exists` });
+      return;
+    }
+    handleServerError(res, err);
+  }
+});
+
+// PUT /api/sources/:id — update a source (protected)
+app.put('/api/sources/:id', requireAuth, async (req, res) => {
+  const { source_id, url, label, tile_matrix_set_id, metadata } = req.body as {
+    source_id?: string;
+    url?: string;
+    label?: string;
+    tile_matrix_set_id?: string;
+    metadata?: unknown;
+  };
+
+  if (source_id !== undefined && !SOURCE_ID_REGEX.test(source_id)) {
+    res.status(400).json({ error: 'source_id must be a slug (lowercase letters, numbers, hyphens only)' });
+    return;
+  }
+
+  try {
+    const existing = await pool.query('SELECT * FROM ogc_sources WHERE id = $1', [req.params.id]);
+    if (existing.rows.length === 0) {
+      res.status(404).json({ error: 'Source not found' });
+      return;
+    }
+    const row = existing.rows[0] as {
+      source_id: string;
+      url: string;
+      label: string | null;
+      tile_matrix_set_id: string;
+    };
+
+    const newUrl = url ?? row.url;
+    const result = await pool.query(
+      `UPDATE ogc_sources SET source_id = $1, url = $2, label = $3, tile_matrix_set_id = $4, updated_at = now()
+       WHERE id = $5 RETURNING *`,
+      [
+        source_id ?? row.source_id,
+        newUrl,
+        label !== undefined ? (label || null) : row.label,
+        tile_matrix_set_id ?? row.tile_matrix_set_id,
+        req.params.id,
+      ],
+    );
+
+    // Re-inspect if URL changed
+    if (url && url !== row.url) {
+      if (metadata) {
+        // Client provided metadata — save directly
+        const updated = await pool.query(
+          'UPDATE ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
+          [JSON.stringify(metadata), req.params.id],
+        );
+        res.json(updated.rows[0]);
+        return;
+      }
+      // No metadata provided — auto-inspect server-side (fallback)
+      try {
+        const inspected = await inspectOgcSource(newUrl);
+        const updated = await pool.query(
+          'UPDATE ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
+          [JSON.stringify(inspected), req.params.id],
+        );
+        res.json(updated.rows[0]);
+        return;
+      } catch {
+        // Inspection failed — return without updated metadata
+      }
+    }
+    res.json(result.rows[0]);
+  } catch (err: unknown) {
+    if (err instanceof Error && 'code' in err && (err as { code: string }).code === '23505') {
+      res.status(409).json({ error: `A source with that id already exists` });
+      return;
+    }
+    handleServerError(res, err);
+  }
+});
+
+// PUT /api/sources/:id/metadata — save client-inspected metadata (protected)
+app.put('/api/sources/:id/metadata', requireAuth, async (req, res) => {
+  const { metadata } = req.body as { metadata?: unknown };
+  if (!metadata) {
+    res.status(400).json({ error: 'metadata is required' });
+    return;
+  }
+  try {
+    const result = await pool.query(
+      'UPDATE ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
+      [JSON.stringify(metadata), req.params.id],
+    );
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'Source not found' });
+      return;
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    handleServerError(res, err);
+  }
+});
+
+// DELETE /api/sources/:id — delete a source (protected)
+app.delete('/api/sources/:id', requireAuth, async (req, res) => {
+  try {
+    const sourceResult = await pool.query('SELECT source_id FROM ogc_sources WHERE id = $1', [req.params.id]);
+    if (sourceResult.rows.length === 0) {
+      res.status(404).json({ error: 'Source not found' });
+      return;
+    }
+    const sourceId = (sourceResult.rows[0] as { source_id: string }).source_id;
+
+    // Check usage unless force=true
+    if (req.query.force !== 'true') {
+      const usage = await pool.query(
+        `SELECT id, name FROM map_configs
+         WHERE EXISTS (
+           SELECT 1 FROM jsonb_array_elements(config->'sources') AS s
+           WHERE s->>'id' = $1
+         )`,
+        [sourceId],
+      );
+      if (usage.rows.length > 0) {
+        const names = (usage.rows as { name: string }[]).map(r => r.name).join(', ');
+        res.status(409).json({
+          error: `Source is in use by configs: ${names}. Use ?force=true to delete anyway.`,
+          configs: usage.rows,
+        });
+        return;
+      }
+    }
+
+    await pool.query('DELETE FROM ogc_sources WHERE id = $1', [req.params.id]);
+    res.json({ deleted: req.params.id });
+  } catch (err) {
+    handleServerError(res, err);
+  }
+});
+
+// POST /api/sources/:id/inspect — refresh metadata for a source (protected)
+app.post('/api/sources/:id/inspect', requireAuth, async (req, res) => {
+  try {
+    const sourceResult = await pool.query('SELECT url FROM ogc_sources WHERE id = $1', [req.params.id]);
+    if (sourceResult.rows.length === 0) {
+      res.status(404).json({ error: 'Source not found' });
+      return;
+    }
+    const { url } = sourceResult.rows[0] as { url: string };
+
+    const metadata = await inspectOgcSource(url);
+    const result = await pool.query(
+      'UPDATE ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
+      [JSON.stringify(metadata), req.params.id],
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    handleServerError(res, err);
+  }
+});
+
+// POST /api/sources/import — bulk import sources from existing configs (protected)
+app.post('/api/sources/import', requireAuth, async (_req, res) => {
+  try {
+    const configsResult = await pool.query(
+      "SELECT config->'sources' AS sources FROM map_configs WHERE config->'sources' IS NOT NULL",
+    );
+
+    const seen = new Map<string, { id: string; url: string; label?: string; tileMatrixSetId?: string }>();
+    for (const row of configsResult.rows) {
+      const sources = (row as { sources: Array<{ id: string; url: string; label?: string; tileMatrixSetId?: string }> }).sources;
+      if (!Array.isArray(sources)) continue;
+      for (const s of sources) {
+        if (s.id && s.url && !seen.has(s.id)) {
+          seen.set(s.id, s);
+        }
+      }
+    }
+
+    let imported = 0;
+    if (seen.size > 0) {
+      const values = Array.from(seen.values());
+      const placeholders = values.map((_, i) => {
+        const b = i * 4;
+        return `($${b + 1}, $${b + 2}, $${b + 3}, $${b + 4})`;
+      }).join(', ');
+      const params = values.flatMap(s => [
+        s.id, s.url, s.label ?? null, s.tileMatrixSetId ?? 'WebMercatorQuad',
+      ]);
+      const result = await pool.query(
+        `INSERT INTO ogc_sources (source_id, url, label, tile_matrix_set_id)
+         VALUES ${placeholders}
+         ON CONFLICT (source_id) DO NOTHING`,
+        params,
+      );
+      imported = result.rowCount ?? 0;
+    }
+
+    res.json({ imported, total: seen.size });
   } catch (err) {
     handleServerError(res, err);
   }

@@ -79,4 +79,34 @@ export async function initDb(): Promise<void> {
     CREATE UNIQUE INDEX IF NOT EXISTS map_configs_default_idx
       ON map_configs ((true)) WHERE is_default = true
   `);
+
+  // Reusable OGC API sources catalog
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS ogc_sources (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      source_id TEXT NOT NULL UNIQUE,
+      url TEXT NOT NULL,
+      label TEXT,
+      tile_matrix_set_id TEXT DEFAULT 'WebMercatorQuad',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+
+  // Enforce slug format for source_id
+  await pool.query(`
+    DO $$ BEGIN
+      ALTER TABLE ogc_sources ADD CONSTRAINT ogc_sources_source_id_slug_check
+        CHECK (source_id ~ '^[a-z0-9]+(-[a-z0-9]+)*$');
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END $$
+  `);
+
+  // Cached metadata from OGC API inspection
+  await pool.query(`
+    ALTER TABLE ogc_sources ADD COLUMN IF NOT EXISTS metadata JSONB
+  `);
+  await pool.query(`
+    ALTER TABLE ogc_sources ADD COLUMN IF NOT EXISTS metadata_updated_at TIMESTAMPTZ
+  `);
 }
