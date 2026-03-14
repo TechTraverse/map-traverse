@@ -232,7 +232,7 @@ export function MapPreview({
       if (options?.prefetch) {
         if (prefetchedRef.current.has(key)) return;
         prefetchedRef.current.add(key);
-        fetchDistinctValues(sourceInfo.url, layer.collection, property, { limit: 500 })
+        fetchDistinctValues(sourceInfo.url, layer.collection, property, { fetchAll: true })
           .then(values => setAutocompleteSuggestions(prev => ({ ...prev, [key]: values })))
           .catch(() => prefetchedRef.current.delete(key));
         return;

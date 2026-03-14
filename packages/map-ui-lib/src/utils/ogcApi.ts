@@ -265,26 +265,55 @@ export async function fetchDistinctValues(
   baseUrl: string,
   collection: string,
   property: string,
-  options?: { query?: string; limit?: number },
+  options?: { query?: string; limit?: number; fetchAll?: boolean; maxFeatures?: number },
 ): Promise<string[]> {
   const cql2Filter: CQL2Expression | undefined =
     options?.query
       ? { op: 'like', args: [{ property }, `%${options.query}%`] }
       : undefined;
 
-  const data = await fetchFeatures(baseUrl, collection, {
-    properties: [property],
-    limit: options?.limit ?? 50,
-    cql2Filter,
-  });
-
   const seen = new Set<string>();
-  for (const feature of data.features) {
-    const val = feature.properties?.[property];
-    if (val != null && typeof val === 'string') {
-      seen.add(val);
+
+  const collectValues = (features: GeoJsonFeature[]) => {
+    for (const feature of features) {
+      const val = feature.properties?.[property];
+      if (val != null && typeof val === 'string') seen.add(val);
     }
+  };
+
+  if (options?.fetchAll) {
+    const maxFeatures = options.maxFeatures ?? 10_000;
+    const pageSize = options.limit ?? 500;
+    let offset = 0;
+    let fetched = 0;
+
+    while (fetched < maxFeatures) {
+      const batchSize = Math.min(pageSize, maxFeatures - fetched);
+      const page = await fetchFeatures(baseUrl, collection, {
+        properties: [property],
+        limit: batchSize,
+        offset,
+        cql2Filter,
+      });
+
+      collectValues(page.features);
+      fetched += page.features.length;
+      offset += page.features.length;
+
+      const done =
+        page.features.length < batchSize ||
+        (page.numberMatched != null && offset >= page.numberMatched);
+      if (done) break;
+    }
+  } else {
+    const data = await fetchFeatures(baseUrl, collection, {
+      properties: [property],
+      limit: options?.limit ?? 50,
+      cql2Filter,
+    });
+    collectValues(data.features);
   }
+
   return Array.from(seen).sort();
 }
 

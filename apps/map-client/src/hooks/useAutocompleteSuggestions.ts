@@ -40,7 +40,7 @@ export function useAutocompleteSuggestions(): {
         const source = sources.find((s) => s.id === layer.sourceId);
         if (!source) return;
 
-        fetchDistinctValues(source.url, layer.collection, property, { limit: 500 })
+        fetchDistinctValues(source.url, layer.collection, property, { fetchAll: true })
           .then((results) => {
             setAutocompleteSuggestions((prev) => ({ ...prev, [fieldKey]: results }));
           })
