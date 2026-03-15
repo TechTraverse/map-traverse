@@ -1,5 +1,11 @@
 # @ogc-maps/storybook-components
 
+## 0.11.0
+
+### Minor Changes
+
+- cd75fde: selection tool
+
 ## 0.10.0
 
 ### Minor Changes
