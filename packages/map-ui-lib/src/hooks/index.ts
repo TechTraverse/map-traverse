@@ -46,6 +46,8 @@ export {
   getCql2FilteredVectorTileUrl,
   getTileJsonUrl,
   getVectorTileUrl,
+  getVectorTileSourceKey,
+  buildGeometryFilter,
   type OgcCollection,
   type OgcCollectionsResponse,
   type GeoJsonFeature,

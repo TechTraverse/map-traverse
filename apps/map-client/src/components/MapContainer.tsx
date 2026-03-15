@@ -1,20 +1,10 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { Map, Source, Layer, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
-import { useOgcFeatures, getCql2FilteredVectorTileUrl, resolveStyleWithSprites } from '@ogc-maps/storybook-components/hooks';
+import { useOgcFeatures, getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSourceKey, buildGeometryFilter } from '@ogc-maps/storybook-components/hooks';
 import type { CQL2Expression } from '@ogc-maps/storybook-components/hooks';
 import type { LayerConfig } from '@ogc-maps/storybook-components/types';
 import type { MeasureMode, SelectionMode } from '@ogc-maps/storybook-components';
 import { useMapStore } from '../stores/mapStore';
-
-function buildGeometryFilter(types: string[]): any {
-  return types.length === 1
-    ? ['==', ['geometry-type'], types[0]]
-    : ['in', ['geometry-type'], ['literal', types]];
-}
-
-function getVectorTileSourceKey(layerId: string, cql2Filter?: CQL2Expression | null): string {
-  return cql2Filter ? `${layerId}--${JSON.stringify(cql2Filter)}` : layerId;
-}
 
 // Inline component for vector tile layers
 function VectorTileLayer({

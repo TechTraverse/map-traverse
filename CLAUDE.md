@@ -19,7 +19,7 @@
 - `packages/map-ui-lib`: UI library (React, Zod, Hooks). Published as `@ogc-maps/storybook-components`.
 - `apps/map-client`: Main map app (MapLibre, Zustand, nuqs).
 - `apps/admin-app`: Admin UI for managing map configs (Express + React, PostgreSQL, auth).
-- `docker-compose.yml`: Four services — PostGIS, tipg (OGC API), seed (Natural Earth data), admin-app.
+- `docker-compose.yml`: Five services — PostGIS, tipg (OGC API), seed (Natural Earth data), admin-app, map-client.
 
 ## Workflows
 - See `.agent/workflows/development.md` for detailed setup and troubleshooting.

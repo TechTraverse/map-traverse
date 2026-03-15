@@ -13,6 +13,8 @@ import {
   fetchFeatureById,
   eq,
   bboxFromGeometry,
+  getVectorTileSourceKey,
+  buildGeometryFilter,
 } from '@ogc-maps/storybook-components/hooks';
 import type { CQL2Expression } from '@ogc-maps/storybook-components/hooks';
 import {
@@ -52,16 +54,6 @@ import { LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icon
 import { useBoxDraw } from '../hooks/useBoxDraw';
 
 const FALLBACK_BASEMAP_URL = 'https://demotiles.maplibre.org/style.json';
-
-function getVectorTileSourceKey(layerId: string, cql2Filter?: CQL2Expression | null): string {
-  return cql2Filter ? `${layerId}--${JSON.stringify(cql2Filter)}` : layerId;
-}
-
-function buildGeometryFilter(types: string[]) {
-  return types.length === 1
-    ? ['==', ['geometry-type'], types[0]]
-    : ['in', ['geometry-type'], ['literal', types]];
-}
 
 function PreviewVectorTileLayer({
   layer,

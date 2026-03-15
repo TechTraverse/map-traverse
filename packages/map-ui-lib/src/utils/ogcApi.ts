@@ -355,3 +355,22 @@ export function getCql2FilteredVectorTileUrl(
   });
   return `${tileUrl}?${params}`;
 }
+
+/**
+ * Build a stable source key for a vector tile layer, incorporating the CQL2 filter.
+ * When the filter changes, the key changes, forcing MapLibre to re-fetch tiles.
+ */
+export function getVectorTileSourceKey(layerId: string, cql2Filter?: CQL2Expression | null): string {
+  return cql2Filter ? `${layerId}--${JSON.stringify(cql2Filter)}` : layerId;
+}
+
+/**
+ * Build a MapLibre geometry-type filter expression for restricting which
+ * geometry types a layer renders.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function buildGeometryFilter(types: string[]): any {
+  return types.length === 1
+    ? ['==', ['geometry-type'], types[0]]
+    : ['in', ['geometry-type'], ['literal', types]];
+}
