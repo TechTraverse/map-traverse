@@ -16,6 +16,7 @@ const TOGGLE_LABELS: { key: keyof UIConfig; label: string; description: string }
   { key: 'showExportButton', label: 'Export Button', description: 'Export data as CSV' },
   { key: 'showLegendOpacity', label: 'Legend Opacity', description: 'Expand legend with opacity sliders' },
   { key: 'showMeasureTool', label: 'Measure Tool', description: 'Measure distances and areas on the map' },
+  { key: 'showSelectionTool', label: 'Selection Tool', description: 'Select features by click or box draw' },
 ];
 
 export function UIConfigEditor({ value, onChange }: UIConfigEditorProps) {

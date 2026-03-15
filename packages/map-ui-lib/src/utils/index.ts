@@ -7,3 +7,5 @@ export * from './spriteUtils';
 export * from './colorPalettes';
 export * from './expressionColors';
 export * from './measure';
+export * from './selection';
+export * from './boxDraw';

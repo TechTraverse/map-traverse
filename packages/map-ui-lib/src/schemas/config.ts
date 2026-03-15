@@ -337,6 +337,7 @@ export const UIConfigSchema = z.object({
   showExportButton: z.boolean().default(true),
   showLegendOpacity: z.boolean().default(false),
   showMeasureTool: z.boolean().default(false),
+  showSelectionTool: z.boolean().default(false),
 });
 
 // --- Root Map Config ---

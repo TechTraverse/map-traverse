@@ -138,6 +138,31 @@ export function tDuring(
 }
 
 // ---------------------------------------------------------------------------
+// Spatial builders
+// ---------------------------------------------------------------------------
+
+/** GeoJSON geometry type for spatial CQL2 args. */
+export type CQL2Geometry = {
+  type: string;
+  coordinates: unknown;
+};
+
+/** S_INTERSECTS — tests whether two geometries share any portion of space. */
+export function sIntersects(property: string, geometry: CQL2Geometry): CQL2Expression {
+  return { op: 's_intersects', args: [{ property }, geometry] };
+}
+
+/** S_WITHIN — tests whether the first geometry is completely within the second. */
+export function sWithin(property: string, geometry: CQL2Geometry): CQL2Expression {
+  return { op: 's_within', args: [{ property }, geometry] };
+}
+
+/** S_DWITHIN — tests whether two geometries are within a specified distance. */
+export function sDwithin(property: string, geometry: CQL2Geometry, distance: number, units: string = 'meters'): CQL2Expression {
+  return { op: 's_dwithin', args: [{ property }, geometry, distance, units] };
+}
+
+// ---------------------------------------------------------------------------
 // Conversion helpers
 // ---------------------------------------------------------------------------
 

@@ -151,6 +151,24 @@ export async function fetchFeatures(
 }
 
 /**
+ * Fetch a single feature by ID from an OGC API collection.
+ * Returns null if the feature is not found or the request fails.
+ */
+export async function fetchFeatureById(
+  baseUrl: string,
+  collection: string,
+  featureId: string | number,
+): Promise<GeoJsonFeature | null> {
+  const base = stripTrailingSlash(baseUrl);
+  const url = `${base}/collections/${encodeURIComponent(collection)}/items/${encodeURIComponent(String(featureId))}?f=geojson`;
+  try {
+    return await fetchJson<GeoJsonFeature>(url);
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Fetch queryable properties for a collection.
  */
 export async function fetchQueryables(

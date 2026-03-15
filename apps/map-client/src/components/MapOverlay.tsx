@@ -11,18 +11,19 @@ import {
   ExportButton,
   ExportModal,
   MeasurePanel,
+  SelectionPanel,
   type CoordinateFormatOption,
   type ExportableLayer,
   type ExportFormatOption,
   type ExportRequest,
 } from '@ogc-maps/storybook-components';
-import type { MeasureMode, MeasureUnit, Measurement } from '@ogc-maps/storybook-components';
+import type { MeasureMode, MeasureUnit, Measurement, SelectionMode } from '@ogc-maps/storybook-components';
 import { useExport, fromStructuredFilters, fetchFeatures, eq, bboxFromGeometry } from '@ogc-maps/storybook-components/hooks';
 import type { UIConfig, SearchFilterValue, SearchFilterValues } from '@ogc-maps/storybook-components/types';
 import { useMapStore, useActiveLayerIds } from '../stores/mapStore';
 import { useAutocompleteSuggestions } from '../hooks/useAutocompleteSuggestions';
 import { exportConverters } from '../utils/exportConverters';
-import { LuLayers3, LuMap, LuRuler, LuSearch } from 'react-icons/lu';
+import { LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
 
 const availableFormats: ExportFormatOption[] = [
   { id: 'csv', label: 'CSV', extension: '.csv', description: 'Comma-separated values' },
@@ -60,6 +61,13 @@ interface MapOverlayProps {
   measureUnit: MeasureUnit;
   onMeasureUnitChange: (unit: MeasureUnit) => void;
   onMeasureClear: () => void;
+  selectionMode: SelectionMode | null;
+  onSelectionModeChange: (mode: SelectionMode | null) => void;
+  selectionActiveLayerId: string | null;
+  onSelectionActiveLayerChange: (layerId: string | null) => void;
+  selectionCount: number;
+  onSelectionClear: () => void;
+  onSelectionViewResults: () => void;
 }
 
 export function MapOverlay({
@@ -79,6 +87,13 @@ export function MapOverlay({
   measureUnit,
   onMeasureUnitChange,
   onMeasureClear,
+  selectionMode,
+  onSelectionModeChange,
+  selectionActiveLayerId,
+  onSelectionActiveLayerChange,
+  selectionCount,
+  onSelectionClear,
+  onSelectionViewResults,
 }: MapOverlayProps) {
   const layers = useMapStore((s) => s.layers);
   const basemaps = useMapStore((s) => s.basemaps);
@@ -254,6 +269,34 @@ export function MapOverlay({
                 unit={measureUnit}
                 onUnitChange={onMeasureUnitChange}
                 onClear={onMeasureClear}
+                className="p-3 max-w-xs"
+              />
+            </CollapsibleControl>
+          </div>
+        )}
+
+        {uiConfig.showSelectionTool && (
+          <div className="pointer-events-auto">
+            <CollapsibleControl
+              icon={LuMousePointer2}
+              label="Select"
+              collapsed={openControl !== 'selection'}
+              onToggle={(collapsed) => {
+                setOpenControl(collapsed ? null : 'selection');
+                if (collapsed) {
+                  onSelectionModeChange(null);
+                }
+              }}
+            >
+              <SelectionPanel
+                mode={selectionMode}
+                onModeChange={onSelectionModeChange}
+                layers={layers}
+                activeLayerId={selectionActiveLayerId}
+                onActiveLayerChange={onSelectionActiveLayerChange}
+                selectedCount={selectionCount}
+                onClear={onSelectionClear}
+                onViewResults={onSelectionViewResults}
                 className="p-3 max-w-xs"
               />
             </CollapsibleControl>

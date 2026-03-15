@@ -105,10 +105,13 @@ describe('lte', () => {
 });
 
 describe('between', () => {
-  it('returns between op with 3 args', () => {
+  it('returns gte+lte AND expression (tipg/pygeofilter compat)', () => {
     expect(between('pop', 100, 500)).toEqual({
-      op: 'between',
-      args: [{ property: 'pop' }, 100, 500],
+      op: 'and',
+      args: [
+        { op: '>=', args: [{ property: 'pop' }, 100] },
+        { op: '<=', args: [{ property: 'pop' }, 500] },
+      ],
     });
   });
 });
@@ -316,9 +319,15 @@ describe('fromStructuredFilters', () => {
     expect(result).toEqual({ op: '<=', args: [{ property: 'pop' }, 100000] });
   });
 
-  it('converts { min, max } to between', () => {
+  it('converts { min, max } to gte+lte AND expression', () => {
     const result = fromStructuredFilters({ pop: { min: 100, max: 500 } }, [numberField]);
-    expect(result).toEqual({ op: 'between', args: [{ property: 'pop' }, 100, 500] });
+    expect(result).toEqual({
+      op: 'and',
+      args: [
+        { op: '>=', args: [{ property: 'pop' }, 100] },
+        { op: '<=', args: [{ property: 'pop' }, 500] },
+      ],
+    });
   });
 
   it('converts { start, end } to tDuring', () => {

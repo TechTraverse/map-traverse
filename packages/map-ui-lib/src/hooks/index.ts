@@ -8,6 +8,8 @@ export { downloadBlob } from '../utils/download';
 export { useOgcQueryables, type UseOgcQueryablesResult } from './useOgcQueryables';
 export { useOgcCollectionDetail, type UseOgcCollectionDetailResult } from './useOgcCollectionDetail';
 export { useMeasure, type UseMeasureResult } from './useMeasure';
+export { useSelection, type UseSelectionResult } from './useSelection';
+
 
 export type {
   OgcApiSource,
@@ -33,6 +35,7 @@ export type SearchFieldType = SearchField['type'];
 export {
   fetchCollections,
   fetchFeatures,
+  fetchFeatureById,
   fetchQueryables,
   fetchCollectionDetail,
   fetchConformance,
@@ -73,10 +76,15 @@ export {
   fromSimpleFilters,
   fromStructuredFilters,
   serializeCql2,
+  sIntersects,
+  sWithin,
+  sDwithin,
   type CQL2Expression,
   type CQL2PropertyRef,
   type CQL2Date,
   type CQL2Timestamp,
   type CQL2Interval,
+  type CQL2Geometry,
 } from '../utils/cql2';
 export { bboxFromGeometry, type BBox } from '../utils/geo';
+export type { SelectionMode, SelectedFeature } from '../utils/selection';

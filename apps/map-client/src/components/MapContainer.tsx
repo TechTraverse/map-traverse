@@ -3,7 +3,7 @@ import { Map, Source, Layer, AttributionControl, type MapRef } from 'react-map-g
 import { useOgcFeatures, getCql2FilteredVectorTileUrl, resolveStyleWithSprites } from '@ogc-maps/storybook-components/hooks';
 import type { CQL2Expression } from '@ogc-maps/storybook-components/hooks';
 import type { LayerConfig } from '@ogc-maps/storybook-components/types';
-import type { MeasureMode } from '@ogc-maps/storybook-components';
+import type { MeasureMode, SelectionMode } from '@ogc-maps/storybook-components';
 import { useMapStore } from '../stores/mapStore';
 
 function buildGeometryFilter(types: string[]): any {
@@ -116,9 +116,16 @@ interface MapContainerProps {
   measureGeometryData?: GeoJSON.Feature | null;
   measurePointsData?: GeoJSON.FeatureCollection | null;
   onMeasureClick?: (point: [number, number]) => void;
+  selectionMode?: SelectionMode | null;
+  selectionLayerId?: string | null;
+  selectionHighlightData?: GeoJSON.FeatureCollection | null;
+  boxDrawData?: GeoJSON.Feature | null;
+  onSelectionClick?: (features: Array<{ id?: string | number; properties: Record<string, unknown>; geometry: Record<string, unknown> }>) => void;
+  externalMapRef?: React.RefObject<MapRef | null>;
+  onMapRef?: (ref: MapRef | null) => void;
 }
 
-export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeatureHover, measureMode, measurePoints = [], measureGeometryData, measurePointsData, onMeasureClick }: MapContainerProps = {}) {
+export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeatureHover, measureMode, measurePoints = [], measureGeometryData, measurePointsData, onMeasureClick, selectionMode, selectionLayerId, selectionHighlightData, boxDrawData, onSelectionClick, externalMapRef, onMapRef }: MapContainerProps = {}) {
   const viewState = useMapStore((s) => s.viewState);
   const layers = useMapStore((s) => s.layers);
   const sources = useMapStore((s) => s.sources);
@@ -131,12 +138,14 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
   const setViewState = useMapStore((s) => s.setViewState);
 
   const [mapInstance, setMapInstance] = useState<ReturnType<MapRef['getMap']> | null>(null);
-  const mapRef = useRef<MapRef>(null);
+  const internalMapRef = useRef<MapRef>(null);
+  const mapRef = externalMapRef ?? internalMapRef;
   const [resolvedStyle, setResolvedStyle] = useState<string | object | undefined>(undefined);
 
   const handleMapLoad = useCallback(() => {
     setMapInstance(mapRef.current?.getMap() ?? null);
-  }, []);
+    onMapRef?.(mapRef.current ?? null);
+  }, [onMapRef, mapRef]);
 
   useEffect(() => {
     if (!mapInstance) return;
@@ -245,18 +254,37 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
 
   return (
     <Map
-      ref={mapRef}
+      ref={mapRef as React.Ref<MapRef>}
       {...viewState}
       style={{ width: '100%', height: '100%' }}
       mapStyle={resolvedStyle as any}
-      cursor={measureMode ? 'crosshair' : cursor}
-      interactiveLayerIds={measureMode ? undefined : interactiveLayerIds}
-      doubleClickZoom={!measureMode}
+      cursor={measureMode ? 'crosshair' : selectionMode ? 'crosshair' : cursor}
+      interactiveLayerIds={measureMode ? undefined : selectionMode === 'box' ? undefined : interactiveLayerIds}
+      doubleClickZoom={!measureMode && !selectionMode}
       onLoad={handleMapLoad}
       onMove={(evt) => setViewState(evt.viewState)}
       onClick={(evt) => {
         if (measureMode && onMeasureClick) {
           onMeasureClick([evt.lngLat.lng, evt.lngLat.lat]);
+          return;
+        }
+        if (selectionMode === 'click' && onSelectionClick) {
+          const allFeatures = evt.features ?? [];
+          // Filter to only features from the active selection layer
+          const sourceKey = selectionLayerId
+            ? getVectorTileSourceKey(selectionLayerId, activeCql2Filters[selectionLayerId])
+            : null;
+          const selFeatures = sourceKey
+            ? allFeatures.filter((f) => f.layer.id.startsWith(`${sourceKey}--`))
+            : allFeatures;
+          if (selFeatures.length > 0) {
+            const results = selFeatures.map((f) => ({
+              id: f.id,
+              properties: (f.properties ?? {}) as Record<string, unknown>,
+              geometry: (f.geometry ?? {}) as unknown as Record<string, unknown>,
+            }));
+            onSelectionClick(results);
+          }
           return;
         }
         const features = evt.features ?? [];
@@ -377,6 +405,45 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
             id="measure-points-layer"
             type="circle"
             paint={{ 'circle-color': '#3b82f6', 'circle-radius': 5, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 }}
+          />
+        </Source>
+      )}
+
+      {/* Selection highlight GeoJSON */}
+      {selectionHighlightData && (
+        <Source id="selection-highlight" type="geojson" data={selectionHighlightData}>
+          <Layer
+            id="selection-highlight-fill"
+            type="fill"
+            paint={{ 'fill-color': '#fbbf24', 'fill-opacity': 0.3 }}
+            filter={['in', ['geometry-type'], ['literal', ['Polygon', 'MultiPolygon']]]}
+          />
+          <Layer
+            id="selection-highlight-line"
+            type="line"
+            paint={{ 'line-color': '#f59e0b', 'line-width': 3 }}
+          />
+          <Layer
+            id="selection-highlight-circle"
+            type="circle"
+            paint={{ 'circle-color': '#fbbf24', 'circle-radius': 6, 'circle-stroke-color': '#f59e0b', 'circle-stroke-width': 2 }}
+            filter={['==', ['geometry-type'], 'Point']}
+          />
+        </Source>
+      )}
+
+      {/* Box draw preview */}
+      {boxDrawData && (
+        <Source id="box-draw-preview" type="geojson" data={boxDrawData}>
+          <Layer
+            id="box-draw-fill"
+            type="fill"
+            paint={{ 'fill-color': '#3b82f6', 'fill-opacity': 0.15 }}
+          />
+          <Layer
+            id="box-draw-line"
+            type="line"
+            paint={{ 'line-color': '#3b82f6', 'line-width': 2, 'line-dasharray': [3, 3] }}
           />
         </Source>
       )}

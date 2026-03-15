@@ -6,6 +6,7 @@ import { StyleEditor, defaultFill, defaultCircle } from '../StyleEditor/StyleEdi
 import { LegendEditor } from '../LegendEditor/LegendEditor';
 import { SearchFieldList } from '../SearchFieldEditor/SearchFieldList';
 import { PropertyDisplayEditor } from '../PropertyDisplayEditor/PropertyDisplayEditor';
+
 import { useOgcCollections } from '../../hooks/useOgcCollections';
 import { useOgcQueryables } from '../../hooks/useOgcQueryables';
 import { fetchFeatures, fetchDistinctValues } from '../../utils/ogcApi';
@@ -312,6 +313,7 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
           availableProperties={availableProperties}
         />
       </CollapsibleSection>
+
     </div>
   );
 }

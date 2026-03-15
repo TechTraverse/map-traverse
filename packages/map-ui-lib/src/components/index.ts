@@ -25,9 +25,12 @@ export { Legend } from './Legend';
 export type { LegendProps } from './Legend';
 export { MeasurePanel } from './MeasurePanel';
 export type { MeasurePanelProps } from './MeasurePanel';
+export { SelectionPanel } from './SelectionPanel';
+export type { SelectionPanelProps } from './SelectionPanel';
 export { SearchPanel } from './SearchPanel';
 export type { SearchPanelProps } from './SearchPanel';
-
+export { ResultsDrawer } from './ResultsDrawer';
+export type { ResultsDrawerProps } from './ResultsDrawer';
 // Admin components
 export { FormField, ColorPicker, ConfirmDialog, CollapsibleSection } from './admin';
 export type { FormFieldProps, ColorPickerProps, ConfirmDialogProps, CollapsibleSectionProps } from './admin';

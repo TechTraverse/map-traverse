@@ -1,16 +1,21 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import proj4 from 'proj4';
+import type { MapRef } from 'react-map-gl/maplibre';
 import type { UIConfig } from '@ogc-maps/storybook-components/types';
 import {
   formatDecimal,
   formatDMS,
+  ResultsDrawer,
   type CoordinateFormatOption,
 } from '@ogc-maps/storybook-components';
 import { useMeasure } from '@ogc-maps/storybook-components/hooks';
+import { useSelection } from '@ogc-maps/storybook-components/hooks';
+import { fetchFeatureById } from '@ogc-maps/storybook-components/hooks';
 import { resolvePropertyDisplay } from '@ogc-maps/storybook-components/hooks';
 import { useMapStore } from '../stores/mapStore';
 import { MapContainer } from './MapContainer';
 import { MapOverlay } from './MapOverlay';
+import { useBoxDraw } from '../hooks/useBoxDraw';
 
 interface LayoutProps {
   uiConfig: UIConfig;
@@ -43,6 +48,40 @@ export function Layout({ uiConfig }: LayoutProps) {
   // Measure tool state
   const measure = useMeasure();
 
+  // Selection tool state
+  const selection = useSelection();
+  const [resultsOpen, setResultsOpen] = useState(false);
+  const mapRefForBoxDraw = useRef<MapRef>(null);
+
+  const activeCql2Filters = useMapStore((s) => s.activeCql2Filters);
+
+  const selectionQueryLayerIds = useMemo(() => {
+    if (!selection.activeLayerId) return [];
+    const layer = layers.find((l) => l.id === selection.activeLayerId);
+    if (!layer) return [];
+    const sourceKey = layer.dataMode === 'vector-tiles'
+      ? (activeCql2Filters[layer.id] ? `${layer.id}--${JSON.stringify(activeCql2Filters[layer.id])}` : layer.id)
+      : layer.id;
+    return (layer.styles ?? []).map((s, i) => `${sourceKey}--${s.type}--${i}`);
+  }, [selection.activeLayerId, layers, activeCql2Filters]);
+
+  const { boxDrawData } = useBoxDraw({
+    mapRef: mapRefForBoxDraw,
+    enabled: selection.mode === 'box' && selection.activeLayerId != null,
+    queryLayerIds: selectionQueryLayerIds,
+    onComplete: (features) => {
+      if (!selection.activeLayerId) return;
+      selection.addFeatures(
+        features.map((f) => ({
+          id: f.id,
+          layerId: selection.activeLayerId!,
+          properties: f.properties,
+          geometry: f.geometry,
+        })),
+      );
+    },
+  });
+
   // Define coordinate formats including projected CRS
   const coordinateFormats: CoordinateFormatOption[] = [
     { id: 'decimal', label: 'Decimal', format: formatDecimal },
@@ -66,11 +105,54 @@ export function Layout({ uiConfig }: LayoutProps) {
       </header>
       <div className="relative flex-grow w-full">
         <MapContainer
+          externalMapRef={mapRefForBoxDraw}
           measureMode={measure.mode}
           measurePoints={measure.points}
           measureGeometryData={measure.geometryData}
           measurePointsData={measure.pointsData}
           onMeasureClick={measure.addPoint}
+          selectionMode={selection.mode}
+          selectionLayerId={selection.activeLayerId}
+          selectionHighlightData={selection.highlightData}
+          boxDrawData={boxDrawData}
+          onSelectionClick={(features) => {
+            if (!selection.activeLayerId) return;
+            const layer = layers.find((l) => l.id === selection.activeLayerId);
+            const source = layer ? useMapStore.getState().sources.find((s) => s.id === layer.sourceId) : null;
+            if (layer && source && layer.dataMode === 'vector-tiles') {
+              // Fetch full geometry from OGC API for vector tile features
+              const tileFeatures = features.map((f) => ({
+                id: f.id,
+                layerId: selection.activeLayerId!,
+                properties: f.properties,
+                geometry: f.geometry,
+              }));
+              Promise.allSettled(
+                features.map(async (f) => {
+                  const featureId = f.properties?.gid ?? f.id;
+                  if (featureId != null) {
+                    const full = await fetchFeatureById(source.url, layer.collection, featureId as string | number);
+                    if (full) {
+                      return { id: f.id, layerId: selection.activeLayerId!, properties: (full.properties ?? {}) as Record<string, unknown>, geometry: full.geometry as unknown as Record<string, unknown> };
+                    }
+                  }
+                  return { id: f.id, layerId: selection.activeLayerId!, properties: f.properties, geometry: f.geometry };
+                }),
+              ).then((results) => {
+                const resolved = results.map((r, i) => r.status === 'fulfilled' ? r.value : tileFeatures[i]);
+                selection.addFeatures(resolved);
+              });
+            } else {
+              selection.addFeatures(
+                features.map((f) => ({
+                  id: f.id,
+                  layerId: selection.activeLayerId!,
+                  properties: f.properties,
+                  geometry: f.geometry,
+                })),
+              );
+            }
+          }}
           onMouseMove={(coords) =>
             setMouseCoords({
               latitude: coords.latitude,
@@ -139,6 +221,23 @@ export function Layout({ uiConfig }: LayoutProps) {
           measureUnit={measure.unit}
           onMeasureUnitChange={measure.setUnit}
           onMeasureClear={measure.clear}
+          selectionMode={selection.mode}
+          onSelectionModeChange={selection.setMode}
+          selectionActiveLayerId={selection.activeLayerId}
+          onSelectionActiveLayerChange={selection.setActiveLayerId}
+          selectionCount={selection.features.length}
+          onSelectionClear={selection.clearFeatures}
+          onSelectionViewResults={() => setResultsOpen(true)}
+        />
+        <ResultsDrawer
+          open={resultsOpen}
+          features={selection.features.map((f) => ({ properties: f.properties, geometry: f.geometry }))}
+          title={`Selected Features${selection.activeLayerId ? ` — ${layers.find((l) => l.id === selection.activeLayerId)?.label ?? ''}` : ''}`}
+          onClose={() => setResultsOpen(false)}
+          onClearSelection={() => {
+            selection.clearFeatures();
+            setResultsOpen(false);
+          }}
         />
       </div>
     </>

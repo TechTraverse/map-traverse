@@ -10,6 +10,7 @@ import {
   fetchDistinctValues,
   resolveStyleWithSprites,
   fetchFeatures,
+  fetchFeatureById,
   eq,
   bboxFromGeometry,
 } from '@ogc-maps/storybook-components/hooks';
@@ -25,11 +26,13 @@ import {
   FeatureTooltip,
   ExportButton,
   MeasurePanel,
+  SelectionPanel,
+  ResultsDrawer,
   formatDecimal,
   formatDMS,
 } from '@ogc-maps/storybook-components';
 import type { CoordinateFormatOption } from '@ogc-maps/storybook-components';
-import { useMeasure } from '@ogc-maps/storybook-components/hooks';
+import { useMeasure, useSelection } from '@ogc-maps/storybook-components/hooks';
 
 const coordinateFormats: CoordinateFormatOption[] = [
   { id: 'decimal', label: 'Decimal', format: formatDecimal },
@@ -45,7 +48,8 @@ import type {
   ExportableLayer,
 } from '@ogc-maps/storybook-components';
 import type { SearchFilterValue, SearchFilterValues } from '@ogc-maps/storybook-components/types';
-import { LuLayers3, LuMap, LuRuler, LuSearch } from 'react-icons/lu';
+import { LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
+import { useBoxDraw } from '../hooks/useBoxDraw';
 
 const FALLBACK_BASEMAP_URL = 'https://demotiles.maplibre.org/style.json';
 
@@ -185,6 +189,30 @@ export function MapPreview({
   const [mapInstance, setMapInstance] = useState<maplibregl.Map | null>(null);
   const mapRef = useRef<MapRef>(null);
   const measure = useMeasure();
+  const selection = useSelection();
+  const [resultsOpen, setResultsOpen] = useState(false);
+
+  const selectionQueryLayerIds = useMemo(() => {
+    if (!selection.activeLayerId) return [];
+    const layer = layers.find((l) => l.id === selection.activeLayerId);
+    if (!layer) return [];
+    const sourceKey = layer.dataMode === 'vector-tiles'
+      ? getVectorTileSourceKey(layer.id, activeCql2Filters[layer.id])
+      : layer.id;
+    return (layer.styles ?? []).map((s, i) => `${sourceKey}--${s.type}--${i}`);
+  }, [selection.activeLayerId, layers, activeCql2Filters]);
+
+  const { boxDrawData } = useBoxDraw({
+    mapRef,
+    enabled: selection.mode === 'box' && selection.activeLayerId != null,
+    queryLayerIds: selectionQueryLayerIds,
+    onComplete: (features) => {
+      if (!selection.activeLayerId) return;
+      selection.addFeatures(
+        features.map((f) => ({ id: f.id, layerId: selection.activeLayerId!, properties: f.properties, geometry: f.geometry })),
+      );
+    },
+  });
 
   // Reset viewport when entering the view step or when the prop changes while on that step
   useEffect(() => {
@@ -468,14 +496,62 @@ export function MapPreview({
         bearing={internalViewState.bearing}
         style={{ width: '100%', height: '100%' }}
         mapStyle={resolvedStyle as any}
-        cursor={measure.mode ? 'crosshair' : cursor}
-        interactiveLayerIds={measure.mode ? undefined : interactiveLayerIds}
-        doubleClickZoom={!measure.mode}
+        cursor={measure.mode || selection.mode ? 'crosshair' : cursor}
+        interactiveLayerIds={measure.mode || selection.mode === 'box' ? undefined : interactiveLayerIds}
+        doubleClickZoom={!measure.mode && !selection.mode}
         onLoad={handleMapLoad}
         onMove={handleMove}
         onClick={(evt) => {
           if (measure.mode) {
             measure.addPoint([evt.lngLat.lng, evt.lngLat.lat]);
+            return;
+          }
+          if (selection.mode === 'click') {
+            const allFeatures = evt.features ?? [];
+            // Filter to only features from the active selection layer
+            const sourceKey = selection.activeLayerId
+              ? getVectorTileSourceKey(selection.activeLayerId, activeCql2Filters[selection.activeLayerId])
+              : null;
+            const selFeatures = sourceKey
+              ? allFeatures.filter((f) => f.layer.id.startsWith(`${sourceKey}--`))
+              : allFeatures;
+            if (selFeatures.length > 0 && selection.activeLayerId) {
+              const activeLayer = layers.find((l) => l.id === selection.activeLayerId);
+              const activeSourceInfo = activeLayer ? sourceUrlMap[activeLayer.sourceId] : null;
+              if (activeLayer && activeSourceInfo && activeLayer.dataMode === 'vector-tiles') {
+                // Fetch full geometry from OGC API for vector tile features
+                const tileFeatures = selFeatures.map((f) => ({
+                  id: f.id,
+                  layerId: selection.activeLayerId!,
+                  properties: (f.properties ?? {}) as Record<string, unknown>,
+                  geometry: f.geometry as unknown as Record<string, unknown>,
+                }));
+                Promise.allSettled(
+                  selFeatures.map(async (f) => {
+                    const featureId = (f.properties as Record<string, unknown>)?.gid ?? f.id;
+                    if (featureId != null) {
+                      const full = await fetchFeatureById(activeSourceInfo.url, activeLayer.collection, featureId as string | number);
+                      if (full) {
+                        return { id: f.id, layerId: selection.activeLayerId!, properties: (full.properties ?? {}) as Record<string, unknown>, geometry: full.geometry as unknown as Record<string, unknown> };
+                      }
+                    }
+                    return { id: f.id, layerId: selection.activeLayerId!, properties: (f.properties ?? {}) as Record<string, unknown>, geometry: f.geometry as unknown as Record<string, unknown> };
+                  }),
+                ).then((results) => {
+                  const resolved = results.map((r, i) => r.status === 'fulfilled' ? r.value : tileFeatures[i]);
+                  selection.addFeatures(resolved);
+                });
+              } else {
+                selection.addFeatures(
+                  selFeatures.map((f) => ({
+                    id: f.id,
+                    layerId: selection.activeLayerId!,
+                    properties: (f.properties ?? {}) as Record<string, unknown>,
+                    geometry: f.geometry as unknown as Record<string, unknown>,
+                  })),
+                );
+              }
+            }
             return;
           }
           if (!featureInteractionEnabled) return;
@@ -506,7 +582,7 @@ export function MapPreview({
         }}
         onMouseMove={(evt) => {
           setMouseCoords({ latitude: evt.lngLat.lat, longitude: evt.lngLat.lng });
-          if (!featureInteractionEnabled) return;
+          if (!featureInteractionEnabled || selection.mode) return;
           clearTimeout(hoverTimerRef.current);
           const features = evt.features ?? [];
           if (features.length > 0) {
@@ -599,7 +675,42 @@ export function MapPreview({
             />
           </Source>
         )}
+
+        {/* Selection highlight */}
+        {selection.highlightData && (
+          <Source id="selection-highlight" type="geojson" data={selection.highlightData}>
+            <Layer id="selection-highlight-fill" type="fill"
+              paint={{ 'fill-color': '#fbbf24', 'fill-opacity': 0.3 }}
+              filter={['in', ['geometry-type'], ['literal', ['Polygon', 'MultiPolygon']]] as any} />
+            <Layer id="selection-highlight-line" type="line"
+              paint={{ 'line-color': '#f59e0b', 'line-width': 3 }} />
+            <Layer id="selection-highlight-circle" type="circle"
+              paint={{ 'circle-color': '#fbbf24', 'circle-radius': 6, 'circle-stroke-color': '#f59e0b', 'circle-stroke-width': 2 }}
+              filter={['==', ['geometry-type'], 'Point'] as any} />
+          </Source>
+        )}
+
+        {/* Box draw preview */}
+        {boxDrawData && (
+          <Source id="box-draw-preview" type="geojson" data={boxDrawData}>
+            <Layer id="box-draw-fill" type="fill"
+              paint={{ 'fill-color': '#3b82f6', 'fill-opacity': 0.15 }} />
+            <Layer id="box-draw-line" type="line"
+              paint={{ 'line-color': '#3b82f6', 'line-width': 2, 'line-dasharray': [3, 3] }} />
+          </Source>
+        )}
       </Map>
+
+      <ResultsDrawer
+        open={resultsOpen}
+        features={selection.features.map((f) => ({ properties: f.properties, geometry: f.geometry }))}
+        title={`Selected Features${selection.activeLayerId ? ` — ${layers.find((l) => l.id === selection.activeLayerId)?.label ?? ''}` : ''}`}
+        onClose={() => setResultsOpen(false)}
+        onClearSelection={() => {
+          selection.clearFeatures();
+          setResultsOpen(false);
+        }}
+      />
 
       {/* Full overlay when uiConfig is provided */}
       {!showEmptyState && uiConfig && (
@@ -704,6 +815,34 @@ export function MapPreview({
                     unit={measure.unit}
                     onUnitChange={measure.setUnit}
                     onClear={measure.clear}
+                    className="mapui:p-3 mapui:max-w-xs"
+                  />
+                </CollapsibleControl>
+              </div>
+            )}
+
+            {uiConfig.showSelectionTool && (
+              <div className="mapui:pointer-events-auto">
+                <CollapsibleControl
+                  icon={LuMousePointer2}
+                  label="Select"
+                  collapsed={openControl !== 'selection'}
+                  onToggle={(collapsed) => {
+                    setOpenControl(collapsed ? null : 'selection');
+                    if (collapsed) {
+                      selection.setMode(null);
+                    }
+                  }}
+                >
+                  <SelectionPanel
+                    mode={selection.mode}
+                    onModeChange={selection.setMode}
+                    layers={layersWithDefaults}
+                    activeLayerId={selection.activeLayerId}
+                    onActiveLayerChange={selection.setActiveLayerId}
+                    selectedCount={selection.features.length}
+                    onClear={selection.clearFeatures}
+                    onViewResults={() => setResultsOpen(true)}
                     className="mapui:p-3 mapui:max-w-xs"
                   />
                 </CollapsibleControl>
