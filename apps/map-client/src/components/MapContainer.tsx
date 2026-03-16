@@ -109,13 +109,14 @@ interface MapContainerProps {
   selectionMode?: SelectionMode | null;
   selectionLayerId?: string | null;
   selectionHighlightData?: GeoJSON.FeatureCollection | null;
+  queryHighlightData?: GeoJSON.FeatureCollection | null;
   boxDrawData?: GeoJSON.Feature | null;
   onSelectionClick?: (features: Array<{ id?: string | number; properties: Record<string, unknown>; geometry: Record<string, unknown> }>) => void;
   externalMapRef?: React.RefObject<MapRef | null>;
   onMapRef?: (ref: MapRef | null) => void;
 }
 
-export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeatureHover, measureMode, measurePoints = [], measureGeometryData, measurePointsData, onMeasureClick, selectionMode, selectionLayerId, selectionHighlightData, boxDrawData, onSelectionClick, externalMapRef, onMapRef }: MapContainerProps = {}) {
+export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeatureHover, measureMode, measurePoints = [], measureGeometryData, measurePointsData, onMeasureClick, selectionMode, selectionLayerId, selectionHighlightData, queryHighlightData, boxDrawData, onSelectionClick, externalMapRef, onMapRef }: MapContainerProps = {}) {
   const viewState = useMapStore((s) => s.viewState);
   const layers = useMapStore((s) => s.layers);
   const sources = useMapStore((s) => s.sources);
@@ -417,6 +418,29 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
             id="selection-highlight-circle"
             type="circle"
             paint={{ 'circle-color': '#fbbf24', 'circle-radius': 6, 'circle-stroke-color': '#f59e0b', 'circle-stroke-width': 2 }}
+            filter={['==', ['geometry-type'], 'Point']}
+          />
+        </Source>
+      )}
+
+      {/* Query results highlight */}
+      {queryHighlightData && (
+        <Source id="query-results-highlight" type="geojson" data={queryHighlightData}>
+          <Layer
+            id="query-results-fill"
+            type="fill"
+            paint={{ 'fill-color': '#3b82f6', 'fill-opacity': 0.25 }}
+            filter={['in', ['geometry-type'], ['literal', ['Polygon', 'MultiPolygon']]]}
+          />
+          <Layer
+            id="query-results-line"
+            type="line"
+            paint={{ 'line-color': '#3b82f6', 'line-width': 2 }}
+          />
+          <Layer
+            id="query-results-circle"
+            type="circle"
+            paint={{ 'circle-color': '#3b82f6', 'circle-radius': 5, 'circle-stroke-color': '#2563eb', 'circle-stroke-width': 1.5 }}
             filter={['==', ['geometry-type'], 'Point']}
           />
         </Source>

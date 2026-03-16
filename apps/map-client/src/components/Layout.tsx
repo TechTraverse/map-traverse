@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import proj4 from 'proj4';
 import type { MapRef } from 'react-map-gl/maplibre';
 import type { UIConfig } from '@ogc-maps/storybook-components/types';
@@ -8,10 +8,17 @@ import {
   ResultsDrawer,
   type CoordinateFormatOption,
 } from '@ogc-maps/storybook-components';
-import { useMeasure } from '@ogc-maps/storybook-components/hooks';
-import { useSelection } from '@ogc-maps/storybook-components/hooks';
-import { fetchFeatureById } from '@ogc-maps/storybook-components/hooks';
-import { resolvePropertyDisplay } from '@ogc-maps/storybook-components/hooks';
+import type { ResultsDrawerTab } from '@ogc-maps/storybook-components';
+import {
+  useMeasure,
+  useSelection,
+  fetchFeatureById,
+  resolvePropertyDisplay,
+  buildCql2Query,
+  fetchFeatures,
+  combineGeometries,
+} from '@ogc-maps/storybook-components/hooks';
+import type { Cql2FilterConfig } from '@ogc-maps/storybook-components/types';
 import { useMapStore } from '../stores/mapStore';
 import { MapContainer } from './MapContainer';
 import { MapOverlay } from './MapOverlay';
@@ -54,6 +61,77 @@ export function Layout({ uiConfig }: LayoutProps) {
   const mapRefForBoxDraw = useRef<MapRef>(null);
 
   const activeCql2Filters = useMapStore((s) => s.activeCql2Filters);
+  const sources = useMapStore((s) => s.sources);
+
+  // Query state
+  const [queryResults, setQueryResults] = useState<Array<{ properties: Record<string, unknown>; geometry?: Record<string, unknown> }> | null>(null);
+  const [queryLoading, setQueryLoading] = useState(false);
+  const [resultsActiveTab, setResultsActiveTab] = useState<string>('selected');
+
+  // Active layer for query support
+  const activeLayer = useMemo(
+    () => layers.find((l) => l.id === selection.activeLayerId),
+    [layers, selection.activeLayerId],
+  );
+
+  // Clear query results when layer changes
+  useEffect(() => { setQueryResults(null); }, [selection.activeLayerId]);
+
+  const handleRunQuery = useCallback(async (params: Record<string, unknown>) => {
+    if (!activeLayer?.cql2Filter) return;
+    const source = sources.find((s) => s.id === activeLayer.sourceId);
+    if (!source) return;
+
+    const selectionGeometry = combineGeometries(selection.features.map((f) => f.geometry));
+    setQueryLoading(true);
+    try {
+      const query = buildCql2Query(activeLayer.cql2Filter as Cql2FilterConfig, params, selectionGeometry as any);
+      const data = await fetchFeatures(source.url, activeLayer.collection, {
+        cql2Filter: query.filter ?? undefined,
+        limit: query.limit,
+      });
+      setQueryResults(data.features.map((f) => ({ properties: (f.properties ?? {}) as Record<string, unknown>, geometry: f.geometry as Record<string, unknown> | undefined })));
+      setResultsActiveTab('query');
+      setResultsOpen(true);
+    } catch (err) {
+      console.error('Query failed:', err);
+    } finally {
+      setQueryLoading(false);
+    }
+  }, [activeLayer, sources, selection.features]);
+
+  // Build tabs for ResultsDrawer
+  const resultsTabs = useMemo((): ResultsDrawerTab[] => {
+    const tabs: ResultsDrawerTab[] = [{
+      id: 'selected',
+      label: 'Selected Features',
+      features: selection.features.map((f) => ({ properties: f.properties, geometry: f.geometry })),
+      onClear: () => { selection.clearFeatures(); if (!queryResults) setResultsOpen(false); },
+    }];
+    if (queryResults) {
+      tabs.push({
+        id: 'query',
+        label: 'Query Results',
+        features: queryResults,
+        onClear: () => { setQueryResults(null); setResultsActiveTab('selected'); },
+      });
+    }
+    return tabs;
+  }, [selection.features, queryResults]);
+
+  // Query results highlight data for the map
+  const queryHighlightData = useMemo(() => {
+    if (!queryResults?.length) return null;
+    return {
+      type: 'FeatureCollection' as const,
+      features: queryResults.filter((f) => f.geometry).map((f, i) => ({
+        type: 'Feature' as const,
+        id: i,
+        properties: {},
+        geometry: f.geometry!,
+      })),
+    };
+  }, [queryResults]);
 
   const selectionQueryLayerIds = useMemo(() => {
     if (!selection.activeLayerId) return [];
@@ -114,6 +192,7 @@ export function Layout({ uiConfig }: LayoutProps) {
           selectionMode={selection.mode}
           selectionLayerId={selection.activeLayerId}
           selectionHighlightData={selection.highlightData}
+          queryHighlightData={queryHighlightData as unknown as GeoJSON.FeatureCollection | null}
           boxDrawData={boxDrawData}
           onSelectionClick={(features) => {
             if (!selection.activeLayerId) return;
@@ -228,16 +307,17 @@ export function Layout({ uiConfig }: LayoutProps) {
           selectionCount={selection.features.length}
           onSelectionClear={selection.clearFeatures}
           onSelectionViewResults={() => setResultsOpen(true)}
+          queryFilter={activeLayer?.cql2Filter as Cql2FilterConfig | undefined}
+          onRunQuery={handleRunQuery}
+          queryLoading={queryLoading}
+          hasSelectionGeometry={selection.features.length > 0}
         />
         <ResultsDrawer
           open={resultsOpen}
-          features={selection.features.map((f) => ({ properties: f.properties, geometry: f.geometry }))}
-          title={`Selected Features${selection.activeLayerId ? ` — ${layers.find((l) => l.id === selection.activeLayerId)?.label ?? ''}` : ''}`}
+          tabs={resultsTabs}
+          activeTabId={resultsActiveTab}
+          onTabChange={setResultsActiveTab}
           onClose={() => setResultsOpen(false)}
-          onClearSelection={() => {
-            selection.clearFeatures();
-            setResultsOpen(false);
-          }}
         />
       </div>
     </>

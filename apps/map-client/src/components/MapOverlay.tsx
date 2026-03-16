@@ -12,12 +12,14 @@ import {
   ExportModal,
   MeasurePanel,
   SelectionPanel,
+  QueryPanel,
   type CoordinateFormatOption,
   type ExportableLayer,
   type ExportFormatOption,
   type ExportRequest,
 } from '@ogc-maps/storybook-components';
 import type { MeasureMode, MeasureUnit, Measurement, SelectionMode } from '@ogc-maps/storybook-components';
+import type { FilterRuleGroup } from '@ogc-maps/storybook-components/types';
 import { useExport, fromStructuredFilters, fetchFeatures, eq, bboxFromGeometry } from '@ogc-maps/storybook-components/hooks';
 import type { UIConfig, SearchFilterValue, SearchFilterValues } from '@ogc-maps/storybook-components/types';
 import { useMapStore, useActiveLayerIds } from '../stores/mapStore';
@@ -68,6 +70,10 @@ interface MapOverlayProps {
   selectionCount: number;
   onSelectionClear: () => void;
   onSelectionViewResults: () => void;
+  queryFilter?: FilterRuleGroup;
+  onRunQuery?: (params: Record<string, unknown>) => void;
+  queryLoading?: boolean;
+  hasSelectionGeometry?: boolean;
 }
 
 export function MapOverlay({
@@ -94,6 +100,10 @@ export function MapOverlay({
   selectionCount,
   onSelectionClear,
   onSelectionViewResults,
+  queryFilter,
+  onRunQuery,
+  queryLoading,
+  hasSelectionGeometry,
 }: MapOverlayProps) {
   const layers = useMapStore((s) => s.layers);
   const basemaps = useMapStore((s) => s.basemaps);
@@ -297,6 +307,14 @@ export function MapOverlay({
                 selectedCount={selectionCount}
                 onClear={onSelectionClear}
                 onViewResults={onSelectionViewResults}
+                queryPanel={queryFilter && onRunQuery ? (
+                  <QueryPanel
+                    cql2Filter={queryFilter}
+                    onRun={onRunQuery}
+                    loading={queryLoading}
+                    hasSelectionGeometry={hasSelectionGeometry}
+                  />
+                ) : undefined}
                 className="p-3 max-w-xs"
               />
             </CollapsibleControl>

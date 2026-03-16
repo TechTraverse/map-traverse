@@ -103,5 +103,6 @@ export {
   type CQL2Interval,
   type CQL2Geometry,
 } from '../utils/cql2';
-export { bboxFromGeometry, type BBox } from '../utils/geo';
+export { bboxFromGeometry, combineGeometries, type BBox } from '../utils/geo';
+export { extractQueryParameters, queryRequiresGeometry, type QueryParameter } from '../utils/queryParameters';
 export type { SelectionMode, SelectedFeature } from '../utils/selection';

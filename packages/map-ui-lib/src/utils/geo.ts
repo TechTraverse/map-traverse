@@ -16,6 +16,17 @@ function extractCoords(geometry: Record<string, unknown>): number[][] {
 
 const POINT_PADDING = 0.01; // ~1km at equator
 
+/**
+ * Combines multiple geometries into a single geometry.
+ * Returns the geometry directly if only one, or a GeometryCollection if multiple.
+ * Returns null if the array is empty.
+ */
+export function combineGeometries(geometries: Record<string, unknown>[]): Record<string, unknown> | null {
+  if (geometries.length === 0) return null;
+  if (geometries.length === 1) return geometries[0];
+  return { type: 'GeometryCollection', geometries };
+}
+
 export function bboxFromGeometry(geometry: Record<string, unknown>): BBox | null {
   const coords = extractCoords(geometry);
   if (coords.length === 0) return null;
