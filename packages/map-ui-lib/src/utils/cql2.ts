@@ -251,3 +251,204 @@ export function fromStructuredFilters(
 export function serializeCql2(expr: CQL2Expression): string {
   return JSON.stringify(expr);
 }
+
+// ---------------------------------------------------------------------------
+// Filter Rule Group → CQL2 conversion
+// ---------------------------------------------------------------------------
+
+import type {
+  FilterRule,
+  FilterRuleGroup,
+  FilterRuleValue,
+  RelativeDateValue,
+  Cql2QueryShape,
+} from '../types';
+
+function resolveOffsetValue(
+  offset: { kind: 'static'; value: number } | { kind: 'parameter'; name: string; label: string; default?: number },
+  params?: Record<string, unknown>,
+): number {
+  if (offset.kind === 'parameter') {
+    return (params?.[offset.name] as number) ?? offset.default ?? 0;
+  }
+  return offset.value;
+}
+
+/**
+ * Resolves a relative date value (e.g., "3 years ago") to an ISO timestamp string.
+ * Supports parameterized offsets resolved from `params`. The optional `now` parameter
+ * overrides the current date (useful for testing).
+ */
+export function resolveRelativeDate(
+  value: RelativeDateValue,
+  params?: Record<string, unknown>,
+  now?: Date,
+): string {
+  const base = now ?? new Date();
+  const offset = resolveOffsetValue(value.offset, params);
+  const sign = value.direction === 'past' ? -1 : 1;
+  const result = new Date(base);
+  switch (value.unit) {
+    case 'days':   result.setDate(result.getDate() + sign * offset); break;
+    case 'months': result.setMonth(result.getMonth() + sign * offset); break;
+    case 'years':  result.setFullYear(result.getFullYear() + sign * offset); break;
+  }
+  return result.toISOString();
+}
+
+function resolveDateEndpoint(
+  endpoint: { kind: 'static'; value: string } | RelativeDateValue | { kind: 'parameter'; name: string; label: string; default?: string },
+  params?: Record<string, unknown>,
+  now?: Date,
+): string {
+  if (endpoint.kind === 'relativeDate') {
+    return resolveRelativeDate(endpoint, params, now);
+  }
+  if (endpoint.kind === 'parameter') {
+    const resolved = params?.[endpoint.name] ?? endpoint.default;
+    return (resolved as string) ?? `{{${endpoint.name}}}`;
+  }
+  return endpoint.value;
+}
+
+function resolveValue(
+  value: FilterRuleValue,
+  params?: Record<string, unknown>,
+): unknown {
+  if (value.kind === 'parameter') {
+    const resolved = params?.[value.name] ?? value.default;
+    return resolved ?? `{{${value.name}}}`;
+  }
+  if (value.kind === 'relativeDate') {
+    return resolveRelativeDate(value, params);
+  }
+  if (value.kind === 'static') {
+    return value.value;
+  }
+  // dateRange and computedRange are handled specially in filterRuleToCql2
+  return null;
+}
+
+export function isFilterRuleGroup(item: FilterRule | FilterRuleGroup): item is FilterRuleGroup {
+  return 'combinator' in item;
+}
+
+function resolveSpatialDistance(
+  spatial: FilterRule['spatial'],
+  params?: Record<string, unknown>,
+): number {
+  if (!spatial?.distance) return 0;
+  if (typeof spatial.distance === 'number') return spatial.distance;
+  // parameter
+  return (params?.[spatial.distance.name] as number) ?? spatial.distance.default ?? 0;
+}
+
+function filterRuleToCql2(
+  rule: FilterRule,
+  params?: Record<string, unknown>,
+  selectionGeometry?: CQL2Geometry | null,
+): CQL2Expression | null {
+  const { property, operator, spatial } = rule;
+
+  switch (operator) {
+    case '=':       return eq(property, resolveValue(rule.value, params) as string | number | boolean);
+    case '<>':      return neq(property, resolveValue(rule.value, params) as string | number | boolean);
+    case '>':       return gt(property, resolveValue(rule.value, params) as number);
+    case '>=':      return gte(property, resolveValue(rule.value, params) as number);
+    case '<':       return lt(property, resolveValue(rule.value, params) as number);
+    case '<=':      return lte(property, resolveValue(rule.value, params) as number);
+    case 'like':    return like(property, `%${resolveValue(rule.value, params) as string}%`);
+    case 'in':      return inList(property, resolveValue(rule.value, params) as (string | number)[]);
+    case 'isNull':  return isNull(property);
+    case 'between': {
+      // Computed range: "within N% of X"
+      if (rule.value.kind === 'computedRange') {
+        const base = (params?.[rule.value.baseParam] as number) ?? 0;
+        const offsetAmt = resolveOffsetValue(rule.value.offsetAmount, params);
+        let lower: number, upper: number;
+        if (rule.value.offsetType === 'percentage') {
+          lower = base * (1 - offsetAmt / 100);
+          upper = base * (1 + offsetAmt / 100);
+        } else {
+          lower = base - offsetAmt;
+          upper = base + offsetAmt;
+        }
+        return between(property, lower, upper);
+      }
+      const v = resolveValue(rule.value, params) as { lower: number; upper: number };
+      return between(property, v.lower, v.upper);
+    }
+    case 't_after': {
+      const ts = resolveValue(rule.value, params) as string;
+      return tAfter(property, { timestamp: ts });
+    }
+    case 't_before': {
+      const ts = resolveValue(rule.value, params) as string;
+      return tBefore(property, { timestamp: ts });
+    }
+    case 't_during': {
+      // DateRange kind: each endpoint resolved independently
+      if (rule.value.kind === 'dateRange') {
+        const startTs = resolveDateEndpoint(rule.value.start, params);
+        const endTs = resolveDateEndpoint(rule.value.end, params);
+        return tDuring(property, { timestamp: startTs }, { timestamp: endTs });
+      }
+      const v = resolveValue(rule.value, params) as { start: string; end: string };
+      return tDuring(property, { timestamp: v.start }, { timestamp: v.end });
+    }
+    case 's_intersects': {
+      if (!selectionGeometry) return null;
+      return sIntersects(property, selectionGeometry);
+    }
+    case 's_within': {
+      if (!selectionGeometry) return null;
+      return sWithin(property, selectionGeometry);
+    }
+    case 's_dwithin': {
+      if (!selectionGeometry) return null;
+      const dist = resolveSpatialDistance(spatial, params);
+      return sDwithin(property, selectionGeometry, dist, spatial?.units ?? 'meters');
+    }
+    default:
+      return null;
+  }
+}
+
+/**
+ * Converts a FilterRuleGroup (visual query builder model) to a CQL2Expression.
+ *
+ * @param group - The rule group to convert
+ * @param params - Runtime parameter values (for parameterized templates)
+ * @param selectionGeometry - Geometry from selected feature(s) for spatial operators
+ * @returns CQL2Expression or null if the group produces no valid expressions
+ */
+export function fromFilterRuleGroup(
+  group: FilterRuleGroup,
+  params?: Record<string, unknown>,
+  selectionGeometry?: CQL2Geometry | null,
+): CQL2Expression | null {
+  const expressions = group.rules.map((item) => {
+    if (isFilterRuleGroup(item)) {
+      return fromFilterRuleGroup(item, params, selectionGeometry);
+    }
+    return filterRuleToCql2(item, params, selectionGeometry);
+  });
+
+  return group.combinator === 'and' ? and(...expressions) : or(...expressions);
+}
+
+/**
+ * Builds a full query shape from a FilterRuleGroup, including sort and limit metadata.
+ * Use this when you need the complete query (filter + sort + limit) rather than just the CQL2 filter.
+ */
+export function buildCql2Query(
+  group: FilterRuleGroup,
+  params?: Record<string, unknown>,
+  selectionGeometry?: CQL2Geometry | null,
+): Cql2QueryShape {
+  return {
+    filter: fromFilterRuleGroup(group, params, selectionGeometry),
+    sortby: group.sortby,
+    limit: group.limit,
+  };
+}

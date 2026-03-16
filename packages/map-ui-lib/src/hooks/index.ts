@@ -28,6 +28,17 @@ export type {
   SelectSearchField,
   PropertyDisplay,
   PropertyDisplayConfig,
+  FilterOperator,
+  FilterRuleValue,
+  SpatialConfig,
+  FilterRule,
+  FilterRuleGroup,
+  Cql2FilterConfig,
+  Cql2QueryShape,
+  RelativeDateValue,
+  DateRangeValue,
+  ComputedRangeValue,
+  SortField,
 } from '../types';
 export { resolvePropertyDisplay } from '../utils/propertyDisplay';
 export { resolveStyleWithSprites } from '../utils/spriteUtils';
@@ -77,6 +88,10 @@ export {
   tDuring,
   fromSimpleFilters,
   fromStructuredFilters,
+  fromFilterRuleGroup,
+  buildCql2Query,
+  resolveRelativeDate,
+  isFilterRuleGroup,
   serializeCql2,
   sIntersects,
   sWithin,

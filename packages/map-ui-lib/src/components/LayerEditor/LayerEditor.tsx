@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import type { LayerConfig, OgcApiSource, AvailableProperty, StyleConfig } from '../../types';
+import type { LayerConfig, OgcApiSource, AvailableProperty, StyleConfig, Cql2FilterConfig } from '../../types';
 import { FormField } from '../admin/FormField';
 import { CollapsibleSection } from '../admin/CollapsibleSection';
 import { StyleEditor, defaultFill, defaultCircle } from '../StyleEditor/StyleEditor';
 import { LegendEditor } from '../LegendEditor/LegendEditor';
 import { SearchFieldList } from '../SearchFieldEditor/SearchFieldList';
 import { PropertyDisplayEditor } from '../PropertyDisplayEditor/PropertyDisplayEditor';
+import { Cql2FilterEditor } from '../Cql2FilterEditor/Cql2FilterEditor';
 
 import { useOgcCollections } from '../../hooks/useOgcCollections';
 import { useOgcQueryables } from '../../hooks/useOgcQueryables';
@@ -310,6 +311,14 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
           onChange={(propertyDisplay) =>
             update({ propertyDisplay: Object.keys(propertyDisplay).length > 0 ? propertyDisplay : undefined })
           }
+          availableProperties={availableProperties}
+        />
+      </CollapsibleSection>
+
+      <CollapsibleSection title="CQL2 Filter" badge={value.cql2Filter?.rules.length ?? 0}>
+        <Cql2FilterEditor
+          value={value.cql2Filter as Cql2FilterConfig | undefined}
+          onChange={(cql2Filter) => update({ cql2Filter } as Partial<LayerConfig>)}
           availableProperties={availableProperties}
         />
       </CollapsibleSection>

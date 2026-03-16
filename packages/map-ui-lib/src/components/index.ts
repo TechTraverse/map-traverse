@@ -58,3 +58,5 @@ export { ViewEditor } from './ViewEditor';
 export type { ViewEditorProps } from './ViewEditor';
 export { ConfigPreview } from './ConfigPreview';
 export type { ConfigPreviewProps } from './ConfigPreview';
+export { Cql2FilterEditor } from './Cql2FilterEditor';
+export type { Cql2FilterEditorProps } from './Cql2FilterEditor';
