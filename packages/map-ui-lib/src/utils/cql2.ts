@@ -8,6 +8,8 @@
  * `filter` query parameter with `filter-lang=cql2-json`.
  */
 
+import turfBuffer from '@turf/buffer';
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -157,9 +159,36 @@ export function sWithin(property: string, geometry: CQL2Geometry): CQL2Expressio
   return { op: 's_within', args: [{ property }, geometry] };
 }
 
-/** S_DWITHIN — tests whether two geometries are within a specified distance. */
+/**
+ * Converts distance values to turf-compatible units (kilometers or miles).
+ * Turf's buffer function accepts: 'kilometers', 'miles', 'degrees', etc.
+ */
+function convertDistanceForTurf(distance: number, units: string): { value: number; turfUnits: 'kilometers' | 'miles' } {
+  switch (units) {
+    case 'meters': return { value: distance / 1000, turfUnits: 'kilometers' };
+    case 'feet': return { value: distance / 5280, turfUnits: 'miles' };
+    case 'kilometers': return { value: distance, turfUnits: 'kilometers' };
+    case 'miles': return { value: distance, turfUnits: 'miles' };
+    default: return { value: distance / 1000, turfUnits: 'kilometers' };
+  }
+}
+
+/**
+ * S_DWITHIN — tests whether two geometries are within a specified distance.
+ * tipg/pygeofilter doesn't support s_dwithin directly, so we buffer the
+ * geometry client-side using turf and use s_intersects instead.
+ */
 export function sDwithin(property: string, geometry: CQL2Geometry, distance: number, units: string = 'meters'): CQL2Expression {
-  return { op: 's_dwithin', args: [{ property }, geometry, distance, units] };
+  // Use s_intersects with buffered geometry — tipg doesn't handle s_dwithin
+  const { value, turfUnits } = convertDistanceForTurf(distance, units);
+  if (value > 0) {
+    const buffered = turfBuffer(geometry as GeoJSON.Geometry, value, { units: turfUnits });
+    if (buffered) {
+      return sIntersects(property, buffered.geometry as CQL2Geometry);
+    }
+  }
+  // Fallback: distance=0 or buffer failed — use plain s_intersects
+  return sIntersects(property, geometry);
 }
 
 // ---------------------------------------------------------------------------
@@ -446,9 +475,24 @@ export function buildCql2Query(
   params?: Record<string, unknown>,
   selectionGeometry?: CQL2Geometry | null,
 ): Cql2QueryShape {
-  return {
-    filter: fromFilterRuleGroup(group, params, selectionGeometry),
-    sortby: group.sortby,
-    limit: group.limit,
-  };
+  let filter = fromFilterRuleGroup(group, params, selectionGeometry);
+
+  // Auto-add spatial constraint when selection geometry exists
+  if (selectionGeometry && group.spatialConstraint) {
+    const { operator, geometryProperty, distance, distanceUnits } = group.spatialConstraint;
+    let spatial: CQL2Expression;
+    switch (operator) {
+      case 's_within':
+        spatial = sWithin(geometryProperty, selectionGeometry);
+        break;
+      case 's_dwithin':
+        spatial = sDwithin(geometryProperty, selectionGeometry, distance ?? 0, distanceUnits ?? 'meters');
+        break;
+      default: // s_intersects
+        spatial = sIntersects(geometryProperty, selectionGeometry);
+    }
+    filter = filter ? and(filter, spatial)! : spatial;
+  }
+
+  return { filter, sortby: group.sortby, limit: group.limit };
 }

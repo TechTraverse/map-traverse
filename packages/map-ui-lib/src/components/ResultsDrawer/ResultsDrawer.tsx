@@ -91,9 +91,9 @@ export function ResultsDrawer({
     };
   }, [open]);
 
-  if (!open) return null;
-
   // Resolve active content: tab mode or single-content mode
+  // NOTE: All hooks (including useMemo) must be called before any early return
+  // to satisfy React's rules of hooks.
   const isTabMode = tabs && tabs.length > 0;
   const activeTab = isTabMode ? tabs.find((t) => t.id === activeTabId) ?? tabs[0] : undefined;
   const features = isTabMode ? activeTab!.features : (featuresProp ?? []);
@@ -109,6 +109,8 @@ export function ResultsDrawer({
       : []),
     [columns, features],
   );
+
+  if (!open) return null;
 
   return (
     <div

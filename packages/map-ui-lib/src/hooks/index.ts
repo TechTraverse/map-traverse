@@ -31,6 +31,7 @@ export type {
   FilterOperator,
   FilterRuleValue,
   SpatialConfig,
+  SpatialConstraint,
   FilterRule,
   FilterRuleGroup,
   Cql2FilterConfig,
@@ -105,4 +106,5 @@ export {
 } from '../utils/cql2';
 export { bboxFromGeometry, combineGeometries, type BBox } from '../utils/geo';
 export { extractQueryParameters, queryRequiresGeometry, type QueryParameter } from '../utils/queryParameters';
+export { getGeometryPropertyNames } from '../utils/queryableHelpers';
 export type { SelectionMode, SelectedFeature } from '../utils/selection';

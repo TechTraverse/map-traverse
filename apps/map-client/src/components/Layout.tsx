@@ -66,6 +66,7 @@ export function Layout({ uiConfig }: LayoutProps) {
   // Query state
   const [queryResults, setQueryResults] = useState<Array<{ properties: Record<string, unknown>; geometry?: Record<string, unknown> }> | null>(null);
   const [queryLoading, setQueryLoading] = useState(false);
+  const [queryError, setQueryError] = useState<string | null>(null);
   const [resultsActiveTab, setResultsActiveTab] = useState<string>('selected');
 
   // Active layer for query support
@@ -84,16 +85,20 @@ export function Layout({ uiConfig }: LayoutProps) {
 
     const selectionGeometry = combineGeometries(selection.features.map((f) => f.geometry));
     setQueryLoading(true);
+    setQueryError(null);
     try {
       const query = buildCql2Query(activeLayer.cql2Filter as Cql2FilterConfig, params, selectionGeometry as any);
       const data = await fetchFeatures(source.url, activeLayer.collection, {
         cql2Filter: query.filter ?? undefined,
         limit: query.limit,
+        sortby: query.sortby,
       });
       setQueryResults(data.features.map((f) => ({ properties: (f.properties ?? {}) as Record<string, unknown>, geometry: f.geometry as Record<string, unknown> | undefined })));
       setResultsActiveTab('query');
       setResultsOpen(true);
     } catch (err) {
+      const message = err instanceof Error ? err.message : 'Query failed';
+      setQueryError(message);
       console.error('Query failed:', err);
     } finally {
       setQueryLoading(false);
@@ -114,6 +119,23 @@ export function Layout({ uiConfig }: LayoutProps) {
         label: 'Query Results',
         features: queryResults,
         onClear: () => { setQueryResults(null); setResultsActiveTab('selected'); },
+        onExport: () => {
+          const rows = queryResults;
+          if (!rows.length) return;
+          const cols = Object.keys(rows[0].properties);
+          const csv = [cols.join(','), ...rows.map((r) => cols.map((c) => {
+            const v = r.properties[c];
+            const s = v == null ? '' : String(v);
+            return s.includes(',') || s.includes('"') ? `"${s.replace(/"/g, '""')}"` : s;
+          }).join(','))].join('\n');
+          const blob = new Blob([csv], { type: 'text/csv' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `query-results.csv`;
+          a.click();
+          URL.revokeObjectURL(url);
+        },
       });
     }
     return tabs;
@@ -310,6 +332,7 @@ export function Layout({ uiConfig }: LayoutProps) {
           queryFilter={activeLayer?.cql2Filter as Cql2FilterConfig | undefined}
           onRunQuery={handleRunQuery}
           queryLoading={queryLoading}
+          queryError={queryError}
           hasSelectionGeometry={selection.features.length > 0}
         />
         <ResultsDrawer

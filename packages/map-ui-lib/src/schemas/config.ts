@@ -377,6 +377,13 @@ export const SortFieldSchema = z.object({
   direction: z.enum(['asc', 'desc']),
 });
 
+export const SpatialConstraintSchema = z.object({
+  operator: z.enum(['s_intersects', 's_within', 's_dwithin']),
+  geometryProperty: z.string(),
+  distance: z.number().optional(),
+  distanceUnits: z.string().optional(),
+});
+
 export const FilterRuleGroupSchema: z.ZodType<{
   id: string;
   combinator: 'and' | 'or';
@@ -386,6 +393,7 @@ export const FilterRuleGroupSchema: z.ZodType<{
   )[];
   sortby?: Array<{ property: string; direction: 'asc' | 'desc' }>;
   limit?: number;
+  spatialConstraint?: z.infer<typeof SpatialConstraintSchema>;
 }> = z.lazy(() =>
   z.object({
     id: z.string(),
@@ -393,6 +401,7 @@ export const FilterRuleGroupSchema: z.ZodType<{
     rules: z.array(z.union([FilterRuleSchema, FilterRuleGroupSchema])),
     sortby: z.array(SortFieldSchema).optional(),
     limit: z.number().min(1).optional(),
+    spatialConstraint: SpatialConstraintSchema.optional(),
   }),
 );
 

@@ -94,6 +94,8 @@ export interface FetchFeaturesOptions {
   filter?: Record<string, string | number>;
   /** CQL2 JSON filter expression. When provided, takes precedence over filter. */
   cql2Filter?: CQL2Expression;
+  /** Sort fields for OGC API sortby parameter. */
+  sortby?: Array<{ property: string; direction: 'asc' | 'desc' }>;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -137,6 +139,9 @@ export async function fetchFeatures(
   if (options.bbox) params.set('bbox', options.bbox.join(','));
   if (options.properties?.length) params.set('properties', options.properties.join(','));
   if (options.datetime) params.set('datetime', options.datetime);
+  if (options.sortby?.length) {
+    params.set('sortby', options.sortby.map((s) => `${s.direction === 'desc' ? '-' : '+'}${s.property}`).join(','));
+  }
   if (options.cql2Filter) {
     params.set('filter-lang', 'cql2-json');
     params.set('filter', JSON.stringify(options.cql2Filter));

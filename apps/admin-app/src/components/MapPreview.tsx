@@ -15,6 +15,8 @@ import {
   bboxFromGeometry,
   getVectorTileSourceKey,
   buildGeometryFilter,
+  buildCql2Query,
+  combineGeometries,
 } from '@ogc-maps/storybook-components/hooks';
 import type { CQL2Expression } from '@ogc-maps/storybook-components/hooks';
 import {
@@ -29,11 +31,12 @@ import {
   ExportButton,
   MeasurePanel,
   SelectionPanel,
+  QueryPanel,
   ResultsDrawer,
   formatDecimal,
   formatDMS,
 } from '@ogc-maps/storybook-components';
-import type { CoordinateFormatOption } from '@ogc-maps/storybook-components';
+import type { CoordinateFormatOption, ResultsDrawerTab } from '@ogc-maps/storybook-components';
 import { useMeasure, useSelection } from '@ogc-maps/storybook-components/hooks';
 
 const coordinateFormats: CoordinateFormatOption[] = [
@@ -49,7 +52,7 @@ import type {
   UIConfig,
   ExportableLayer,
 } from '@ogc-maps/storybook-components';
-import type { SearchFilterValue, SearchFilterValues } from '@ogc-maps/storybook-components/types';
+import type { SearchFilterValue, SearchFilterValues, Cql2FilterConfig } from '@ogc-maps/storybook-components/types';
 import { LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
 import { useBoxDraw } from '../hooks/useBoxDraw';
 
@@ -183,6 +186,80 @@ export function MapPreview({
   const measure = useMeasure();
   const selection = useSelection();
   const [resultsOpen, setResultsOpen] = useState(false);
+
+  // Query state
+  const [queryResults, setQueryResults] = useState<Array<{ properties: Record<string, unknown>; geometry?: Record<string, unknown> }> | null>(null);
+  const [queryLoading, setQueryLoading] = useState(false);
+  const [queryError, setQueryError] = useState<string | null>(null);
+  const [resultsActiveTab, setResultsActiveTab] = useState<string>('selected');
+
+  const activeLayer = useMemo(
+    () => layers.find((l) => l.id === selection.activeLayerId),
+    [layers, selection.activeLayerId],
+  );
+
+  // Clear query results when layer changes
+  useEffect(() => { setQueryResults(null); setQueryError(null); }, [selection.activeLayerId]);
+
+  const handleRunQuery = useCallback(async (params: Record<string, unknown>) => {
+    if (!activeLayer?.cql2Filter) return;
+    const source = sources.find((s) => s.id === activeLayer.sourceId);
+    if (!source) return;
+
+    const selectionGeometry = combineGeometries(selection.features.map((f) => f.geometry));
+    setQueryLoading(true);
+    setQueryError(null);
+    try {
+      const query = buildCql2Query(activeLayer.cql2Filter as Cql2FilterConfig, params, selectionGeometry as any);
+      const data = await fetchFeatures(source.url, activeLayer.collection, {
+        cql2Filter: query.filter ?? undefined,
+        limit: query.limit,
+        sortby: query.sortby,
+      });
+      setQueryResults(data.features.map((f) => ({ properties: (f.properties ?? {}) as Record<string, unknown>, geometry: f.geometry as Record<string, unknown> | undefined })));
+      setResultsActiveTab('query');
+      setResultsOpen(true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Query failed';
+      setQueryError(message);
+      console.error('Query failed:', err);
+    } finally {
+      setQueryLoading(false);
+    }
+  }, [activeLayer, sources, selection.features]);
+
+  // Build tabs for ResultsDrawer
+  const resultsTabs = useMemo((): ResultsDrawerTab[] => {
+    const tabs: ResultsDrawerTab[] = [{
+      id: 'selected',
+      label: 'Selected Features',
+      features: selection.features.map((f) => ({ properties: f.properties, geometry: f.geometry })),
+      onClear: () => { selection.clearFeatures(); if (!queryResults) setResultsOpen(false); },
+    }];
+    if (queryResults) {
+      tabs.push({
+        id: 'query',
+        label: 'Query Results',
+        features: queryResults,
+        onClear: () => { setQueryResults(null); setResultsActiveTab('selected'); },
+      });
+    }
+    return tabs;
+  }, [selection.features, queryResults]);
+
+  // Query results highlight data for the map
+  const queryHighlightData = useMemo(() => {
+    if (!queryResults?.length) return null;
+    return {
+      type: 'FeatureCollection' as const,
+      features: queryResults.filter((f) => f.geometry).map((f, i) => ({
+        type: 'Feature' as const,
+        id: i,
+        properties: {},
+        geometry: f.geometry!,
+      })),
+    };
+  }, [queryResults]);
 
   const selectionQueryLayerIds = useMemo(() => {
     if (!selection.activeLayerId) return [];
@@ -682,6 +759,20 @@ export function MapPreview({
           </Source>
         )}
 
+        {/* Query results highlight */}
+        {queryHighlightData && (
+          <Source id="query-highlight" type="geojson" data={queryHighlightData as any}>
+            <Layer id="query-highlight-fill" type="fill"
+              paint={{ 'fill-color': '#3b82f6', 'fill-opacity': 0.25 }}
+              filter={['in', ['geometry-type'], ['literal', ['Polygon', 'MultiPolygon']]] as any} />
+            <Layer id="query-highlight-line" type="line"
+              paint={{ 'line-color': '#3b82f6', 'line-width': 2 }} />
+            <Layer id="query-highlight-circle" type="circle"
+              paint={{ 'circle-color': '#3b82f6', 'circle-radius': 5, 'circle-stroke-color': '#2563eb', 'circle-stroke-width': 2 }}
+              filter={['==', ['geometry-type'], 'Point'] as any} />
+          </Source>
+        )}
+
         {/* Box draw preview */}
         {boxDrawData && (
           <Source id="box-draw-preview" type="geojson" data={boxDrawData}>
@@ -695,13 +786,10 @@ export function MapPreview({
 
       <ResultsDrawer
         open={resultsOpen}
-        features={selection.features.map((f) => ({ properties: f.properties, geometry: f.geometry }))}
-        title={`Selected Features${selection.activeLayerId ? ` — ${layers.find((l) => l.id === selection.activeLayerId)?.label ?? ''}` : ''}`}
+        tabs={resultsTabs}
+        activeTabId={resultsActiveTab}
+        onTabChange={setResultsActiveTab}
         onClose={() => setResultsOpen(false)}
-        onClearSelection={() => {
-          selection.clearFeatures();
-          setResultsOpen(false);
-        }}
       />
 
       {/* Full overlay when uiConfig is provided */}
@@ -835,6 +923,19 @@ export function MapPreview({
                     selectedCount={selection.features.length}
                     onClear={selection.clearFeatures}
                     onViewResults={() => setResultsOpen(true)}
+                    queryPanel={activeLayer?.cql2Filter ? (
+                      <>
+                        <QueryPanel
+                          cql2Filter={activeLayer.cql2Filter as Cql2FilterConfig}
+                          onRun={handleRunQuery}
+                          loading={queryLoading}
+                          hasSelectionGeometry={selection.features.length > 0}
+                        />
+                        {queryError && (
+                          <p className="mapui:m-0 mapui:text-xs mapui:text-red-600 mapui:mt-1">{queryError}</p>
+                        )}
+                      </>
+                    ) : undefined}
                     className="mapui:p-3 mapui:max-w-xs"
                   />
                 </CollapsibleControl>

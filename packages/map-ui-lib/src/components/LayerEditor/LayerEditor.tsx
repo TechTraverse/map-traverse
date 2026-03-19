@@ -17,6 +17,7 @@ import {
   buildDefaultStylesForGeometryTypes,
   geometryTypeToStyleTypes,
   toAvailableProperties,
+  getGeometryPropertyNames,
 } from '../../utils/queryableHelpers';
 
 function replaceAt<T>(arr: T[] | undefined, index: number, value: T): T[] {
@@ -63,6 +64,9 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
   const availableProperties: AvailableProperty[] = queryables
     ? toAvailableProperties(queryables)
     : [];
+
+  // Derive geometry property names for spatial constraint UI
+  const geometryProperties = queryables ? getGeometryPropertyNames(queryables) : [];
 
   // Detect suggested styles from queryables; fall back to fetching features
   const [suggestedStyles, setSuggestedStyles] = useState<StyleConfig[]>([]);
@@ -320,6 +324,7 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
           value={value.cql2Filter as Cql2FilterConfig | undefined}
           onChange={(cql2Filter) => update({ cql2Filter } as Partial<LayerConfig>)}
           availableProperties={availableProperties}
+          geometryProperties={geometryProperties}
         />
       </CollapsibleSection>
 

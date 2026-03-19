@@ -84,6 +84,7 @@ export function extractQueryParameters(group: FilterRuleGroup): QueryParameter[]
  * that require a selection geometry at runtime.
  */
 export function queryRequiresGeometry(group: FilterRuleGroup): boolean {
+  if (group.spatialConstraint) return true;
   for (const item of group.rules) {
     if (isFilterRuleGroup(item)) {
       if (queryRequiresGeometry(item)) return true;

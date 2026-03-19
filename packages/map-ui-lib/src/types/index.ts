@@ -38,6 +38,7 @@ import {
   DateRangeValueSchema,
   ComputedRangeValueSchema,
   SpatialConfigSchema,
+  SpatialConstraintSchema,
   FilterRuleSchema,
   FilterRuleGroupSchema,
   SortFieldSchema,
@@ -94,6 +95,7 @@ export type RelativeDateValue = z.infer<typeof RelativeDateValueSchema>;
 export type DateRangeValue = z.infer<typeof DateRangeValueSchema>;
 export type ComputedRangeValue = z.infer<typeof ComputedRangeValueSchema>;
 export type SpatialConfig = z.infer<typeof SpatialConfigSchema>;
+export type SpatialConstraint = z.infer<typeof SpatialConstraintSchema>;
 export type FilterRule = z.infer<typeof FilterRuleSchema>;
 export type SortField = z.infer<typeof SortFieldSchema>;
 
@@ -108,6 +110,7 @@ export interface FilterRuleGroup {
   rules: (FilterRule | FilterRuleGroup)[];
   sortby?: SortField[];
   limit?: number;
+  spatialConstraint?: SpatialConstraint;
 }
 
 /** Top-level CQL2 filter config stored in `LayerConfig.cql2Filter`. Alias for `FilterRuleGroup`. */
@@ -183,6 +186,7 @@ export {
   DateRangeValueSchema,
   ComputedRangeValueSchema,
   SpatialConfigSchema,
+  SpatialConstraintSchema,
   FilterRuleSchema,
   FilterRuleGroupSchema,
   SortFieldSchema,

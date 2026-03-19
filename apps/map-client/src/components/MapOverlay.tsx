@@ -73,6 +73,7 @@ interface MapOverlayProps {
   queryFilter?: FilterRuleGroup;
   onRunQuery?: (params: Record<string, unknown>) => void;
   queryLoading?: boolean;
+  queryError?: string | null;
   hasSelectionGeometry?: boolean;
 }
 
@@ -103,6 +104,7 @@ export function MapOverlay({
   queryFilter,
   onRunQuery,
   queryLoading,
+  queryError,
   hasSelectionGeometry,
 }: MapOverlayProps) {
   const layers = useMapStore((s) => s.layers);
@@ -308,12 +310,17 @@ export function MapOverlay({
                 onClear={onSelectionClear}
                 onViewResults={onSelectionViewResults}
                 queryPanel={queryFilter && onRunQuery ? (
-                  <QueryPanel
-                    cql2Filter={queryFilter}
-                    onRun={onRunQuery}
-                    loading={queryLoading}
-                    hasSelectionGeometry={hasSelectionGeometry}
-                  />
+                  <>
+                    <QueryPanel
+                      cql2Filter={queryFilter}
+                      onRun={onRunQuery}
+                      loading={queryLoading}
+                      hasSelectionGeometry={hasSelectionGeometry}
+                    />
+                    {queryError && (
+                      <p className="m-0 text-xs text-red-600 mt-1">{queryError}</p>
+                    )}
+                  </>
                 ) : undefined}
                 className="p-3 max-w-xs"
               />

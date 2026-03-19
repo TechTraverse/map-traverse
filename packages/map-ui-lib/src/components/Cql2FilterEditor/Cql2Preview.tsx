@@ -15,6 +15,12 @@ export function Cql2Preview({ value }: Cql2PreviewProps) {
     if (query.filter) output.filter = query.filter;
     if (query.sortby) output.sortby = query.sortby;
     if (query.limit) output.limit = query.limit;
+    if (value.spatialConstraint) {
+      output.spatialConstraint = {
+        note: 'Auto-added when features are selected',
+        ...value.spatialConstraint,
+      };
+    }
     if (Object.keys(output).length === 0) return null;
     return JSON.stringify(output, null, 2);
   }, [value]);
