@@ -82,6 +82,8 @@ function PreviewVectorTileLayer({
           source-layer={sourceLayer}
           paint={style.paint as any}
           layout={{ ...(style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' } as any}
+          {...(layer.minZoom != null ? { minzoom: layer.minZoom } : {})}
+          {...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {})}
           {...(style.geometryFilter ? { filter: buildGeometryFilter(style.geometryFilter) as any } : {})}
         />
       ))}
@@ -119,6 +121,8 @@ function PreviewGeoJsonLayer({
           type={style.type}
           paint={style.paint as any}
           layout={{ ...(style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' } as any}
+          {...(layer.minZoom != null ? { minzoom: layer.minZoom } : {})}
+          {...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {})}
           {...(style.geometryFilter ? { filter: buildGeometryFilter(style.geometryFilter) as any } : {})}
         />
       ))}

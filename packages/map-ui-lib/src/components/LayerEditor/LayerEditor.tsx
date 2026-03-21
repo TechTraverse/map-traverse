@@ -237,6 +237,33 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
         </label>
       </div>
 
+      <div className="mapui:grid mapui:grid-cols-2 mapui:gap-3">
+        <FormField label="Min Zoom">
+          <input
+            type="number"
+            min={0}
+            max={24}
+            step={1}
+            value={value.minZoom ?? ''}
+            onChange={(e) => { const v = e.target.valueAsNumber; update({ minZoom: isNaN(v) ? undefined : v }); }}
+            placeholder="0"
+            className={inputClass}
+          />
+        </FormField>
+        <FormField label="Max Zoom">
+          <input
+            type="number"
+            min={0}
+            max={24}
+            step={1}
+            value={value.maxZoom ?? ''}
+            onChange={(e) => { const v = e.target.valueAsNumber; update({ maxZoom: isNaN(v) ? undefined : v }); }}
+            placeholder="24"
+            className={inputClass}
+          />
+        </FormField>
+      </div>
+
       <CollapsibleSection title="Style">
         <div className="mapui:flex mapui:flex-col mapui:gap-4">
           {(value.styles ?? [defaultFill]).map((style, i) => (

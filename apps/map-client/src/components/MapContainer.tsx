@@ -37,6 +37,8 @@ function VectorTileLayer({
           source-layer={sourceLayer}
           paint={style.paint as any}
           layout={{ ...(style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' }}
+          {...(layer.minZoom != null ? { minzoom: layer.minZoom } : {})}
+          {...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {})}
           {...(style.geometryFilter ? { filter: buildGeometryFilter(style.geometryFilter) } : {})}
         />
       ))}
@@ -77,6 +79,8 @@ function GeoJsonLayer({ layer, sourceUrl, cql2Filter }: { layer: LayerConfig; so
           type={style.type}
           paint={style.paint as any}
           layout={{ ...(style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' }}
+          {...(layer.minZoom != null ? { minzoom: layer.minZoom } : {})}
+          {...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {})}
           {...(style.geometryFilter ? { filter: buildGeometryFilter(style.geometryFilter) } : {})}
         />
       ))}
