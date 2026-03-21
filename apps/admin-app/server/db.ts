@@ -109,4 +109,20 @@ export async function initDb(): Promise<void> {
   await pool.query(`
     ALTER TABLE ogc_sources ADD COLUMN IF NOT EXISTS metadata_updated_at TIMESTAMPTZ
   `);
+
+  // Site-wide branding / customization (single-row table)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS site_settings (
+      id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+      header_title TEXT NOT NULL DEFAULT 'Map Config Admin',
+      header_color TEXT NOT NULL DEFAULT '#1e293b',
+      browser_title TEXT NOT NULL DEFAULT 'Map Config Admin',
+      favicon_data_url TEXT,
+      logo_data_url TEXT,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+  await pool.query(`
+    INSERT INTO site_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING
+  `);
 }

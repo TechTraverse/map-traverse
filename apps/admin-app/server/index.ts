@@ -879,6 +879,90 @@ app.post('/api/sources/import', requireAuth, async (_req, res) => {
   }
 });
 
+// --- Site settings endpoints ---
+
+const HEX_COLOR_REGEX = /^#[0-9a-fA-F]{6}$/;
+
+// GET /api/settings — public (needed before login for favicon/title)
+app.get('/api/settings', async (_req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM site_settings WHERE id = 1');
+    if (result.rows.length === 0) {
+      res.json({
+        header_title: 'Map Config Admin',
+        header_color: '#1e293b',
+        browser_title: 'Map Config Admin',
+        favicon_data_url: null,
+        logo_data_url: null,
+      });
+      return;
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    handleServerError(res, err);
+  }
+});
+
+// PUT /api/settings — update site settings (protected)
+app.put('/api/settings', requireAuth, async (req, res) => {
+  const { header_title, header_color, browser_title, favicon_data_url, logo_data_url } = req.body as {
+    header_title?: string;
+    header_color?: string;
+    browser_title?: string;
+    favicon_data_url?: string | null;
+    logo_data_url?: string | null;
+  };
+
+  // Validate
+  if (header_title !== undefined && !header_title.trim()) {
+    res.status(400).json({ error: 'header_title must not be empty' });
+    return;
+  }
+  if (browser_title !== undefined && !browser_title.trim()) {
+    res.status(400).json({ error: 'browser_title must not be empty' });
+    return;
+  }
+  if (header_color !== undefined && !HEX_COLOR_REGEX.test(header_color)) {
+    res.status(400).json({ error: 'header_color must be a hex color (e.g. #1e293b)' });
+    return;
+  }
+  if (favicon_data_url !== undefined && favicon_data_url !== null && !favicon_data_url.startsWith('data:image/')) {
+    res.status(400).json({ error: 'favicon_data_url must be a data:image/ URL or null' });
+    return;
+  }
+  if (logo_data_url !== undefined && logo_data_url !== null && !logo_data_url.startsWith('data:image/')) {
+    res.status(400).json({ error: 'logo_data_url must be a data:image/ URL or null' });
+    return;
+  }
+
+  try {
+    // Build dynamic SET clause for partial updates
+    const fields: string[] = [];
+    const values: unknown[] = [];
+    let idx = 1;
+
+    if (header_title !== undefined) { fields.push(`header_title = $${idx++}`); values.push(header_title.trim()); }
+    if (header_color !== undefined) { fields.push(`header_color = $${idx++}`); values.push(header_color); }
+    if (browser_title !== undefined) { fields.push(`browser_title = $${idx++}`); values.push(browser_title.trim()); }
+    if (favicon_data_url !== undefined) { fields.push(`favicon_data_url = $${idx++}`); values.push(favicon_data_url); }
+    if (logo_data_url !== undefined) { fields.push(`logo_data_url = $${idx++}`); values.push(logo_data_url); }
+
+    if (fields.length === 0) {
+      res.status(400).json({ error: 'No fields to update' });
+      return;
+    }
+
+    fields.push('updated_at = now()');
+    const result = await pool.query(
+      `UPDATE site_settings SET ${fields.join(', ')} WHERE id = 1 RETURNING *`,
+      values,
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    handleServerError(res, err);
+  }
+});
+
 // Serve SPA static files (after all API routes)
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath = path.join(__dirname, '..', 'dist');
