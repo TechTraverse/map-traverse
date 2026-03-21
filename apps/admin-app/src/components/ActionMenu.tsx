@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LuEllipsisVertical, LuPencil, LuEye, LuHistory, LuTrash2 } from 'react-icons/lu';
+import { LuEllipsisVertical, LuPencil, LuEye, LuHistory, LuCopy, LuTrash2 } from 'react-icons/lu';
 
 interface ActionMenuProps {
   configId: string;
+  onDuplicate: () => void;
   onDelete: () => void;
 }
 
-export function ActionMenu({ configId, onDelete }: ActionMenuProps) {
+export function ActionMenu({ configId, onDuplicate, onDelete }: ActionMenuProps) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -57,6 +58,15 @@ export function ActionMenu({ configId, onDelete }: ActionMenuProps) {
           >
             <LuHistory className="mapui:w-4 mapui:h-4" /> History
           </Link>
+          <button
+            onClick={() => {
+              setOpen(false);
+              onDuplicate();
+            }}
+            className={linkClass}
+          >
+            <LuCopy className="mapui:w-4 mapui:h-4" /> Duplicate
+          </button>
           <div className="mapui:border-t mapui:border-gray-100 mapui:my-1" />
           <button
             onClick={() => {

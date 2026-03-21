@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ActionMenu } from '../components/ActionMenu';
 
 interface ConfigSummary {
@@ -18,6 +18,7 @@ export function ConfigListPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [publishingId, setPublishingId] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const fetchConfigs = async () => {
     const res = await fetch('/api/configs');
@@ -41,6 +42,40 @@ export function ConfigListPage() {
       return;
     }
     setConfigs(prev => prev.filter(c => c.id !== id));
+  };
+
+  const handleDuplicate = async (id: string) => {
+    setActionError(null);
+    try {
+      const res = await fetch(`/api/configs/${id}`, { credentials: 'include' });
+      if (!res.ok) {
+        setActionError(`Duplicate failed: could not fetch config`);
+        return;
+      }
+      const source = await res.json();
+
+      const existingNames = new Set(configs.map(c => c.name));
+      let newName = `${source.name}-copy`;
+      let i = 2;
+      while (existingNames.has(newName)) {
+        newName = `${source.name}-copy-${i++}`;
+      }
+
+      const createRes = await fetch('/api/configs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name: newName, description: source.description, config: source.config }),
+      });
+      if (!createRes.ok) {
+        setActionError(`Duplicate failed: ${await createRes.text()}`);
+        return;
+      }
+      const newConfig = await createRes.json();
+      navigate(`/configs/${newConfig.id}/edit`);
+    } catch (err) {
+      setActionError(`Duplicate failed: ${String(err)}`);
+    }
   };
 
   const handlePublish = async (id: string) => {
@@ -191,7 +226,7 @@ export function ConfigListPage() {
                     {new Date(config.updated_at).toLocaleDateString()}
                   </td>
                   <td className="mapui:px-6 mapui:py-4">
-                    <ActionMenu configId={config.id} onDelete={() => handleDelete(config.id)} />
+                    <ActionMenu configId={config.id} onDuplicate={() => handleDuplicate(config.id)} onDelete={() => handleDelete(config.id)} />
                   </td>
                 </tr>
               ))}
