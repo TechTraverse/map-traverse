@@ -612,6 +612,7 @@ export function MapPreview({
           }
         }}
         onMouseOut={() => {
+          clearTimeout(hoverTimerRef.current);
           setCursor('auto');
           setMouseCoords(null);
           setHoveredFeatures([]);
