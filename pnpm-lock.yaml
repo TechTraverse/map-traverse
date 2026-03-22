@@ -20,9 +20,15 @@ importers:
 
   apps/admin-app:
     dependencies:
+      '@ngageoint/geopackage':
+        specifier: ^4.2.0
+        version: 4.2.6
       '@ogc-maps/storybook-components':
         specifier: workspace:*
         version: link:../../packages/map-ui-lib
+      '@tmcw/tokml':
+        specifier: ^1.0.0-alpha.0
+        version: 1.0.0-alpha.0
       '@turf/bbox':
         specifier: ^7.3.4
         version: 7.3.4
@@ -50,6 +56,9 @@ importers:
       express-session:
         specifier: ^1.18.0
         version: 1.19.0
+      flatgeobuf:
+        specifier: ^3.32.0
+        version: 3.38.0
       maplibre-gl:
         specifier: ^4.7.1
         version: 4.7.1
@@ -71,6 +80,9 @@ importers:
       react-router-dom:
         specifier: ^6.28.0
         version: 6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      shp-write:
+        specifier: ^0.3.2
+        version: 0.3.2
       zod:
         specifier: ^3.25.76
         version: 3.25.76

@@ -5,6 +5,7 @@ export { useCsvExport, type UseCsvExportOptions, type UseCsvExportResult } from 
 export { useExport, type UseExportOptions, type UseExportResult, type FormatConverter } from './useExport';
 export { featuresToCsv, type CsvExportOptions } from '../utils/csvExport';
 export { downloadBlob } from '../utils/download';
+export { DEFAULT_EXPORT_FORMATS } from '../utils/exportFormats';
 export { useOgcQueryables, type UseOgcQueryablesResult } from './useOgcQueryables';
 export { useOgcCollectionDetail, type UseOgcCollectionDetailResult } from './useOgcCollectionDetail';
 export { useMeasure, type UseMeasureResult } from './useMeasure';

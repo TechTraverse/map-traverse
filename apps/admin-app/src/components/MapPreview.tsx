@@ -4,7 +4,8 @@ import { Map, Source, Layer, AttributionControl, type MapRef } from 'react-map-g
 import {
   getCql2FilteredVectorTileUrl,
   useOgcFeatures,
-  useCsvExport,
+  useExport,
+  DEFAULT_EXPORT_FORMATS,
   fromStructuredFilters,
   resolvePropertyDisplay,
   fetchDistinctValues,
@@ -27,19 +28,22 @@ import {
   FeatureDetailPanel,
   FeatureTooltip,
   ExportButton,
+  ExportModal,
   MeasurePanel,
   SelectionPanel,
   ResultsDrawer,
   formatDecimal,
   formatDMS,
 } from '@ogc-maps/storybook-components';
-import type { CoordinateFormatOption } from '@ogc-maps/storybook-components';
+import type { CoordinateFormatOption, ExportRequest } from '@ogc-maps/storybook-components';
 import { useMeasure, useSelection } from '@ogc-maps/storybook-components/hooks';
 
 const coordinateFormats: CoordinateFormatOption[] = [
   { id: 'decimal', label: 'Decimal', format: formatDecimal },
   { id: 'dms', label: 'DMS', format: formatDMS },
 ];
+
+
 import type {
   OgcApiSource,
   LayerConfig,
@@ -50,9 +54,10 @@ import type {
   ExportableLayer,
 } from '@ogc-maps/storybook-components';
 import type { SearchFilterValue, SearchFilterValues } from '@ogc-maps/storybook-components/types';
-import { LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
+import { LuDownload, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
 import { useBoxDraw } from '../hooks/useBoxDraw';
 import { usePolygonDraw } from '../hooks/usePolygonDraw';
+import { exportConverters } from '../utils/exportConverters';
 
 const FALLBACK_BASEMAP_URL = 'https://demotiles.maplibre.org/style.json';
 
@@ -347,22 +352,27 @@ export function MapPreview({
     });
   }, [featureInteractionEnabled, layers, activeCql2Filters]);
 
-  // CSV export
-  const exportBaseUrl = sources[0]?.url ?? '';
-  const { exportCsv, loading: exportLoading } = useCsvExport({ baseUrl: exportBaseUrl });
+  const { runExport, loading: exportLoading, progress: exportProgress, error: exportError } = useExport({
+    converters: exportConverters,
+  });
+
+  const [exportModalOpen, setExportModalOpen] = useState(false);
 
   const exportableLayers: ExportableLayer[] = useMemo(
     () => layers.filter(l => l.visible).map(l => ({ id: l.id, label: l.label, collection: l.collection })),
     [layers],
   );
 
-  const handleExport = useCallback(
-    () => {
-      const layer = exportableLayers[0];
-      if (!layer) return;
-      exportCsv(layer.collection, `${layer.label}.csv`, activeCql2Filters[layer.id] ?? undefined);
+  const handleExportRequest = useCallback(
+    (request: ExportRequest) => {
+      const cql2Filter = request.filtered ? (activeCql2Filters[request.layer.id] ?? undefined) : undefined;
+      const filename = `${request.layer.label}${request.format.extension}`;
+      const layer = layers.find(l => l.id === request.layer.id);
+      const source = sources.find(s => s.id === layer?.sourceId);
+      const baseUrl = source?.url ?? '';
+      runExport(request.layer.collection, request.format.id, filename, cql2Filter, baseUrl);
     },
-    [exportCsv, activeCql2Filters, exportableLayers],
+    [runExport, activeCql2Filters, layers, sources],
   );
 
   const handleFilterChange = useCallback(
@@ -902,17 +912,32 @@ export function MapPreview({
                 </CollapsibleControl>
               </div>
             )}
+
+            {uiConfig.showExportButton && (
+              <div className="mapui:pointer-events-auto">
+                <ExportButton
+                  icon={LuDownload}
+                  onExport={() => setExportModalOpen(true)}
+                  loading={exportLoading}
+                />
+              </div>
+            )}
           </div>
 
-          {/* Bottom-right: Export button */}
-          {uiConfig.showExportButton && (
-            <div className="mapui:absolute mapui:bottom-8 mapui:right-4 mapui:pointer-events-auto">
-              <ExportButton
-                onExport={handleExport}
-                loading={exportLoading}
-              />
-            </div>
-          )}
+          {/* Export modal */}
+          <div className="mapui:pointer-events-auto">
+            <ExportModal
+              open={exportModalOpen}
+              layers={exportableLayers}
+              availableFormats={DEFAULT_EXPORT_FORMATS}
+              hasActiveFilter={(layerId) => activeCql2Filters[layerId] != null}
+              loading={exportLoading}
+              progress={exportProgress}
+              error={exportError?.message}
+              onExport={handleExportRequest}
+              onClose={() => setExportModalOpen(false)}
+            />
+          </div>
 
           {/* Bottom-center: Coordinate display */}
           {uiConfig.showCoordinateDisplay && (

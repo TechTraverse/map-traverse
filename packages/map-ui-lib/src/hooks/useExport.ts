@@ -9,7 +9,8 @@ export type FormatConverter = (
 ) => Promise<{ blob: Blob; filename: string }> | { blob: Blob; filename: string };
 
 export interface UseExportOptions {
-  baseUrl: string;
+  /** Default base URL. Can be overridden per-call via runExport's baseUrl parameter. */
+  baseUrl?: string;
   limit?: number;
   converters: Record<string, FormatConverter>;
 }
@@ -20,6 +21,7 @@ export interface UseExportResult {
     formatId: string,
     filename: string,
     cql2Filter?: CQL2Expression,
+    baseUrl?: string,
   ) => Promise<void>;
   loading: boolean;
   progress: string | null;
@@ -27,7 +29,7 @@ export interface UseExportResult {
 }
 
 export function useExport({
-  baseUrl,
+  baseUrl: defaultBaseUrl = '',
   limit = 100_000,
   converters,
 }: UseExportOptions): UseExportResult {
@@ -41,7 +43,9 @@ export function useExport({
       formatId: string,
       filename: string,
       cql2Filter?: CQL2Expression,
+      baseUrl?: string,
     ) => {
+      const resolvedBaseUrl = baseUrl ?? defaultBaseUrl;
       const converter = converters[formatId];
       if (!converter) {
         setError(new Error(`Unknown export format: ${formatId}`));
@@ -60,7 +64,7 @@ export function useExport({
         while (features.length < limit) {
           const remaining = limit - features.length;
           const batchSize = Math.min(pageSize, remaining);
-          const page = await fetchFeatures(baseUrl, collectionId, {
+          const page = await fetchFeatures(resolvedBaseUrl, collectionId, {
             limit: batchSize,
             offset,
             cql2Filter,
@@ -92,7 +96,7 @@ export function useExport({
         setProgress(null);
       }
     },
-    [baseUrl, limit, converters],
+    [defaultBaseUrl, limit, converters],
   );
 
   return { runExport, loading, progress, error };

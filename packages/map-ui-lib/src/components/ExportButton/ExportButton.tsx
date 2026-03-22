@@ -1,4 +1,8 @@
 export interface ExportButtonProps {
+  /** Icon component to display (e.g., LuDownload from react-icons/lu) */
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  /** Accessible label for the button (shown as tooltip/aria-label) */
+  label?: string;
   onExport: () => void;
   loading?: boolean;
   disabled?: boolean;
@@ -6,6 +10,8 @@ export interface ExportButtonProps {
 }
 
 export function ExportButton({
+  icon: Icon,
+  label = 'Export',
   onExport,
   loading = false,
   disabled = false,
@@ -13,21 +19,20 @@ export function ExportButton({
 }: ExportButtonProps) {
   const isDisabled = disabled || loading;
 
-  const buttonClasses = [
-    'mapui:inline-flex mapui:items-center mapui:gap-1.5 mapui:rounded mapui:border mapui:border-gray-300',
-    'mapui:bg-white mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:text-gray-700 mapui:transition-colors',
-    isDisabled
-      ? 'mapui:cursor-not-allowed mapui:opacity-50'
-      : 'mapui:cursor-pointer hover:mapui:bg-gray-50 hover:mapui:border-gray-400',
-  ].join(' ');
-
   return (
     <button
-      className={`${buttonClasses} ${className}`.trim()}
+      type="button"
+      title={label}
+      aria-label={label}
+      className={`mapui:flex mapui:items-center mapui:justify-center mapui:w-10 mapui:h-10 mapui:bg-white mapui:rounded mapui:shadow-md mapui:transition-colors ${
+        isDisabled
+          ? 'mapui:cursor-not-allowed mapui:opacity-50'
+          : 'mapui:cursor-pointer hover:mapui:bg-gray-50'
+      } ${className}`.trim()}
       disabled={isDisabled}
-      onClick={() => !isDisabled && onExport()}
+      onClick={onExport}
     >
-      {loading ? 'Exporting...' : 'Export'}
+      <Icon size={20} className="mapui:text-gray-700" />
     </button>
   );
 }

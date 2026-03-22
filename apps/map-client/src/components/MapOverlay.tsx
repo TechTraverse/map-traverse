@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   LayerPanel,
   Legend,
@@ -14,25 +14,16 @@ import {
   SelectionPanel,
   type CoordinateFormatOption,
   type ExportableLayer,
-  type ExportFormatOption,
+
   type ExportRequest,
 } from '@ogc-maps/storybook-components';
 import type { MeasureMode, MeasureUnit, Measurement, SelectionMode } from '@ogc-maps/storybook-components';
-import { useExport, fromStructuredFilters, fetchFeatures, eq, bboxFromGeometry } from '@ogc-maps/storybook-components/hooks';
+import { useExport, DEFAULT_EXPORT_FORMATS, fromStructuredFilters, fetchFeatures, eq, bboxFromGeometry } from '@ogc-maps/storybook-components/hooks';
+import { exportConverters } from '../utils/exportConverters';
 import type { UIConfig, SearchFilterValue, SearchFilterValues } from '@ogc-maps/storybook-components/types';
 import { useMapStore, useActiveLayerIds } from '../stores/mapStore';
 import { useAutocompleteSuggestions } from '../hooks/useAutocompleteSuggestions';
-import { exportConverters } from '../utils/exportConverters';
-import { LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
-
-const availableFormats: ExportFormatOption[] = [
-  { id: 'csv', label: 'CSV', extension: '.csv', description: 'Comma-separated values' },
-  { id: 'geojson', label: 'GeoJSON', extension: '.geojson', description: 'GeoJSON format' },
-  { id: 'kml', label: 'KML', extension: '.kml', description: 'Google Earth' },
-  { id: 'shapefile', label: 'Shapefile', extension: '.zip', description: 'Esri Shapefile' },
-  { id: 'flatgeobuf', label: 'FlatGeobuf', extension: '.fgb', description: 'FlatGeobuf' },
-  { id: 'geopackage', label: 'GeoPackage', extension: '.gpkg', description: 'OGC GeoPackage' },
-];
+import { LuDownload, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
 
 interface MapOverlayProps {
   uiConfig: UIConfig;
@@ -112,26 +103,27 @@ export function MapOverlay({
 
   const { autocompleteSuggestions, fetchSuggestions } = useAutocompleteSuggestions();
 
-  // Export: use the first source's base URL (all layers in this app share one source)
-  const exportBaseUrl = sources[0]?.url ?? '';
   const { runExport, loading: exportLoading, progress: exportProgress, error: exportError } = useExport({
-    baseUrl: exportBaseUrl,
     converters: exportConverters,
   });
 
   const [exportModalOpen, setExportModalOpen] = useState(false);
 
-  const exportableLayers: ExportableLayer[] = layers
-    .filter((l) => l.visible)
-    .map((l) => ({ id: l.id, label: l.label, collection: l.collection }));
+  const exportableLayers: ExportableLayer[] = useMemo(
+    () => layers.filter((l) => l.visible).map((l) => ({ id: l.id, label: l.label, collection: l.collection })),
+    [layers],
+  );
 
   const handleExportRequest = useCallback(
     (request: ExportRequest) => {
       const cql2Filter = request.filtered ? (activeCql2Filters[request.layer.id] ?? undefined) : undefined;
       const filename = `${request.layer.label}${request.format.extension}`;
-      runExport(request.layer.collection, request.format.id, filename, cql2Filter);
+      const layer = useMapStore.getState().layers.find((l) => l.id === request.layer.id);
+      const source = sources.find((s) => s.id === layer?.sourceId);
+      const baseUrl = source?.url ?? '';
+      runExport(request.layer.collection, request.format.id, filename, cql2Filter, baseUrl);
     },
-    [runExport, activeCql2Filters],
+    [runExport, activeCql2Filters, sources],
   );
 
   const handleZoomToFeature = useCallback(
@@ -319,24 +311,24 @@ export function MapOverlay({
             </CollapsibleControl>
           </div>
         )}
-      </div>
 
-      {/* Bottom-right: Export button */}
-      {uiConfig.showExportButton && (
-        <div className="absolute bottom-8 right-4 pointer-events-auto">
-          <ExportButton
-            onExport={() => setExportModalOpen(true)}
-            loading={exportLoading}
-          />
-        </div>
-      )}
+        {uiConfig.showExportButton && (
+          <div className="pointer-events-auto">
+            <ExportButton
+              icon={LuDownload}
+              onExport={() => setExportModalOpen(true)}
+              loading={exportLoading}
+            />
+          </div>
+        )}
+      </div>
 
       {/* Export modal */}
       <div className="pointer-events-auto">
         <ExportModal
         open={exportModalOpen}
         layers={exportableLayers}
-        availableFormats={availableFormats}
+        availableFormats={DEFAULT_EXPORT_FORMATS}
         hasActiveFilter={(layerId) => activeCql2Filters[layerId] != null}
         loading={exportLoading}
         progress={exportProgress}
