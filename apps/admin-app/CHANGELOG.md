@@ -1,5 +1,13 @@
 # admin-app
 
+## 0.1.1
+
+### Patch Changes
+
+- aef3ba5: tool tips and layer flyout configurable per layer
+- Updated dependencies [aef3ba5]
+  - @ogc-maps/storybook-components@0.12.1
+
 ## 0.1.0
 
 ### Minor Changes

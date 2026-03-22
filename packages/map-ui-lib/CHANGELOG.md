@@ -1,5 +1,11 @@
 # @ogc-maps/storybook-components
 
+## 0.12.1
+
+### Patch Changes
+
+- aef3ba5: tool tips and layer flyout configurable per layer
+
 ## 0.12.0
 
 ### Minor Changes
