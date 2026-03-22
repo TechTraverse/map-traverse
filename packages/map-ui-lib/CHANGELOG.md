@@ -1,5 +1,11 @@
 # @ogc-maps/storybook-components
 
+## 0.13.0
+
+### Minor Changes
+
+- 2f84854: export style improvements
+
 ## 0.12.3
 
 ### Patch Changes
