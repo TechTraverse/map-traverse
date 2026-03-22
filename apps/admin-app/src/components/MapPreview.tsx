@@ -557,6 +557,7 @@ export function MapPreview({
             const infos: typeof selectedFeatures = [];
             for (const f of features) {
               const layer = findLayerForFeature(f.layer.id);
+              if (layer?.showDetailPanel === false) continue;
               const layerId = layer?.id ?? f.layer.id;
               if (seen.has(layerId)) continue;
               seen.add(layerId);
@@ -589,6 +590,7 @@ export function MapPreview({
               const infos: typeof hoveredFeatures = [];
               for (const f of features) {
                 const layer = findLayerForFeature(f.layer.id);
+                if (layer?.showTooltip === false) continue;
                 const layerId = layer?.id ?? f.layer.id;
                 if (seen.has(layerId)) continue;
                 seen.add(layerId);

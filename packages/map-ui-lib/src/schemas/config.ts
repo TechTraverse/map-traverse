@@ -297,6 +297,8 @@ const layerConfigFields = {
   filters: FilterConfigSchema.optional(),
   search: SearchConfigSchema.optional(),
   propertyDisplay: PropertyDisplayConfigSchema.optional(),
+  showTooltip: z.boolean().optional(),
+  showDetailPanel: z.boolean().optional(),
 };
 
 export const LayerConfigSchema = z.preprocess(

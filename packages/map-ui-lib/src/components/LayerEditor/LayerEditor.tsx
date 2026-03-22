@@ -237,6 +237,32 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
         </label>
       </div>
 
+      <div className="mapui:flex mapui:items-center mapui:gap-2">
+        <input
+          type="checkbox"
+          id={`layer-tooltip-${value.id}`}
+          checked={value.showTooltip ?? true}
+          onChange={(e) => update({ showTooltip: e.target.checked })}
+          className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
+        />
+        <label htmlFor={`layer-tooltip-${value.id}`} className="mapui:text-sm mapui:text-gray-700">
+          Show tooltip on hover
+        </label>
+      </div>
+
+      <div className="mapui:flex mapui:items-center mapui:gap-2">
+        <input
+          type="checkbox"
+          id={`layer-detail-${value.id}`}
+          checked={value.showDetailPanel ?? true}
+          onChange={(e) => update({ showDetailPanel: e.target.checked })}
+          className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
+        />
+        <label htmlFor={`layer-detail-${value.id}`} className="mapui:text-sm mapui:text-gray-700">
+          Show detail panel on click
+        </label>
+      </div>
+
       <div className="mapui:grid mapui:grid-cols-2 mapui:gap-3">
         <FormField label="Min Zoom">
           <input

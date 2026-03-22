@@ -177,17 +177,18 @@ export function Layout({ uiConfig }: LayoutProps) {
           onMouseLeave={() => setMouseCoords(null)}
           onFeatureClick={(infos) => {
             setSelectedFeatures(
-              infos.map((info) => {
+              infos.flatMap((info) => {
                 const layer = layers.find(
                   (l) => info.layerId === l.id || info.layerId.startsWith(l.id + '--'),
                 );
+                if (layer?.showDetailPanel === false) return [];
                 const resolved = resolvePropertyDisplay(layer?.propertyDisplay);
-                return {
+                return [{
                   properties: info.properties,
                   title: layer?.label ?? (info.properties['name'] as string) ?? info.layerId,
                   fields: resolved?.fields,
                   labels: resolved?.labels,
-                };
+                }];
               }),
             );
           }}
@@ -201,17 +202,18 @@ export function Layout({ uiConfig }: LayoutProps) {
             hoverTimerRef.current = setTimeout(() => {
               setHoveredPoint(infos[0]?.point ?? null);
               setHoveredFeatures(
-                infos.map((info) => {
+                infos.flatMap((info) => {
                   const layer = layers.find(
                     (l) => info.layerId === l.id || info.layerId.startsWith(l.id + '--'),
                   );
+                  if (layer?.showTooltip === false) return [];
                   const resolved = resolvePropertyDisplay(layer?.propertyDisplay);
-                  return {
+                  return [{
                     properties: info.properties,
                     title: layer?.label ?? (info.properties['name'] as string),
                     fields: resolved?.fields,
                     labels: resolved?.labels,
-                  };
+                  }];
                 }),
               );
             }, 1000);
