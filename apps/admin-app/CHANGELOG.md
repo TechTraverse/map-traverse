@@ -1,5 +1,16 @@
 # admin-app
 
+## 0.1.0
+
+### Minor Changes
+
+- e3f0363: map branding configuration
+
+### Patch Changes
+
+- Updated dependencies [e3f0363]
+  - @ogc-maps/storybook-components@0.12.0
+
 ## 0.0.12
 
 ### Patch Changes

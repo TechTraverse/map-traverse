@@ -1,5 +1,11 @@
 # @ogc-maps/storybook-components
 
+## 0.12.0
+
+### Minor Changes
+
+- e3f0363: map branding configuration
+
 ## 0.11.0
 
 ### Minor Changes
