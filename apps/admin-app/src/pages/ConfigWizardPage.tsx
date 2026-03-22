@@ -9,6 +9,9 @@ import {
   UIConfigEditor,
   ViewEditor,
   ConfigPreview,
+  CollapsibleSection,
+  FormField,
+  ColorPicker,
   detectStyleTypeForCollection,
   defaultFill,
   defaultLine,
@@ -16,7 +19,7 @@ import {
   defaultSymbol,
   resolveAvailableIcons,
 } from '@ogc-maps/storybook-components';
-import { safeValidateMapConfig } from '@ogc-maps/storybook-components/schemas';
+import { safeValidateMapConfig, DEFAULT_HEADER_COLOR } from '@ogc-maps/storybook-components/schemas';
 import type {
   OgcApiSource,
   LayerConfig,
@@ -25,7 +28,9 @@ import type {
   UIConfig,
   ViewConfig,
   MapConfig,
+  BrandingConfig,
 } from '@ogc-maps/storybook-components';
+import { ImageUploadField } from '../components/ImageUploadField';
 import { MapPreview } from '../components/MapPreview';
 
 interface SavedSourceSummary { id: string; source_id: string; url: string; label: string | null; tile_matrix_set_id: string }
@@ -94,6 +99,10 @@ export function ConfigWizardPage() {
   const [showPreview, setShowPreview] = useState(true);
   const [previewLayout, setPreviewLayout] = useState<'horizontal' | 'vertical'>('vertical');
 
+  // Branding state (single object, matches uiConfig pattern)
+  const [branding, setBranding] = useState<BrandingConfig>({});
+  const updateBranding = (patch: Partial<BrandingConfig>) => setBranding(prev => ({ ...prev, ...patch }));
+
   // Config state
   const [sources, setSources] = useState<OgcApiSource[]>([]);
   const [layers, setLayers] = useState<LayerConfig[]>([]);
@@ -130,7 +139,9 @@ export function ConfigWizardPage() {
   const currentStepIndex = STEPS.findIndex(s => s.key === currentStep);
 
   // Derived config object for save + preview
-  const assembledConfig: MapConfig = { sources, layers, basemaps, sprites: sprites.length > 0 ? sprites : undefined, ui: uiConfig, initialView };
+  const hasBranding = Object.keys(branding).length > 0;
+
+  const assembledConfig: MapConfig = { sources, layers, basemaps, sprites: sprites.length > 0 ? sprites : undefined, ui: uiConfig, initialView, ...(hasBranding && { branding }) };
 
   const isConfigValid = useMemo(() => {
     if (!name) return false;
@@ -159,6 +170,9 @@ export function ConfigWizardPage() {
           setSprites(data.config.sprites ?? []);
           setUiConfig(data.config.ui ?? DEFAULT_UI_CONFIG);
           setInitialView(data.config.initialView ?? DEFAULT_VIEW);
+          if (data.config.branding) {
+            setBranding(data.config.branding);
+          }
         }
       })
       .catch((err) => setError(String(err)))
@@ -325,6 +339,65 @@ export function ConfigWizardPage() {
                 className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
               />
             </div>
+
+            <CollapsibleSection title="Branding" badge="optional">
+              <div className="mapui:flex mapui:flex-col mapui:gap-4">
+                <FormField label="Header Title" description="Title shown in the map header bar">
+                  <input
+                    type="text"
+                    value={branding.headerTitle ?? ''}
+                    onChange={e => updateBranding({ headerTitle: e.target.value || undefined })}
+                    placeholder="My Map"
+                    className="mapui:w-full mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
+                  />
+                </FormField>
+
+                <FormField label="Header Background Color">
+                  <ColorPicker value={branding.headerColor ?? DEFAULT_HEADER_COLOR} onChange={color => updateBranding({ headerColor: color })} />
+                </FormField>
+
+                <FormField label="Browser Tab Title" description="Title shown in the browser tab">
+                  <input
+                    type="text"
+                    value={branding.browserTitle ?? ''}
+                    onChange={e => updateBranding({ browserTitle: e.target.value || undefined })}
+                    placeholder="My Map"
+                    className="mapui:w-full mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
+                  />
+                </FormField>
+
+                <FormField label="Favicon" description="Icon shown in the browser tab (PNG, ICO, or SVG, max 100KB)">
+                  <ImageUploadField
+                    value={branding.faviconDataUrl ?? null}
+                    onChange={dataUrl => updateBranding({ faviconDataUrl: dataUrl ?? undefined })}
+                    accept="image/png,image/x-icon,image/svg+xml"
+                    maxSizeKb={100}
+                    previewHeight={32}
+                  />
+                </FormField>
+
+                <FormField label="Logo" description="Logo image displayed in the header (PNG, JPEG, or SVG, max 200KB)">
+                  <ImageUploadField
+                    value={branding.logoDataUrl ?? null}
+                    onChange={dataUrl => updateBranding({ logoDataUrl: dataUrl ?? undefined })}
+                    accept="image/png,image/jpeg,image/svg+xml"
+                    maxSizeKb={200}
+                    previewHeight={40}
+                  />
+                </FormField>
+
+                <FormField label="Logo Height (px)" description="Height of the logo. Logos taller than the header will extend below it.">
+                  <input
+                    type="number"
+                    min={16}
+                    max={200}
+                    value={branding.logoHeight ?? 32}
+                    onChange={e => updateBranding({ logoHeight: Number(e.target.value) })}
+                    className="mapui:w-24 mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
+                  />
+                </FormField>
+              </div>
+            </CollapsibleSection>
           </div>
         )}
 

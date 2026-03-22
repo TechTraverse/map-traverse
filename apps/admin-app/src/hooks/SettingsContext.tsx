@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import { DEFAULT_HEADER_COLOR } from '@ogc-maps/storybook-components/schemas';
 
 export interface SiteSettings {
   header_title: string;
@@ -18,7 +19,7 @@ interface UseSettingsResult {
 
 const DEFAULTS: SiteSettings = {
   header_title: 'Map Config Admin',
-  header_color: '#1e293b',
+  header_color: DEFAULT_HEADER_COLOR,
   browser_title: 'Map Config Admin',
   favicon_data_url: null,
   logo_data_url: null,

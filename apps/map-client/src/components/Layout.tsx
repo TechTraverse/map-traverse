@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import proj4 from 'proj4';
 import type { MapRef } from 'react-map-gl/maplibre';
 import type { UIConfig } from '@ogc-maps/storybook-components/types';
+import { DEFAULT_HEADER_COLOR } from '@ogc-maps/storybook-components/schemas';
 import {
   formatDecimal,
   formatDMS,
@@ -30,6 +31,7 @@ interface FeatureInfo {
 
 export function Layout({ uiConfig }: LayoutProps) {
   const layers = useMapStore((s) => s.layers);
+  const branding = useMapStore((s) => s.branding);
 
   const [mouseCoords, setMouseCoords] = useState<{
     latitude: number;
@@ -98,10 +100,23 @@ export function Layout({ uiConfig }: LayoutProps) {
 
   return (
     <>
-      <header className="bg-slate-800 text-white px-6 py-4 shadow-lg">
-        <h1 className="text-lg font-semibold">
-          Example Map for OGC APIs with Storybook Components
-        </h1>
+      <header
+        className="relative z-10 overflow-visible text-white px-6 shadow-lg"
+        style={{ backgroundColor: branding?.headerColor ?? DEFAULT_HEADER_COLOR, height: 56 }}
+      >
+        <div className="flex h-full items-center gap-3">
+          {branding?.logoDataUrl && (
+            <img
+              src={branding.logoDataUrl}
+              alt=""
+              className="w-auto self-start"
+              style={{ height: branding?.logoHeight ?? 32 }}
+            />
+          )}
+          <h1 className="text-lg font-semibold">
+            {branding?.headerTitle ?? 'Map'}
+          </h1>
+        </div>
       </header>
       <div className="relative flex-grow w-full">
         <MapContainer

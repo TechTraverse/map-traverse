@@ -16,6 +16,8 @@ export {
   LayerConfigSchema,
   BasemapConfigSchema,
   UIConfigSchema,
+  DEFAULT_HEADER_COLOR,
+  BrandingConfigSchema,
   MapConfigSchema,
   validateMapConfig,
   safeValidateMapConfig,

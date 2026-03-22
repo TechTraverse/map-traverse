@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { safeValidateMapConfig } from '@ogc-maps/storybook-components/schemas';
+import type { BrandingConfig } from '@ogc-maps/storybook-components/types';
 import { useMapStore } from './stores/mapStore';
 import { useMapSync } from './hooks/useMapSync';
 import { Layout } from './components/Layout';
@@ -7,6 +8,19 @@ import { CachedConfigBanner } from './components/CachedConfigBanner';
 
 const CACHE_KEY = 'mapui:cached-config';
 const CACHE_TS_KEY = 'mapui:cached-config-timestamp';
+
+function applyBranding(branding: BrandingConfig | undefined) {
+  if (branding?.browserTitle) document.title = branding.browserTitle;
+  if (branding?.faviconDataUrl) {
+    let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
+    link.href = branding.faviconDataUrl;
+  }
+}
 
 function App() {
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -45,6 +59,7 @@ function App() {
         localStorage.setItem(CACHE_KEY, JSON.stringify(raw));
         localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
         hydrate(result.data);
+        applyBranding(result.data.branding);
         setUsingCachedConfig(false);
         setIsReady(true);
         return;
@@ -66,6 +81,7 @@ function App() {
       localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
 
       hydrate(result.data);
+      applyBranding(result.data.branding);
       setUsingCachedConfig(false);
       setIsReady(true);
     } catch {
@@ -79,6 +95,7 @@ function App() {
           const result = safeValidateMapConfig(parsed);
           if (result.success) {
             hydrate(result.data);
+            applyBranding(result.data.branding);
             setUsingCachedConfig(true);
             setCacheTimestamp(cachedTs ? Number(cachedTs) : Date.now());
             setIsReady(true);

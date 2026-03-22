@@ -8,6 +8,7 @@ import type {
   ViewConfig,
   OgcApiSource,
   UIConfig,
+  BrandingConfig,
   SearchFilterValues,
 } from '@ogc-maps/storybook-components/types';
 import type { CQL2Expression, BBox } from '@ogc-maps/storybook-components/hooks';
@@ -20,6 +21,7 @@ interface MapState {
   sources: OgcApiSource[];
   sprites: SpriteSource[];
   uiConfig: UIConfig;
+  branding: BrandingConfig | undefined;
   /** Form values for the SearchPanel UI and URL serialization. */
   activeFilters: Record<string, SearchFilterValues>;
   /** Derived CQL2 expressions for API calls. Kept in sync with activeFilters. */
@@ -66,6 +68,7 @@ export const useMapStore = create<MapState>((set) => ({
     showMeasureTool: false,
     showSelectionTool: false,
   },
+  branding: undefined,
   activeFilters: {},
   activeCql2Filters: {},
   pendingFitBounds: null,
@@ -153,6 +156,7 @@ export const useMapStore = create<MapState>((set) => ({
       sources: config.sources,
       sprites: config.sprites ?? [],
       uiConfig: config.ui,
+      branding: config.branding,
       activeFilters: {},
       activeCql2Filters: {},
     }),

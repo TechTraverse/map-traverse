@@ -342,6 +342,19 @@ export const UIConfigSchema = z.object({
   showSelectionTool: z.boolean().default(false),
 });
 
+// --- Branding Config ---
+
+export const DEFAULT_HEADER_COLOR = '#1e293b';
+
+export const BrandingConfigSchema = z.object({
+  headerTitle: z.string().optional(),
+  headerColor: z.string().optional(),
+  browserTitle: z.string().optional(),
+  faviconDataUrl: z.string().optional(),
+  logoDataUrl: z.string().optional(),
+  logoHeight: z.number().int().min(16).max(200).optional(),
+});
+
 // --- Root Map Config ---
 
 export const MapConfigSchema = z.object({
@@ -351,6 +364,7 @@ export const MapConfigSchema = z.object({
   sprites: z.array(SpriteSourceSchema).optional(),
   ui: UIConfigSchema.default({}),
   initialView: ViewConfigSchema,
+  branding: BrandingConfigSchema.optional(),
 });
 
 // --- Validation Utilities ---

@@ -31,6 +31,7 @@ import {
   BasemapConfigSchema,
   SpriteSourceSchema,
   UIConfigSchema,
+  BrandingConfigSchema,
   MapConfigSchema,
 } from '../schemas/config';
 
@@ -83,6 +84,7 @@ export type LayerConfig = z.infer<typeof LayerConfigSchema>;
 export type BasemapConfig = z.infer<typeof BasemapConfigSchema>;
 export type SpriteSource = z.infer<typeof SpriteSourceSchema>;
 export type UIConfig = z.infer<typeof UIConfigSchema>;
+export type BrandingConfig = z.infer<typeof BrandingConfigSchema>;
 export type MapConfig = z.infer<typeof MapConfigSchema>;
 
 /** A queryable property from OGC API metadata, used to drive editor dropdowns. */
@@ -129,5 +131,6 @@ export {
   BasemapConfigSchema,
   SpriteSourceSchema,
   UIConfigSchema,
+  BrandingConfigSchema,
   MapConfigSchema,
 };
