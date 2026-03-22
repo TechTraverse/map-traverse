@@ -1,5 +1,16 @@
 # map-client
 
+## 0.2.0
+
+### Minor Changes
+
+- 2f84854: export style improvements
+
+### Patch Changes
+
+- Updated dependencies [2f84854]
+  - @ogc-maps/storybook-components@0.13.0
+
 ## 0.1.3
 
 ### Patch Changes
