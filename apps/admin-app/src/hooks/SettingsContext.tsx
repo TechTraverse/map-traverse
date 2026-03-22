@@ -6,6 +6,7 @@ export interface SiteSettings {
   browser_title: string;
   favicon_data_url: string | null;
   logo_data_url: string | null;
+  logo_height: number;
 }
 
 interface UseSettingsResult {
@@ -21,6 +22,7 @@ const DEFAULTS: SiteSettings = {
   browser_title: 'Map Config Admin',
   favicon_data_url: null,
   logo_data_url: null,
+  logo_height: 32,
 };
 
 const SettingsContext = createContext<UseSettingsResult | null>(null);

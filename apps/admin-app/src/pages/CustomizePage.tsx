@@ -53,7 +53,8 @@ export function CustomizePage() {
     form.header_color !== settings.header_color ||
     form.browser_title !== settings.browser_title ||
     form.favicon_data_url !== settings.favicon_data_url ||
-    form.logo_data_url !== settings.logo_data_url;
+    form.logo_data_url !== settings.logo_data_url ||
+    form.logo_height !== settings.logo_height;
 
   return (
     <div className="mapui:mx-auto mapui:max-w-2xl mapui:px-6 mapui:py-8">
@@ -119,6 +120,17 @@ export function CustomizePage() {
               accept="image/png,image/jpeg,image/svg+xml"
               maxSizeKb={200}
               previewHeight={40}
+            />
+          </FormField>
+
+          <FormField label="Logo Height (px)" description="Height of the logo in the header. Logos taller than the header will extend below it.">
+            <input
+              type="number"
+              min={16}
+              max={200}
+              value={form.logo_height}
+              onChange={e => update({ logo_height: Number(e.target.value) })}
+              className={inputClass}
             />
           </FormField>
         </div>

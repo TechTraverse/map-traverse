@@ -894,6 +894,7 @@ app.get('/api/settings', async (_req, res) => {
         browser_title: 'Map Config Admin',
         favicon_data_url: null,
         logo_data_url: null,
+        logo_height: 32,
       });
       return;
     }
@@ -905,12 +906,13 @@ app.get('/api/settings', async (_req, res) => {
 
 // PUT /api/settings — update site settings (protected)
 app.put('/api/settings', requireAuth, async (req, res) => {
-  const { header_title, header_color, browser_title, favicon_data_url, logo_data_url } = req.body as {
+  const { header_title, header_color, browser_title, favicon_data_url, logo_data_url, logo_height } = req.body as {
     header_title?: string;
     header_color?: string;
     browser_title?: string;
     favicon_data_url?: string | null;
     logo_data_url?: string | null;
+    logo_height?: number;
   };
 
   // Validate
@@ -934,6 +936,10 @@ app.put('/api/settings', requireAuth, async (req, res) => {
     res.status(400).json({ error: 'logo_data_url must be a data:image/ URL or null' });
     return;
   }
+  if (logo_height !== undefined && (!Number.isInteger(logo_height) || logo_height < 16 || logo_height > 200)) {
+    res.status(400).json({ error: 'logo_height must be an integer between 16 and 200' });
+    return;
+  }
 
   try {
     // Build dynamic SET clause for partial updates
@@ -946,6 +952,7 @@ app.put('/api/settings', requireAuth, async (req, res) => {
     if (browser_title !== undefined) { fields.push(`browser_title = $${idx++}`); values.push(browser_title.trim()); }
     if (favicon_data_url !== undefined) { fields.push(`favicon_data_url = $${idx++}`); values.push(favicon_data_url); }
     if (logo_data_url !== undefined) { fields.push(`logo_data_url = $${idx++}`); values.push(logo_data_url); }
+    if (logo_height !== undefined) { fields.push(`logo_height = $${idx++}`); values.push(logo_height); }
 
     if (fields.length === 0) {
       res.status(400).json({ error: 'No fields to update' });

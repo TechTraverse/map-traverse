@@ -18,21 +18,26 @@ function Header() {
   const showLogout = authenticated && !unconfigured;
 
   return (
-    <header className="mapui:text-white mapui:px-6 mapui:py-4 mapui:shadow-lg" style={{ backgroundColor: settings.header_color }}>
-      <div className="mapui:flex mapui:items-center mapui:justify-between">
-        <Link to="/configs" className="mapui:flex mapui:items-center mapui:gap-3 mapui:text-lg mapui:font-semibold mapui:hover:text-slate-300">
+    <header className="mapui:relative mapui:z-10 mapui:overflow-visible mapui:text-white mapui:px-6 mapui:shadow-lg" style={{ backgroundColor: settings.header_color, height: 56 }}>
+      <div className="mapui:flex mapui:h-full mapui:items-center mapui:justify-between">
+        <Link to="/configs" className="mapui:flex mapui:items-center mapui:self-stretch mapui:gap-3 mapui:text-lg mapui:font-semibold mapui:hover:text-slate-300">
           {settings.logo_data_url && (
-            <img src={settings.logo_data_url} alt="" className="mapui:h-8 mapui:w-auto" />
+            <img
+              src={settings.logo_data_url}
+              alt=""
+              className="mapui:w-auto mapui:self-start"
+              style={{ height: settings.logo_height }}
+            />
           )}
           {settings.header_title}
         </Link>
         <div className="mapui:flex mapui:items-center mapui:gap-6">
           <nav className="mapui:flex mapui:gap-4 mapui:text-sm">
-            <Link
-              to="/configs"
-              className={`mapui:hover:text-slate-300 ${location.pathname.startsWith('/configs') ? 'mapui:text-white mapui:font-medium' : 'mapui:text-slate-400'}`}
+          <Link
+              to="/customize"
+              className={`mapui:hover:text-slate-300 ${location.pathname === '/customize' ? 'mapui:text-white mapui:font-medium' : 'mapui:text-slate-400'}`}
             >
-              Configurations
+              Customize
             </Link>
             <Link
               to="/sources"
@@ -41,11 +46,12 @@ function Header() {
               Sources
             </Link>
             <Link
-              to="/customize"
-              className={`mapui:hover:text-slate-300 ${location.pathname === '/customize' ? 'mapui:text-white mapui:font-medium' : 'mapui:text-slate-400'}`}
+              to="/configs"
+              className={`mapui:hover:text-slate-300 ${location.pathname.startsWith('/configs') ? 'mapui:text-white mapui:font-medium' : 'mapui:text-slate-400'}`}
             >
-              Customize
+              Configurations
             </Link>
+
           </nav>
           {showLogout && (
             <div className="mapui:flex mapui:items-center mapui:gap-3 mapui:text-sm">

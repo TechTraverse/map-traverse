@@ -125,4 +125,7 @@ export async function initDb(): Promise<void> {
   await pool.query(`
     INSERT INTO site_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING
   `);
+  await pool.query(`
+    ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS logo_height INTEGER NOT NULL DEFAULT 32
+  `);
 }
