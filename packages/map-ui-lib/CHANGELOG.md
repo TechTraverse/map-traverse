@@ -1,5 +1,11 @@
 # @ogc-maps/storybook-components
 
+## 0.12.2
+
+### Patch Changes
+
+- 8219573: polygon selection tool
+
 ## 0.12.1
 
 ### Patch Changes

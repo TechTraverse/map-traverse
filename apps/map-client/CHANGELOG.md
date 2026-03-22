@@ -1,5 +1,13 @@
 # map-client
 
+## 0.1.2
+
+### Patch Changes
+
+- 8219573: polygon selection tool
+- Updated dependencies [8219573]
+  - @ogc-maps/storybook-components@0.12.2
+
 ## 0.1.1
 
 ### Patch Changes
