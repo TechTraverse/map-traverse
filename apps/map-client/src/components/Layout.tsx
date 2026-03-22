@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import proj4 from 'proj4';
 import type { MapRef } from 'react-map-gl/maplibre';
 import type { UIConfig } from '@ogc-maps/storybook-components/types';
@@ -17,6 +17,7 @@ import { useMapStore } from '../stores/mapStore';
 import { MapContainer } from './MapContainer';
 import { MapOverlay } from './MapOverlay';
 import { useBoxDraw } from '../hooks/useBoxDraw';
+import { usePolygonDraw } from '../hooks/usePolygonDraw';
 
 interface LayoutProps {
   uiConfig: UIConfig;
@@ -67,11 +68,8 @@ export function Layout({ uiConfig }: LayoutProps) {
     return (layer.styles ?? []).map((s, i) => `${sourceKey}--${s.type}--${i}`);
   }, [selection.activeLayerId, layers, activeCql2Filters]);
 
-  const { boxDrawData } = useBoxDraw({
-    mapRef: mapRefForBoxDraw,
-    enabled: selection.mode === 'box' && selection.activeLayerId != null,
-    queryLayerIds: selectionQueryLayerIds,
-    onComplete: (features) => {
+  const handleSpatialSelectionComplete = useCallback(
+    (features: Array<{ id?: string | number; properties: Record<string, unknown>; geometry: Record<string, unknown> }>) => {
       if (!selection.activeLayerId) return;
       selection.addFeatures(
         features.map((f) => ({
@@ -82,6 +80,21 @@ export function Layout({ uiConfig }: LayoutProps) {
         })),
       );
     },
+    [selection.activeLayerId, selection.addFeatures],
+  );
+
+  const { boxDrawData } = useBoxDraw({
+    mapRef: mapRefForBoxDraw,
+    enabled: selection.mode === 'box' && selection.activeLayerId != null,
+    queryLayerIds: selectionQueryLayerIds,
+    onComplete: handleSpatialSelectionComplete,
+  });
+
+  const polygonDraw = usePolygonDraw({
+    mapRef: mapRefForBoxDraw,
+    enabled: selection.mode === 'polygon' && selection.activeLayerId != null,
+    queryLayerIds: selectionQueryLayerIds,
+    onComplete: handleSpatialSelectionComplete,
   });
 
   // Define coordinate formats including projected CRS
@@ -130,6 +143,10 @@ export function Layout({ uiConfig }: LayoutProps) {
           selectionLayerId={selection.activeLayerId}
           selectionHighlightData={selection.highlightData}
           boxDrawData={boxDrawData}
+          polygonDrawData={polygonDraw.polygonDrawData}
+          polygonDrawPointsData={polygonDraw.polygonDrawPointsData}
+          onPolygonDrawClick={polygonDraw.addPoint}
+          onPolygonDrawComplete={polygonDraw.complete}
           onSelectionClick={(features) => {
             if (!selection.activeLayerId) return;
             const layer = layers.find((l) => l.id === selection.activeLayerId);

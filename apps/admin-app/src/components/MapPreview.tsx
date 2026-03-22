@@ -52,6 +52,7 @@ import type {
 import type { SearchFilterValue, SearchFilterValues } from '@ogc-maps/storybook-components/types';
 import { LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
 import { useBoxDraw } from '../hooks/useBoxDraw';
+import { usePolygonDraw } from '../hooks/usePolygonDraw';
 
 const FALLBACK_BASEMAP_URL = 'https://demotiles.maplibre.org/style.json';
 
@@ -198,16 +199,28 @@ export function MapPreview({
     return (layer.styles ?? []).map((s, i) => `${sourceKey}--${s.type}--${i}`);
   }, [selection.activeLayerId, layers, activeCql2Filters]);
 
-  const { boxDrawData } = useBoxDraw({
-    mapRef,
-    enabled: selection.mode === 'box' && selection.activeLayerId != null,
-    queryLayerIds: selectionQueryLayerIds,
-    onComplete: (features) => {
+  const handleSpatialSelectionComplete = useCallback(
+    (features: Array<{ id?: string | number; properties: Record<string, unknown>; geometry: Record<string, unknown> }>) => {
       if (!selection.activeLayerId) return;
       selection.addFeatures(
         features.map((f) => ({ id: f.id, layerId: selection.activeLayerId!, properties: f.properties, geometry: f.geometry })),
       );
     },
+    [selection.activeLayerId, selection.addFeatures],
+  );
+
+  const { boxDrawData } = useBoxDraw({
+    mapRef,
+    enabled: selection.mode === 'box' && selection.activeLayerId != null,
+    queryLayerIds: selectionQueryLayerIds,
+    onComplete: handleSpatialSelectionComplete,
+  });
+
+  const polygonDraw = usePolygonDraw({
+    mapRef,
+    enabled: selection.mode === 'polygon' && selection.activeLayerId != null,
+    queryLayerIds: selectionQueryLayerIds,
+    onComplete: handleSpatialSelectionComplete,
   });
 
   // Reset viewport when entering the view step or when the prop changes while on that step
@@ -493,13 +506,17 @@ export function MapPreview({
         style={{ width: '100%', height: '100%' }}
         mapStyle={resolvedStyle as any}
         cursor={measure.mode || selection.mode ? 'crosshair' : cursor}
-        interactiveLayerIds={measure.mode || selection.mode === 'box' ? undefined : interactiveLayerIds}
+        interactiveLayerIds={measure.mode || selection.mode === 'box' || selection.mode === 'polygon' ? undefined : interactiveLayerIds}
         doubleClickZoom={!measure.mode && !selection.mode}
         onLoad={handleMapLoad}
         onMove={handleMove}
         onClick={(evt) => {
           if (measure.mode) {
             measure.addPoint([evt.lngLat.lng, evt.lngLat.lat]);
+            return;
+          }
+          if (selection.mode === 'polygon') {
+            polygonDraw.addPoint([evt.lngLat.lng, evt.lngLat.lat]);
             return;
           }
           if (selection.mode === 'click') {
@@ -575,6 +592,11 @@ export function MapPreview({
         onDblClick={(evt) => {
           if (measure.mode) {
             evt.preventDefault();
+            return;
+          }
+          if (selection.mode === 'polygon') {
+            evt.preventDefault();
+            polygonDraw.complete();
           }
         }}
         onMouseMove={(evt) => {
@@ -696,6 +718,22 @@ export function MapPreview({
               paint={{ 'fill-color': '#3b82f6', 'fill-opacity': 0.15 }} />
             <Layer id="box-draw-line" type="line"
               paint={{ 'line-color': '#3b82f6', 'line-width': 2, 'line-dasharray': [3, 3] }} />
+          </Source>
+        )}
+
+        {/* Polygon draw preview */}
+        {polygonDraw.polygonDrawData && (
+          <Source id="polygon-draw-preview" type="geojson" data={polygonDraw.polygonDrawData}>
+            <Layer id="polygon-draw-fill" type="fill"
+              paint={{ 'fill-color': '#3b82f6', 'fill-opacity': 0.15 }} />
+            <Layer id="polygon-draw-line" type="line"
+              paint={{ 'line-color': '#3b82f6', 'line-width': 2, 'line-dasharray': [3, 3] }} />
+          </Source>
+        )}
+        {polygonDraw.polygonDrawPointsData && (
+          <Source id="polygon-draw-points" type="geojson" data={polygonDraw.polygonDrawPointsData}>
+            <Layer id="polygon-draw-points-layer" type="circle"
+              paint={{ 'circle-color': '#3b82f6', 'circle-radius': 5, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 }} />
           </Source>
         )}
       </Map>

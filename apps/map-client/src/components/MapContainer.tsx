@@ -115,11 +115,15 @@ interface MapContainerProps {
   selectionHighlightData?: GeoJSON.FeatureCollection | null;
   boxDrawData?: GeoJSON.Feature | null;
   onSelectionClick?: (features: Array<{ id?: string | number; properties: Record<string, unknown>; geometry: Record<string, unknown> }>) => void;
+  polygonDrawData?: GeoJSON.Feature | null;
+  polygonDrawPointsData?: GeoJSON.FeatureCollection | null;
+  onPolygonDrawClick?: (point: [number, number]) => void;
+  onPolygonDrawComplete?: () => void;
   externalMapRef?: React.RefObject<MapRef | null>;
   onMapRef?: (ref: MapRef | null) => void;
 }
 
-export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeatureHover, measureMode, measurePoints = [], measureGeometryData, measurePointsData, onMeasureClick, selectionMode, selectionLayerId, selectionHighlightData, boxDrawData, onSelectionClick, externalMapRef, onMapRef }: MapContainerProps = {}) {
+export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeatureHover, measureMode, measurePoints = [], measureGeometryData, measurePointsData, onMeasureClick, selectionMode, selectionLayerId, selectionHighlightData, boxDrawData, onSelectionClick, polygonDrawData, polygonDrawPointsData, onPolygonDrawClick, onPolygonDrawComplete, externalMapRef, onMapRef }: MapContainerProps = {}) {
   const viewState = useMapStore((s) => s.viewState);
   const layers = useMapStore((s) => s.layers);
   const sources = useMapStore((s) => s.sources);
@@ -253,13 +257,17 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
       style={{ width: '100%', height: '100%' }}
       mapStyle={resolvedStyle as any}
       cursor={measureMode ? 'crosshair' : selectionMode ? 'crosshair' : cursor}
-      interactiveLayerIds={measureMode ? undefined : selectionMode === 'box' ? undefined : interactiveLayerIds}
+      interactiveLayerIds={measureMode ? undefined : (selectionMode === 'box' || selectionMode === 'polygon') ? undefined : interactiveLayerIds}
       doubleClickZoom={!measureMode && !selectionMode}
       onLoad={handleMapLoad}
       onMove={(evt) => setViewState(evt.viewState)}
       onClick={(evt) => {
         if (measureMode && onMeasureClick) {
           onMeasureClick([evt.lngLat.lng, evt.lngLat.lat]);
+          return;
+        }
+        if (selectionMode === 'polygon' && onPolygonDrawClick) {
+          onPolygonDrawClick([evt.lngLat.lng, evt.lngLat.lat]);
           return;
         }
         if (selectionMode === 'click' && onSelectionClick) {
@@ -301,6 +309,11 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
       onDblClick={(evt) => {
         if (measureMode) {
           evt.preventDefault();
+          return;
+        }
+        if (selectionMode === 'polygon') {
+          evt.preventDefault();
+          onPolygonDrawComplete?.();
         }
       }}
       onMouseMove={(evt) => {
@@ -438,6 +451,36 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
             id="box-draw-line"
             type="line"
             paint={{ 'line-color': '#3b82f6', 'line-width': 2, 'line-dasharray': [3, 3] }}
+          />
+        </Source>
+      )}
+
+      {/* Polygon draw preview */}
+      {polygonDrawData && (
+        <Source id="polygon-draw-preview" type="geojson" data={polygonDrawData}>
+          <Layer
+            id="polygon-draw-fill"
+            type="fill"
+            paint={{ 'fill-color': '#3b82f6', 'fill-opacity': 0.15 }}
+          />
+          <Layer
+            id="polygon-draw-line"
+            type="line"
+            paint={{ 'line-color': '#3b82f6', 'line-width': 2, 'line-dasharray': [3, 3] }}
+          />
+        </Source>
+      )}
+      {polygonDrawPointsData && (
+        <Source id="polygon-draw-points" type="geojson" data={polygonDrawPointsData}>
+          <Layer
+            id="polygon-draw-points-layer"
+            type="circle"
+            paint={{
+              'circle-color': '#3b82f6',
+              'circle-radius': 5,
+              'circle-stroke-color': '#ffffff',
+              'circle-stroke-width': 2,
+            }}
           />
         </Source>
       )}
