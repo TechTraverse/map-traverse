@@ -1,5 +1,11 @@
 # @ogc-maps/storybook-components
 
+## 0.12.3
+
+### Patch Changes
+
+- 012878d: legend autogenerate label based on layer label
+
 ## 0.12.2
 
 ### Patch Changes

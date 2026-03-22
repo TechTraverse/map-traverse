@@ -1,5 +1,12 @@
 # admin-app
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies [012878d]
+  - @ogc-maps/storybook-components@0.12.3
+
 ## 0.1.2
 
 ### Patch Changes
