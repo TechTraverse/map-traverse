@@ -11,6 +11,7 @@ interface SavedSource {
   url: string;
   label: string | null;
   tile_matrix_set_id: string;
+  source_type: string;
   metadata: InspectionResult | null;
   metadata_updated_at: string | null;
   created_at: string;
@@ -23,6 +24,7 @@ function toOgcApiSource(s: SavedSource): OgcApiSource {
     url: s.url,
     label: s.label ?? undefined,
     tileMatrixSetId: s.tile_matrix_set_id,
+    type: (s.source_type ?? 'features') as 'features' | 'imagery',
   };
 }
 
@@ -144,6 +146,7 @@ export function SourcesPage() {
           url: newSource.url,
           label: newSource.label || null,
           tile_matrix_set_id: newSource.tileMatrixSetId || 'WebMercatorQuad',
+          source_type: newSource.type || 'features',
           ...(clientMetadata ? { metadata: clientMetadata } : {}),
         }),
       });
@@ -179,6 +182,7 @@ export function SourcesPage() {
           url: editingSource.url,
           label: editingSource.label || null,
           tile_matrix_set_id: editingSource.tileMatrixSetId || 'WebMercatorQuad',
+          source_type: editingSource.type || 'features',
         }),
       });
       if (!res.ok) {
@@ -360,6 +364,7 @@ export function SourcesPage() {
               <tr>
                 <th className="mapui:px-3 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600 mapui:w-8"></th>
                 <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Source ID</th>
+                <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Type</th>
                 <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">URL</th>
                 <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Label</th>
                 <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Collections</th>
@@ -372,7 +377,7 @@ export function SourcesPage() {
                 <Fragment key={source.id}>
                   <tr>
                     {editingId === source.id ? (
-                      <td colSpan={7} className="mapui:px-6 mapui:py-4">
+                      <td colSpan={8} className="mapui:px-6 mapui:py-4">
                         <SourceEditor
                           value={editingSource ?? toOgcApiSource(source)}
                           onChange={setEditingSource}
@@ -420,6 +425,15 @@ export function SourcesPage() {
                           </button>
                         </td>
                         <td className="mapui:px-4 mapui:py-4 mapui:font-medium mapui:font-mono mapui:text-sm mapui:text-gray-900">{source.source_id}</td>
+                        <td className="mapui:px-4 mapui:py-4 mapui:text-sm">
+                          <span className={`mapui:rounded-full mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:font-medium ${
+                            (source.source_type ?? 'features') === 'imagery'
+                              ? 'mapui:bg-purple-100 mapui:text-purple-700'
+                              : 'mapui:bg-blue-100 mapui:text-blue-700'
+                          }`}>
+                            {(source.source_type ?? 'features') === 'imagery' ? 'Imagery' : 'Features'}
+                          </span>
+                        </td>
                         <td className="mapui:px-4 mapui:py-4 mapui:text-gray-500 mapui:text-sm mapui:font-mono mapui:max-w-xs mapui:truncate">{source.url}</td>
                         <td className="mapui:px-4 mapui:py-4 mapui:text-gray-500 mapui:text-sm">{source.label ?? '—'}</td>
                         <td className="mapui:px-4 mapui:py-4 mapui:text-gray-500 mapui:text-sm">
@@ -449,7 +463,7 @@ export function SourcesPage() {
                   </tr>
                   {expandedIds.has(source.id) && editingId !== source.id && (
                     <tr>
-                      <td colSpan={7} className="mapui:p-0">
+                      <td colSpan={8} className="mapui:p-0">
                         <SourceMetadataPanel
                           metadata={source.metadata}
                           metadataUpdatedAt={source.metadata_updated_at}

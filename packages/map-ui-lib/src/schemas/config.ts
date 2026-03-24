@@ -32,6 +32,7 @@ export const OgcApiSourceSchema = z.object({
   url: z.string().url(),
   label: z.string().optional(),
   tileMatrixSetId: z.string().optional().default('WebMercatorQuad'),
+  type: z.enum(['features', 'imagery']).optional(),
 });
 
 // --- Paint Schemas (MapLibre GL JS conventions) ---
@@ -342,6 +343,7 @@ export const UIConfigSchema = z.object({
   showLegendOpacity: z.boolean().default(false),
   showMeasureTool: z.boolean().default(false),
   showSelectionTool: z.boolean().default(false),
+  showImageryPanel: z.boolean().default(false),
 });
 
 // --- Branding Config ---
@@ -357,11 +359,28 @@ export const BrandingConfigSchema = z.object({
   logoHeight: z.number().int().min(16).max(200).optional(),
 });
 
+// --- Imagery Layer Config ---
+
+export const ImageryLayerConfigSchema = z.object({
+  id: z.string().min(1),
+  sourceId: z.string().min(1),
+  collection: z.string().min(1),
+  label: z.string(),
+  visible: z.boolean().default(false),
+  opacity: z.number().min(0).max(1).default(1),
+  exclusive: z.boolean().default(false),
+  minZoom: z.number().min(0).max(24).optional(),
+  maxZoom: z.number().min(0).max(24).optional(),
+  tileSize: z.number().default(256),
+  tileUrlTemplate: z.string().optional(),
+});
+
 // --- Root Map Config ---
 
 export const MapConfigSchema = z.object({
   sources: z.array(OgcApiSourceSchema).min(1),
   layers: z.array(LayerConfigSchema),
+  imageryLayers: z.array(ImageryLayerConfigSchema).optional(),
   basemaps: z.array(BasemapConfigSchema).min(1),
   sprites: z.array(SpriteSourceSchema).optional(),
   ui: UIConfigSchema.default({}),

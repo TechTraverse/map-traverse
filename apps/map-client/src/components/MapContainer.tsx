@@ -1,8 +1,8 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { Map, Source, Layer, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
-import { useOgcFeatures, getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSourceKey, buildGeometryFilter } from '@ogc-maps/storybook-components/hooks';
+import { useOgcFeatures, getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSourceKey, buildGeometryFilter, getImageryTileUrl } from '@ogc-maps/storybook-components/hooks';
 import type { CQL2Expression } from '@ogc-maps/storybook-components/hooks';
-import type { LayerConfig } from '@ogc-maps/storybook-components/types';
+import type { LayerConfig, ImageryLayerConfig } from '@ogc-maps/storybook-components/types';
 import type { MeasureMode, SelectionMode } from '@ogc-maps/storybook-components';
 import { useMapStore } from '../stores/mapStore';
 
@@ -88,6 +88,31 @@ function GeoJsonLayer({ layer, sourceUrl, cql2Filter }: { layer: LayerConfig; so
   );
 }
 
+// Inline component for raster imagery layers
+function RasterImageryLayer({
+  layer,
+  sourceUrl,
+  tileMatrixSetId,
+}: {
+  layer: ImageryLayerConfig;
+  sourceUrl: string;
+  tileMatrixSetId?: string;
+}) {
+  const tileUrl = getImageryTileUrl(sourceUrl, layer.collection, tileMatrixSetId, layer.tileUrlTemplate);
+  return (
+    <Source id={`imagery-${layer.id}`} key={`imagery-${layer.id}`} type="raster" tiles={[tileUrl]} tileSize={layer.tileSize ?? 256}>
+      <Layer
+        id={`imagery-${layer.id}`}
+        type="raster"
+        paint={{ 'raster-opacity': layer.opacity ?? 1 }}
+        layout={{ visibility: layer.visible ? 'visible' : 'none' }}
+        {...(layer.minZoom != null ? { minzoom: layer.minZoom } : {})}
+        {...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {})}
+      />
+    </Source>
+  );
+}
+
 interface FeatureClickInfo {
   layerId: string;
   properties: Record<string, unknown>;
@@ -126,6 +151,7 @@ interface MapContainerProps {
 export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeatureHover, measureMode, measurePoints = [], measureGeometryData, measurePointsData, onMeasureClick, selectionMode, selectionLayerId, selectionHighlightData, boxDrawData, onSelectionClick, polygonDrawData, polygonDrawPointsData, onPolygonDrawClick, onPolygonDrawComplete, externalMapRef, onMapRef }: MapContainerProps = {}) {
   const viewState = useMapStore((s) => s.viewState);
   const layers = useMapStore((s) => s.layers);
+  const imageryLayers = useMapStore((s) => s.imageryLayers);
   const sources = useMapStore((s) => s.sources);
   const basemaps = useMapStore((s) => s.basemaps);
   const activeBasemapId = useMapStore((s) => s.activeBasemapId);
@@ -178,6 +204,7 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
       });
     }
   }, [mapInstance, layers, activeCql2Filters]);
+
 
   // Zoom to pending fit bounds
   useEffect(() => {
@@ -360,6 +387,20 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
       attributionControl={false}
     >
       <AttributionControl position="bottom-left" />
+
+      {/* Render raster imagery layers (above basemap, below feature layers) */}
+      {imageryLayers.map((layer) => {
+        const sourceInfo = sourceUrlMap[layer.sourceId];
+        if (!sourceInfo) return null;
+        return (
+          <RasterImageryLayer
+            key={layer.id}
+            layer={layer}
+            sourceUrl={sourceInfo.url}
+            tileMatrixSetId={sourceInfo.tileMatrixSetId}
+          />
+        );
+      })}
 
       {/* Render vector tile layers */}
       {vectorTileLayers.map((layer) => {

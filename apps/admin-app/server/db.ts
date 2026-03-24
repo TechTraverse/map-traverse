@@ -102,6 +102,11 @@ export async function initDb(): Promise<void> {
     END $$
   `);
 
+  // Source type discriminator (features or imagery)
+  await pool.query(`
+    ALTER TABLE ogc_sources ADD COLUMN IF NOT EXISTS source_type TEXT NOT NULL DEFAULT 'features'
+  `);
+
   // Cached metadata from OGC API inspection
   await pool.query(`
     ALTER TABLE ogc_sources ADD COLUMN IF NOT EXISTS metadata JSONB

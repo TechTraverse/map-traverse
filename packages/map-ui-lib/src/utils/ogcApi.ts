@@ -374,3 +374,19 @@ export function buildGeometryFilter(types: string[]): any {
     ? ['==', ['geometry-type'], types[0]]
     : ['in', ['geometry-type'], ['literal', types]];
 }
+
+/**
+ * Build a raster imagery tile URL template for MapLibre.
+ * If a custom tileUrlTemplate is provided, use it directly.
+ * Otherwise, construct the OGC API Tiles standard pattern.
+ */
+export function getImageryTileUrl(
+  baseUrl: string,
+  collection: string,
+  tileMatrixSetId: string = 'WebMercatorQuad',
+  tileUrlTemplate?: string,
+): string {
+  if (tileUrlTemplate) return tileUrlTemplate;
+  const base = stripTrailingSlash(baseUrl);
+  return `${base}/collections/${encodeURIComponent(collection)}/map/tiles/${encodeURIComponent(tileMatrixSetId)}/{z}/{x}/{y}.png`;
+}

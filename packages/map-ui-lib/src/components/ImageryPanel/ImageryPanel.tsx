@@ -1,0 +1,71 @@
+import type { ImageryLayerConfig } from '../../types';
+
+export interface ImageryPanelProps {
+  imageryLayers: ImageryLayerConfig[];
+  onToggleVisibility: (layerId: string) => void;
+  onOpacityChange?: (layerId: string, opacity: number) => void;
+  className?: string;
+  hideTitle?: boolean;
+}
+
+export function ImageryPanel({
+  imageryLayers,
+  onToggleVisibility,
+  onOpacityChange,
+  className = '',
+  hideTitle,
+}: ImageryPanelProps) {
+  return (
+    <div className={`mapui:flex mapui:flex-col mapui:gap-1 ${className}`.trim()}>
+      {!hideTitle && (
+        <h3 className="mapui:m-0 mapui:mb-2 mapui:text-sm mapui:font-semibold mapui:text-gray-700">
+          Imagery
+        </h3>
+      )}
+      <ul className="mapui:m-0 mapui:list-none mapui:p-0">
+        {imageryLayers.map((layer) => (
+          <li
+            key={layer.id}
+            className="mapui:flex mapui:flex-col mapui:gap-1 mapui:rounded mapui:px-2 mapui:py-1.5 mapui:transition-colors hover:mapui:bg-gray-100"
+          >
+            <label className="mapui:flex mapui:flex-1 mapui:cursor-pointer mapui:items-center mapui:gap-2 mapui:min-w-0">
+              <input
+                type="checkbox"
+                checked={layer.visible}
+                onChange={() => onToggleVisibility(layer.id)}
+                className="mapui:h-4 mapui:w-4 mapui:cursor-pointer mapui:accent-blue-600"
+              />
+              <span className="mapui:flex-1 mapui:text-sm mapui:text-gray-800 mapui:truncate">
+                {layer.label}
+              </span>
+              {layer.exclusive && (
+                <span
+                  className="mapui:text-xs mapui:text-gray-400"
+                  title="Exclusive — enabling this disables other imagery layers"
+                >
+                  ●
+                </span>
+              )}
+            </label>
+            {onOpacityChange && layer.visible && (
+              <div className="mapui:flex mapui:items-center mapui:gap-2 mapui:pl-6">
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={layer.opacity ?? 1}
+                  onChange={(e) => onOpacityChange(layer.id, Number(e.target.value))}
+                  className="mapui:h-1 mapui:w-full mapui:cursor-pointer mapui:accent-blue-600"
+                />
+                <span className="mapui:text-xs mapui:text-gray-500 mapui:w-8 mapui:text-right">
+                  {Math.round((layer.opacity ?? 1) * 100)}%
+                </span>
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}

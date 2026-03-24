@@ -14,6 +14,7 @@ export {
   SearchConfigSchema,
   FilterConfigSchema,
   LayerConfigSchema,
+  ImageryLayerConfigSchema,
   BasemapConfigSchema,
   UIConfigSchema,
   DEFAULT_HEADER_COLOR,

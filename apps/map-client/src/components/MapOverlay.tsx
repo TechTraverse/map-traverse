@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
   LayerPanel,
+  ImageryPanel,
   Legend,
   BasemapSwitcher,
   SearchPanel,
@@ -24,6 +25,7 @@ import type { UIConfig, SearchFilterValue, SearchFilterValues } from '@ogc-maps/
 import { useMapStore, useActiveLayerIds } from '../stores/mapStore';
 import { useAutocompleteSuggestions } from '../hooks/useAutocompleteSuggestions';
 import { LuDownload, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
+import { TbSatellite } from 'react-icons/tb';
 
 interface MapOverlayProps {
   uiConfig: UIConfig;
@@ -99,6 +101,9 @@ export function MapOverlay({
   const setLayerCql2Filter = useMapStore((s) => s.setLayerCql2Filter);
   const setLayerOpacity = useMapStore((s) => s.setLayerOpacity);
   const clearLayerFilters = useMapStore((s) => s.clearLayerFilters);
+  const imageryLayers = useMapStore((s) => s.imageryLayers);
+  const toggleImageryLayerVisibility = useMapStore((s) => s.toggleImageryLayerVisibility);
+  const setImageryLayerOpacity = useMapStore((s) => s.setImageryLayerOpacity);
   const activeLayerIds = useActiveLayerIds();
 
   const { autocompleteSuggestions, fetchSuggestions } = useAutocompleteSuggestions();
@@ -289,6 +294,25 @@ export function MapOverlay({
                 selectedCount={selectionCount}
                 onClear={onSelectionClear}
                 onViewResults={onSelectionViewResults}
+                className="p-3 max-w-xs"
+              />
+            </CollapsibleControl>
+          </div>
+        )}
+
+        {uiConfig.showImageryPanel && imageryLayers.length > 0 && (
+          <div className="pointer-events-auto">
+            <CollapsibleControl
+              icon={TbSatellite}
+              label="Imagery"
+              collapsed={openControl !== 'imagery'}
+              onToggle={(collapsed) => setOpenControl(collapsed ? null : 'imagery')}
+            >
+              <ImageryPanel
+                imageryLayers={imageryLayers}
+                onToggleVisibility={toggleImageryLayerVisibility}
+                onOpacityChange={setImageryLayerOpacity}
+                hideTitle
                 className="p-3 max-w-xs"
               />
             </CollapsibleControl>

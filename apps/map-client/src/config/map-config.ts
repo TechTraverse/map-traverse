@@ -209,6 +209,7 @@ export const mapConfig: MapConfig = {
     showLegendOpacity: false,
     showMeasureTool: false,
     showSelectionTool: false,
+    showImageryPanel: false,
   },
   initialView: {
     latitude: 0,

@@ -626,11 +626,12 @@ app.post('/api/sources/test-connection', requireAuth, async (req, res) => {
 
 // POST /api/sources — create a new source (protected)
 app.post('/api/sources', requireAuth, async (req, res) => {
-  const { source_id, url, label, tile_matrix_set_id, metadata } = req.body as {
+  const { source_id, url, label, tile_matrix_set_id, source_type, metadata } = req.body as {
     source_id?: string;
     url?: string;
     label?: string;
     tile_matrix_set_id?: string;
+    source_type?: string;
     metadata?: unknown;
   };
 
@@ -645,9 +646,9 @@ app.post('/api/sources', requireAuth, async (req, res) => {
 
   try {
     const result = await pool.query(
-      `INSERT INTO ogc_sources (source_id, url, label, tile_matrix_set_id)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [source_id, url, label ?? null, tile_matrix_set_id ?? 'WebMercatorQuad'],
+      `INSERT INTO ogc_sources (source_id, url, label, tile_matrix_set_id, source_type)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [source_id, url, label ?? null, tile_matrix_set_id ?? 'WebMercatorQuad', source_type ?? 'features'],
     );
     const row = result.rows[0] as { id: string };
 
@@ -683,11 +684,12 @@ app.post('/api/sources', requireAuth, async (req, res) => {
 
 // PUT /api/sources/:id — update a source (protected)
 app.put('/api/sources/:id', requireAuth, async (req, res) => {
-  const { source_id, url, label, tile_matrix_set_id, metadata } = req.body as {
+  const { source_id, url, label, tile_matrix_set_id, source_type, metadata } = req.body as {
     source_id?: string;
     url?: string;
     label?: string;
     tile_matrix_set_id?: string;
+    source_type?: string;
     metadata?: unknown;
   };
 
@@ -707,17 +709,19 @@ app.put('/api/sources/:id', requireAuth, async (req, res) => {
       url: string;
       label: string | null;
       tile_matrix_set_id: string;
+      source_type: string;
     };
 
     const newUrl = url ?? row.url;
     const result = await pool.query(
-      `UPDATE ogc_sources SET source_id = $1, url = $2, label = $3, tile_matrix_set_id = $4, updated_at = now()
-       WHERE id = $5 RETURNING *`,
+      `UPDATE ogc_sources SET source_id = $1, url = $2, label = $3, tile_matrix_set_id = $4, source_type = $5, updated_at = now()
+       WHERE id = $6 RETURNING *`,
       [
         source_id ?? row.source_id,
         newUrl,
         label !== undefined ? (label || null) : row.label,
         tile_matrix_set_id ?? row.tile_matrix_set_id,
+        source_type ?? row.source_type,
         req.params.id,
       ],
     );

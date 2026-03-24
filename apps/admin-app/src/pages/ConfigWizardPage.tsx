@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   SourceList,
   LayerList,
+  ImageryList,
   CollectionBrowser,
   BasemapList,
   SpriteSourceList,
@@ -23,6 +24,7 @@ import { safeValidateMapConfig, DEFAULT_HEADER_COLOR } from '@ogc-maps/storybook
 import type {
   OgcApiSource,
   LayerConfig,
+  ImageryLayerConfig,
   BasemapConfig,
   SpriteSource,
   UIConfig,
@@ -33,9 +35,9 @@ import type {
 import { ImageUploadField } from '../components/ImageUploadField';
 import { MapPreview } from '../components/MapPreview';
 
-interface SavedSourceSummary { id: string; source_id: string; url: string; label: string | null; tile_matrix_set_id: string }
+interface SavedSourceSummary { id: string; source_id: string; url: string; label: string | null; tile_matrix_set_id: string; source_type?: string }
 
-type WizardStep = 'metadata' | 'sources' | 'layer-select' | 'layer-config' | 'basemaps' | 'ui' | 'view' | 'review';
+type WizardStep = 'metadata' | 'sources' | 'layer-select' | 'layer-config' | 'imagery' | 'basemaps' | 'ui' | 'view' | 'review';
 
 const STEPS: { key: WizardStep; label: string }[] = [
   { key: 'metadata', label: 'Metadata' },
@@ -43,6 +45,7 @@ const STEPS: { key: WizardStep; label: string }[] = [
   { key: 'sources', label: 'Sources' },
   { key: 'layer-select', label: 'Layer selection' },
   { key: 'layer-config', label: 'Layer configuration' },
+  { key: 'imagery', label: 'Imagery' },
   { key: 'ui', label: 'UI' },
   { key: 'view', label: 'View' },
   { key: 'review', label: 'Review' },
@@ -60,6 +63,7 @@ const DEFAULT_UI_CONFIG: UIConfig = {
   showLegendOpacity: false,
   showMeasureTool: false,
   showSelectionTool: false,
+  showImageryPanel: false,
 };
 
 const DEFAULT_VIEW: ViewConfig = {
@@ -109,6 +113,7 @@ export function ConfigWizardPage() {
   const [basemaps, setBasemaps] = useState<BasemapConfig[]>([]);
   const [sprites, setSprites] = useState<SpriteSource[]>([]);
   const [availableIcons, setAvailableIcons] = useState<string[]>([]);
+  const [imageryLayers, setImageryLayers] = useState<ImageryLayerConfig[]>([]);
   const [uiConfig, setUiConfig] = useState<UIConfig>(DEFAULT_UI_CONFIG);
   const [initialView, setInitialView] = useState<ViewConfig>(DEFAULT_VIEW);
 
@@ -134,6 +139,7 @@ export function ConfigWizardPage() {
 
   // CollectionBrowser source selector state
   const [browseSourceId, setBrowseSourceId] = useState('');
+  const [imageryBrowseSourceId, setImageryBrowseSourceId] = useState('');
 
   const isEditing = !!id;
   const currentStepIndex = STEPS.findIndex(s => s.key === currentStep);
@@ -141,7 +147,7 @@ export function ConfigWizardPage() {
   // Derived config object for save + preview
   const hasBranding = Object.keys(branding).length > 0;
 
-  const assembledConfig: MapConfig = { sources, layers, basemaps, sprites: sprites.length > 0 ? sprites : undefined, ui: uiConfig, initialView, ...(hasBranding && { branding }) };
+  const assembledConfig: MapConfig = { sources, layers, ...(imageryLayers.length > 0 ? { imageryLayers } : {}), basemaps, sprites: sprites.length > 0 ? sprites : undefined, ui: uiConfig, initialView, ...(hasBranding && { branding }) };
 
   const isConfigValid = useMemo(() => {
     if (!name) return false;
@@ -166,6 +172,7 @@ export function ConfigWizardPage() {
         if (data.config) {
           setSources(data.config.sources ?? []);
           setLayers(data.config.layers ?? []);
+          setImageryLayers(data.config.imageryLayers ?? []);
           setBasemaps(data.config.basemaps ?? []);
           setSprites(data.config.sprites ?? []);
           setUiConfig(data.config.ui ?? DEFAULT_UI_CONFIG);
@@ -242,6 +249,49 @@ export function ConfigWizardPage() {
       prev.filter(l => !(l.sourceId === browseSourceId && l.collection === collectionId)),
     );
   };
+
+  // Imagery collection select/deselect (mirrors layer-select pattern)
+  const handleImageryCollectionSelect = (collectionId: string, collectionTitle?: string) => {
+    if (!imageryBrowseSourceId) return;
+    const layerId = `${imageryBrowseSourceId}-${collectionId}`;
+    const newLayer: ImageryLayerConfig = {
+      id: layerId,
+      sourceId: imageryBrowseSourceId,
+      collection: collectionId,
+      label: collectionTitle ?? collectionId,
+      visible: false,
+      opacity: 1,
+      exclusive: false,
+      tileSize: 256,
+    };
+    setImageryLayers(prev => [...prev, newLayer]);
+  };
+
+  const handleImageryCollectionDeselect = (collectionId: string) => {
+    setImageryLayers(prev =>
+      prev.filter(l => !(l.sourceId === imageryBrowseSourceId && l.collection === collectionId)),
+    );
+  };
+
+  const handleAddCustomImageryLayer = () => {
+    const newLayer: ImageryLayerConfig = {
+      id: '',
+      sourceId: '',
+      collection: '',
+      label: 'Custom Imagery Layer',
+      visible: false,
+      opacity: 1,
+      exclusive: false,
+      tileSize: 256,
+      tileUrlTemplate: '',
+    };
+    setImageryLayers(prev => [...prev, newLayer]);
+  };
+
+  const imageryBrowseSource = sources.find(s => s.id === imageryBrowseSourceId);
+  const imagerySelectedCollectionIds = imageryLayers
+    .filter(l => l.sourceId === imageryBrowseSourceId)
+    .map(l => l.collection);
 
   const isBasemapSelected = (preset: BasemapConfig) =>
     basemaps.some(b => b.url === preset.url);
@@ -423,6 +473,7 @@ export function ConfigWizardPage() {
                             url: saved.url,
                             label: saved.label ?? undefined,
                             tileMatrixSetId: saved.tile_matrix_set_id,
+                            type: (saved.source_type ?? 'features') as 'features' | 'imagery',
                           }]);
                         }}
                         disabled={alreadyAdded}
@@ -438,6 +489,11 @@ export function ConfigWizardPage() {
                           </svg>
                         )}
                         {saved.label ?? saved.source_id}
+                        {(saved.source_type ?? 'features') === 'imagery' && (
+                          <span className="mapui:text-xs mapui:rounded-full mapui:bg-purple-100 mapui:text-purple-700 mapui:px-1.5 mapui:py-0.5">
+                            Imagery
+                          </span>
+                        )}
                       </button>
                     );
                   })}
@@ -510,6 +566,78 @@ export function ConfigWizardPage() {
               </div>
             ) : (
               <LayerList layers={layers} onChange={setLayers} availableSources={sources} availableIcons={availableIcons} />
+            )}
+          </div>
+        )}
+
+        {currentStep === 'imagery' && (
+          <div className="mapui:space-y-6">
+            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">Imagery Layers</h2>
+            {sources.length === 0 ? (
+              <div className="mapui:rounded mapui:bg-yellow-50 mapui:border mapui:border-yellow-200 mapui:p-4 mapui:text-sm mapui:text-yellow-800">
+                No sources configured. Go back to the <strong>Sources</strong> step to add at least one source.
+              </div>
+            ) : (
+              <div className="mapui:space-y-6">
+                {/* Section A: Browse & select collections */}
+                <div className="mapui:rounded mapui:border mapui:border-gray-200 mapui:p-4">
+                  <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">Browse Collections</h3>
+                  <p className="mapui:text-xs mapui:text-gray-500 mapui:mb-3">
+                    Select a source and check the collections you want to add as imagery layers.
+                  </p>
+                  <div className="mapui:mb-3">
+                    <label className="mapui:block mapui:text-xs mapui:font-medium mapui:text-gray-600 mapui:mb-1">
+                      Source
+                    </label>
+                    <select
+                      value={imageryBrowseSourceId}
+                      onChange={e => setImageryBrowseSourceId(e.target.value)}
+                      className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
+                    >
+                      <option value="">Select a source...</option>
+                      {sources.map(s => (
+                        <option key={s.id} value={s.id}>
+                          {s.label ?? s.id}{s.type === 'imagery' ? ' (Imagery)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {imageryBrowseSource && (
+                    <CollectionBrowser
+                      sourceUrl={imageryBrowseSource.url}
+                      selectedCollectionIds={imagerySelectedCollectionIds}
+                      onSelect={(collectionId) => handleImageryCollectionSelect(collectionId)}
+                      onDeselect={handleImageryCollectionDeselect}
+                    />
+                  )}
+                </div>
+
+                {/* Custom layer button */}
+                <button
+                  type="button"
+                  onClick={handleAddCustomImageryLayer}
+                  className="mapui:text-sm mapui:text-blue-600 hover:mapui:text-blue-800 mapui:underline"
+                >
+                  + Add custom imagery layer (non-OGC tile URL)
+                </button>
+
+                {/* Section B: Configure selected layers */}
+                {imageryLayers.length > 0 && (
+                  <div>
+                    <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">
+                      Configure Imagery Layers
+                      <span className="mapui:ml-2 mapui:text-xs mapui:font-normal mapui:text-gray-400">
+                        {imageryLayers.length} layer{imageryLayers.length !== 1 ? 's' : ''}
+                      </span>
+                    </h3>
+                    <ImageryList
+                      imageryLayers={imageryLayers}
+                      onChange={setImageryLayers}
+                      availableSources={sources}
+                    />
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}
@@ -695,11 +823,13 @@ export function ConfigWizardPage() {
         <MapPreview
           sources={sources}
           layers={layers}
+          imageryLayers={imageryLayers}
           basemaps={basemaps}
           sprites={sprites}
           viewState={initialView}
           onViewStateChange={currentStep === 'view' ? setInitialView : undefined}
           onLayersChange={setLayers}
+          onImageryLayersChange={setImageryLayers}
           currentStep={currentStep}
           uiConfig={uiConfig}
         />

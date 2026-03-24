@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type {
   MapConfig,
   LayerConfig,
+  ImageryLayerConfig,
   BasemapConfig,
   SpriteSource,
   ViewConfig,
@@ -26,8 +27,11 @@ interface MapState {
   activeFilters: Record<string, SearchFilterValues>;
   /** Derived CQL2 expressions for API calls. Kept in sync with activeFilters. */
   activeCql2Filters: Record<string, CQL2Expression | null>;
+  imageryLayers: ImageryLayerConfig[];
   pendingFitBounds: BBox | null;
 
+  toggleImageryLayerVisibility: (layerId: string) => void;
+  setImageryLayerOpacity: (layerId: string, opacity: number) => void;
   setViewState: (vs: Partial<ViewConfig>) => void;
   toggleLayerVisibility: (layerId: string) => void;
   setLayerVisibility: (layerId: string, visible: boolean) => void;
@@ -67,11 +71,36 @@ export const useMapStore = create<MapState>((set) => ({
     showLegendOpacity: false,
     showMeasureTool: false,
     showSelectionTool: false,
+    showImageryPanel: false,
   },
   branding: undefined,
+  imageryLayers: [],
   activeFilters: {},
   activeCql2Filters: {},
   pendingFitBounds: null,
+
+  toggleImageryLayerVisibility: (layerId) =>
+    set((state) => {
+      const target = state.imageryLayers.find((l) => l.id === layerId);
+      if (!target) return state;
+      const newVisible = !target.visible;
+      return {
+        imageryLayers: state.imageryLayers.map((l) => {
+          if (l.id === layerId) return { ...l, visible: newVisible };
+          if (!newVisible) return l;
+          if (target.exclusive) return { ...l, visible: false };
+          if (l.exclusive && l.visible) return { ...l, visible: false };
+          return l;
+        }),
+      };
+    }),
+
+  setImageryLayerOpacity: (layerId, opacity) =>
+    set((state) => ({
+      imageryLayers: state.imageryLayers.map((l) =>
+        l.id === layerId ? { ...l, opacity } : l
+      ),
+    })),
 
   setViewState: (vs) =>
     set((state) => ({
@@ -151,6 +180,7 @@ export const useMapStore = create<MapState>((set) => ({
     set({
       viewState: config.initialView,
       layers: config.layers,
+      imageryLayers: config.imageryLayers ?? [],
       basemaps: config.basemaps,
       activeBasemapId: config.basemaps[0]?.id || '',
       sources: config.sources,

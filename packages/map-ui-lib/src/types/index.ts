@@ -27,6 +27,7 @@ import {
   FilterConfigSchema,
   PropertyDisplaySchema,
   PropertyDisplayConfigSchema,
+  ImageryLayerConfigSchema,
   LayerConfigSchema,
   BasemapConfigSchema,
   SpriteSourceSchema,
@@ -80,6 +81,7 @@ export type FilterConfig = z.infer<typeof FilterConfigSchema>;
 export type PropertyDisplay = z.infer<typeof PropertyDisplaySchema>;
 export type PropertyDisplayConfig = z.infer<typeof PropertyDisplayConfigSchema>;
 export type PropertyDisplayConfigInput = z.input<typeof PropertyDisplayConfigSchema>;
+export type ImageryLayerConfig = z.infer<typeof ImageryLayerConfigSchema>;
 export type LayerConfig = z.infer<typeof LayerConfigSchema>;
 export type BasemapConfig = z.infer<typeof BasemapConfigSchema>;
 export type SpriteSource = z.infer<typeof SpriteSourceSchema>;
@@ -127,6 +129,7 @@ export {
   FilterConfigSchema,
   PropertyDisplaySchema,
   PropertyDisplayConfigSchema,
+  ImageryLayerConfigSchema,
   LayerConfigSchema,
   BasemapConfigSchema,
   SpriteSourceSchema,

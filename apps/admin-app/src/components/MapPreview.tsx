@@ -3,6 +3,7 @@ import maplibregl from 'maplibre-gl';
 import { Map, Source, Layer, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
 import {
   getCql2FilteredVectorTileUrl,
+  getImageryTileUrl,
   useOgcFeatures,
   useExport,
   DEFAULT_EXPORT_FORMATS,
@@ -21,6 +22,7 @@ import type { CQL2Expression } from '@ogc-maps/storybook-components/hooks';
 import {
   Legend,
   LayerPanel,
+  ImageryPanel,
   BasemapSwitcher,
   SearchPanel,
   CollapsibleControl,
@@ -47,6 +49,7 @@ const coordinateFormats: CoordinateFormatOption[] = [
 import type {
   OgcApiSource,
   LayerConfig,
+  ImageryLayerConfig,
   BasemapConfig,
   SpriteSource,
   ViewConfig,
@@ -55,6 +58,7 @@ import type {
 } from '@ogc-maps/storybook-components';
 import type { SearchFilterValue, SearchFilterValues } from '@ogc-maps/storybook-components/types';
 import { LuDownload, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
+import { TbSatellite } from 'react-icons/tb';
 import { useBoxDraw } from '../hooks/useBoxDraw';
 import { usePolygonDraw } from '../hooks/usePolygonDraw';
 import { exportConverters } from '../utils/exportConverters';
@@ -136,14 +140,40 @@ function PreviewGeoJsonLayer({
   );
 }
 
+function PreviewRasterImageryLayer({
+  layer,
+  sourceUrl,
+  tileMatrixSetId,
+}: {
+  layer: ImageryLayerConfig;
+  sourceUrl: string;
+  tileMatrixSetId?: string;
+}) {
+  const tileUrl = getImageryTileUrl(sourceUrl, layer.collection, tileMatrixSetId, layer.tileUrlTemplate);
+  return (
+    <Source id={`imagery-${layer.id}`} key={`imagery-${layer.id}`} type="raster" tiles={[tileUrl]} tileSize={layer.tileSize ?? 256}>
+      <Layer
+        id={`imagery-${layer.id}`}
+        type="raster"
+        paint={{ 'raster-opacity': layer.opacity ?? 1 }}
+        layout={{ visibility: layer.visible ? 'visible' : 'none' }}
+        {...(layer.minZoom != null ? { minzoom: layer.minZoom } : {})}
+        {...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {})}
+      />
+    </Source>
+  );
+}
+
 export interface MapPreviewProps {
   sources: OgcApiSource[];
   layers: LayerConfig[];
+  imageryLayers?: ImageryLayerConfig[];
   basemaps: BasemapConfig[];
   sprites?: SpriteSource[];
   viewState: ViewConfig;
   onViewStateChange?: (view: ViewConfig) => void;
   onLayersChange?: (layers: LayerConfig[]) => void;
+  onImageryLayersChange?: (layers: ImageryLayerConfig[]) => void;
   currentStep: string;
   uiConfig?: UIConfig;
 }
@@ -151,11 +181,13 @@ export interface MapPreviewProps {
 export function MapPreview({
   sources,
   layers,
+  imageryLayers: imageryLayersProp,
   basemaps,
   sprites,
   viewState,
   onViewStateChange,
   onLayersChange,
+  onImageryLayersChange,
   currentStep,
   uiConfig,
 }: MapPreviewProps) {
@@ -190,6 +222,44 @@ export function MapPreview({
   useEffect(() => () => clearTimeout(hoverTimerRef.current), []);
   const [mapInstance, setMapInstance] = useState<maplibregl.Map | null>(null);
   const mapRef = useRef<MapRef>(null);
+  const [imageryVisibility, setImageryVisibility] = useState<Record<string, boolean>>({});
+  const imageryLayers = useMemo(() =>
+    (imageryLayersProp ?? []).map(l => ({
+      ...l,
+      visible: imageryVisibility[l.id] ?? l.visible,
+    })),
+    [imageryLayersProp, imageryVisibility],
+  );
+  const imageryLayerIds = useMemo(
+    () => (imageryLayersProp ?? []).map(l => l.id),
+    [imageryLayersProp],
+  );
+
+  const handleToggleImageryVisibility = useCallback((layerId: string) => {
+    setImageryVisibility(prev => {
+      const current = prev[layerId] ?? imageryLayersProp?.find(l => l.id === layerId)?.visible ?? false;
+      const newVisible = !current;
+      const target = imageryLayersProp?.find(l => l.id === layerId);
+      if (!target) return prev;
+
+      const next: Record<string, boolean> = { ...prev, [layerId]: newVisible };
+      if (newVisible) {
+        for (const l of imageryLayersProp ?? []) {
+          if (l.id === layerId) continue;
+          if (target.exclusive) { next[l.id] = false; }
+          else if (l.exclusive && (prev[l.id] ?? l.visible)) { next[l.id] = false; }
+        }
+      }
+      return next;
+    });
+  }, [imageryLayersProp]);
+
+  const handleImageryOpacity = useCallback((layerId: string, opacity: number) => {
+    onImageryLayersChange?.(
+      (imageryLayersProp ?? []).map(l => l.id === layerId ? { ...l, opacity } : l),
+    );
+  }, [imageryLayersProp, onImageryLayersChange]);
+
   const measure = useMeasure();
   const selection = useSelection();
   const [resultsOpen, setResultsOpen] = useState(false);
@@ -484,10 +554,23 @@ export function MapPreview({
           // Layer may not be on the map yet
         }
       }
+
+      // Move imagery layers below all feature layers
+      const firstFeatureId = desiredOrder[0];
+      if (firstFeatureId) {
+        for (const id of imageryLayerIds) {
+          const imgLayerId = `imagery-${id}`;
+          if (mapInstance.getLayer(imgLayerId)) {
+            try {
+              mapInstance.moveLayer(imgLayerId, firstFeatureId);
+            } catch { /* layer may not be on map yet */ }
+          }
+        }
+      }
     });
 
     return () => cancelAnimationFrame(frame);
-  }, [mapInstance, layersWithDefaults, sourceUrlMap, activeCql2Filters]);
+  }, [mapInstance, layersWithDefaults, sourceUrlMap, activeCql2Filters, imageryLayerIds]);
 
   const handleMove = (evt: { viewState: { latitude: number; longitude: number; zoom: number; pitch: number; bearing: number } }) => {
     const next: ViewConfig = {
@@ -653,6 +736,20 @@ export function MapPreview({
         attributionControl={false}
       >
         <AttributionControl position="bottom-left" />
+
+        {/* Render raster imagery layers (above basemap, below features) */}
+        {!showEmptyState && imageryLayers.map((layer) => {
+          const sourceInfo = sourceUrlMap[layer.sourceId];
+          if (!sourceInfo) return null;
+          return (
+            <PreviewRasterImageryLayer
+              key={layer.id}
+              layer={layer}
+              sourceUrl={sourceInfo.url}
+              tileMatrixSetId={sourceInfo.tileMatrixSetId}
+            />
+          );
+        })}
 
         {!showEmptyState && layersWithDefaults.map((layer) => {
           const sourceInfo = sourceUrlMap[layer.sourceId];
@@ -890,6 +987,25 @@ export function MapPreview({
                     selectedCount={selection.features.length}
                     onClear={selection.clearFeatures}
                     onViewResults={() => setResultsOpen(true)}
+                    className="mapui:p-3 mapui:max-w-xs"
+                  />
+                </CollapsibleControl>
+              </div>
+            )}
+
+            {uiConfig.showImageryPanel && imageryLayers.length > 0 && (
+              <div className="mapui:pointer-events-auto">
+                <CollapsibleControl
+                  icon={TbSatellite}
+                  label="Imagery"
+                  collapsed={openControl !== 'imagery'}
+                  onToggle={(collapsed) => setOpenControl(collapsed ? null : 'imagery')}
+                >
+                  <ImageryPanel
+                    imageryLayers={imageryLayers}
+                    onToggleVisibility={handleToggleImageryVisibility}
+                    onOpacityChange={handleImageryOpacity}
+                    hideTitle
                     className="mapui:p-3 mapui:max-w-xs"
                   />
                 </CollapsibleControl>

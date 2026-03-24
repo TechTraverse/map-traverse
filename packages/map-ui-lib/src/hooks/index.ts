@@ -27,6 +27,7 @@ export type {
   NumberSearchField,
   DatetimeSearchField,
   SelectSearchField,
+  ImageryLayerConfig,
   PropertyDisplay,
   PropertyDisplayConfig,
 } from '../types';
@@ -49,6 +50,7 @@ export {
   getVectorTileUrl,
   getVectorTileSourceKey,
   buildGeometryFilter,
+  getImageryTileUrl,
   type OgcCollection,
   type OgcCollectionsResponse,
   type GeoJsonFeature,

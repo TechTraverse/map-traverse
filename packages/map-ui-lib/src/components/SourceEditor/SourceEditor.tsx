@@ -23,6 +23,24 @@ export function SourceEditor({
 
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-3">
+      <FormField label="Type">
+        <div className="mapui:flex mapui:gap-4">
+          {(['features', 'imagery'] as const).map((t) => (
+            <label key={t} className="mapui:flex mapui:items-center mapui:gap-1.5 mapui:cursor-pointer">
+              <input
+                type="radio"
+                name={`source-type-${value.id || 'new'}`}
+                value={t}
+                checked={(value.type ?? 'features') === t}
+                onChange={() => update({ type: t })}
+                className="mapui:accent-blue-600"
+              />
+              <span className="mapui:text-sm mapui:text-gray-700 mapui:capitalize">{t}</span>
+            </label>
+          ))}
+        </div>
+      </FormField>
+
       <FormField label="ID" required>
         <input
           type="text"
