@@ -1,7 +1,9 @@
 /**
- * OGC API source inspection — fetches metadata from an OGC API endpoint
+ * Source inspection — fetches metadata from OGC API, TileJSON, or XYZ tile endpoints
  * and returns a structured result with graceful error handling.
  */
+
+import { detectTileSourceType } from '@ogc-maps/storybook-components/hooks';
 
 const REQUEST_TIMEOUT_MS = 10_000;
 const COLLECTION_BATCH_SIZE = 5;
@@ -34,6 +36,17 @@ export interface CollectionMeta {
   queryablesError?: string;
 }
 
+export interface TileJsonMeta {
+  tilejson: string;
+  tiles: string[];
+  name?: string;
+  description?: string;
+  minzoom?: number;
+  maxzoom?: number;
+  bounds?: [number, number, number, number];
+  center?: [number, number, number];
+}
+
 export interface InspectionResult {
   landing: { title?: string; description?: string } | null;
   conformance: string[] | null;
@@ -41,6 +54,7 @@ export interface InspectionResult {
   collections: CollectionMeta[];
   inspectedAt: string;
   errors: string[];
+  tileJson?: TileJsonMeta;
 }
 
 // --- Helpers ---
@@ -242,4 +256,73 @@ export async function inspectOgcSource(url: string): Promise<InspectionResult> {
     inspectedAt: new Date().toISOString(),
     errors,
   };
+}
+
+// --- TileJSON inspection ---
+
+async function inspectTileJsonSource(url: string): Promise<InspectionResult> {
+  const normalizedUrl = normalizeUrl(url);
+  try {
+    const data = await fetchJson(normalizedUrl) as Record<string, unknown>;
+    const tiles = data.tiles;
+    if (!Array.isArray(tiles) || tiles.length === 0) {
+      return {
+        landing: null,
+        conformance: null,
+        collections: [],
+        inspectedAt: new Date().toISOString(),
+        errors: ['Invalid TileJSON: missing tiles array'],
+      };
+    }
+    return {
+      landing: {
+        title: typeof data.name === 'string' ? data.name : undefined,
+        description: typeof data.description === 'string' ? data.description : undefined,
+      },
+      conformance: null,
+      collections: [],
+      inspectedAt: new Date().toISOString(),
+      errors: [],
+      tileJson: {
+        tilejson: typeof data.tilejson === 'string' ? data.tilejson : '',
+        tiles: tiles as string[],
+        name: typeof data.name === 'string' ? data.name : undefined,
+        description: typeof data.description === 'string' ? data.description : undefined,
+        minzoom: typeof data.minzoom === 'number' ? data.minzoom : undefined,
+        maxzoom: typeof data.maxzoom === 'number' ? data.maxzoom : undefined,
+        bounds: Array.isArray(data.bounds) ? data.bounds as [number, number, number, number] : undefined,
+        center: Array.isArray(data.center) ? data.center as [number, number, number] : undefined,
+      },
+    };
+  } catch (err) {
+    return {
+      landing: null,
+      conformance: null,
+      collections: [],
+      inspectedAt: new Date().toISOString(),
+      errors: [`TileJSON fetch failed: ${errorMessage(err)}`],
+    };
+  }
+}
+
+// --- Main inspection router ---
+
+export async function inspectSource(url: string): Promise<InspectionResult> {
+  const sourceType = detectTileSourceType(url);
+
+  if (sourceType === 'tilejson') {
+    return inspectTileJsonSource(url);
+  }
+
+  if (sourceType === 'xyz') {
+    return {
+      landing: null,
+      conformance: null,
+      collections: [],
+      inspectedAt: new Date().toISOString(),
+      errors: [],
+    };
+  }
+
+  return inspectOgcSource(url);
 }

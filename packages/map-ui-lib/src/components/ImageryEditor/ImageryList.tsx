@@ -104,6 +104,7 @@ export function ImageryList({
                     onChange={(updated) => handleUpdate(index, updated)}
                     availableSources={availableSources}
                     sourceUrl={availableSources.find((s) => s.id === layer.sourceId)?.url}
+                    sourceAuth={availableSources.find((s) => s.id === layer.sourceId)?.auth}
                   />
                 </div>
               )}

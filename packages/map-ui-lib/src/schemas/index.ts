@@ -1,5 +1,6 @@
 export {
   ViewConfigSchema,
+  SourceAuthSchema,
   OgcApiSourceSchema,
   FillPaintSchema,
   LinePaintSchema,

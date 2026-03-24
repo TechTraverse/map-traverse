@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import { SourceEditor, ConfirmDialog } from '@ogc-maps/storybook-components';
-import type { OgcApiSource } from '@ogc-maps/storybook-components';
+import type { OgcApiSource, SourceAuth } from '@ogc-maps/storybook-components';
+import { detectTileSourceType, appendAuth, authHeaders } from '@ogc-maps/storybook-components/hooks';
 import { SourceMetadataPanel } from '../components/SourceMetadataPanel';
 import type { InspectionResult } from '../components/SourceMetadataPanel';
 import { inspectSourceClientSide } from '../utils/inspectSource';
@@ -12,6 +13,7 @@ interface SavedSource {
   label: string | null;
   tile_matrix_set_id: string;
   source_type: string;
+  auth: SourceAuth | null;
   metadata: InspectionResult | null;
   metadata_updated_at: string | null;
   created_at: string;
@@ -25,6 +27,7 @@ function toOgcApiSource(s: SavedSource): OgcApiSource {
     label: s.label ?? undefined,
     tileMatrixSetId: s.tile_matrix_set_id,
     type: (s.source_type ?? 'features') as 'features' | 'imagery',
+    auth: s.auth ?? undefined,
   };
 }
 
@@ -85,18 +88,40 @@ export function SourcesPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleTestConnection = async (key: string, url: string) => {
+  const handleTestConnection = async (key: string, url: string, auth?: SourceAuth) => {
     setTestStatus(prev => ({ ...prev, [key]: 'loading' }));
     const normalizedUrl = url.trim().replace(/\/$/, '');
     const testUrl = /^https?:\/\//i.test(normalizedUrl) ? normalizedUrl : `http://${normalizedUrl}`;
+    const sourceType = detectTileSourceType(testUrl);
 
     // Try client-side first (browser fetches directly)
     try {
-      const res = await fetch(`${testUrl}/conformance?f=json`, {
+      let testEndpoint: string;
+      let acceptHeader = 'application/json';
+      if (sourceType === 'tilejson') {
+        testEndpoint = appendAuth(testUrl, auth ?? undefined);
+      } else if (sourceType === 'xyz') {
+        testEndpoint = appendAuth(
+          testUrl.replace('{z}', '0').replace('{x}', '0').replace('{y}', '0'),
+          auth ?? undefined,
+        );
+        acceptHeader = '*/*';
+      } else {
+        testEndpoint = appendAuth(`${testUrl}/conformance?f=json`, auth ?? undefined);
+      }
+
+      const res = await fetch(testEndpoint, {
         signal: AbortSignal.timeout(10_000),
-        headers: { Accept: 'application/json' },
+        headers: { Accept: acceptHeader, ...authHeaders(auth ?? undefined) },
       });
       if (res.ok) {
+        // For TileJSON, also verify structure
+        if (sourceType === 'tilejson') {
+          const data = await res.json();
+          if (!data.tiles || !Array.isArray(data.tiles)) {
+            throw new Error('Invalid TileJSON: missing tiles array');
+          }
+        }
         setTestStatus(prev => ({ ...prev, [key]: 'success' }));
         return;
       }
@@ -110,7 +135,7 @@ export function SourcesPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url, auth }),
       });
       const data = await res.json();
       if (data.status === 'success') {
@@ -132,7 +157,7 @@ export function SourcesPage() {
       // Try client-side inspection first
       let clientMetadata: InspectionResult | undefined;
       try {
-        clientMetadata = await inspectSourceClientSide(newSource.url);
+        clientMetadata = await inspectSourceClientSide(newSource.url, newSource.auth);
       } catch {
         // Client-side inspection failed (CORS/network) — server will auto-inspect
       }
@@ -147,6 +172,7 @@ export function SourcesPage() {
           label: newSource.label || null,
           tile_matrix_set_id: newSource.tileMatrixSetId || 'WebMercatorQuad',
           source_type: newSource.type || 'features',
+          auth: newSource.auth ?? null,
           ...(clientMetadata ? { metadata: clientMetadata } : {}),
         }),
       });
@@ -183,6 +209,7 @@ export function SourcesPage() {
           label: editingSource.label || null,
           tile_matrix_set_id: editingSource.tileMatrixSetId || 'WebMercatorQuad',
           source_type: editingSource.type || 'features',
+          auth: editingSource.auth ?? null,
         }),
       });
       if (!res.ok) {
@@ -258,7 +285,7 @@ export function SourcesPage() {
       // Try client-side inspection first
       let succeeded = false;
       try {
-        const metadata = await inspectSourceClientSide(source.url);
+        const metadata = await inspectSourceClientSide(source.url, source.auth ?? undefined);
         const res = await fetch(`/api/sources/${source.id}/metadata`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -331,7 +358,7 @@ export function SourcesPage() {
           <SourceEditor
             value={newSource}
             onChange={setNewSource}
-            onTestConnection={url => handleTestConnection('new', url)}
+            onTestConnection={(url, auth) => handleTestConnection('new', url, auth)}
             testStatus={testStatus['new']}
             testError={testError['new']}
           />
@@ -381,7 +408,7 @@ export function SourcesPage() {
                         <SourceEditor
                           value={editingSource ?? toOgcApiSource(source)}
                           onChange={setEditingSource}
-                          onTestConnection={url => handleTestConnection(`edit-${source.id}`, url)}
+                          onTestConnection={(url, auth) => handleTestConnection(`edit-${source.id}`, url, auth)}
                           testStatus={testStatus[`edit-${source.id}`]}
                           testError={testError[`edit-${source.id}`]}
                         />

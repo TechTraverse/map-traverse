@@ -190,7 +190,46 @@ export function SourceMetadataPanel({ metadata, metadataUpdatedAt, onRefresh, re
         </div>
       )}
 
-      {/* Collections */}
+      {/* TileJSON Metadata (for non-OGC tile sources) */}
+      {metadata.tileJson && (
+        <CollapsibleSection title="TileJSON" defaultOpen={true}>
+          <div className="mapui:space-y-2 mapui:text-xs">
+            <div className="mapui:grid mapui:grid-cols-[auto_1fr] mapui:gap-x-3 mapui:gap-y-1">
+              {metadata.tileJson.minzoom != null && (
+                <>
+                  <span className="mapui:text-gray-500 mapui:font-medium">Zoom Range</span>
+                  <span className="mapui:text-gray-800">{metadata.tileJson.minzoom} – {metadata.tileJson.maxzoom ?? '?'}</span>
+                </>
+              )}
+              {metadata.tileJson.bounds && (
+                <>
+                  <span className="mapui:text-gray-500 mapui:font-medium">Bounds</span>
+                  <span className="mapui:text-gray-800">{formatBbox(metadata.tileJson.bounds)}</span>
+                </>
+              )}
+              {metadata.tileJson.tilejson && (
+                <>
+                  <span className="mapui:text-gray-500 mapui:font-medium">TileJSON Version</span>
+                  <span className="mapui:text-gray-800">{metadata.tileJson.tilejson}</span>
+                </>
+              )}
+            </div>
+            {metadata.tileJson.tiles.length > 0 && (
+              <div>
+                <span className="mapui:text-gray-500 mapui:font-medium">Tile URLs</span>
+                <ul className="mapui:mt-1 mapui:space-y-0.5">
+                  {metadata.tileJson.tiles.map((url, i) => (
+                    <li key={i} className="mapui:text-gray-600 mapui:font-mono mapui:break-all">{url}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {/* Collections (for OGC API sources) */}
+      {!metadata.tileJson && (
       <CollapsibleSection
         title="Collections"
         defaultOpen={true}
@@ -285,6 +324,7 @@ export function SourceMetadataPanel({ metadata, metadataUpdatedAt, onRefresh, re
           </div>
         )}
       </CollapsibleSection>
+      )}
     </div>
   );
 }

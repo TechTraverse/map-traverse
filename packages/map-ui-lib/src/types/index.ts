@@ -2,6 +2,7 @@ import type { z } from 'zod';
 import {
   GeometryTypeSchema,
   ViewConfigSchema,
+  SourceAuthSchema,
   OgcApiSourceSchema,
   FillPaintSchema,
   LinePaintSchema,
@@ -39,6 +40,7 @@ import {
 // Inferred types from Zod schemas
 export type GeometryType = z.infer<typeof GeometryTypeSchema>;
 export type ViewConfig = z.infer<typeof ViewConfigSchema>;
+export type SourceAuth = z.infer<typeof SourceAuthSchema>;
 export type OgcApiSource = z.infer<typeof OgcApiSourceSchema>;
 
 export type FillPaint = z.infer<typeof FillPaintSchema>;
@@ -104,6 +106,7 @@ export interface AvailableProperty {
 export {
   GeometryTypeSchema,
   ViewConfigSchema,
+  SourceAuthSchema,
   OgcApiSourceSchema,
   FillPaintSchema,
   LinePaintSchema,

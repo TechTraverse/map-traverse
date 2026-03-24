@@ -50,7 +50,7 @@ export { PropertyDisplayEditor } from './PropertyDisplayEditor';
 export type { PropertyDisplayEditorProps } from './PropertyDisplayEditor';
 export { LayerEditor, LayerList } from './LayerEditor';
 export type { LayerEditorProps, LayerListProps } from './LayerEditor';
-export { ImageryEditor, ImageryList } from './ImageryEditor';
+export { ImageryEditor, ImageryList, slugify } from './ImageryEditor';
 export type { ImageryEditorProps, ImageryListProps } from './ImageryEditor';
 export { BasemapEditor, BasemapList } from './BasemapEditor';
 export type { BasemapEditorProps, BasemapListProps } from './BasemapEditor';

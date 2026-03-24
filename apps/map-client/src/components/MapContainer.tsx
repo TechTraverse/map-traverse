@@ -1,7 +1,7 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { Map, Source, Layer, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
 import { useOgcFeatures, getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSourceKey, buildGeometryFilter, getImageryTileUrl } from '@ogc-maps/storybook-components/hooks';
-import type { CQL2Expression } from '@ogc-maps/storybook-components/hooks';
+import type { CQL2Expression, SourceAuth } from '@ogc-maps/storybook-components/hooks';
 import type { LayerConfig, ImageryLayerConfig } from '@ogc-maps/storybook-components/types';
 import type { MeasureMode, SelectionMode } from '@ogc-maps/storybook-components';
 import { useMapStore } from '../stores/mapStore';
@@ -12,13 +12,15 @@ function VectorTileLayer({
   sourceUrl,
   tileMatrixSetId,
   cql2Filter,
+  auth,
 }: {
   layer: LayerConfig;
   sourceUrl: string;
   tileMatrixSetId?: string;
   cql2Filter?: CQL2Expression | null;
+  auth?: SourceAuth;
 }) {
-  const tileUrl = getCql2FilteredVectorTileUrl(sourceUrl, layer.collection, cql2Filter, tileMatrixSetId);
+  const tileUrl = getCql2FilteredVectorTileUrl(sourceUrl, layer.collection, cql2Filter, tileMatrixSetId, auth);
   const sourceKey = getVectorTileSourceKey(layer.id, cql2Filter);
   const sourceLayer = layer.collection.replace(/^[^.]+\./, '');
 
@@ -47,11 +49,11 @@ function VectorTileLayer({
 }
 
 // Inline component for GeoJSON layers
-function GeoJsonLayer({ layer, sourceUrl, cql2Filter }: { layer: LayerConfig; sourceUrl: string; cql2Filter?: CQL2Expression | null }) {
+function GeoJsonLayer({ layer, sourceUrl, cql2Filter, auth }: { layer: LayerConfig; sourceUrl: string; cql2Filter?: CQL2Expression | null; auth?: SourceAuth }) {
   const { features, error } = useOgcFeatures(sourceUrl, layer.collection, {
     limit: 10000,
     cql2Filter: cql2Filter ?? undefined,
-  });
+  }, auth);
 
   const featureCollection = useMemo(
     () => ({
@@ -93,12 +95,14 @@ function RasterImageryLayer({
   layer,
   sourceUrl,
   tileMatrixSetId,
+  auth,
 }: {
   layer: ImageryLayerConfig;
   sourceUrl: string;
   tileMatrixSetId?: string;
+  auth?: SourceAuth;
 }) {
-  const tileUrl = getImageryTileUrl(sourceUrl, layer.collection, tileMatrixSetId, layer.tileUrlTemplate);
+  const tileUrl = getImageryTileUrl(sourceUrl, layer.collection, tileMatrixSetId, layer.tileUrlTemplate, auth);
   return (
     <Source id={`imagery-${layer.id}`} key={`imagery-${layer.id}`} type="raster" tiles={[tileUrl]} tileSize={layer.tileSize ?? 256}>
       <Layer
@@ -213,16 +217,30 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
     clearPendingFitBounds();
   }, [pendingFitBounds, clearPendingFitBounds]);
 
-  // Build source URL lookup map with tileMatrixSetId
+  // Build source URL lookup map with tileMatrixSetId and auth
   const sourceUrlMap = useMemo(() => {
-    const urlMap: Record<string, { url: string; tileMatrixSetId?: string }> = {};
+    const urlMap: Record<string, { url: string; tileMatrixSetId?: string; auth?: SourceAuth }> = {};
     sources.forEach((source) => {
       urlMap[source.id] = {
         url: source.url,
         tileMatrixSetId: source.tileMatrixSetId,
+        auth: source.auth,
       };
     });
     return urlMap;
+  }, [sources]);
+
+  // Inject auth headers for tile requests when sources use header auth
+  const transformRequest = useMemo(() => {
+    const headerSources = sources
+      .filter(s => s.auth?.type === 'header')
+      .map(s => ({ prefix: s.url.replace(/\/$/, ''), auth: s.auth! }));
+    if (headerSources.length === 0) return undefined;
+    return (url: string) => {
+      const match = headerSources.find(s => url.startsWith(s.prefix));
+      if (!match) return { url };
+      return { url, headers: { [match.auth.name]: match.auth.value } };
+    };
   }, [sources]);
 
   // Get active basemap URL
@@ -283,6 +301,7 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
       {...viewState}
       style={{ width: '100%', height: '100%' }}
       mapStyle={resolvedStyle as any}
+      transformRequest={transformRequest}
       cursor={measureMode ? 'crosshair' : selectionMode ? 'crosshair' : cursor}
       interactiveLayerIds={measureMode ? undefined : (selectionMode === 'box' || selectionMode === 'polygon') ? undefined : interactiveLayerIds}
       doubleClickZoom={!measureMode && !selectionMode}
@@ -391,13 +410,14 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
       {/* Render raster imagery layers (above basemap, below feature layers) */}
       {imageryLayers.map((layer) => {
         const sourceInfo = sourceUrlMap[layer.sourceId];
-        if (!sourceInfo) return null;
+        if (!sourceInfo && !layer.tileUrlTemplate) return null;
         return (
           <RasterImageryLayer
             key={layer.id}
             layer={layer}
-            sourceUrl={sourceInfo.url}
-            tileMatrixSetId={sourceInfo.tileMatrixSetId}
+            sourceUrl={sourceInfo?.url ?? ''}
+            tileMatrixSetId={sourceInfo?.tileMatrixSetId}
+            auth={sourceInfo?.auth}
           />
         );
       })}
@@ -416,6 +436,7 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
             sourceUrl={sourceInfo.url}
             tileMatrixSetId={sourceInfo.tileMatrixSetId}
             cql2Filter={activeCql2Filters[layer.id]}
+            auth={sourceInfo.auth}
           />
         );
       })}
@@ -427,7 +448,7 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
           console.warn(`Source URL not found for layer ${layer.id}`);
           return null;
         }
-        return <GeoJsonLayer key={`${layer.id}--${layer.styles?.length ?? 0}`} layer={layer} sourceUrl={sourceInfo.url} cql2Filter={activeCql2Filters[layer.id]} />;
+        return <GeoJsonLayer key={`${layer.id}--${layer.styles?.length ?? 0}`} layer={layer} sourceUrl={sourceInfo.url} cql2Filter={activeCql2Filters[layer.id]} auth={sourceInfo.auth} />;
       })}
 
       {/* Measure tool GeoJSON */}

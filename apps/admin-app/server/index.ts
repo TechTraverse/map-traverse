@@ -6,7 +6,8 @@ import session from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 import bcrypt from 'bcryptjs';
 import { pool, initDb } from './db.js';
-import { inspectOgcSource, normalizeUrl } from './inspect.js';
+import { inspectSource, normalizeUrl } from './inspect.js';
+import { detectTileSourceType } from '@ogc-maps/storybook-components/hooks';
 import { safeValidateMapConfig } from '@ogc-maps/storybook-components/schemas';
 
 // Augment session with our custom fields
@@ -610,11 +611,33 @@ app.post('/api/sources/test-connection', requireAuth, async (req, res) => {
   }
   try {
     const testUrl = normalizeUrl(url).replace(/\/$/, '');
-    const response = await fetch(`${testUrl}/conformance?f=json`, {
+
+    const sourceType = detectTileSourceType(testUrl);
+    let testEndpoint: string;
+    let acceptHeader = 'application/json';
+
+    if (sourceType === 'xyz') {
+      testEndpoint = testUrl.replace('{z}', '0').replace('{x}', '0').replace('{y}', '0');
+      acceptHeader = '*/*';
+    } else if (sourceType === 'tilejson') {
+      testEndpoint = testUrl;
+    } else {
+      testEndpoint = `${testUrl}/conformance?f=json`;
+    }
+
+    const response = await fetch(testEndpoint, {
       signal: AbortSignal.timeout(10_000),
-      headers: { 'Accept': 'application/json' },
+      headers: { 'Accept': acceptHeader },
     });
     if (response.ok) {
+      // For TileJSON, also verify structure
+      if (sourceType === 'tilejson') {
+        const data = await response.json();
+        if (!data.tiles || !Array.isArray(data.tiles)) {
+          res.json({ status: 'error', error: 'Invalid TileJSON: missing tiles array' });
+          return;
+        }
+      }
       res.json({ status: 'success' });
     } else {
       res.json({ status: 'error', error: `HTTP ${response.status} ${response.statusText}` });
@@ -626,12 +649,13 @@ app.post('/api/sources/test-connection', requireAuth, async (req, res) => {
 
 // POST /api/sources — create a new source (protected)
 app.post('/api/sources', requireAuth, async (req, res) => {
-  const { source_id, url, label, tile_matrix_set_id, source_type, metadata } = req.body as {
+  const { source_id, url, label, tile_matrix_set_id, source_type, auth, metadata } = req.body as {
     source_id?: string;
     url?: string;
     label?: string;
     tile_matrix_set_id?: string;
     source_type?: string;
+    auth?: { type: string; name: string; value: string } | null;
     metadata?: unknown;
   };
 
@@ -646,9 +670,9 @@ app.post('/api/sources', requireAuth, async (req, res) => {
 
   try {
     const result = await pool.query(
-      `INSERT INTO ogc_sources (source_id, url, label, tile_matrix_set_id, source_type)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [source_id, url, label ?? null, tile_matrix_set_id ?? 'WebMercatorQuad', source_type ?? 'features'],
+      `INSERT INTO ogc_sources (source_id, url, label, tile_matrix_set_id, source_type, auth)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [source_id, url, label ?? null, tile_matrix_set_id ?? 'WebMercatorQuad', source_type ?? 'features', auth ? JSON.stringify(auth) : null],
     );
     const row = result.rows[0] as { id: string };
 
@@ -662,7 +686,7 @@ app.post('/api/sources', requireAuth, async (req, res) => {
     } else {
       // No metadata provided — auto-inspect server-side (fallback)
       try {
-        const inspected = await inspectOgcSource(url);
+        const inspected = await inspectSource(url);
         const updated = await pool.query(
           'UPDATE ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
           [JSON.stringify(inspected), row.id],
@@ -684,12 +708,13 @@ app.post('/api/sources', requireAuth, async (req, res) => {
 
 // PUT /api/sources/:id — update a source (protected)
 app.put('/api/sources/:id', requireAuth, async (req, res) => {
-  const { source_id, url, label, tile_matrix_set_id, source_type, metadata } = req.body as {
+  const { source_id, url, label, tile_matrix_set_id, source_type, auth, metadata } = req.body as {
     source_id?: string;
     url?: string;
     label?: string;
     tile_matrix_set_id?: string;
     source_type?: string;
+    auth?: { type: string; name: string; value: string } | null;
     metadata?: unknown;
   };
 
@@ -710,18 +735,20 @@ app.put('/api/sources/:id', requireAuth, async (req, res) => {
       label: string | null;
       tile_matrix_set_id: string;
       source_type: string;
+      auth: { type: string; name: string; value: string } | null;
     };
 
     const newUrl = url ?? row.url;
     const result = await pool.query(
-      `UPDATE ogc_sources SET source_id = $1, url = $2, label = $3, tile_matrix_set_id = $4, source_type = $5, updated_at = now()
-       WHERE id = $6 RETURNING *`,
+      `UPDATE ogc_sources SET source_id = $1, url = $2, label = $3, tile_matrix_set_id = $4, source_type = $5, auth = $6, updated_at = now()
+       WHERE id = $7 RETURNING *`,
       [
         source_id ?? row.source_id,
         newUrl,
         label !== undefined ? (label || null) : row.label,
         tile_matrix_set_id ?? row.tile_matrix_set_id,
         source_type ?? row.source_type,
+        auth !== undefined ? (auth ? JSON.stringify(auth) : null) : (row.auth ? JSON.stringify(row.auth) : null),
         req.params.id,
       ],
     );
@@ -739,7 +766,7 @@ app.put('/api/sources/:id', requireAuth, async (req, res) => {
       }
       // No metadata provided — auto-inspect server-side (fallback)
       try {
-        const inspected = await inspectOgcSource(newUrl);
+        const inspected = await inspectSource(newUrl);
         const updated = await pool.query(
           'UPDATE ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
           [JSON.stringify(inspected), req.params.id],
@@ -829,7 +856,7 @@ app.post('/api/sources/:id/inspect', requireAuth, async (req, res) => {
     }
     const { url } = sourceResult.rows[0] as { url: string };
 
-    const metadata = await inspectOgcSource(url);
+    const metadata = await inspectSource(url);
     const result = await pool.query(
       'UPDATE ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
       [JSON.stringify(metadata), req.params.id],

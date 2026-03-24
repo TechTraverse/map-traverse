@@ -25,6 +25,14 @@ export const ViewConfigSchema = z.object({
   bearing: z.number().min(-180).max(180).default(0),
 });
 
+// --- Source Authentication ---
+
+export const SourceAuthSchema = z.object({
+  type: z.enum(['query_param', 'header']),
+  name: z.string().min(1),
+  value: z.string().min(1),
+});
+
 // --- OGC API Source ---
 
 export const OgcApiSourceSchema = z.object({
@@ -33,6 +41,7 @@ export const OgcApiSourceSchema = z.object({
   label: z.string().optional(),
   tileMatrixSetId: z.string().optional().default('WebMercatorQuad'),
   type: z.enum(['features', 'imagery']).optional(),
+  auth: SourceAuthSchema.optional(),
 });
 
 // --- Paint Schemas (MapLibre GL JS conventions) ---
@@ -363,8 +372,8 @@ export const BrandingConfigSchema = z.object({
 
 export const ImageryLayerConfigSchema = z.object({
   id: z.string().min(1),
-  sourceId: z.string().min(1),
-  collection: z.string().min(1),
+  sourceId: z.string().default(''),
+  collection: z.string().default(''),
   label: z.string(),
   visible: z.boolean().default(false),
   opacity: z.number().min(0).max(1).default(1),
@@ -373,6 +382,15 @@ export const ImageryLayerConfigSchema = z.object({
   maxZoom: z.number().min(0).max(24).optional(),
   tileSize: z.number().default(256),
   tileUrlTemplate: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (!data.tileUrlTemplate) {
+    if (!data.sourceId) {
+      ctx.addIssue({ code: z.ZodIssueCode.too_small, minimum: 1, type: 'string', inclusive: true, path: ['sourceId'], message: 'Source is required when not using a custom tile URL' });
+    }
+    if (!data.collection) {
+      ctx.addIssue({ code: z.ZodIssueCode.too_small, minimum: 1, type: 'string', inclusive: true, path: ['collection'], message: 'Collection is required when not using a custom tile URL' });
+    }
+  }
 });
 
 // --- Root Map Config ---

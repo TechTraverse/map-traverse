@@ -48,6 +48,7 @@ const coordinateFormats: CoordinateFormatOption[] = [
 
 import type {
   OgcApiSource,
+  SourceAuth,
   LayerConfig,
   ImageryLayerConfig,
   BasemapConfig,
@@ -70,13 +71,15 @@ function PreviewVectorTileLayer({
   sourceUrl,
   tileMatrixSetId,
   cql2Filter,
+  auth,
 }: {
   layer: LayerConfig;
   sourceUrl: string;
   tileMatrixSetId?: string;
   cql2Filter?: CQL2Expression | null;
+  auth?: SourceAuth;
 }) {
-  const tileUrl = getCql2FilteredVectorTileUrl(sourceUrl, layer.collection, cql2Filter, tileMatrixSetId);
+  const tileUrl = getCql2FilteredVectorTileUrl(sourceUrl, layer.collection, cql2Filter, tileMatrixSetId, auth);
   const sourceKey = getVectorTileSourceKey(layer.id, cql2Filter);
   const sourceLayer = layer.collection.replace(/^[^.]+\./, '');
 
@@ -105,12 +108,14 @@ function PreviewGeoJsonLayer({
   layer,
   sourceUrl,
   cql2Filter,
+  auth,
 }: {
   layer: LayerConfig;
   sourceUrl: string;
   cql2Filter?: CQL2Expression | null;
+  auth?: SourceAuth;
 }) {
-  const { features } = useOgcFeatures(sourceUrl, layer.collection, { limit: 10000, cql2Filter: cql2Filter ?? undefined });
+  const { features } = useOgcFeatures(sourceUrl, layer.collection, { limit: 10000, cql2Filter: cql2Filter ?? undefined }, auth);
 
   const featureCollection = useMemo(
     () => ({
@@ -144,12 +149,14 @@ function PreviewRasterImageryLayer({
   layer,
   sourceUrl,
   tileMatrixSetId,
+  auth,
 }: {
   layer: ImageryLayerConfig;
   sourceUrl: string;
   tileMatrixSetId?: string;
+  auth?: SourceAuth;
 }) {
-  const tileUrl = getImageryTileUrl(sourceUrl, layer.collection, tileMatrixSetId, layer.tileUrlTemplate);
+  const tileUrl = getImageryTileUrl(sourceUrl, layer.collection, tileMatrixSetId, layer.tileUrlTemplate, auth);
   return (
     <Source id={`imagery-${layer.id}`} key={`imagery-${layer.id}`} type="raster" tiles={[tileUrl]} tileSize={layer.tileSize ?? 256}>
       <Layer
@@ -314,11 +321,23 @@ export function MapPreview({
   }, [basemaps]);
 
   const sourceUrlMap = useMemo(() => {
-    const map: Record<string, { url: string; tileMatrixSetId?: string }> = {};
+    const map: Record<string, { url: string; tileMatrixSetId?: string; auth?: SourceAuth }> = {};
     sources.forEach((source) => {
-      map[source.id] = { url: source.url, tileMatrixSetId: source.tileMatrixSetId };
+      map[source.id] = { url: source.url, tileMatrixSetId: source.tileMatrixSetId, auth: source.auth };
     });
     return map;
+  }, [sources]);
+
+  const transformRequest = useMemo(() => {
+    const headerSources = sources
+      .filter(s => s.auth?.type === 'header')
+      .map(s => ({ prefix: s.url.replace(/\/$/, ''), auth: s.auth! }));
+    if (headerSources.length === 0) return undefined;
+    return (url: string) => {
+      const match = headerSources.find(s => url.startsWith(s.prefix));
+      if (!match) return { url };
+      return { url, headers: { [match.auth.name]: match.auth.value } };
+    };
   }, [sources]);
 
   // Cleanup debounce timers on unmount
@@ -344,7 +363,7 @@ export function MapPreview({
       if (options?.prefetch) {
         if (prefetchedRef.current.has(key)) return;
         prefetchedRef.current.add(key);
-        fetchDistinctValues(sourceInfo.url, layer.collection, property, { fetchAll: true })
+        fetchDistinctValues(sourceInfo.url, layer.collection, property, { fetchAll: true }, sourceInfo.auth)
           .then(values => setAutocompleteSuggestions(prev => ({ ...prev, [key]: values })))
           .catch(() => prefetchedRef.current.delete(key));
         return;
@@ -358,7 +377,7 @@ export function MapPreview({
 
       const timer = setTimeout(() => {
         delete debounceTimersRef.current[key];
-        fetchDistinctValues(sourceInfo.url, layer.collection, property, { query, limit: 50 })
+        fetchDistinctValues(sourceInfo.url, layer.collection, property, { query, limit: 50 }, sourceInfo.auth)
           .then(values => setAutocompleteSuggestions(prev => ({ ...prev, [key]: values })))
           .catch(() => {});
       }, 300);
@@ -473,7 +492,7 @@ export function MapPreview({
       if (!sourceInfo) return;
 
       const cql2Filter = eq(property, value);
-      const data = await fetchFeatures(sourceInfo.url, layer.collection, { cql2Filter, limit: 1 });
+      const data = await fetchFeatures(sourceInfo.url, layer.collection, { cql2Filter, limit: 1 }, sourceInfo.auth);
       if (!data.features.length) return;
 
       const bbox = bboxFromGeometry(data.features[0].geometry as Record<string, unknown>);
@@ -598,6 +617,7 @@ export function MapPreview({
         bearing={internalViewState.bearing}
         style={{ width: '100%', height: '100%' }}
         mapStyle={resolvedStyle as any}
+        transformRequest={transformRequest}
         cursor={measure.mode || selection.mode ? 'crosshair' : cursor}
         interactiveLayerIds={measure.mode || selection.mode === 'box' || selection.mode === 'polygon' ? undefined : interactiveLayerIds}
         doubleClickZoom={!measure.mode && !selection.mode}
@@ -740,13 +760,14 @@ export function MapPreview({
         {/* Render raster imagery layers (above basemap, below features) */}
         {!showEmptyState && imageryLayers.map((layer) => {
           const sourceInfo = sourceUrlMap[layer.sourceId];
-          if (!sourceInfo) return null;
+          if (!sourceInfo && !layer.tileUrlTemplate) return null;
           return (
             <PreviewRasterImageryLayer
               key={layer.id}
               layer={layer}
-              sourceUrl={sourceInfo.url}
-              tileMatrixSetId={sourceInfo.tileMatrixSetId}
+              sourceUrl={sourceInfo?.url ?? ''}
+              tileMatrixSetId={sourceInfo?.tileMatrixSetId}
+              auth={sourceInfo?.auth}
             />
           );
         })}
@@ -762,6 +783,7 @@ export function MapPreview({
                 layer={layer}
                 sourceUrl={sourceInfo.url}
                 cql2Filter={activeCql2Filters[layer.id]}
+                auth={sourceInfo.auth}
               />
             );
           }
@@ -773,6 +795,7 @@ export function MapPreview({
               sourceUrl={sourceInfo.url}
               tileMatrixSetId={sourceInfo.tileMatrixSetId}
               cql2Filter={activeCql2Filters[layer.id]}
+              auth={sourceInfo.auth}
             />
           );
         })}

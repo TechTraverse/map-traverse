@@ -19,8 +19,10 @@ import {
   defaultCircle,
   defaultSymbol,
   resolveAvailableIcons,
+  slugify,
 } from '@ogc-maps/storybook-components';
 import { safeValidateMapConfig, DEFAULT_HEADER_COLOR } from '@ogc-maps/storybook-components/schemas';
+import { detectTileSourceType, fetchGenericTileJson } from '@ogc-maps/storybook-components/hooks';
 import type {
   OgcApiSource,
   LayerConfig,
@@ -289,9 +291,58 @@ export function ConfigWizardPage() {
   };
 
   const imageryBrowseSource = sources.find(s => s.id === imageryBrowseSourceId);
+  const imageryBrowseSourceType = imageryBrowseSource ? detectTileSourceType(imageryBrowseSource.url) : null;
   const imagerySelectedCollectionIds = imageryLayers
     .filter(l => l.sourceId === imageryBrowseSourceId)
     .map(l => l.collection);
+  const imagerySourceAlreadyAdded = imageryLayers.some(l => l.sourceId === imageryBrowseSourceId);
+
+  const [imageryTileJsonLoading, setImageryTileJsonLoading] = useState(false);
+  const [imageryTileJsonError, setImageryTileJsonError] = useState<string | null>(null);
+
+  const createImageryLayerFromSource = (opts: { label: string; tileUrlTemplate: string; minZoom?: number; maxZoom?: number }): ImageryLayerConfig => ({
+    id: slugify(opts.label) || imageryBrowseSourceId,
+    sourceId: imageryBrowseSourceId,
+    collection: '',
+    label: opts.label,
+    visible: false,
+    opacity: 1,
+    exclusive: false,
+    tileSize: 256,
+    tileUrlTemplate: opts.tileUrlTemplate,
+    ...(opts.minZoom != null ? { minZoom: opts.minZoom } : {}),
+    ...(opts.maxZoom != null ? { maxZoom: opts.maxZoom } : {}),
+  });
+
+  const handleAddTileJsonImageryLayer = async () => {
+    if (!imageryBrowseSource) return;
+    setImageryTileJsonLoading(true);
+    setImageryTileJsonError(null);
+    try {
+      const tj = await fetchGenericTileJson(imageryBrowseSource.url, imageryBrowseSource.auth);
+      if (!tj.tiles?.[0]) throw new Error('TileJSON has no tile URLs');
+      const label = tj.name ?? imageryBrowseSource.label ?? imageryBrowseSourceId;
+      setImageryLayers(prev => [...prev, createImageryLayerFromSource({
+        label,
+        tileUrlTemplate: tj.tiles[0],
+        minZoom: tj.minzoom ?? undefined,
+        maxZoom: tj.maxzoom ?? undefined,
+      })]);
+    } catch (err) {
+      setImageryTileJsonError(err instanceof Error ? err.message : 'Failed to fetch TileJSON');
+    } finally {
+      setImageryTileJsonLoading(false);
+    }
+  };
+
+  const handleAddXyzImageryLayer = () => {
+    if (!imageryBrowseSource) return;
+    const label = imageryBrowseSource.label ?? imageryBrowseSourceId;
+    setImageryLayers(prev => [...prev, createImageryLayerFromSource({
+      label,
+      tileUrlTemplate: imageryBrowseSource.url,
+    })]);
+  };
 
   const isBasemapSelected = (preset: BasemapConfig) =>
     basemaps.some(b => b.url === preset.url);
@@ -602,13 +653,55 @@ export function ConfigWizardPage() {
                       ))}
                     </select>
                   </div>
-                  {imageryBrowseSource && (
+                  {imageryBrowseSource && imageryBrowseSourceType === 'ogc-api' && (
                     <CollectionBrowser
                       sourceUrl={imageryBrowseSource.url}
                       selectedCollectionIds={imagerySelectedCollectionIds}
                       onSelect={(collectionId) => handleImageryCollectionSelect(collectionId)}
                       onDeselect={handleImageryCollectionDeselect}
                     />
+                  )}
+
+                  {imageryBrowseSource && imageryBrowseSourceType === 'tilejson' && (
+                    <div className="mapui:rounded mapui:bg-blue-50 mapui:border mapui:border-blue-200 mapui:p-3 mapui:text-sm">
+                      <p className="mapui:text-blue-800 mapui:mb-2">
+                        This is a TileJSON source. It provides a single tile layer.
+                      </p>
+                      {imagerySourceAlreadyAdded ? (
+                        <span className="mapui:text-blue-600 mapui:text-xs">Already added as an imagery layer.</span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleAddTileJsonImageryLayer}
+                          disabled={imageryTileJsonLoading}
+                          className="mapui:rounded mapui:bg-blue-600 mapui:text-white mapui:px-3 mapui:py-1.5 mapui:text-sm hover:mapui:bg-blue-700 disabled:mapui:opacity-50"
+                        >
+                          {imageryTileJsonLoading ? 'Loading TileJSON…' : 'Add as Imagery Layer'}
+                        </button>
+                      )}
+                      {imageryTileJsonError && (
+                        <p className="mapui:text-red-600 mapui:text-xs mapui:mt-1">{imageryTileJsonError}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {imageryBrowseSource && imageryBrowseSourceType === 'xyz' && (
+                    <div className="mapui:rounded mapui:bg-blue-50 mapui:border mapui:border-blue-200 mapui:p-3 mapui:text-sm">
+                      <p className="mapui:text-blue-800 mapui:mb-2">
+                        This source uses a direct tile URL template.
+                      </p>
+                      {imagerySourceAlreadyAdded ? (
+                        <span className="mapui:text-blue-600 mapui:text-xs">Already added as an imagery layer.</span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleAddXyzImageryLayer}
+                          className="mapui:rounded mapui:bg-blue-600 mapui:text-white mapui:px-3 mapui:py-1.5 mapui:text-sm hover:mapui:bg-blue-700"
+                        >
+                          Add as Imagery Layer
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
 
