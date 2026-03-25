@@ -1,5 +1,16 @@
 # map-client
 
+## 0.3.0
+
+### Minor Changes
+
+- 277bb19: imagery layers
+
+### Patch Changes
+
+- Updated dependencies [277bb19]
+  - @ogc-maps/storybook-components@0.14.0
+
 ## 0.2.0
 
 ### Minor Changes
