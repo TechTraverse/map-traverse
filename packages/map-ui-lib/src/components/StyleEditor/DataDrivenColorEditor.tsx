@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { AvailableProperty } from '../../types';
+import type { AvailableProperty, FetchDistinctValuesFn } from '../../types';
 import { ColorPicker } from '../admin/ColorPicker';
 import { getColorFromPalette } from '../../utils/colorPalettes';
 
@@ -7,7 +7,7 @@ export interface DataDrivenColorEditorProps {
   value: unknown[];
   onChange: (expr: unknown[]) => void;
   availableProperties?: AvailableProperty[];
-  onFetchDistinctValues?: (property: string) => Promise<string[]>;
+  onFetchDistinctValues?: FetchDistinctValuesFn;
 }
 
 type ExprMode = 'match' | 'interpolate';
@@ -121,6 +121,7 @@ export function DataDrivenColorEditor({
 }: DataDrivenColorEditorProps) {
   const [mode, setMode] = useState<ExprMode>(() => detectMode(value));
   const [autoPopulating, setAutoPopulating] = useState(false);
+  const [scanAll, setScanAll] = useState(false);
 
   // Match state
   const parsed = parseMatchExpr(value);
@@ -199,7 +200,10 @@ export function DataDrivenColorEditor({
     if (!onFetchDistinctValues || !matchProperty) return;
     setAutoPopulating(true);
     try {
-      const values = await onFetchDistinctValues(matchProperty);
+      const values = await onFetchDistinctValues(
+        matchProperty,
+        scanAll ? { maxFeatures: 500_000 } : undefined,
+      );
       const pairs = values.map((v, i) => ({
         value: v,
         color: getColorFromPalette(i),
@@ -340,14 +344,25 @@ export function DataDrivenColorEditor({
               + Add value
             </button>
             {onFetchDistinctValues && matchProperty && (
-              <button
-                type="button"
-                onClick={handleAutoPopulate}
-                disabled={autoPopulating}
-                className={btnClass}
-              >
-                {autoPopulating ? 'Loading…' : 'Auto-populate'}
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={handleAutoPopulate}
+                  disabled={autoPopulating}
+                  className={btnClass}
+                >
+                  {autoPopulating ? 'Loading…' : 'Auto-populate'}
+                </button>
+                <label className="mapui:flex mapui:items-center mapui:gap-1 mapui:text-xs mapui:text-gray-600">
+                  <input
+                    type="checkbox"
+                    checked={scanAll}
+                    onChange={(e) => setScanAll(e.target.checked)}
+                    className="mapui:h-3 mapui:w-3"
+                  />
+                  Scan all features
+                </label>
+              </>
             )}
           </div>
         </>

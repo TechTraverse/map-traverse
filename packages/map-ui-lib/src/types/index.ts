@@ -91,6 +91,12 @@ export type UIConfig = z.infer<typeof UIConfigSchema>;
 export type BrandingConfig = z.infer<typeof BrandingConfigSchema>;
 export type MapConfig = z.infer<typeof MapConfigSchema>;
 
+/** Callback for fetching distinct property values from an OGC API collection. */
+export type FetchDistinctValuesFn = (
+  property: string,
+  options?: { maxFeatures?: number },
+) => Promise<string[]>;
+
 /** A queryable property from OGC API metadata, used to drive editor dropdowns. */
 export interface AvailableProperty {
   name: string;
