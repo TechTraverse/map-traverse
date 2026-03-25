@@ -966,6 +966,11 @@ export function MapPreview({
                     onToggleVisibility={(layerId) => {
                       onLayersChange?.(layers.map(l => l.id === layerId ? { ...l, visible: !l.visible } : l));
                     }}
+                    onReorder={(layerIds) => {
+                      const layerById: Record<string, LayerConfig> = Object.fromEntries(layers.map(l => [l.id, l]));
+                      const reordered = layerIds.map(id => layerById[id]).filter((l): l is LayerConfig => !!l);
+                      onLayersChange?.(reordered);
+                    }}
                     hideTitle
                   />
                 </CollapsibleControl>

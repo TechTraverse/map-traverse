@@ -217,7 +217,6 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
     }
   }, [mapInstance, layers, activeCql2Filters]);
 
-
   // Zoom to pending fit bounds
   useEffect(() => {
     if (!pendingFitBounds || !mapRef.current) return;
@@ -271,11 +270,45 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
 
   const [cursor, setCursor] = useState<string>('auto');
 
-  // Split layers by data mode
   // Reverse so first layer in config (top of list) renders on top of the map
-  const reversedLayers = [...layers].reverse();
-  const vectorTileLayers = reversedLayers.filter((l) => l.dataMode === 'vector-tiles');
-  const geojsonLayers = reversedLayers.filter((l) => l.dataMode === 'geojson');
+  const reversedLayers = useMemo(() => [...layers].reverse(), [layers]);
+
+  const imageryLayerIds = useMemo(() => imageryLayers.map(l => l.id), [imageryLayers]);
+
+  // MapLibre doesn't reorder layers when JSX order changes,
+  // so we imperatively reorder after each layer change.
+  useEffect(() => {
+    if (!mapInstance) return;
+    const frame = requestAnimationFrame(() => {
+      const desiredOrder = reversedLayers
+        .filter(l => sourceUrlMap[l.sourceId] && l.styles?.length)
+        .flatMap(l => {
+          const sourceKey = l.dataMode === 'vector-tiles'
+            ? getVectorTileSourceKey(l.id, activeCql2Filters[l.id])
+            : l.id;
+          return (l.styles ?? []).map((s, i) => `${sourceKey}--${s.type}--${i}`);
+        })
+        .filter(id => mapInstance.getLayer(id));
+
+      for (let i = desiredOrder.length - 2; i >= 0; i--) {
+        try { mapInstance.moveLayer(desiredOrder[i], desiredOrder[i + 1]); }
+        catch { /* layer may not be on map yet */ }
+      }
+
+      // Keep imagery layers below all feature layers
+      const firstFeatureId = desiredOrder[0];
+      if (firstFeatureId) {
+        for (const id of imageryLayerIds) {
+          const imgLayerId = `imagery-${id}`;
+          if (mapInstance.getLayer(imgLayerId)) {
+            try { mapInstance.moveLayer(imgLayerId, firstFeatureId); }
+            catch { /* layer may not be on map yet */ }
+          }
+        }
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [mapInstance, reversedLayers, sourceUrlMap, activeCql2Filters, imageryLayerIds]);
 
   // IDs of visible layers for feature querying (one per sub-layer)
   const interactiveLayerIds = useMemo(
@@ -432,12 +465,15 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
         );
       })}
 
-      {/* Render vector tile layers */}
-      {vectorTileLayers.map((layer) => {
+      {/* Render feature layers (vector tiles + geojson) in unified order */}
+      {reversedLayers.map((layer) => {
         const sourceInfo = sourceUrlMap[layer.sourceId];
         if (!sourceInfo) {
           console.warn(`Source URL not found for layer ${layer.id}`);
           return null;
+        }
+        if (layer.dataMode === 'geojson') {
+          return <GeoJsonLayer key={`${layer.id}--${layer.styles?.length ?? 0}`} layer={layer} sourceUrl={sourceInfo.url} cql2Filter={activeCql2Filters[layer.id]} auth={sourceInfo.auth} />;
         }
         return (
           <VectorTileLayer
@@ -449,16 +485,6 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
             auth={sourceInfo.auth}
           />
         );
-      })}
-
-      {/* Render GeoJSON layers */}
-      {geojsonLayers.map((layer) => {
-        const sourceInfo = sourceUrlMap[layer.sourceId];
-        if (!sourceInfo) {
-          console.warn(`Source URL not found for layer ${layer.id}`);
-          return null;
-        }
-        return <GeoJsonLayer key={`${layer.id}--${layer.styles?.length ?? 0}`} layer={layer} sourceUrl={sourceInfo.url} cql2Filter={activeCql2Filters[layer.id]} auth={sourceInfo.auth} />;
       })}
 
       {/* Measure tool GeoJSON */}
