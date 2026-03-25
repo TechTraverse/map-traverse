@@ -1,5 +1,11 @@
 # @ogc-maps/storybook-components
 
+## 0.14.0
+
+### Minor Changes
+
+- 277bb19: imagery layers
+
 ## 0.13.0
 
 ### Minor Changes
