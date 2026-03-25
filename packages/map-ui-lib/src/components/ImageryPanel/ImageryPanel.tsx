@@ -33,7 +33,7 @@ export function ImageryPanel({
                 type="checkbox"
                 checked={layer.visible}
                 onChange={() => onToggleVisibility(layer.id)}
-                className="mapui:h-4 mapui:w-4 mapui:cursor-pointer mapui:accent-blue-600"
+                className="mapui:h-4 mapui:w-4 mapui:cursor-pointer mapui:accent-gray-700"
               />
               <span className="mapui:flex-1 mapui:text-sm mapui:text-gray-800 mapui:truncate">
                 {layer.label}
@@ -56,7 +56,7 @@ export function ImageryPanel({
                   step={0.05}
                   value={layer.opacity ?? 1}
                   onChange={(e) => onOpacityChange(layer.id, Number(e.target.value))}
-                  className="mapui:h-1 mapui:w-full mapui:cursor-pointer mapui:accent-blue-600"
+                  className="mapui:h-1 mapui:w-full mapui:cursor-pointer mapui:accent-gray-700"
                 />
                 <span className="mapui:text-xs mapui:text-gray-500 mapui:w-8 mapui:text-right">
                   {Math.round((layer.opacity ?? 1) * 100)}%

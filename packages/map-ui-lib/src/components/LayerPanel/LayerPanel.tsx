@@ -95,7 +95,7 @@ export function LayerPanel({
                 'mapui:flex mapui:items-center mapui:gap-2 mapui:rounded mapui:px-2 mapui:py-1.5',
                 'mapui:select-none mapui:transition-colors',
                 isDragOver
-                  ? 'mapui:bg-blue-100'
+                  ? 'mapui:bg-gray-200'
                   : 'mapui:bg-transparent hover:mapui:bg-gray-100',
                 isDragged ? 'mapui:opacity-50' : 'mapui:opacity-100',
               ].join(' ')}
@@ -113,7 +113,7 @@ export function LayerPanel({
                   type="checkbox"
                   checked={isActive}
                   onChange={() => onToggleVisibility(layer.id)}
-                  className="mapui:h-4 mapui:w-4 mapui:cursor-pointer mapui:accent-blue-600"
+                  className="mapui:h-4 mapui:w-4 mapui:cursor-pointer mapui:accent-gray-700"
                 />
                 <span className="mapui:text-sm mapui:text-gray-800 mapui:truncate">{layer.label}</span>
               </label>
