@@ -29,7 +29,7 @@ RUN corepack enable
 WORKDIR /app
 
 # Copy workspace manifest files
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
 COPY packages/map-ui-lib/package.json ./packages/map-ui-lib/
 COPY apps/admin-app/package.json ./apps/admin-app/
 

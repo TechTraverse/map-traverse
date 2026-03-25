@@ -37,7 +37,7 @@ import type {
 import { ImageUploadField } from '../components/ImageUploadField';
 import { MapPreview } from '../components/MapPreview';
 
-interface SavedSourceSummary { id: string; source_id: string; url: string; label: string | null; tile_matrix_set_id: string; source_type?: string }
+interface SavedSourceSummary { id: string; source_id: string; url: string; label: string | null; tile_matrix_set_id: string; source_type?: string; auth?: { type: 'query_param' | 'header'; name: string; value: string } | null }
 
 type WizardStep = 'metadata' | 'sources' | 'layer-select' | 'layer-config' | 'imagery' | 'basemaps' | 'ui' | 'view' | 'review';
 
@@ -525,6 +525,7 @@ export function ConfigWizardPage() {
                             label: saved.label ?? undefined,
                             tileMatrixSetId: saved.tile_matrix_set_id,
                             type: (saved.source_type ?? 'features') as 'features' | 'imagery',
+                            auth: saved.auth ?? undefined,
                           }]);
                         }}
                         disabled={alreadyAdded}
@@ -597,6 +598,7 @@ export function ConfigWizardPage() {
                   {browseSource && (
                     <CollectionBrowser
                       sourceUrl={browseSource.url}
+                      sourceAuth={browseSource.auth}
                       selectedCollectionIds={selectedCollectionIds}
                       onSelect={handleCollectionSelect}
                       onDeselect={handleCollectionDeselect}
@@ -656,6 +658,7 @@ export function ConfigWizardPage() {
                   {imageryBrowseSource && imageryBrowseSourceType === 'ogc-api' && (
                     <CollectionBrowser
                       sourceUrl={imageryBrowseSource.url}
+                      sourceAuth={imageryBrowseSource.auth}
                       selectedCollectionIds={imagerySelectedCollectionIds}
                       onSelect={(collectionId) => handleImageryCollectionSelect(collectionId)}
                       onDeselect={handleImageryCollectionDeselect}
