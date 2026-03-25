@@ -413,6 +413,9 @@ export function MapPreview({
     [layers, opacityOverrides],
   );
 
+  // Reverse so first layer in config (top of list) renders on top of the map
+  const reversedLayers = useMemo(() => [...layersWithDefaults].reverse(), [layersWithDefaults]);
+
   const handleLayerOpacity = useCallback((layerId: string, opacity: number) => {
     setOpacityOverrides(prev => ({ ...prev, [layerId]: opacity }));
   }, []);
@@ -563,7 +566,7 @@ export function MapPreview({
     if (!mapInstance) return;
 
     const frame = requestAnimationFrame(() => {
-      const desiredOrder = layersWithDefaults
+      const desiredOrder = reversedLayers
         .filter(l => sourceUrlMap[l.sourceId] && l.styles?.length)
         .flatMap(l => {
           const sourceKey = l.dataMode === 'vector-tiles'
@@ -597,7 +600,7 @@ export function MapPreview({
     });
 
     return () => cancelAnimationFrame(frame);
-  }, [mapInstance, layersWithDefaults, sourceUrlMap, activeCql2Filters, imageryLayerIds]);
+  }, [mapInstance, reversedLayers, sourceUrlMap, activeCql2Filters, imageryLayerIds]);
 
   const handleMove = (evt: { viewState: { latitude: number; longitude: number; zoom: number; pitch: number; bearing: number } }) => {
     const next: ViewConfig = {
@@ -780,7 +783,7 @@ export function MapPreview({
           );
         })}
 
-        {!showEmptyState && layersWithDefaults.map((layer) => {
+        {!showEmptyState && reversedLayers.map((layer) => {
           const sourceInfo = sourceUrlMap[layer.sourceId];
           if (!sourceInfo || !layer.styles?.length) return null;
 

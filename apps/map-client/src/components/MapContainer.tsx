@@ -272,8 +272,10 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
   const [cursor, setCursor] = useState<string>('auto');
 
   // Split layers by data mode
-  const vectorTileLayers = layers.filter((l) => l.dataMode === 'vector-tiles');
-  const geojsonLayers = layers.filter((l) => l.dataMode === 'geojson');
+  // Reverse so first layer in config (top of list) renders on top of the map
+  const reversedLayers = [...layers].reverse();
+  const vectorTileLayers = reversedLayers.filter((l) => l.dataMode === 'vector-tiles');
+  const geojsonLayers = reversedLayers.filter((l) => l.dataMode === 'geojson');
 
   // IDs of visible layers for feature querying (one per sub-layer)
   const interactiveLayerIds = useMemo(
