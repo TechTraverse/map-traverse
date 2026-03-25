@@ -16,7 +16,7 @@ export function ImageryPanel({
   hideTitle,
 }: ImageryPanelProps) {
   return (
-    <div className={`mapui:flex mapui:flex-col mapui:gap-1 ${className}`.trim()}>
+    <div className={`mapui:flex mapui:flex-col mapui:gap-1 mapui:min-w-48 ${className}`.trim()}>
       {!hideTitle && (
         <h3 className="mapui:m-0 mapui:mb-2 mapui:text-sm mapui:font-semibold mapui:text-gray-700">
           Imagery

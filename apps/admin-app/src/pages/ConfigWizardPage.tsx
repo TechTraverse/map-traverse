@@ -22,7 +22,7 @@ import {
   slugify,
 } from '@ogc-maps/storybook-components';
 import { safeValidateMapConfig, DEFAULT_HEADER_COLOR } from '@ogc-maps/storybook-components/schemas';
-import { detectTileSourceType, fetchGenericTileJson } from '@ogc-maps/storybook-components/hooks';
+import { detectTileSourceType, fetchGenericTileJson, tileSizeFromTileJson } from '@ogc-maps/storybook-components/hooks';
 import type {
   OgcApiSource,
   LayerConfig,
@@ -33,11 +33,12 @@ import type {
   ViewConfig,
   MapConfig,
   BrandingConfig,
+  SourceAuth,
 } from '@ogc-maps/storybook-components';
 import { ImageUploadField } from '../components/ImageUploadField';
 import { MapPreview } from '../components/MapPreview';
 
-interface SavedSourceSummary { id: string; source_id: string; url: string; label: string | null; tile_matrix_set_id: string; source_type?: string; auth?: { type: 'query_param' | 'header'; name: string; value: string } | null }
+interface SavedSourceSummary { id: string; source_id: string; url: string; label: string | null; tile_matrix_set_id: string; source_type?: string; auth?: SourceAuth | null }
 
 type WizardStep = 'metadata' | 'sources' | 'layer-select' | 'layer-config' | 'imagery' | 'basemaps' | 'ui' | 'view' | 'review';
 
@@ -45,9 +46,9 @@ const STEPS: { key: WizardStep; label: string }[] = [
   { key: 'metadata', label: 'Metadata' },
   { key: 'basemaps', label: 'Basemaps' },
   { key: 'sources', label: 'Sources' },
+  { key: 'imagery', label: 'Imagery' },
   { key: 'layer-select', label: 'Layer selection' },
   { key: 'layer-config', label: 'Layer configuration' },
-  { key: 'imagery', label: 'Imagery' },
   { key: 'ui', label: 'UI' },
   { key: 'view', label: 'View' },
   { key: 'review', label: 'Review' },
@@ -300,7 +301,7 @@ export function ConfigWizardPage() {
   const [imageryTileJsonLoading, setImageryTileJsonLoading] = useState(false);
   const [imageryTileJsonError, setImageryTileJsonError] = useState<string | null>(null);
 
-  const createImageryLayerFromSource = (opts: { label: string; tileUrlTemplate: string; minZoom?: number; maxZoom?: number }): ImageryLayerConfig => ({
+  const createImageryLayerFromSource = (opts: { label: string; tileUrlTemplate: string; minZoom?: number; maxZoom?: number; tileSize?: number }): ImageryLayerConfig => ({
     id: slugify(opts.label) || imageryBrowseSourceId,
     sourceId: imageryBrowseSourceId,
     collection: '',
@@ -308,7 +309,7 @@ export function ConfigWizardPage() {
     visible: false,
     opacity: 1,
     exclusive: false,
-    tileSize: 256,
+    tileSize: opts.tileSize ?? 256,
     tileUrlTemplate: opts.tileUrlTemplate,
     ...(opts.minZoom != null ? { minZoom: opts.minZoom } : {}),
     ...(opts.maxZoom != null ? { maxZoom: opts.maxZoom } : {}),
@@ -321,12 +322,14 @@ export function ConfigWizardPage() {
     try {
       const tj = await fetchGenericTileJson(imageryBrowseSource.url, imageryBrowseSource.auth);
       if (!tj.tiles?.[0]) throw new Error('TileJSON has no tile URLs');
+      const tileSize = tileSizeFromTileJson(tj);
       const label = tj.name ?? imageryBrowseSource.label ?? imageryBrowseSourceId;
       setImageryLayers(prev => [...prev, createImageryLayerFromSource({
         label,
         tileUrlTemplate: tj.tiles[0],
         minZoom: tj.minzoom ?? undefined,
         maxZoom: tj.maxzoom ?? undefined,
+        tileSize,
       })]);
     } catch (err) {
       setImageryTileJsonError(err instanceof Error ? err.message : 'Failed to fetch TileJSON');

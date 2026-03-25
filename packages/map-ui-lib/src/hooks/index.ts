@@ -53,6 +53,7 @@ export {
   buildGeometryFilter,
   getImageryTileUrl,
   fetchGenericTileJson,
+  tileSizeFromTileJson,
   detectTileSourceType,
   appendAuth,
   authHeaders,

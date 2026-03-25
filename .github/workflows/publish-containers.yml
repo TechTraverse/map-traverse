@@ -1,0 +1,55 @@
+name: Publish Container Images
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish-containers:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version from release tag
+        id: version
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG##*@}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push map-admin
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/admin-app/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/ogc-maps/map-admin:${{ steps.version.outputs.version }}
+            ghcr.io/ogc-maps/map-admin:latest
+
+      - name: Build and push map-client
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/map-client/Dockerfile
+          push: true
+          build-args: |
+            VITE_CONFIG_API_URL=/api
+          tags: |
+            ghcr.io/ogc-maps/map-client:${{ steps.version.outputs.version }}
+            ghcr.io/ogc-maps/map-client:latest

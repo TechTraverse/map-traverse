@@ -104,7 +104,15 @@ function RasterImageryLayer({
 }) {
   const tileUrl = getImageryTileUrl(sourceUrl, layer.collection, tileMatrixSetId, layer.tileUrlTemplate, auth);
   return (
-    <Source id={`imagery-${layer.id}`} key={`imagery-${layer.id}`} type="raster" tiles={[tileUrl]} tileSize={layer.tileSize ?? 256}>
+    <Source
+      id={`imagery-${layer.id}`}
+      key={`imagery-${layer.id}`}
+      type="raster"
+      tiles={[tileUrl]}
+      tileSize={layer.tileSize ?? 256}
+      {...(layer.minZoom != null ? { minzoom: layer.minZoom } : {})}
+      {...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {})}
+    >
       <Layer
         id={`imagery-${layer.id}`}
         type="raster"

@@ -82,6 +82,13 @@ export interface TileJson {
     description?: string;
     fields?: Record<string, string>;
   }>;
+  /** Non-standard extension (MapTiler): tile scale factor. "2.000000" or 2 means 512px tiles. */
+  scale?: string | number;
+}
+
+/** Derive tileSize from TileJSON scale field. Returns 512 for @2x tiles, 256 otherwise. */
+export function tileSizeFromTileJson(tj: TileJson): number {
+  return (Number(tj.scale) || 1) >= 2 ? 512 : 256;
 }
 
 /** Options for fetchFeatures. */
@@ -418,7 +425,14 @@ export function getImageryTileUrl(
   tileUrlTemplate?: string,
   auth?: SourceAuth,
 ): string {
-  if (tileUrlTemplate) return appendAuth(tileUrlTemplate, auth);
+  if (tileUrlTemplate) {
+    // Skip appending auth if the URL already contains the auth param
+    // (e.g. TileJSON tile URLs that bake in the API key)
+    if (auth?.type === 'query_param' && new RegExp(`[?&]${auth.name}=`).test(tileUrlTemplate)) {
+      return tileUrlTemplate;
+    }
+    return appendAuth(tileUrlTemplate, auth);
+  }
   const base = stripTrailingSlash(baseUrl);
   const url = `${base}/collections/${encodeURIComponent(collection)}/map/tiles/${encodeURIComponent(tileMatrixSetId)}/{z}/{x}/{y}.png`;
   return appendAuth(url, auth);

@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import type { ImageryLayerConfig, OgcApiSource, SourceAuth } from '../../types';
 import { useOgcCollections } from '../../hooks/useOgcCollections';
-import { fetchGenericTileJson, detectTileSourceType } from '../../utils/ogcApi';
+import { fetchGenericTileJson, tileSizeFromTileJson, detectTileSourceType } from '../../utils/ogcApi';
 import { FormField } from '../admin/FormField';
 
 export interface ImageryEditorProps {
@@ -72,7 +72,8 @@ export function ImageryEditor({
       try {
         const tj = await fetchGenericTileJson(url, sourceAuth);
         if (generation !== fetchGeneration.current) return; // stale response
-        const patch: Partial<ImageryLayerConfig> = { tileUrlTemplate: tj.tiles?.[0] ?? url };
+        const tileSize = tileSizeFromTileJson(tj);
+        const patch: Partial<ImageryLayerConfig> = { tileUrlTemplate: tj.tiles?.[0] ?? url, tileSize };
         if (tj.name && (!value.label || value.label === 'Custom Imagery Layer' || value.label === 'New Imagery Layer')) {
           patch.label = tj.name;
         }
