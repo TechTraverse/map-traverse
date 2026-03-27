@@ -143,7 +143,7 @@ app.get('/api/health', async (_req, res) => {
   }
 });
 
-const NAME_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+const NAME_REGEX = /^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$/;
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-/;
 
 // --- Config endpoints ---
@@ -220,7 +220,7 @@ app.post('/api/configs', requireAuth, async (req, res) => {
     return;
   }
   if (!NAME_REGEX.test(name)) {
-    res.status(400).json({ error: 'name must be a slug (lowercase letters, numbers, hyphens only, e.g. "my-config")' });
+    res.status(400).json({ error: 'name must contain only letters, numbers, and hyphens (e.g. "My-Config")' });
     return;
   }
 
@@ -252,7 +252,7 @@ app.put('/api/configs/:id', requireAuth, async (req, res) => {
   };
 
   if (name !== undefined && !NAME_REGEX.test(name)) {
-    res.status(400).json({ error: 'name must be a slug (lowercase letters, numbers, hyphens only, e.g. "my-config")' });
+    res.status(400).json({ error: 'name must contain only letters, numbers, and hyphens (e.g. "My-Config")' });
     return;
   }
 
@@ -669,14 +669,29 @@ app.post('/api/sources', requireAuth, async (req, res) => {
   }
 
   try {
+    const effectiveType = source_type ?? 'features';
+    const { thumbnail } = req.body as { thumbnail?: string };
+
+    // For basemaps, store thumbnail in metadata and skip OGC inspection
+    const basemapMetadata = effectiveType === 'basemap' && thumbnail
+      ? JSON.stringify({ thumbnail })
+      : (effectiveType === 'basemap' ? null : undefined);
+
     const result = await pool.query(
-      `INSERT INTO ogc_sources (source_id, url, label, tile_matrix_set_id, source_type, auth)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [source_id, url, label ?? null, tile_matrix_set_id ?? 'WebMercatorQuad', source_type ?? 'features', auth ? JSON.stringify(auth) : null],
+      `INSERT INTO ogc_sources (source_id, url, label, tile_matrix_set_id, source_type, auth${basemapMetadata !== undefined ? ', metadata, metadata_updated_at' : ''})
+       VALUES ($1, $2, $3, $4, $5, $6${basemapMetadata !== undefined ? ', $7, now()' : ''}) RETURNING *`,
+      [
+        source_id, url, label ?? null, tile_matrix_set_id ?? 'WebMercatorQuad', effectiveType,
+        auth ? JSON.stringify(auth) : null,
+        ...(basemapMetadata !== undefined ? [basemapMetadata] : []),
+      ],
     );
     const row = result.rows[0] as { id: string };
 
-    if (metadata) {
+    // Skip inspection for basemaps
+    if (effectiveType === 'basemap') {
+      res.status(201).json(result.rows[0]);
+    } else if (metadata) {
       // Client provided metadata (client-side inspection) — save directly
       const updated = await pool.query(
         'UPDATE ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
@@ -739,6 +754,9 @@ app.put('/api/sources/:id', requireAuth, async (req, res) => {
     };
 
     const newUrl = url ?? row.url;
+    const effectiveType = source_type ?? row.source_type;
+    const { thumbnail } = req.body as { thumbnail?: string };
+
     const result = await pool.query(
       `UPDATE ogc_sources SET source_id = $1, url = $2, label = $3, tile_matrix_set_id = $4, source_type = $5, auth = $6, updated_at = now()
        WHERE id = $7 RETURNING *`,
@@ -747,13 +765,28 @@ app.put('/api/sources/:id', requireAuth, async (req, res) => {
         newUrl,
         label !== undefined ? (label || null) : row.label,
         tile_matrix_set_id ?? row.tile_matrix_set_id,
-        source_type ?? row.source_type,
+        effectiveType,
         auth !== undefined ? (auth ? JSON.stringify(auth) : null) : (row.auth ? JSON.stringify(row.auth) : null),
         req.params.id,
       ],
     );
 
-    // Re-inspect if URL changed
+    // For basemaps, update thumbnail in metadata and skip OGC inspection
+    if (effectiveType === 'basemap') {
+      if (thumbnail !== undefined) {
+        const meta = thumbnail ? { thumbnail } : null;
+        const updated = await pool.query(
+          'UPDATE ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
+          [meta ? JSON.stringify(meta) : null, req.params.id],
+        );
+        res.json(updated.rows[0]);
+      } else {
+        res.json(result.rows[0]);
+      }
+      return;
+    }
+
+    // Re-inspect if URL changed (non-basemap sources)
     if (url && url !== row.url) {
       if (metadata) {
         // Client provided metadata — save directly
@@ -871,40 +904,107 @@ app.post('/api/sources/:id/inspect', requireAuth, async (req, res) => {
 app.post('/api/sources/import', requireAuth, async (_req, res) => {
   try {
     const configsResult = await pool.query(
-      "SELECT config->'sources' AS sources FROM map_configs WHERE config->'sources' IS NOT NULL",
+      "SELECT config->'sources' AS sources, config->'imageryLayers' AS imagery_layers, config->'basemaps' AS basemaps FROM map_configs WHERE config IS NOT NULL",
     );
 
-    const seen = new Map<string, { id: string; url: string; label?: string; tileMatrixSetId?: string }>();
+    // Single-pass collection of sources, imagery refs, and basemaps
+    const seen = new Map<string, { id: string; url: string; label?: string; tileMatrixSetId?: string; type?: string; auth?: { type: string; name: string; value: string } }>();
+    const imagerySourceIds = new Set<string>();
+    const seenBasemaps = new Map<string, { id: string; url: string; label: string; thumbnail?: string }>();
+
     for (const row of configsResult.rows) {
-      const sources = (row as { sources: Array<{ id: string; url: string; label?: string; tileMatrixSetId?: string }> }).sources;
-      if (!Array.isArray(sources)) continue;
-      for (const s of sources) {
-        if (s.id && s.url && !seen.has(s.id)) {
-          seen.set(s.id, s);
+      const r = row as {
+        sources: Array<{ id: string; url: string; label?: string; tileMatrixSetId?: string; type?: string; auth?: { type: string; name: string; value: string } }> | null;
+        imagery_layers: Array<{ sourceId: string }> | null;
+        basemaps: Array<{ id: string; url: string; label: string; thumbnail?: string }> | null;
+      };
+
+      if (Array.isArray(r.imagery_layers)) {
+        for (const il of r.imagery_layers) {
+          if (il.sourceId) imagerySourceIds.add(il.sourceId);
+        }
+      }
+
+      if (Array.isArray(r.sources)) {
+        for (const s of r.sources) {
+          if (s.id && s.url && !seen.has(s.id)) {
+            seen.set(s.id, s);
+          }
+        }
+      }
+
+      if (Array.isArray(r.basemaps)) {
+        for (const b of r.basemaps) {
+          if (b.id && b.url && !seenBasemaps.has(b.id)) {
+            seenBasemaps.set(b.id, b);
+          }
         }
       }
     }
 
-    let imported = 0;
+    // Apply cross-reference: if a source is used in imageryLayers, mark it as imagery
+    for (const [id, s] of seen) {
+      if (!s.type && imagerySourceIds.has(id)) {
+        s.type = 'imagery';
+      }
+    }
+
+    let importedFeatures = 0;
+    let importedImagery = 0;
+    let importedBasemaps = 0;
+
+    // Import OGC API sources (features + imagery)
     if (seen.size > 0) {
       const values = Array.from(seen.values());
       const placeholders = values.map((_, i) => {
-        const b = i * 4;
-        return `($${b + 1}, $${b + 2}, $${b + 3}, $${b + 4})`;
+        const b = i * 6;
+        return `($${b + 1}, $${b + 2}, $${b + 3}, $${b + 4}, $${b + 5}, $${b + 6})`;
       }).join(', ');
       const params = values.flatMap(s => [
         s.id, s.url, s.label ?? null, s.tileMatrixSetId ?? 'WebMercatorQuad',
+        s.type ?? 'features', s.auth ? JSON.stringify(s.auth) : null,
       ]);
       const result = await pool.query(
-        `INSERT INTO ogc_sources (source_id, url, label, tile_matrix_set_id)
+        `INSERT INTO ogc_sources (source_id, url, label, tile_matrix_set_id, source_type, auth)
          VALUES ${placeholders}
-         ON CONFLICT (source_id) DO NOTHING`,
+         ON CONFLICT (source_id) DO UPDATE SET
+           source_type = EXCLUDED.source_type,
+           auth = COALESCE(EXCLUDED.auth, ogc_sources.auth)
+         RETURNING source_type`,
         params,
       );
-      imported = result.rowCount ?? 0;
+      for (const row of result.rows) {
+        if ((row as { source_type: string }).source_type === 'imagery') importedImagery++;
+        else importedFeatures++;
+      }
     }
 
-    res.json({ imported, total: seen.size });
+    // Import basemap sources
+    if (seenBasemaps.size > 0) {
+      const basemapValues = Array.from(seenBasemaps.values());
+      const placeholders = basemapValues.map((_, i) => {
+        const b = i * 5;
+        return `($${b + 1}, $${b + 2}, $${b + 3}, $${b + 4}, $${b + 5})`;
+      }).join(', ');
+      const params = basemapValues.flatMap(b => [
+        b.id, b.url, b.label, 'basemap',
+        b.thumbnail ? JSON.stringify({ thumbnail: b.thumbnail }) : null,
+      ]);
+      const result = await pool.query(
+        `INSERT INTO ogc_sources (source_id, url, label, source_type, metadata)
+         VALUES ${placeholders}
+         ON CONFLICT (source_id) DO UPDATE SET
+           source_type = EXCLUDED.source_type,
+           metadata = COALESCE(EXCLUDED.metadata, ogc_sources.metadata)`,
+        params,
+      );
+      importedBasemaps = result.rowCount ?? 0;
+    }
+
+    res.json({
+      imported: { features: importedFeatures, imagery: importedImagery, basemaps: importedBasemaps },
+      total: seen.size + seenBasemaps.size,
+    });
   } catch (err) {
     handleServerError(res, err);
   }

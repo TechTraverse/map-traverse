@@ -1,10 +1,18 @@
 import { Fragment, useEffect, useState } from 'react';
-import { SourceEditor, ConfirmDialog } from '@ogc-maps/storybook-components';
-import type { OgcApiSource, SourceAuth } from '@ogc-maps/storybook-components';
+import { SourceEditor, BasemapEditor, ConfirmDialog } from '@ogc-maps/storybook-components';
+import type { OgcApiSource, SourceAuth, BasemapConfig } from '@ogc-maps/storybook-components';
 import { detectTileSourceType, appendAuth, authHeaders } from '@ogc-maps/storybook-components/hooks';
 import { SourceMetadataPanel } from '../components/SourceMetadataPanel';
 import type { InspectionResult } from '../components/SourceMetadataPanel';
 import { inspectSourceClientSide } from '../utils/inspectSource';
+
+type SourceTab = 'features' | 'imagery' | 'basemap';
+
+const TAB_LABELS: Record<SourceTab, string> = {
+  features: 'Features',
+  imagery: 'Imagery',
+  basemap: 'Basemaps',
+};
 
 interface SavedSource {
   id: string;
@@ -14,7 +22,7 @@ interface SavedSource {
   tile_matrix_set_id: string;
   source_type: string;
   auth: SourceAuth | null;
-  metadata: InspectionResult | null;
+  metadata: (InspectionResult & { thumbnail?: string }) | null;
   metadata_updated_at: string | null;
   created_at: string;
   updated_at: string;
@@ -28,6 +36,15 @@ function toOgcApiSource(s: SavedSource): OgcApiSource {
     tileMatrixSetId: s.tile_matrix_set_id,
     type: (s.source_type ?? 'features') as 'features' | 'imagery',
     auth: s.auth ?? undefined,
+  };
+}
+
+function toBasemapConfig(s: SavedSource): BasemapConfig {
+  return {
+    id: s.source_id,
+    label: s.label ?? s.source_id,
+    url: s.url,
+    thumbnail: s.metadata?.thumbnail,
   };
 }
 
@@ -48,12 +65,20 @@ export function SourcesPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Create/edit state
+  // Tab state
+  const [activeTab, setActiveTab] = useState<SourceTab>('basemap');
+
+  // Create/edit state for OGC sources (features/imagery)
   const [addingNew, setAddingNew] = useState(false);
   const [newSource, setNewSource] = useState<OgcApiSource>({ id: '', url: '', tileMatrixSetId: 'WebMercatorQuad' });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingSource, setEditingSource] = useState<OgcApiSource | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Create/edit state for basemaps
+  const [addingNewBasemap, setAddingNewBasemap] = useState(false);
+  const [newBasemap, setNewBasemap] = useState<BasemapConfig>({ id: '', label: '', url: '' });
+  const [editingBasemap, setEditingBasemap] = useState<BasemapConfig | null>(null);
 
   // Connection test state
   const [testStatus, setTestStatus] = useState<Record<string, 'idle' | 'loading' | 'success' | 'error'>>({});
@@ -66,6 +91,9 @@ export function SourcesPage() {
   // Expand/collapse and refresh state
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [refreshingIds, setRefreshingIds] = useState<Set<string>>(new Set());
+
+  // Derived: filtered sources for active tab
+  const filteredSources = sources.filter(s => (s.source_type ?? 'features') === activeTab);
 
   const toggleExpanded = (id: string) => {
     setExpandedIds(prev => {
@@ -87,6 +115,15 @@ export function SourcesPage() {
       .catch(err => setError(String(err)))
       .finally(() => setLoading(false));
   }, []);
+
+  // Reset create/edit state when switching tabs
+  useEffect(() => {
+    setAddingNew(false);
+    setAddingNewBasemap(false);
+    setEditingId(null);
+    setEditingSource(null);
+    setEditingBasemap(null);
+  }, [activeTab]);
 
   const handleTestConnection = async (key: string, url: string, auth?: SourceAuth) => {
     setTestStatus(prev => ({ ...prev, [key]: 'loading' }));
@@ -171,7 +208,7 @@ export function SourcesPage() {
           url: newSource.url,
           label: newSource.label || null,
           tile_matrix_set_id: newSource.tileMatrixSetId || 'WebMercatorQuad',
-          source_type: newSource.type || 'features',
+          source_type: activeTab,
           auth: newSource.auth ?? null,
           ...(clientMetadata ? { metadata: clientMetadata } : {}),
         }),
@@ -185,8 +222,38 @@ export function SourcesPage() {
       setAddingNew(false);
       setNewSource({ id: '', url: '', tileMatrixSetId: 'WebMercatorQuad' });
       await fetchSources();
-      // Auto-expand the new source to show its metadata
       setExpandedIds(prev => new Set(prev).add(created.id));
+    } catch (err) {
+      setActionError(String(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCreateBasemap = async () => {
+    setSaving(true);
+    setActionError(null);
+    try {
+      const res = await fetch('/api/sources', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          source_id: newBasemap.id,
+          url: newBasemap.url,
+          label: newBasemap.label || null,
+          source_type: 'basemap',
+          thumbnail: newBasemap.thumbnail || null,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json() as { error: string };
+        setActionError(data.error);
+        return;
+      }
+      setAddingNewBasemap(false);
+      setNewBasemap({ id: '', label: '', url: '' });
+      await fetchSources();
     } catch (err) {
       setActionError(String(err));
     } finally {
@@ -208,7 +275,7 @@ export function SourcesPage() {
           url: editingSource.url,
           label: editingSource.label || null,
           tile_matrix_set_id: editingSource.tileMatrixSetId || 'WebMercatorQuad',
-          source_type: editingSource.type || 'features',
+          source_type: activeTab,
           auth: editingSource.auth ?? null,
         }),
       });
@@ -219,6 +286,38 @@ export function SourcesPage() {
       }
       setEditingId(null);
       setEditingSource(null);
+      await fetchSources();
+    } catch (err) {
+      setActionError(String(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateBasemap = async () => {
+    if (!editingId || !editingBasemap) return;
+    setSaving(true);
+    setActionError(null);
+    try {
+      const res = await fetch(`/api/sources/${editingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          source_id: editingBasemap.id,
+          url: editingBasemap.url,
+          label: editingBasemap.label || null,
+          source_type: 'basemap',
+          thumbnail: editingBasemap.thumbnail || null,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json() as { error: string };
+        setActionError(data.error);
+        return;
+      }
+      setEditingId(null);
+      setEditingBasemap(null);
       await fetchSources();
     } catch (err) {
       setActionError(String(err));
@@ -271,8 +370,16 @@ export function SourcesPage() {
         setActionError(`Import failed: ${await res.text()}`);
         return;
       }
-      const data = await res.json() as { imported: number; total: number };
-      setSuccessMessage(`Imported ${data.imported} source(s) from existing configs (${data.total} unique found).`);
+      const data = await res.json() as { imported: { features: number; imagery: number; basemaps: number }; total: number };
+      const parts: string[] = [];
+      if (data.imported.features > 0) parts.push(`${data.imported.features} feature`);
+      if (data.imported.imagery > 0) parts.push(`${data.imported.imagery} imagery`);
+      if (data.imported.basemaps > 0) parts.push(`${data.imported.basemaps} basemap`);
+      setSuccessMessage(
+        parts.length > 0
+          ? `Imported ${parts.join(', ')} source(s) from existing configs (${data.total} unique found).`
+          : `No new sources to import (${data.total} unique found, all already exist).`,
+      );
       await fetchSources();
     } catch (err) {
       setActionError(String(err));
@@ -325,12 +432,25 @@ export function SourcesPage() {
     }
   };
 
+  const handleAddNew = () => {
+    if (activeTab === 'basemap') {
+      setAddingNewBasemap(true);
+      setNewBasemap({ id: '', label: '', url: '' });
+    } else {
+      setAddingNew(true);
+      setNewSource({ id: '', url: '', tileMatrixSetId: 'WebMercatorQuad', type: activeTab });
+    }
+  };
+
+  const isBasemapTab = activeTab === 'basemap';
+  const colCount = isBasemapTab ? 6 : 7;
+
   if (loading) return <div className="mapui:p-8 mapui:text-center mapui:text-gray-500">Loading...</div>;
 
   return (
     <div className="mapui:p-8">
       <div className="mapui:flex mapui:items-center mapui:justify-between mapui:mb-6">
-        <h1 className="mapui:text-2xl mapui:font-bold mapui:text-gray-900">OGC API Sources</h1>
+        <h1 className="mapui:text-2xl mapui:font-bold mapui:text-gray-900">Sources</h1>
         <div className="mapui:flex mapui:gap-2">
           <button
             onClick={handleImport}
@@ -339,22 +459,47 @@ export function SourcesPage() {
             Import from Configs
           </button>
           <button
-            onClick={() => { setAddingNew(true); setNewSource({ id: '', url: '', tileMatrixSetId: 'WebMercatorQuad' }); }}
+            onClick={handleAddNew}
             className="mapui:bg-blue-600 mapui:text-white mapui:px-4 mapui:py-2 mapui:rounded mapui:hover:bg-blue-700 mapui:text-sm"
           >
-            Create New Source
+            {isBasemapTab ? 'Add Basemap' : 'Create New Source'}
           </button>
         </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="mapui:flex mapui:gap-1 mapui:mb-4 mapui:border-b mapui:border-gray-200">
+        {(['basemap', 'imagery', 'features'] as const).map(tab => {
+          const count = sources.filter(s => (s.source_type ?? 'features') === tab).length;
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`mapui:px-4 mapui:py-2 mapui:text-sm mapui:font-medium mapui:border-b-2 mapui:transition-colors ${
+                activeTab === tab
+                  ? 'mapui:border-blue-600 mapui:text-blue-600'
+                  : 'mapui:border-transparent mapui:text-gray-500 mapui:hover:text-gray-700 mapui:hover:border-gray-300'
+              }`}
+            >
+              {TAB_LABELS[tab]}
+              {count > 0 && (
+                <span className="mapui:ml-1.5 mapui:rounded-full mapui:bg-gray-100 mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:text-gray-600">
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {error && <DismissibleAlert message={error} variant="error" onDismiss={() => setError(null)} />}
       {actionError && <DismissibleAlert message={actionError} variant="error" onDismiss={() => setActionError(null)} />}
       {successMessage && <DismissibleAlert message={successMessage} variant="success" onDismiss={() => setSuccessMessage(null)} />}
 
-      {/* Create new source form */}
-      {addingNew && (
+      {/* Create new OGC source form (features/imagery) */}
+      {addingNew && !isBasemapTab && (
         <div className="mapui:mb-6 mapui:bg-white mapui:rounded-lg mapui:shadow mapui:p-6">
-          <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800 mapui:mb-4">New Source</h2>
+          <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800 mapui:mb-4">New {activeTab === 'imagery' ? 'Imagery' : 'Feature'} Source</h2>
           <SourceEditor
             value={newSource}
             onChange={setNewSource}
@@ -380,31 +525,67 @@ export function SourcesPage() {
         </div>
       )}
 
-      {sources.length === 0 && !addingNew ? (
-        <div className="mapui:text-center mapui:text-gray-500 mapui:py-12">
-          No sources saved yet. Create one or import from existing configs.
+      {/* Create new basemap form */}
+      {addingNewBasemap && isBasemapTab && (
+        <div className="mapui:mb-6 mapui:bg-white mapui:rounded-lg mapui:shadow mapui:p-6">
+          <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800 mapui:mb-4">New Basemap</h2>
+          <BasemapEditor
+            value={newBasemap}
+            onChange={setNewBasemap}
+          />
+          <div className="mapui:mt-4 mapui:flex mapui:gap-2">
+            <button
+              onClick={handleCreateBasemap}
+              disabled={saving || !newBasemap.id || !newBasemap.url}
+              className="mapui:bg-blue-600 mapui:text-white mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:hover:bg-blue-700 mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
+            >
+              {saving ? 'Saving...' : 'Save Basemap'}
+            </button>
+            <button
+              onClick={() => setAddingNewBasemap(false)}
+              className="mapui:border mapui:border-gray-300 mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
-      ) : sources.length > 0 && (
+      )}
+
+      {filteredSources.length === 0 && !addingNew && !addingNewBasemap ? (
+        <div className="mapui:text-center mapui:text-gray-500 mapui:py-12">
+          {isBasemapTab
+            ? 'No basemaps saved yet. Add one or import from existing configs.'
+            : `No ${activeTab} sources saved yet. Create one or import from existing configs.`}
+        </div>
+      ) : filteredSources.length > 0 && (
         <div className="mapui:bg-white mapui:rounded-lg mapui:shadow mapui:overflow-visible">
           <table className="mapui:w-full">
             <thead className="mapui:bg-gray-50 mapui:text-left">
               <tr>
-                <th className="mapui:px-3 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600 mapui:w-8"></th>
+                {!isBasemapTab && (
+                  <th className="mapui:px-3 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600 mapui:w-8"></th>
+                )}
                 <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Source ID</th>
-                <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Type</th>
-                <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">URL</th>
+                <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">
+                  {isBasemapTab ? 'Style URL' : 'URL'}
+                </th>
                 <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Label</th>
-                <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Collections</th>
+                {isBasemapTab ? (
+                  <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Thumbnail</th>
+                ) : (
+                  <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Collections</th>
+                )}
                 <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Updated</th>
                 <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600"></th>
               </tr>
             </thead>
             <tbody className="mapui:divide-y mapui:divide-gray-200">
-              {sources.map(source => (
+              {filteredSources.map(source => (
                 <Fragment key={source.id}>
                   <tr>
-                    {editingId === source.id ? (
-                      <td colSpan={8} className="mapui:px-6 mapui:py-4">
+                    {/* Editing row (OGC source) */}
+                    {editingId === source.id && !isBasemapTab ? (
+                      <td colSpan={colCount} className="mapui:px-6 mapui:py-4">
                         <SourceEditor
                           value={editingSource ?? toOgcApiSource(source)}
                           onChange={setEditingSource}
@@ -428,51 +609,89 @@ export function SourcesPage() {
                           </button>
                         </div>
                       </td>
-                    ) : (
-                      <>
-                        <td className="mapui:px-3 mapui:py-4">
+                    ) : editingId === source.id && isBasemapTab ? (
+                      /* Editing row (basemap) */
+                      <td colSpan={colCount} className="mapui:px-6 mapui:py-4">
+                        <BasemapEditor
+                          value={editingBasemap ?? toBasemapConfig(source)}
+                          onChange={setEditingBasemap}
+                        />
+                        <div className="mapui:mt-3 mapui:flex mapui:gap-2">
                           <button
-                            onClick={() => toggleExpanded(source.id)}
-                            className="mapui:text-gray-400 mapui:hover:text-gray-600"
+                            onClick={handleUpdateBasemap}
+                            disabled={saving || !editingBasemap?.id || !editingBasemap?.url}
+                            className="mapui:bg-blue-600 mapui:text-white mapui:px-3 mapui:py-1.5 mapui:rounded mapui:text-sm mapui:hover:bg-blue-700 mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
                           >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className={`mapui:transition-transform ${expandedIds.has(source.id) ? 'mapui:rotate-90' : ''}`}
-                            >
-                              <polyline points="9 18 15 12 9 6" />
-                            </svg>
+                            {saving ? 'Saving...' : 'Save'}
                           </button>
-                        </td>
+                          <button
+                            onClick={() => { setEditingId(null); setEditingBasemap(null); }}
+                            className="mapui:border mapui:border-gray-300 mapui:px-3 mapui:py-1.5 mapui:rounded mapui:text-sm mapui:hover:bg-gray-50"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </td>
+                    ) : (
+                      /* Display row */
+                      <>
+                        {!isBasemapTab && (
+                          <td className="mapui:px-3 mapui:py-4">
+                            <button
+                              onClick={() => toggleExpanded(source.id)}
+                              className="mapui:text-gray-400 mapui:hover:text-gray-600"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className={`mapui:transition-transform ${expandedIds.has(source.id) ? 'mapui:rotate-90' : ''}`}
+                              >
+                                <polyline points="9 18 15 12 9 6" />
+                              </svg>
+                            </button>
+                          </td>
+                        )}
                         <td className="mapui:px-4 mapui:py-4 mapui:font-medium mapui:font-mono mapui:text-sm mapui:text-gray-900">{source.source_id}</td>
-                        <td className="mapui:px-4 mapui:py-4 mapui:text-sm">
-                          <span className={`mapui:rounded-full mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:font-medium ${
-                            (source.source_type ?? 'features') === 'imagery'
-                              ? 'mapui:bg-purple-100 mapui:text-purple-700'
-                              : 'mapui:bg-blue-100 mapui:text-blue-700'
-                          }`}>
-                            {(source.source_type ?? 'features') === 'imagery' ? 'Imagery' : 'Features'}
-                          </span>
-                        </td>
                         <td className="mapui:px-4 mapui:py-4 mapui:text-gray-500 mapui:text-sm mapui:font-mono mapui:max-w-xs mapui:truncate">{source.url}</td>
                         <td className="mapui:px-4 mapui:py-4 mapui:text-gray-500 mapui:text-sm">{source.label ?? '—'}</td>
-                        <td className="mapui:px-4 mapui:py-4 mapui:text-gray-500 mapui:text-sm">
-                          {source.metadata?.collections?.length ?? '—'}
-                        </td>
+                        {isBasemapTab ? (
+                          <td className="mapui:px-4 mapui:py-4 mapui:text-sm">
+                            {source.metadata?.thumbnail ? (
+                              <img
+                                src={source.metadata.thumbnail}
+                                alt="Thumbnail"
+                                className="mapui:h-8 mapui:w-12 mapui:rounded mapui:border mapui:border-gray-200 mapui:object-cover"
+                              />
+                            ) : (
+                              <span className="mapui:text-gray-400">—</span>
+                            )}
+                          </td>
+                        ) : (
+                          <td className="mapui:px-4 mapui:py-4 mapui:text-gray-500 mapui:text-sm">
+                            {source.metadata?.collections?.length ?? '—'}
+                          </td>
+                        )}
                         <td className="mapui:px-4 mapui:py-4 mapui:text-gray-500 mapui:text-sm">
                           {new Date(source.updated_at).toLocaleDateString()}
                         </td>
                         <td className="mapui:px-4 mapui:py-4">
                           <div className="mapui:flex mapui:gap-2">
                             <button
-                              onClick={() => { setEditingId(source.id); setEditingSource(toOgcApiSource(source)); }}
+                              onClick={() => {
+                                setEditingId(source.id);
+                                if (isBasemapTab) {
+                                  setEditingBasemap(toBasemapConfig(source));
+                                } else {
+                                  setEditingSource(toOgcApiSource(source));
+                                }
+                              }}
                               className="mapui:text-blue-600 mapui:hover:text-blue-800 mapui:text-sm"
                             >
                               Edit
@@ -488,12 +707,14 @@ export function SourcesPage() {
                       </>
                     )}
                   </tr>
-                  {expandedIds.has(source.id) && editingId !== source.id && (
+                  {/* Metadata expansion for OGC sources only */}
+                  {!isBasemapTab && expandedIds.has(source.id) && editingId !== source.id && (
                     <tr>
-                      <td colSpan={8} className="mapui:p-0">
+                      <td colSpan={colCount} className="mapui:p-0">
                         <SourceMetadataPanel
                           metadata={source.metadata}
                           metadataUpdatedAt={source.metadata_updated_at}
+                          sourceUrl={source.url}
                           onRefresh={() => handleRefreshMetadata(source)}
                           refreshing={refreshingIds.has(source.id)}
                         />
@@ -509,11 +730,11 @@ export function SourcesPage() {
 
       <ConfirmDialog
         open={confirmDeleteId !== null}
-        title="Delete Source"
+        title={isBasemapTab ? 'Delete Basemap' : 'Delete Source'}
         description={
           deleteUsage.length > 0
             ? `This source is used by ${deleteUsage.length} config(s): ${deleteUsage.map(c => c.name).join(', ')}. Deleting it will not affect existing configs (sources are embedded in config data), but it will no longer be available for reuse.`
-            : 'Are you sure you want to delete this source?'
+            : `Are you sure you want to delete this ${isBasemapTab ? 'basemap' : 'source'}?`
         }
         onConfirm={handleDelete}
         onCancel={() => { setConfirmDeleteId(null); setDeleteUsage([]); }}

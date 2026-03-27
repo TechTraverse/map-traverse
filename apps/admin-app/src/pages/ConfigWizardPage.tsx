@@ -22,7 +22,7 @@ import {
   slugify,
 } from '@ogc-maps/storybook-components';
 import { safeValidateMapConfig, DEFAULT_HEADER_COLOR } from '@ogc-maps/storybook-components/schemas';
-import { detectTileSourceType, fetchGenericTileJson, tileSizeFromTileJson } from '@ogc-maps/storybook-components/hooks';
+import { detectTileSourceType } from '@ogc-maps/storybook-components/hooks';
 import type {
   OgcApiSource,
   LayerConfig,
@@ -38,7 +38,7 @@ import type {
 import { ImageUploadField } from '../components/ImageUploadField';
 import { MapPreview } from '../components/MapPreview';
 
-interface SavedSourceSummary { id: string; source_id: string; url: string; label: string | null; tile_matrix_set_id: string; source_type?: string; auth?: SourceAuth | null }
+interface SavedSourceSummary { id: string; source_id: string; url: string; label: string | null; tile_matrix_set_id: string; source_type?: string; auth?: SourceAuth | null; metadata?: { thumbnail?: string; tileJson?: { tiles: string[]; name?: string; minzoom?: number; maxzoom?: number } } | null }
 
 type WizardStep = 'metadata' | 'sources' | 'layer-select' | 'layer-config' | 'imagery' | 'basemaps' | 'ui' | 'view' | 'review';
 
@@ -77,21 +77,9 @@ const DEFAULT_VIEW: ViewConfig = {
   bearing: 0,
 };
 
-const PRESET_BASEMAPS: BasemapConfig[] = [
-  { id: 'carto-positron', url: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json', label: 'Positron (Light)' },
-  { id: 'carto-dark-matter', url: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json', label: 'Dark Matter (Dark)' },
-  { id: 'carto-voyager', url: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json', label: 'Voyager (Streets)' },
-];
-
 const PRESET_SPRITES: (SpriteSource & { displayLabel: string })[] = [
   { id: 'maplibre-osm-bright', url: 'https://demotiles.maplibre.org/styles/osm-bright-gl-style/sprite', displayLabel: 'MapLibre OSM Bright' },
 ];
-
-const BASEMAP_SWATCHES: Record<string, string> = {
-  'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json': 'mapui:bg-gray-200',
-  'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json': 'mapui:bg-gray-800',
-  'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json': 'mapui:bg-amber-200',
-};
 
 export function ConfigWizardPage() {
   const { id } = useParams<{ id: string }>();
@@ -296,65 +284,26 @@ export function ConfigWizardPage() {
   const imagerySelectedCollectionIds = imageryLayers
     .filter(l => l.sourceId === imageryBrowseSourceId)
     .map(l => l.collection);
-  const imagerySourceAlreadyAdded = imageryLayers.some(l => l.sourceId === imageryBrowseSourceId);
 
-  const [imageryTileJsonLoading, setImageryTileJsonLoading] = useState(false);
-  const [imageryTileJsonError, setImageryTileJsonError] = useState<string | null>(null);
+  // Derive filtered saved sources by type
+  const savedFeatureSources = savedSources.filter(s => (s.source_type ?? 'features') === 'features');
+  const savedImagerySources = savedSources.filter(s => s.source_type === 'imagery');
+  const savedBasemapSources = savedSources.filter(s => s.source_type === 'basemap');
+  const imageryOgcSources = sources.filter(s => s.type === 'imagery' && detectTileSourceType(s.url) === 'ogc-api');
 
-  const createImageryLayerFromSource = (opts: { label: string; tileUrlTemplate: string; minZoom?: number; maxZoom?: number; tileSize?: number }): ImageryLayerConfig => ({
-    id: slugify(opts.label) || imageryBrowseSourceId,
-    sourceId: imageryBrowseSourceId,
-    collection: '',
-    label: opts.label,
-    visible: false,
-    opacity: 1,
-    exclusive: false,
-    tileSize: opts.tileSize ?? 256,
-    tileUrlTemplate: opts.tileUrlTemplate,
-    ...(opts.minZoom != null ? { minZoom: opts.minZoom } : {}),
-    ...(opts.maxZoom != null ? { maxZoom: opts.maxZoom } : {}),
-  });
+  const isBasemapSelected = (saved: SavedSourceSummary) =>
+    basemaps.some(b => b.url === saved.url);
 
-  const handleAddTileJsonImageryLayer = async () => {
-    if (!imageryBrowseSource) return;
-    setImageryTileJsonLoading(true);
-    setImageryTileJsonError(null);
-    try {
-      const tj = await fetchGenericTileJson(imageryBrowseSource.url, imageryBrowseSource.auth);
-      if (!tj.tiles?.[0]) throw new Error('TileJSON has no tile URLs');
-      const tileSize = tileSizeFromTileJson(tj);
-      const label = tj.name ?? imageryBrowseSource.label ?? imageryBrowseSourceId;
-      setImageryLayers(prev => [...prev, createImageryLayerFromSource({
-        label,
-        tileUrlTemplate: tj.tiles[0],
-        minZoom: tj.minzoom ?? undefined,
-        maxZoom: tj.maxzoom ?? undefined,
-        tileSize,
-      })]);
-    } catch (err) {
-      setImageryTileJsonError(err instanceof Error ? err.message : 'Failed to fetch TileJSON');
-    } finally {
-      setImageryTileJsonLoading(false);
-    }
-  };
-
-  const handleAddXyzImageryLayer = () => {
-    if (!imageryBrowseSource) return;
-    const label = imageryBrowseSource.label ?? imageryBrowseSourceId;
-    setImageryLayers(prev => [...prev, createImageryLayerFromSource({
-      label,
-      tileUrlTemplate: imageryBrowseSource.url,
-    })]);
-  };
-
-  const isBasemapSelected = (preset: BasemapConfig) =>
-    basemaps.some(b => b.url === preset.url);
-
-  const toggleBasemapPreset = (preset: BasemapConfig) => {
+  const toggleBasemapSource = (saved: SavedSourceSummary) => {
     setBasemaps(prev =>
-      prev.some(b => b.url === preset.url)
-        ? prev.filter(b => b.url !== preset.url)
-        : [...prev, preset],
+      prev.some(b => b.url === saved.url)
+        ? prev.filter(b => b.url !== saved.url)
+        : [...prev, {
+            id: saved.source_id,
+            label: saved.label ?? saved.source_id,
+            url: saved.url,
+            thumbnail: saved.metadata?.thumbnail,
+          }],
     );
   };
 
@@ -423,12 +372,12 @@ export function ConfigWizardPage() {
               <input
                 type="text"
                 value={name}
-                onChange={e => setName(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, ''))}
-                placeholder="my-map-config"
+                onChange={e => setName(e.target.value.replace(/[^a-zA-Z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, ''))}
+                placeholder="My-Map-Config"
                 className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:font-mono mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
               />
               <p className="mapui:text-xs mapui:text-gray-400 mapui:mt-1">
-                Slug format: lowercase letters, numbers, and hyphens (e.g. &quot;my-map-config&quot;)
+                Letters, numbers, and hyphens (e.g. &quot;My-Map-Config&quot;)
               </p>
             </div>
             <div>
@@ -509,33 +458,36 @@ export function ConfigWizardPage() {
           <div className="mapui:space-y-6">
             <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">OGC API Sources</h2>
 
-            {/* Saved sources picker */}
-            {savedSources.length > 0 && (
+            {/* Saved feature sources picker */}
+            {savedFeatureSources.length > 0 && (
               <div>
-                <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">Saved Sources</h3>
+                <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">Saved Feature Sources</h3>
                 <div className="mapui:flex mapui:flex-wrap mapui:gap-2">
-                  {savedSources.map(saved => {
+                  {savedFeatureSources.map(saved => {
                     const alreadyAdded = sources.some(s => s.id === saved.source_id);
                     return (
                       <button
                         key={saved.id}
                         type="button"
                         onClick={() => {
-                          if (alreadyAdded) return;
-                          setSources(prev => [...prev, {
-                            id: saved.source_id,
-                            url: saved.url,
-                            label: saved.label ?? undefined,
-                            tileMatrixSetId: saved.tile_matrix_set_id,
-                            type: (saved.source_type ?? 'features') as 'features' | 'imagery',
-                            auth: saved.auth ?? undefined,
-                          }]);
+                          if (alreadyAdded) {
+                            setSources(prev => prev.filter(s => s.id !== saved.source_id));
+                            setLayers(prev => prev.filter(l => l.sourceId !== saved.source_id));
+                          } else {
+                            setSources(prev => [...prev, {
+                              id: saved.source_id,
+                              url: saved.url,
+                              label: saved.label ?? undefined,
+                              tileMatrixSetId: saved.tile_matrix_set_id,
+                              type: 'features' as const,
+                              auth: saved.auth ?? undefined,
+                            }]);
+                          }
                         }}
-                        disabled={alreadyAdded}
-                        className={`mapui:inline-flex mapui:items-center mapui:gap-1.5 mapui:rounded-full mapui:border mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:transition-colors ${
+                        className={`mapui:inline-flex mapui:items-center mapui:gap-1.5 mapui:rounded-full mapui:border mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:transition-colors mapui:cursor-pointer ${
                           alreadyAdded
-                            ? 'mapui:border-blue-500 mapui:bg-blue-50 mapui:text-blue-700 mapui:cursor-default'
-                            : 'mapui:border-gray-300 mapui:bg-white mapui:text-gray-600 mapui:hover:border-blue-400 mapui:hover:bg-blue-50 mapui:cursor-pointer'
+                            ? 'mapui:border-blue-500 mapui:bg-blue-50 mapui:text-blue-700 mapui:hover:border-blue-300 mapui:hover:bg-blue-100'
+                            : 'mapui:border-gray-300 mapui:bg-white mapui:text-gray-600 mapui:hover:border-blue-400 mapui:hover:bg-blue-50'
                         }`}
                       >
                         {alreadyAdded && (
@@ -544,11 +496,6 @@ export function ConfigWizardPage() {
                           </svg>
                         )}
                         {saved.label ?? saved.source_id}
-                        {(saved.source_type ?? 'features') === 'imagery' && (
-                          <span className="mapui:text-xs mapui:rounded-full mapui:bg-purple-100 mapui:text-purple-700 mapui:px-1.5 mapui:py-0.5">
-                            Imagery
-                          </span>
-                        )}
                       </button>
                     );
                   })}
@@ -558,7 +505,7 @@ export function ConfigWizardPage() {
 
             {/* Inline source editor */}
             <div>
-              {savedSources.length > 0 && (
+              {savedFeatureSources.length > 0 && (
                 <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">All Sources</h3>
               )}
               <SourceList sources={sources} onChange={setSources} />
@@ -591,7 +538,7 @@ export function ConfigWizardPage() {
                       onChange={e => setBrowseSourceId(e.target.value)}
                       className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
                     >
-                      {sources.map(s => (
+                      {sources.filter(s => (s.type ?? 'features') !== 'imagery').map(s => (
                         <option key={s.id} value={s.id}>
                           {s.label ?? s.id}
                         </option>
@@ -629,115 +576,140 @@ export function ConfigWizardPage() {
         {currentStep === 'imagery' && (
           <div className="mapui:space-y-6">
             <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">Imagery Layers</h2>
-            {sources.length === 0 ? (
-              <div className="mapui:rounded mapui:bg-yellow-50 mapui:border mapui:border-yellow-200 mapui:p-4 mapui:text-sm mapui:text-yellow-800">
-                No sources configured. Go back to the <strong>Sources</strong> step to add at least one source.
+
+            {/* Saved imagery sources picker */}
+            {savedImagerySources.length > 0 && (
+              <div>
+                <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">Saved Imagery Sources</h3>
+                <div className="mapui:flex mapui:flex-wrap mapui:gap-2">
+                  {savedImagerySources.map(saved => {
+                    const alreadyAdded = sources.some(s => s.id === saved.source_id);
+                    return (
+                      <button
+                        key={saved.id}
+                        type="button"
+                        onClick={() => {
+                          if (alreadyAdded) {
+                            setSources(prev => prev.filter(s => s.id !== saved.source_id));
+                            setImageryLayers(prev => prev.filter(l => l.sourceId !== saved.source_id));
+                            return;
+                          }
+                          const newSource: OgcApiSource = {
+                            id: saved.source_id,
+                            url: saved.url,
+                            label: saved.label ?? undefined,
+                            tileMatrixSetId: saved.tile_matrix_set_id,
+                            type: 'imagery' as const,
+                            auth: saved.auth ?? undefined,
+                          };
+                          setSources(prev => [...prev, newSource]);
+
+                          // Auto-add imagery layer for TileJSON/XYZ sources
+                          const urlType = detectTileSourceType(saved.url);
+                          const tj = urlType === 'tilejson' ? saved.metadata?.tileJson : null;
+                          const tileUrl = urlType === 'xyz' ? saved.url : tj?.tiles?.[0];
+                          if (tileUrl) {
+                            const label = (tj?.name ?? saved.label ?? saved.source_id);
+                            setImageryLayers(prev => [...prev, {
+                              id: slugify(label) || saved.source_id,
+                              sourceId: saved.source_id,
+                              collection: '',
+                              label,
+                              visible: false,
+                              opacity: 1,
+                              exclusive: false,
+                              tileSize: 256,
+                              tileUrlTemplate: tileUrl,
+                              ...(tj?.minzoom != null ? { minZoom: tj.minzoom } : {}),
+                              ...(tj?.maxzoom != null ? { maxZoom: tj.maxzoom } : {}),
+                            }]);
+                          }
+                        }}
+                        className={`mapui:inline-flex mapui:items-center mapui:gap-1.5 mapui:rounded-full mapui:border mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:transition-colors mapui:cursor-pointer ${
+                          alreadyAdded
+                            ? 'mapui:border-purple-500 mapui:bg-purple-50 mapui:text-purple-700 mapui:hover:border-purple-300 mapui:hover:bg-purple-100'
+                            : 'mapui:border-gray-300 mapui:bg-white mapui:text-gray-600 mapui:hover:border-purple-400 mapui:hover:bg-purple-50'
+                        }`}
+                      >
+                        {alreadyAdded && (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
+                        {saved.label ?? saved.source_id}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            ) : (
-              <div className="mapui:space-y-6">
-                {/* Section A: Browse & select collections */}
-                <div className="mapui:rounded mapui:border mapui:border-gray-200 mapui:p-4">
-                  <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">Browse Collections</h3>
-                  <p className="mapui:text-xs mapui:text-gray-500 mapui:mb-3">
-                    Select a source and check the collections you want to add as imagery layers.
-                  </p>
-                  <div className="mapui:mb-3">
-                    <label className="mapui:block mapui:text-xs mapui:font-medium mapui:text-gray-600 mapui:mb-1">
-                      Source
-                    </label>
-                    <select
-                      value={imageryBrowseSourceId}
-                      onChange={e => setImageryBrowseSourceId(e.target.value)}
-                      className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
+            )}
+
+            <div className="mapui:space-y-6">
+                  {/* Section A: Browse & select collections (only for OGC API imagery sources) */}
+                  {imageryOgcSources.length > 0 && (
+                    <CollapsibleSection
+                      title="Browse Collections"
+                      defaultOpen={true}
+                      badge={imagerySelectedCollectionIds.length}
                     >
-                      <option value="">Select a source...</option>
-                      {sources.map(s => (
-                        <option key={s.id} value={s.id}>
-                          {s.label ?? s.id}{s.type === 'imagery' ? ' (Imagery)' : ''}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {imageryBrowseSource && imageryBrowseSourceType === 'ogc-api' && (
-                    <CollectionBrowser
-                      sourceUrl={imageryBrowseSource.url}
-                      sourceAuth={imageryBrowseSource.auth}
-                      selectedCollectionIds={imagerySelectedCollectionIds}
-                      onSelect={(collectionId) => handleImageryCollectionSelect(collectionId)}
-                      onDeselect={handleImageryCollectionDeselect}
-                    />
+                      <p className="mapui:text-xs mapui:text-gray-500 mapui:mb-3">
+                        Select an OGC API source and check the collections you want to add as imagery layers.
+                      </p>
+                      <div className="mapui:mb-3">
+                        <label className="mapui:block mapui:text-xs mapui:font-medium mapui:text-gray-600 mapui:mb-1">
+                          Source
+                        </label>
+                        <select
+                          value={imageryBrowseSourceId}
+                          onChange={e => setImageryBrowseSourceId(e.target.value)}
+                          className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
+                        >
+                          <option value="">Select a source...</option>
+                          {imageryOgcSources.map(s => (
+                            <option key={s.id} value={s.id}>
+                              {s.label ?? s.id}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      {imageryBrowseSource && imageryBrowseSourceType === 'ogc-api' && (
+                        <CollectionBrowser
+                          sourceUrl={imageryBrowseSource.url}
+                          sourceAuth={imageryBrowseSource.auth}
+                          selectedCollectionIds={imagerySelectedCollectionIds}
+                          onSelect={(collectionId) => handleImageryCollectionSelect(collectionId)}
+                          onDeselect={handleImageryCollectionDeselect}
+                        />
+                      )}
+                    </CollapsibleSection>
                   )}
 
-                  {imageryBrowseSource && imageryBrowseSourceType === 'tilejson' && (
-                    <div className="mapui:rounded mapui:bg-blue-50 mapui:border mapui:border-blue-200 mapui:p-3 mapui:text-sm">
-                      <p className="mapui:text-blue-800 mapui:mb-2">
-                        This is a TileJSON source. It provides a single tile layer.
-                      </p>
-                      {imagerySourceAlreadyAdded ? (
-                        <span className="mapui:text-blue-600 mapui:text-xs">Already added as an imagery layer.</span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={handleAddTileJsonImageryLayer}
-                          disabled={imageryTileJsonLoading}
-                          className="mapui:rounded mapui:bg-blue-600 mapui:text-white mapui:px-3 mapui:py-1.5 mapui:text-sm hover:mapui:bg-blue-700 disabled:mapui:opacity-50"
-                        >
-                          {imageryTileJsonLoading ? 'Loading TileJSON…' : 'Add as Imagery Layer'}
-                        </button>
-                      )}
-                      {imageryTileJsonError && (
-                        <p className="mapui:text-red-600 mapui:text-xs mapui:mt-1">{imageryTileJsonError}</p>
-                      )}
-                    </div>
-                  )}
+                  {/* Custom layer button */}
+                  <button
+                    type="button"
+                    onClick={handleAddCustomImageryLayer}
+                    className="mapui:text-sm mapui:text-blue-600 hover:mapui:text-blue-800 mapui:underline"
+                  >
+                    + Add custom imagery layer (non-OGC tile URL)
+                  </button>
 
-                  {imageryBrowseSource && imageryBrowseSourceType === 'xyz' && (
-                    <div className="mapui:rounded mapui:bg-blue-50 mapui:border mapui:border-blue-200 mapui:p-3 mapui:text-sm">
-                      <p className="mapui:text-blue-800 mapui:mb-2">
-                        This source uses a direct tile URL template.
-                      </p>
-                      {imagerySourceAlreadyAdded ? (
-                        <span className="mapui:text-blue-600 mapui:text-xs">Already added as an imagery layer.</span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={handleAddXyzImageryLayer}
-                          className="mapui:rounded mapui:bg-blue-600 mapui:text-white mapui:px-3 mapui:py-1.5 mapui:text-sm hover:mapui:bg-blue-700"
-                        >
-                          Add as Imagery Layer
-                        </button>
-                      )}
+                  {/* Section B: Configure selected layers */}
+                  {imageryLayers.length > 0 && (
+                    <div>
+                      <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">
+                        Configure Imagery Layers
+                        <span className="mapui:ml-2 mapui:text-xs mapui:font-normal mapui:text-gray-400">
+                          {imageryLayers.length} layer{imageryLayers.length !== 1 ? 's' : ''}
+                        </span>
+                      </h3>
+                      <ImageryList
+                        imageryLayers={imageryLayers}
+                        onChange={setImageryLayers}
+                        availableSources={sources}
+                      />
                     </div>
                   )}
                 </div>
-
-                {/* Custom layer button */}
-                <button
-                  type="button"
-                  onClick={handleAddCustomImageryLayer}
-                  className="mapui:text-sm mapui:text-blue-600 hover:mapui:text-blue-800 mapui:underline"
-                >
-                  + Add custom imagery layer (non-OGC tile URL)
-                </button>
-
-                {/* Section B: Configure selected layers */}
-                {imageryLayers.length > 0 && (
-                  <div>
-                    <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">
-                      Configure Imagery Layers
-                      <span className="mapui:ml-2 mapui:text-xs mapui:font-normal mapui:text-gray-400">
-                        {imageryLayers.length} layer{imageryLayers.length !== 1 ? 's' : ''}
-                      </span>
-                    </h3>
-                    <ImageryList
-                      imageryLayers={imageryLayers}
-                      onChange={setImageryLayers}
-                      availableSources={sources}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         )}
 
@@ -745,37 +717,47 @@ export function ConfigWizardPage() {
           <div className="mapui:space-y-6">
             <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">Basemaps</h2>
 
-            {/* Preset Basemaps */}
-            <div>
-              <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">Preset Basemaps</h3>
-              <div className="mapui:grid mapui:grid-cols-3 mapui:gap-3">
-                {PRESET_BASEMAPS.map(preset => {
-                  const selected = isBasemapSelected(preset);
-                  return (
-                    <button
-                      key={preset.url}
-                      type="button"
-                      onClick={() => toggleBasemapPreset(preset)}
-                      className={`mapui:relative mapui:flex mapui:flex-col mapui:items-center mapui:gap-2 mapui:rounded-lg mapui:border-2 mapui:p-4 mapui:text-sm mapui:transition-colors ${
-                        selected
-                          ? 'mapui:border-blue-500 mapui:bg-blue-50'
-                          : 'mapui:border-gray-200 mapui:bg-white mapui:hover:border-gray-300'
-                      }`}
-                    >
-                      {selected && (
-                        <span className="mapui:absolute mapui:top-2 mapui:right-2 mapui:text-blue-600">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        </span>
-                      )}
-                      <span className={`mapui:w-10 mapui:h-10 mapui:rounded-full ${BASEMAP_SWATCHES[preset.url] ?? 'mapui:bg-gray-300'}`} />
-                      <span className="mapui:font-medium mapui:text-gray-700">{preset.label}</span>
-                    </button>
-                  );
-                })}
+            {/* Saved Basemap Sources */}
+            {savedBasemapSources.length > 0 ? (
+              <div>
+                <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">Available Basemaps</h3>
+                <div className="mapui:grid mapui:grid-cols-3 mapui:gap-3">
+                  {savedBasemapSources.map(saved => {
+                    const selected = isBasemapSelected(saved);
+                    return (
+                      <button
+                        key={saved.id}
+                        type="button"
+                        onClick={() => toggleBasemapSource(saved)}
+                        className={`mapui:relative mapui:flex mapui:flex-col mapui:items-center mapui:gap-2 mapui:rounded-lg mapui:border-2 mapui:p-4 mapui:text-sm mapui:transition-colors ${
+                          selected
+                            ? 'mapui:border-blue-500 mapui:bg-blue-50'
+                            : 'mapui:border-gray-200 mapui:bg-white mapui:hover:border-gray-300'
+                        }`}
+                      >
+                        {selected && (
+                          <span className="mapui:absolute mapui:top-2 mapui:right-2 mapui:text-blue-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          </span>
+                        )}
+                        {saved.metadata?.thumbnail ? (
+                          <img src={saved.metadata.thumbnail} alt="" className="mapui:w-10 mapui:h-10 mapui:rounded-full mapui:object-cover" />
+                        ) : (
+                          <span className="mapui:w-10 mapui:h-10 mapui:rounded-full mapui:bg-gray-300" />
+                        )}
+                        <span className="mapui:font-medium mapui:text-gray-700">{saved.label ?? saved.source_id}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="mapui:rounded mapui:bg-yellow-50 mapui:border mapui:border-yellow-200 mapui:p-4 mapui:text-sm mapui:text-yellow-800">
+                No basemap sources saved yet. Add basemaps in the <strong>Sources</strong> page, or add custom basemaps below.
+              </div>
+            )}
 
             {/* Custom Basemaps */}
             <div>
