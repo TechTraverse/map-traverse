@@ -18,10 +18,13 @@ jobs:
         include:
           - image: map-admin
             file: apps/admin-app/Dockerfile
-            build-args: ""
+            build-args: "VITE_BASE_PATH=/admin/"
           - image: map-client
             file: apps/map-client/Dockerfile
-            build-args: "VITE_CONFIG_API_URL=/api"
+            build-args: ""
+          - image: map-gateway
+            file: docker/gateway/Dockerfile
+            build-args: ""
     steps:
       - name: Checkout
         uses: actions/checkout@v4
