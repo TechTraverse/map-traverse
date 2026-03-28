@@ -18,6 +18,9 @@ COPY packages/map-ui-lib/ ./packages/map-ui-lib/
 COPY apps/admin-app/ ./apps/admin-app/
 
 # Build lib then admin-ui SPA then server
+ARG VITE_BASE_PATH=/admin/
+ENV VITE_BASE_PATH=$VITE_BASE_PATH
+
 RUN pnpm --filter @ogc-maps/storybook-components build
 RUN pnpm --filter admin-app build
 RUN pnpm --filter admin-app build:server

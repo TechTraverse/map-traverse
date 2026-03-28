@@ -30,22 +30,15 @@ function App() {
   const hydrate = useMapStore((s) => s.hydrate);
 
   const loadConfig = useCallback(async () => {
-    const configApiUrl = import.meta.env.VITE_CONFIG_API_URL;
-
     // Extract config name from URL path (e.g., /demo → "demo", / → "default")
     const pathSegment = window.location.pathname.replace(/^\//, '').split('/')[0];
     const configName = pathSegment || 'default';
 
-    // Determine fetch URL: use admin API if configured, otherwise fall back to static file
-    const configUrl = configApiUrl
-      ? `${configApiUrl}/api/configs/${configName}`
-      : '/config.json';
-
     try {
-      const res = await fetch(configUrl);
+      const res = await fetch(`/api/configs/${configName}`);
 
-      // For "default" name via admin API, fall back to local config.json on 404
-      if (!res.ok && configApiUrl && configName === 'default') {
+      // For "default" config, fall back to local config.json on 404 (standalone mode)
+      if (!res.ok && configName === 'default') {
         const fallbackRes = await fetch('/config.json');
         if (!fallbackRes.ok) throw new Error(`HTTP ${fallbackRes.status} ${fallbackRes.statusText}`);
         const raw: unknown = await fallbackRes.json();

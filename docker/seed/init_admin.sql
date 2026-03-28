@@ -36,3 +36,16 @@ CREATE INDEX IF NOT EXISTS config_versions_config_id_idx
 -- Prevent duplicate version numbers for the same config
 ALTER TABLE config_versions DROP CONSTRAINT IF EXISTS config_versions_config_id_version_number_key;
 ALTER TABLE config_versions ADD CONSTRAINT config_versions_config_id_version_number_key UNIQUE (config_id, version_number);
+
+-- Site-wide branding / customization (single-row table)
+CREATE TABLE IF NOT EXISTS site_settings (
+  id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+  header_title TEXT NOT NULL DEFAULT 'Map Config Admin',
+  header_color TEXT NOT NULL DEFAULT '#1e293b',
+  browser_title TEXT NOT NULL DEFAULT 'Map Config Admin',
+  favicon_data_url TEXT,
+  logo_data_url TEXT,
+  logo_height INTEGER NOT NULL DEFAULT 32,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+INSERT INTO site_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;

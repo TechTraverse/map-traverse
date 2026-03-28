@@ -2,9 +2,6 @@
 FROM node:20-alpine AS builder
 RUN corepack enable
 
-ARG VITE_CONFIG_API_URL
-ENV VITE_CONFIG_API_URL=$VITE_CONFIG_API_URL
-
 WORKDIR /app
 
 # Copy workspace manifest files for dependency resolution

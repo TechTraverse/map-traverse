@@ -23,6 +23,9 @@ const PORT = Number(process.env.PORT ?? 3001);
 
 const PgSession = connectPgSimple(session);
 
+// Trust first proxy (gateway nginx) so secure cookies work behind reverse proxy
+app.set('trust proxy', 1);
+
 const corsOrigins = process.env.CORS_ORIGINS;
 app.use(cors({
   credentials: true,
@@ -40,10 +43,12 @@ app.use(
     secret: process.env.SESSION_SECRET ?? 'dev-secret-change-me',
     resave: false,
     saveUninitialized: false,
+    proxy: true,
     cookie: {
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
     },
   }),
 );
@@ -144,7 +149,22 @@ app.get('/api/health', async (_req, res) => {
 });
 
 const NAME_REGEX = /^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$/;
+const RESERVED_CONFIG_NAMES = new Set(['admin', 'api', 'ogc']);
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-/;
+
+/** Returns an error message if the name is invalid, or null if valid. */
+function validateConfigName(name: string | undefined, required: true): string | null;
+function validateConfigName(name: string | undefined): string | null;
+function validateConfigName(name: string | undefined, required?: boolean): string | null {
+  if (name === undefined) return required ? 'name is required' : null;
+  if (!NAME_REGEX.test(name)) {
+    return 'name must contain only letters, numbers, and hyphens (e.g. "My-Config")';
+  }
+  if (RESERVED_CONFIG_NAMES.has(name.toLowerCase())) {
+    return `"${name}" is a reserved name and cannot be used`;
+  }
+  return null;
+}
 
 // --- Config endpoints ---
 
@@ -215,12 +235,9 @@ app.post('/api/configs', requireAuth, async (req, res) => {
     description?: string;
     config?: unknown;
   };
-  if (!name) {
-    res.status(400).json({ error: 'name is required' });
-    return;
-  }
-  if (!NAME_REGEX.test(name)) {
-    res.status(400).json({ error: 'name must contain only letters, numbers, and hyphens (e.g. "My-Config")' });
+  const nameError = validateConfigName(name, true);
+  if (nameError) {
+    res.status(400).json({ error: nameError });
     return;
   }
 
@@ -251,8 +268,9 @@ app.put('/api/configs/:id', requireAuth, async (req, res) => {
     config?: unknown;
   };
 
-  if (name !== undefined && !NAME_REGEX.test(name)) {
-    res.status(400).json({ error: 'name must contain only letters, numbers, and hyphens (e.g. "My-Config")' });
+  const nameError = validateConfigName(name);
+  if (nameError) {
+    res.status(400).json({ error: nameError });
     return;
   }
 
@@ -1104,15 +1122,18 @@ app.put('/api/settings', requireAuth, async (req, res) => {
 // Serve SPA static files (after all API routes)
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath = path.join(__dirname, '..', 'dist');
-app.use(express.static(distPath));
+const indexHtml = path.join(distPath, 'index.html');
+const spaBase = (process.env.SPA_BASE_PATH ?? '/').replace(/\/+$/, '') || '/';
+app.use(spaBase, express.static(distPath));
 
 // JSON 404 for unmatched API routes (must be before SPA catch-all)
 app.all('/api/*', (_req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
 
-app.get('*', (_req, res) => {
-  res.sendFile(path.join(distPath, 'index.html'));
+// SPA catch-all under the configured base path
+app.get(spaBase === '/' ? '*' : `${spaBase}/*`, (_req, res) => {
+  res.sendFile(indexHtml);
 });
 
 // Start server
