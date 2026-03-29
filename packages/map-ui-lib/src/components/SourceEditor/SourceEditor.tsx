@@ -155,6 +155,26 @@ export function SourceEditor({
           </FormField>
         </div>
       )}
+
+      <FormField label="Proxy">
+        <label className="mapui:flex mapui:items-center mapui:gap-2 mapui:cursor-pointer">
+          <input
+            type="checkbox"
+            checked={value.proxy ?? false}
+            onChange={() => update({ proxy: !value.proxy })}
+            className="mapui:accent-blue-600"
+          />
+          <span className="mapui:text-sm mapui:text-gray-700">Proxy requests through server</span>
+        </label>
+        <p className="mapui:text-xs mapui:text-gray-500 mapui:mt-1">
+          Route requests through the server to protect API keys and bypass CORS restrictions.
+        </p>
+        {value.proxy && value.auth && (
+          <p className="mapui:text-xs mapui:text-blue-600 mapui:mt-1">
+            Credentials will be applied server-side and hidden from browsers.
+          </p>
+        )}
+      </FormField>
     </div>
   );
 }

@@ -129,6 +129,11 @@ export async function initDb(): Promise<void> {
     ALTER TABLE ogc_sources ADD COLUMN IF NOT EXISTS metadata_updated_at TIMESTAMPTZ
   `);
 
+  // Proxy flag: route requests through the server to protect API keys and bypass CORS
+  await pool.query(`
+    ALTER TABLE ogc_sources ADD COLUMN IF NOT EXISTS proxy BOOLEAN NOT NULL DEFAULT false
+  `);
+
   // Site-wide branding / customization (single-row table)
   await pool.query(`
     CREATE TABLE IF NOT EXISTS site_settings (

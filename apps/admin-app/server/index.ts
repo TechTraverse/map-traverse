@@ -2,13 +2,49 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { Readable } from 'stream';
 import session from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 import bcrypt from 'bcryptjs';
 import { pool, initDb } from './db.js';
 import { inspectSource, normalizeUrl } from './inspect.js';
-import { detectTileSourceType } from '@ogc-maps/storybook-components/hooks';
+import { detectTileSourceType, appendAuth, authHeaders } from '@ogc-maps/storybook-components/hooks';
+import type { SourceAuth } from '@ogc-maps/storybook-components/hooks';
 import { safeValidateMapConfig } from '@ogc-maps/storybook-components/schemas';
+
+// Shared shape for source create/update request bodies
+interface SourceRequestBody {
+  source_id?: string;
+  url?: string;
+  label?: string;
+  tile_matrix_set_id?: string;
+  source_type?: string;
+  auth?: SourceAuth | null;
+  metadata?: unknown;
+  proxy?: boolean;
+}
+
+// URL helpers for proxy rewriting
+const ORIGIN_RE = /^(https?:\/\/[^/?#]+)/;
+
+function extractOrigin(url: string): string {
+  return url.match(ORIGIN_RE)?.[1] ?? url.replace(/\/$/, '');
+}
+
+function extractUrlPath(url: string): string {
+  return (url.match(/^https?:\/\/[^/?#]+(.*?)(?:\?.*)?$/)?.[1] ?? '').replace(/\/$/, '');
+}
+
+function stripQueryParams(url: string, paramNames: Set<string>): string {
+  if (paramNames.size === 0) return url;
+  const qIdx = url.indexOf('?');
+  if (qIdx === -1) return url;
+  const base = url.substring(0, qIdx);
+  const params = new URLSearchParams(url.substring(qIdx + 1));
+  for (const name of paramNames) params.delete(name);
+  const qs = params.toString();
+  return qs ? `${base}?${qs}` : base;
+}
 
 // Augment session with our custom fields
 declare module 'express-session' {
@@ -221,7 +257,60 @@ app.get('/api/configs/:id', async (req, res) => {
         res.status(404).json({ error: 'Config not found' });
         return;
       }
-      res.json((result.rows[0] as { config: unknown }).config);
+
+      // Rewrite proxied source URLs so the client uses the proxy endpoint
+      const config = (result.rows[0] as { config: Record<string, unknown> }).config;
+      const sources = config.sources as Array<{ id: string; url: string; auth?: unknown }> | undefined;
+      if (sources && sources.length > 0) {
+        const sourceIds = sources.map(s => s.id);
+        const proxied = await pool.query(
+          'SELECT source_id, url, auth FROM ogc_sources WHERE source_id = ANY($1) AND proxy = true',
+          [sourceIds],
+        );
+        if (proxied.rows.length > 0) {
+          // Build lookup with pre-computed origin + params-to-strip per source
+          const proxiedSources = new Map<string, { url: string; origin: string; auth: SourceAuth | null; paramsToStrip: Set<string> }>();
+          for (const r of proxied.rows as Array<{ source_id: string; url: string; auth: SourceAuth | null }>) {
+            const paramsToStrip = new Set<string>();
+            if (r.auth?.name) paramsToStrip.add(r.auth.name);
+            const qIdx = r.url.indexOf('?');
+            if (qIdx !== -1) {
+              for (const [name] of new URLSearchParams(r.url.substring(qIdx + 1))) {
+                paramsToStrip.add(name);
+              }
+            }
+            proxiedSources.set(r.source_id, { url: r.url, origin: extractOrigin(r.url), auth: r.auth, paramsToStrip });
+          }
+
+          const proxyBase = `${req.protocol}://${req.get('host')}/api/proxy`;
+
+          for (const source of sources) {
+            if (proxiedSources.has(source.id)) {
+              source.url = `${proxyBase}/${source.id}${extractUrlPath(proxiedSources.get(source.id)!.url)}`;
+              delete source.auth;
+            }
+          }
+
+          // Rewrite imagery layer tileUrlTemplates that reference proxied sources
+          const imageryLayers = config.imageryLayers as Array<{ sourceId?: string; tileUrlTemplate?: string }> | undefined;
+          if (imageryLayers) {
+            for (const layer of imageryLayers) {
+              if (!layer.tileUrlTemplate || !layer.sourceId) continue;
+              const sourceInfo = proxiedSources.get(layer.sourceId);
+              if (!sourceInfo) continue;
+
+              const tileOrigin = extractOrigin(layer.tileUrlTemplate);
+              // Only rewrite if tile URL shares the same origin as the source (SSRF protection)
+              if (tileOrigin !== sourceInfo.origin) continue;
+
+              const cleanTileUrl = stripQueryParams(layer.tileUrlTemplate, sourceInfo.paramsToStrip);
+              layer.tileUrlTemplate = `${proxyBase}/${layer.sourceId}${cleanTileUrl.substring(tileOrigin.length)}`;
+            }
+          }
+        }
+      }
+
+      res.json(config);
     }
   } catch (err) {
     handleServerError(res, err);
@@ -622,13 +711,14 @@ app.get('/api/sources/:id/usage', async (req, res) => {
 
 // POST /api/sources/test-connection — server-side connection test (protected)
 app.post('/api/sources/test-connection', requireAuth, async (req, res) => {
-  const { url } = req.body as { url?: string };
+  const { url, auth } = req.body as { url?: string; auth?: SourceAuth | null };
   if (!url) {
     res.status(400).json({ error: 'url is required' });
     return;
   }
   try {
     const testUrl = normalizeUrl(url).replace(/\/$/, '');
+    const sourceAuth = auth ?? undefined;
 
     const sourceType = detectTileSourceType(testUrl);
     let testEndpoint: string;
@@ -643,9 +733,9 @@ app.post('/api/sources/test-connection', requireAuth, async (req, res) => {
       testEndpoint = `${testUrl}/conformance?f=json`;
     }
 
-    const response = await fetch(testEndpoint, {
+    const response = await fetch(appendAuth(testEndpoint, sourceAuth), {
       signal: AbortSignal.timeout(10_000),
-      headers: { 'Accept': acceptHeader },
+      headers: { 'Accept': acceptHeader, ...authHeaders(sourceAuth) },
     });
     if (response.ok) {
       // For TileJSON, also verify structure
@@ -667,15 +757,7 @@ app.post('/api/sources/test-connection', requireAuth, async (req, res) => {
 
 // POST /api/sources — create a new source (protected)
 app.post('/api/sources', requireAuth, async (req, res) => {
-  const { source_id, url, label, tile_matrix_set_id, source_type, auth, metadata } = req.body as {
-    source_id?: string;
-    url?: string;
-    label?: string;
-    tile_matrix_set_id?: string;
-    source_type?: string;
-    auth?: { type: string; name: string; value: string } | null;
-    metadata?: unknown;
-  };
+  const { source_id, url, label, tile_matrix_set_id, source_type, auth, metadata, proxy } = req.body as SourceRequestBody;
 
   if (!source_id || !url) {
     res.status(400).json({ error: 'source_id and url are required' });
@@ -696,11 +778,12 @@ app.post('/api/sources', requireAuth, async (req, res) => {
       : (effectiveType === 'basemap' ? null : undefined);
 
     const result = await pool.query(
-      `INSERT INTO ogc_sources (source_id, url, label, tile_matrix_set_id, source_type, auth${basemapMetadata !== undefined ? ', metadata, metadata_updated_at' : ''})
-       VALUES ($1, $2, $3, $4, $5, $6${basemapMetadata !== undefined ? ', $7, now()' : ''}) RETURNING *`,
+      `INSERT INTO ogc_sources (source_id, url, label, tile_matrix_set_id, source_type, auth, proxy${basemapMetadata !== undefined ? ', metadata, metadata_updated_at' : ''})
+       VALUES ($1, $2, $3, $4, $5, $6, $7${basemapMetadata !== undefined ? ', $8, now()' : ''}) RETURNING *`,
       [
         source_id, url, label ?? null, tile_matrix_set_id ?? 'WebMercatorQuad', effectiveType,
         auth ? JSON.stringify(auth) : null,
+        proxy ?? false,
         ...(basemapMetadata !== undefined ? [basemapMetadata] : []),
       ],
     );
@@ -741,15 +824,7 @@ app.post('/api/sources', requireAuth, async (req, res) => {
 
 // PUT /api/sources/:id — update a source (protected)
 app.put('/api/sources/:id', requireAuth, async (req, res) => {
-  const { source_id, url, label, tile_matrix_set_id, source_type, auth, metadata } = req.body as {
-    source_id?: string;
-    url?: string;
-    label?: string;
-    tile_matrix_set_id?: string;
-    source_type?: string;
-    auth?: { type: string; name: string; value: string } | null;
-    metadata?: unknown;
-  };
+  const { source_id, url, label, tile_matrix_set_id, source_type, auth, metadata, proxy } = req.body as SourceRequestBody;
 
   if (source_id !== undefined && !SOURCE_ID_REGEX.test(source_id)) {
     res.status(400).json({ error: 'source_id must be a slug (lowercase letters, numbers, hyphens only)' });
@@ -768,7 +843,8 @@ app.put('/api/sources/:id', requireAuth, async (req, res) => {
       label: string | null;
       tile_matrix_set_id: string;
       source_type: string;
-      auth: { type: string; name: string; value: string } | null;
+      auth: SourceAuth | null;
+      proxy: boolean;
     };
 
     const newUrl = url ?? row.url;
@@ -776,8 +852,8 @@ app.put('/api/sources/:id', requireAuth, async (req, res) => {
     const { thumbnail } = req.body as { thumbnail?: string };
 
     const result = await pool.query(
-      `UPDATE ogc_sources SET source_id = $1, url = $2, label = $3, tile_matrix_set_id = $4, source_type = $5, auth = $6, updated_at = now()
-       WHERE id = $7 RETURNING *`,
+      `UPDATE ogc_sources SET source_id = $1, url = $2, label = $3, tile_matrix_set_id = $4, source_type = $5, auth = $6, proxy = $7, updated_at = now()
+       WHERE id = $8 RETURNING *`,
       [
         source_id ?? row.source_id,
         newUrl,
@@ -785,6 +861,7 @@ app.put('/api/sources/:id', requireAuth, async (req, res) => {
         tile_matrix_set_id ?? row.tile_matrix_set_id,
         effectiveType,
         auth !== undefined ? (auth ? JSON.stringify(auth) : null) : (row.auth ? JSON.stringify(row.auth) : null),
+        proxy !== undefined ? proxy : row.proxy,
         req.params.id,
       ],
     );
@@ -1116,6 +1193,148 @@ app.put('/api/settings', requireAuth, async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     handleServerError(res, err);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Source Proxy — forwards requests to upstream sources with auth applied
+// ---------------------------------------------------------------------------
+
+// In-memory cache for source lookups (avoids DB query per tile request)
+interface ProxySourceData {
+  url: string;
+  origin: string;
+  urlParams: [string, string][];
+  auth: SourceAuth | null;
+  proxy: boolean;
+}
+const proxySourceCache = new Map<string, { data: ProxySourceData; expiresAt: number }>();
+const PROXY_CACHE_TTL = 60_000; // 1 minute
+const PROXY_CACHE_MAX = 500;
+
+async function resolveProxySource(sourceId: string): Promise<ProxySourceData | null> {
+  const cached = proxySourceCache.get(sourceId);
+  if (cached) {
+    if (cached.expiresAt > Date.now()) return cached.data;
+    proxySourceCache.delete(sourceId);
+  }
+  // Evict expired entries when cache is full; if none expired, drop the oldest
+  if (proxySourceCache.size >= PROXY_CACHE_MAX) {
+    const now = Date.now();
+    let evicted = false;
+    for (const [key, entry] of proxySourceCache) {
+      if (entry.expiresAt <= now) { proxySourceCache.delete(key); evicted = true; }
+    }
+    if (!evicted) {
+      // Map iterates in insertion order — first key is oldest
+      const oldest = proxySourceCache.keys().next().value;
+      if (oldest !== undefined) proxySourceCache.delete(oldest);
+    }
+  }
+
+  const result = await pool.query(
+    'SELECT url, auth, proxy FROM ogc_sources WHERE source_id = $1',
+    [sourceId],
+  );
+  if (result.rows.length === 0) return null;
+
+  const row = result.rows[0] as { url: string; auth: SourceAuth | null; proxy: boolean };
+  // Pre-parse origin and URL query params so we don't repeat this per request
+  const qIdx = row.url.indexOf('?');
+  const urlParams = qIdx !== -1 ? [...new URLSearchParams(row.url.substring(qIdx + 1))] : [];
+  const data: ProxySourceData = { url: row.url, origin: extractOrigin(row.url), urlParams, auth: row.auth, proxy: row.proxy };
+  proxySourceCache.set(sourceId, { data, expiresAt: Date.now() + PROXY_CACHE_TTL });
+  return data;
+}
+
+app.all('/api/proxy/:sourceId/*', async (req, res) => {
+  try {
+    const { sourceId } = req.params;
+    const remainingPath = (req.params as Record<string, string>)[0] ?? '';
+
+    const source = await resolveProxySource(sourceId);
+    if (!source) {
+      res.status(404).json({ error: 'Source not found' });
+      return;
+    }
+    if (!source.proxy) {
+      res.status(403).json({ error: 'Proxying is not enabled for this source' });
+      return;
+    }
+
+    const targetParams = new URLSearchParams();
+
+    // Forward client query params
+    for (const [key, val] of Object.entries(req.query)) {
+      if (typeof val === 'string') targetParams.set(key, val);
+    }
+
+    // Forward query params embedded in the source URL (e.g., API keys in the URL)
+    for (const [name, value] of source.urlParams) {
+      targetParams.set(name, value);
+    }
+
+    // Apply query-param auth (takes priority over URL-embedded params)
+    if (source.auth?.type === 'query_param') {
+      targetParams.set(source.auth.name, source.auth.value);
+    }
+
+    const qs = targetParams.toString();
+    const targetUrl = `${source.origin}/${remainingPath}${qs ? '?' + qs : ''}`;
+
+    // Build upstream request headers
+    const upstreamHeaders: Record<string, string> = {};
+    if (source.auth?.type === 'header') {
+      upstreamHeaders[source.auth.name] = source.auth.value;
+    }
+    if (req.headers.accept) upstreamHeaders['Accept'] = req.headers.accept;
+
+    // Prepare upstream request options
+    const fetchOpts: RequestInit & { duplex?: string } = {
+      method: req.method,
+      headers: upstreamHeaders,
+      signal: AbortSignal.timeout(30_000),
+    };
+
+    // Forward body for POST/PUT/PATCH
+    if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+      if (req.headers['content-type']) {
+        upstreamHeaders['Content-Type'] = req.headers['content-type'];
+      }
+      if (req.body && typeof req.body === 'object') {
+        fetchOpts.body = JSON.stringify(req.body);
+      }
+    }
+
+    const upstream = await fetch(targetUrl, fetchOpts);
+
+    // Forward response status and content headers (not CORS — handled by app-level middleware)
+    res.status(upstream.status);
+    for (const h of ['content-type', 'content-length', 'content-encoding', 'cache-control', 'etag', 'last-modified']) {
+      const v = upstream.headers.get(h);
+      if (v) res.setHeader(h, v);
+    }
+
+    if (upstream.body) {
+      // @ts-expect-error Node 18+ ReadableStream is compatible with Readable.fromWeb
+      const stream = Readable.fromWeb(upstream.body);
+      stream.on('error', (err: Error) => {
+        console.error('Proxy stream error:', err);
+        if (!res.headersSent) res.status(502).json({ error: 'Upstream stream failed' });
+        else res.destroy();
+      });
+      res.on('close', () => { stream.destroy(); });
+      stream.pipe(res);
+    } else {
+      res.end();
+    }
+  } catch (err) {
+    if (err instanceof Error && err.name === 'TimeoutError') {
+      res.status(504).json({ error: 'Upstream request timed out' });
+    } else {
+      console.error('Proxy error:', err);
+      res.status(502).json({ error: 'Failed to reach upstream source' });
+    }
   }
 });
 

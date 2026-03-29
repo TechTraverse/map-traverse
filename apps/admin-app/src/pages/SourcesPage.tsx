@@ -22,6 +22,7 @@ interface SavedSource {
   tile_matrix_set_id: string;
   source_type: string;
   auth: SourceAuth | null;
+  proxy: boolean;
   metadata: (InspectionResult & { thumbnail?: string }) | null;
   metadata_updated_at: string | null;
   created_at: string;
@@ -36,6 +37,7 @@ function toOgcApiSource(s: SavedSource): OgcApiSource {
     tileMatrixSetId: s.tile_matrix_set_id,
     type: (s.source_type ?? 'features') as 'features' | 'imagery',
     auth: s.auth ?? undefined,
+    proxy: s.proxy,
   };
 }
 
@@ -210,6 +212,7 @@ export function SourcesPage() {
           tile_matrix_set_id: newSource.tileMatrixSetId || 'WebMercatorQuad',
           source_type: activeTab,
           auth: newSource.auth ?? null,
+          proxy: newSource.proxy ?? false,
           ...(clientMetadata ? { metadata: clientMetadata } : {}),
         }),
       });
@@ -277,6 +280,7 @@ export function SourcesPage() {
           tile_matrix_set_id: editingSource.tileMatrixSetId || 'WebMercatorQuad',
           source_type: activeTab,
           auth: editingSource.auth ?? null,
+          proxy: editingSource.proxy ?? false,
         }),
       });
       if (!res.ok) {

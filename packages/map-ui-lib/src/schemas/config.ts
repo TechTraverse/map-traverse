@@ -42,6 +42,7 @@ export const OgcApiSourceSchema = z.object({
   tileMatrixSetId: z.string().optional().default('WebMercatorQuad'),
   type: z.enum(['features', 'imagery']).optional(),
   auth: SourceAuthSchema.optional(),
+  proxy: z.boolean().optional(),
 });
 
 // --- Paint Schemas (MapLibre GL JS conventions) ---
