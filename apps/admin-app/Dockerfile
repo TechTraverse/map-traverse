@@ -38,7 +38,9 @@ COPY packages/map-ui-lib/package.json ./packages/map-ui-lib/
 COPY apps/admin-app/package.json ./apps/admin-app/
 
 # Install production deps only
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile --prod \
+    && rm -rf /root/.cache/node/corepack \
+    && corepack disable
 
 # Copy built SPA + server from builder
 COPY --from=builder /app/packages/map-ui-lib/dist/ ./packages/map-ui-lib/dist/
