@@ -730,6 +730,54 @@ Validates and displays a `MapConfig` as formatted JSON, showing validation error
 
 ---
 
+## Cql2FilterEditor
+
+Visual CQL2 filter builder for constructing query templates. Supports comparison, pattern, temporal, and spatial operators with parameterized values. Stored in `LayerConfig.cql2Filter`.
+
+### Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `value` | `Cql2FilterConfig \| undefined` | Yes | The current filter config, or `undefined` for empty state |
+| `onChange` | `(config: Cql2FilterConfig \| undefined) => void` | Yes | Called on any change; receives `undefined` when the filter is removed |
+| `availableProperties` | `AvailableProperty[]` | No | Properties available for filtering. When provided, renders select dropdowns instead of free-text inputs |
+
+### Behavior
+
+- **Empty state**: Shows "No CQL2 filter configured" with an "Add Filter" button.
+- **Visual builder**: Recursive AND/OR groups with nested rules. Each rule has property, operator, and value selectors.
+- **Value modes**: Static values, parameterized values (resolved at runtime from user input), relative dates, date ranges, and computed ranges (e.g., "within 20% of X").
+- **Spatial operators**: `s_intersects`, `s_within`, `s_dwithin` — use the selected feature's geometry at runtime. `s_dwithin` supports parameterized distance with configurable units (meters, km, miles, feet).
+- **Query options**: Sort-by fields and result limit, rendered below the rule builder.
+- **CQL2 preview**: Collapsible read-only JSON preview of the generated CQL2 query.
+- **Remove filter**: Button at the bottom calls `onChange(undefined)`.
+
+### Example
+
+```tsx
+import { useState } from 'react';
+import type { Cql2FilterConfig } from '@ogc-maps/storybook-components/hooks';
+import { Cql2FilterEditor } from '@ogc-maps/storybook-components/components/Cql2FilterEditor';
+
+function MyAdmin() {
+  const [filter, setFilter] = useState<Cql2FilterConfig | undefined>(undefined);
+  const properties = [
+    { name: 'name', title: 'Name', type: 'string' },
+    { name: 'population', title: 'Population', type: 'integer' },
+    { name: 'geom', title: 'Geometry', type: 'geometry' },
+  ];
+  return (
+    <Cql2FilterEditor
+      value={filter}
+      onChange={setFilter}
+      availableProperties={properties}
+    />
+  );
+}
+```
+
+---
+
 ## Shared Admin Primitives
 
 ### FormField

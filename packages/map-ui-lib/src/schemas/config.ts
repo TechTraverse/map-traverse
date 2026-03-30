@@ -292,6 +292,132 @@ export const FilterConfigSchema = z.object({
   datetime: z.string().optional(),
 });
 
+// --- CQL2 Filter Builder Config ---
+
+export const FilterOperatorSchema = z.enum([
+  '=', '<>', '>', '>=', '<', '<=',
+  'like', 'in', 'isNull',
+  'between',
+  't_after', 't_before', 't_during',
+  's_intersects', 's_within', 's_dwithin',
+]);
+
+const StaticFilterValueSchema = z.object({
+  kind: z.literal('static'),
+  value: z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(z.string()),
+    z.object({ lower: z.number(), upper: z.number() }),
+    z.object({ start: z.string(), end: z.string() }),
+  ]),
+});
+
+const ParameterFilterValueSchema = z.object({
+  kind: z.literal('parameter'),
+  name: z.string().min(1),
+  label: z.string(),
+  inputType: z.enum(['text', 'number', 'date', 'select']),
+  default: z.union([z.string(), z.number()]).optional(),
+});
+
+const OffsetValueSchema = z.union([
+  z.object({ kind: z.literal('static'), value: z.number() }),
+  z.object({ kind: z.literal('parameter'), name: z.string().min(1), label: z.string(), default: z.number().optional() }),
+]);
+
+export const RelativeDateValueSchema = z.object({
+  kind: z.literal('relativeDate'),
+  direction: z.enum(['past', 'future']),
+  offset: OffsetValueSchema,
+  unit: z.enum(['days', 'months', 'years']),
+});
+
+const DateEndpointSchema = z.union([
+  z.object({ kind: z.literal('static'), value: z.string() }),
+  RelativeDateValueSchema,
+  z.object({ kind: z.literal('parameter'), name: z.string(), label: z.string(), default: z.string().optional() }),
+]);
+
+export const DateRangeValueSchema = z.object({
+  kind: z.literal('dateRange'),
+  start: DateEndpointSchema,
+  end: DateEndpointSchema,
+});
+
+export const ComputedRangeValueSchema = z.object({
+  kind: z.literal('computedRange'),
+  baseParam: z.string().min(1),
+  baseLabel: z.string(),
+  offsetType: z.enum(['percentage', 'absolute']),
+  offsetAmount: OffsetValueSchema,
+});
+
+export const FilterRuleValueSchema = z.discriminatedUnion('kind', [
+  StaticFilterValueSchema,
+  ParameterFilterValueSchema,
+  RelativeDateValueSchema,
+  DateRangeValueSchema,
+  ComputedRangeValueSchema,
+]);
+
+const SpatialDistanceParamSchema = z.object({
+  kind: z.literal('parameter'),
+  name: z.string().min(1),
+  label: z.string(),
+  default: z.number().optional(),
+});
+
+export const SpatialConfigSchema = z.object({
+  distance: z.union([z.number(), SpatialDistanceParamSchema]).optional(),
+  units: z.enum(['meters', 'kilometers', 'miles', 'feet']).optional(),
+});
+
+export const FilterRuleSchema = z.object({
+  id: z.string(),
+  property: z.string(),
+  operator: FilterOperatorSchema,
+  value: FilterRuleValueSchema,
+  spatial: SpatialConfigSchema.optional(),
+});
+
+export const SortFieldSchema = z.object({
+  property: z.string(),
+  direction: z.enum(['asc', 'desc']),
+});
+
+export const SpatialConstraintSchema = z.object({
+  operator: z.enum(['s_intersects', 's_within', 's_dwithin']),
+  geometryProperty: z.string(),
+  distance: z.number().optional(),
+  distanceUnits: z.string().optional(),
+});
+
+export const FilterRuleGroupSchema: z.ZodType<{
+  id: string;
+  combinator: 'and' | 'or';
+  rules: (
+    | z.infer<typeof FilterRuleSchema>
+    | { id: string; combinator: 'and' | 'or'; rules: unknown[] }
+  )[];
+  sortby?: Array<{ property: string; direction: 'asc' | 'desc' }>;
+  limit?: number;
+  spatialConstraint?: z.infer<typeof SpatialConstraintSchema>;
+}> = z.lazy(() =>
+  z.object({
+    id: z.string(),
+    combinator: z.enum(['and', 'or']),
+    rules: z.array(z.union([FilterRuleSchema, FilterRuleGroupSchema])),
+    sortby: z.array(SortFieldSchema).optional(),
+    limit: z.number().min(1).optional(),
+    spatialConstraint: SpatialConstraintSchema.optional(),
+  }),
+);
+
+export const Cql2FilterConfigSchema = FilterRuleGroupSchema;
+
 // --- Layer Config ---
 
 const layerConfigFields = {
@@ -308,6 +434,7 @@ const layerConfigFields = {
   filters: FilterConfigSchema.optional(),
   search: SearchConfigSchema.optional(),
   propertyDisplay: PropertyDisplayConfigSchema.optional(),
+  cql2Filter: Cql2FilterConfigSchema.optional(),
   showTooltip: z.boolean().optional(),
   showDetailPanel: z.boolean().optional(),
 };

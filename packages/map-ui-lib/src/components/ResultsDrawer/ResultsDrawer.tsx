@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { LuX, LuDownload, LuTrash2, LuGripHorizontal } from 'react-icons/lu';
 
 /** Format a property value for table display. */
@@ -9,18 +9,34 @@ function formatCellValue(value: unknown): string {
   return String(value);
 }
 
+export interface ResultsDrawerTab {
+  id: string;
+  label: string;
+  features: Array<{ properties: Record<string, unknown>; geometry?: Record<string, unknown> }>;
+  columns?: string[];
+  onClear?: () => void;
+  onExport?: () => void;
+}
+
 export interface ResultsDrawerProps {
   open: boolean;
-  features: Array<{
+  onClose: () => void;
+  onFeatureClick?: (index: number) => void;
+
+  // Single-content mode (backward compatible)
+  features?: Array<{
     properties: Record<string, unknown>;
     geometry?: Record<string, unknown>;
   }>;
   columns?: string[];
   title?: string;
-  onClose: () => void;
   onExport?: () => void;
-  onFeatureClick?: (index: number) => void;
   onClearSelection?: () => void;
+
+  // Multi-tab mode
+  tabs?: ResultsDrawerTab[];
+  activeTabId?: string;
+  onTabChange?: (tabId: string) => void;
 }
 
 const MIN_HEIGHT = 200;
@@ -29,13 +45,16 @@ const DEFAULT_HEIGHT = 300;
 
 export function ResultsDrawer({
   open,
-  features,
-  columns,
+  features: featuresProp,
+  columns: columnsProp,
   title = 'Results',
   onClose,
-  onExport,
+  onExport: onExportProp,
   onFeatureClick,
   onClearSelection,
+  tabs,
+  activeTabId,
+  onTabChange,
 }: ResultsDrawerProps) {
   const [height, setHeight] = useState(DEFAULT_HEIGHT);
   const dragging = useRef(false);
@@ -72,12 +91,26 @@ export function ResultsDrawer({
     };
   }, [open]);
 
-  if (!open) return null;
+  // Resolve active content: tab mode or single-content mode
+  // NOTE: All hooks (including useMemo) must be called before any early return
+  // to satisfy React's rules of hooks.
+  const isTabMode = tabs && tabs.length > 0;
+  const activeTab = isTabMode ? tabs.find((t) => t.id === activeTabId) ?? tabs[0] : undefined;
+  const features = isTabMode ? activeTab!.features : (featuresProp ?? []);
+  const columns = isTabMode ? activeTab!.columns : columnsProp;
+  const onExport = isTabMode ? activeTab!.onExport : onExportProp;
+  const onClear = isTabMode ? activeTab!.onClear : onClearSelection;
+  const displayTitle = isTabMode ? activeTab!.label : title;
 
   // Determine columns from the first feature if not specified
-  const displayColumns = columns ?? (features.length > 0
-    ? Object.keys(features[0].properties).filter((k) => k !== 'geometry')
-    : []);
+  const displayColumns = useMemo(
+    () => columns ?? (features.length > 0
+      ? Object.keys(features[0].properties).filter((k) => k !== 'geometry')
+      : []),
+    [columns, features],
+  );
+
+  if (!open) return null;
 
   return (
     <div
@@ -95,10 +128,42 @@ export function ResultsDrawer({
       {/* Header */}
       <div className="mapui:flex mapui:items-center mapui:justify-between mapui:px-4 mapui:py-2 mapui:border-b mapui:border-gray-200 mapui:shrink-0">
         <div className="mapui:flex mapui:items-center mapui:gap-2">
-          <span className="mapui:text-sm mapui:font-semibold mapui:text-gray-800">{title}</span>
-          <span className="mapui:rounded-full mapui:bg-blue-100 mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:font-medium mapui:text-blue-700">
-            {features.length}
-          </span>
+          {isTabMode && tabs.length > 1 ? (
+            <div className="mapui:inline-flex mapui:rounded-md mapui:border mapui:border-gray-300 mapui:text-xs">
+              {tabs.map((tab, i) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => onTabChange?.(tab.id)}
+                  className={[
+                    'mapui:px-2.5 mapui:py-1 mapui:flex mapui:items-center mapui:gap-1.5',
+                    i === 0 ? 'mapui:rounded-l-md' : '',
+                    i === tabs.length - 1 ? 'mapui:rounded-r-md' : '',
+                    (activeTab?.id ?? tabs[0].id) === tab.id
+                      ? 'mapui:bg-blue-600 mapui:text-white'
+                      : 'mapui:bg-white mapui:text-gray-600 hover:mapui:bg-gray-100',
+                  ].join(' ')}
+                >
+                  {tab.label}
+                  <span className={[
+                    'mapui:rounded-full mapui:px-1.5 mapui:py-0.5 mapui:text-xs mapui:font-medium',
+                    (activeTab?.id ?? tabs[0].id) === tab.id
+                      ? 'mapui:bg-blue-500 mapui:text-white'
+                      : 'mapui:bg-gray-100 mapui:text-gray-600',
+                  ].join(' ')}>
+                    {tab.features.length}
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <>
+              <span className="mapui:text-sm mapui:font-semibold mapui:text-gray-800">{displayTitle}</span>
+              <span className="mapui:rounded-full mapui:bg-blue-100 mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:font-medium mapui:text-blue-700">
+                {features.length}
+              </span>
+            </>
+          )}
         </div>
         <div className="mapui:flex mapui:items-center mapui:gap-1">
           {onExport && (
@@ -111,11 +176,11 @@ export function ResultsDrawer({
               <LuDownload size={16} />
             </button>
           )}
-          {onClearSelection && (
+          {onClear && (
             <button
               type="button"
-              onClick={onClearSelection}
-              title="Clear selection"
+              onClick={onClear}
+              title="Clear"
               className="mapui:flex mapui:items-center mapui:justify-center mapui:w-7 mapui:h-7 mapui:rounded hover:mapui:bg-gray-100 mapui:text-gray-500"
             >
               <LuTrash2 size={16} />

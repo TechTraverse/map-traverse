@@ -77,6 +77,15 @@ export function detectGeometryStyleTypesFromQueryables(
 }
 
 /**
+ * Returns the names of all geometry properties in a queryables document.
+ */
+export function getGeometryPropertyNames(queryables: OgcQueryables): string[] {
+  return Object.entries(queryables.properties)
+    .filter(([, prop]) => isGeometryProperty(prop))
+    .map(([name]) => name);
+}
+
+/**
  * Filters out geometry properties and maps the rest to AvailableProperty[].
  */
 export function toAvailableProperties(queryables: OgcQueryables): AvailableProperty[] {

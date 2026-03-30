@@ -35,6 +35,17 @@ import {
   UIConfigSchema,
   BrandingConfigSchema,
   MapConfigSchema,
+  FilterOperatorSchema,
+  FilterRuleValueSchema,
+  RelativeDateValueSchema,
+  DateRangeValueSchema,
+  ComputedRangeValueSchema,
+  SpatialConfigSchema,
+  SpatialConstraintSchema,
+  FilterRuleSchema,
+  FilterRuleGroupSchema,
+  SortFieldSchema,
+  Cql2FilterConfigSchema,
 } from '../schemas/config';
 
 // Inferred types from Zod schemas
@@ -80,6 +91,45 @@ export type SearchFilterValue =
 export type SearchFilterValues = Record<string, SearchFilterValue>;
 
 export type FilterConfig = z.infer<typeof FilterConfigSchema>;
+
+// CQL2 Filter Builder types
+export type FilterOperator = z.infer<typeof FilterOperatorSchema>;
+export type FilterRuleValue = z.infer<typeof FilterRuleValueSchema>;
+export type RelativeDateValue = z.infer<typeof RelativeDateValueSchema>;
+export type DateRangeValue = z.infer<typeof DateRangeValueSchema>;
+export type ComputedRangeValue = z.infer<typeof ComputedRangeValueSchema>;
+export type SpatialConfig = z.infer<typeof SpatialConfigSchema>;
+export type SpatialConstraint = z.infer<typeof SpatialConstraintSchema>;
+export type FilterRule = z.infer<typeof FilterRuleSchema>;
+export type SortField = z.infer<typeof SortFieldSchema>;
+
+/**
+ * A recursive group of filter rules combined with AND or OR.
+ * Supports arbitrary nesting (groups within groups). The top-level group
+ * may also carry `sortby` and `limit` for full query shaping.
+ */
+export interface FilterRuleGroup {
+  id: string;
+  combinator: 'and' | 'or';
+  rules: (FilterRule | FilterRuleGroup)[];
+  sortby?: SortField[];
+  limit?: number;
+  spatialConstraint?: SpatialConstraint;
+}
+
+/** Top-level CQL2 filter config stored in `LayerConfig.cql2Filter`. Alias for `FilterRuleGroup`. */
+export type Cql2FilterConfig = FilterRuleGroup;
+
+/**
+ * Full query shape returned by `buildCql2Query()`. Includes the CQL2 filter expression
+ * plus optional sort and limit metadata for OGC API queries.
+ */
+export interface Cql2QueryShape {
+  filter: import('../utils/cql2').CQL2Expression | null;
+  sortby?: SortField[];
+  limit?: number;
+}
+
 export type PropertyDisplay = z.infer<typeof PropertyDisplaySchema>;
 export type PropertyDisplayConfig = z.infer<typeof PropertyDisplayConfigSchema>;
 export type PropertyDisplayConfigInput = z.input<typeof PropertyDisplayConfigSchema>;
@@ -145,4 +195,15 @@ export {
   UIConfigSchema,
   BrandingConfigSchema,
   MapConfigSchema,
+  FilterOperatorSchema,
+  FilterRuleValueSchema,
+  RelativeDateValueSchema,
+  DateRangeValueSchema,
+  ComputedRangeValueSchema,
+  SpatialConfigSchema,
+  SpatialConstraintSchema,
+  FilterRuleSchema,
+  FilterRuleGroupSchema,
+  SortFieldSchema,
+  Cql2FilterConfigSchema,
 };

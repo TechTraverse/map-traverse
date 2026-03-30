@@ -88,6 +88,20 @@ export const mapConfig: MapConfig = {
           },
         ],
       },
+      cql2Filter: {
+        id: 'countries-query',
+        combinator: 'and',
+        rules: [
+          {
+            id: 'pop-rule',
+            property: 'pop_est',
+            operator: '>=',
+            value: { kind: 'parameter', name: 'minPop', label: 'Min Population', inputType: 'number', default: 10000000 },
+          },
+        ],
+        sortby: [{ property: 'pop_est', direction: 'desc' }],
+        limit: 50,
+      },
     },
     {
       id: 'cities',
@@ -208,7 +222,7 @@ export const mapConfig: MapConfig = {
     showExportButton: true,
     showLegendOpacity: false,
     showMeasureTool: false,
-    showSelectionTool: false,
+    showSelectionTool: true,
     showImageryPanel: false,
   },
   initialView: {

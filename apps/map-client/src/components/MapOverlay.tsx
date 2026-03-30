@@ -13,12 +13,13 @@ import {
   ExportModal,
   MeasurePanel,
   SelectionPanel,
+  QueryPanel,
   type CoordinateFormatOption,
   type ExportableLayer,
-
   type ExportRequest,
 } from '@ogc-maps/storybook-components';
 import type { MeasureMode, MeasureUnit, Measurement, SelectionMode } from '@ogc-maps/storybook-components';
+import type { FilterRuleGroup } from '@ogc-maps/storybook-components/types';
 import { useExport, DEFAULT_EXPORT_FORMATS, fromStructuredFilters, fetchFeatures, eq, bboxFromGeometry } from '@ogc-maps/storybook-components/hooks';
 import { exportConverters } from '../utils/exportConverters';
 import type { UIConfig, SearchFilterValue, SearchFilterValues } from '@ogc-maps/storybook-components/types';
@@ -61,6 +62,11 @@ interface MapOverlayProps {
   selectionCount: number;
   onSelectionClear: () => void;
   onSelectionViewResults: () => void;
+  queryFilter?: FilterRuleGroup;
+  onRunQuery?: (params: Record<string, unknown>) => void;
+  queryLoading?: boolean;
+  queryError?: string | null;
+  hasSelectionGeometry?: boolean;
 }
 
 export function MapOverlay({
@@ -87,6 +93,11 @@ export function MapOverlay({
   selectionCount,
   onSelectionClear,
   onSelectionViewResults,
+  queryFilter,
+  onRunQuery,
+  queryLoading,
+  queryError,
+  hasSelectionGeometry,
 }: MapOverlayProps) {
   const layers = useMapStore((s) => s.layers);
   const basemaps = useMapStore((s) => s.basemaps);
@@ -294,6 +305,19 @@ export function MapOverlay({
                 selectedCount={selectionCount}
                 onClear={onSelectionClear}
                 onViewResults={onSelectionViewResults}
+                queryPanel={queryFilter && onRunQuery ? (
+                  <>
+                    <QueryPanel
+                      cql2Filter={queryFilter}
+                      onRun={onRunQuery}
+                      loading={queryLoading}
+                      hasSelectionGeometry={hasSelectionGeometry}
+                    />
+                    {queryError && (
+                      <p className="m-0 text-xs text-red-600 mt-1">{queryError}</p>
+                    )}
+                  </>
+                ) : undefined}
                 className="p-3 max-w-xs"
               />
             </CollapsibleControl>

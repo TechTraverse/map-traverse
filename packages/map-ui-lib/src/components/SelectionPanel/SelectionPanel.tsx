@@ -11,6 +11,8 @@ export interface SelectionPanelProps {
   selectedCount: number;
   onClear: () => void;
   onViewResults: () => void;
+  /** Optional slot for rendering a QueryPanel below the selection controls */
+  queryPanel?: React.ReactNode;
   className?: string;
 }
 
@@ -41,6 +43,7 @@ export function SelectionPanel({
   selectedCount,
   onClear,
   onViewResults,
+  queryPanel,
   className,
 }: SelectionPanelProps) {
   // Only show visible layers
@@ -118,6 +121,9 @@ export function SelectionPanel({
               </button>
             </div>
           )}
+
+          {/* Query panel slot */}
+          {queryPanel}
         </>
       )}
     </div>

@@ -32,7 +32,7 @@ export type { SelectionPanelProps } from './SelectionPanel';
 export { SearchPanel } from './SearchPanel';
 export type { SearchPanelProps } from './SearchPanel';
 export { ResultsDrawer } from './ResultsDrawer';
-export type { ResultsDrawerProps } from './ResultsDrawer';
+export type { ResultsDrawerProps, ResultsDrawerTab } from './ResultsDrawer';
 // Admin components
 export { FormField, ColorPicker, ConfirmDialog, CollapsibleSection } from './admin';
 export type { FormFieldProps, ColorPickerProps, ConfirmDialogProps, CollapsibleSectionProps } from './admin';
@@ -62,3 +62,7 @@ export { ViewEditor } from './ViewEditor';
 export type { ViewEditorProps } from './ViewEditor';
 export { ConfigPreview } from './ConfigPreview';
 export type { ConfigPreviewProps } from './ConfigPreview';
+export { Cql2FilterEditor } from './Cql2FilterEditor';
+export type { Cql2FilterEditorProps } from './Cql2FilterEditor';
+export { QueryPanel } from './QueryPanel';
+export type { QueryPanelProps } from './QueryPanel';

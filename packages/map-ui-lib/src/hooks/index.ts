@@ -31,6 +31,18 @@ export type {
   SourceAuth,
   PropertyDisplay,
   PropertyDisplayConfig,
+  FilterOperator,
+  FilterRuleValue,
+  SpatialConfig,
+  SpatialConstraint,
+  FilterRule,
+  FilterRuleGroup,
+  Cql2FilterConfig,
+  Cql2QueryShape,
+  RelativeDateValue,
+  DateRangeValue,
+  ComputedRangeValue,
+  SortField,
 } from '../types';
 export { resolvePropertyDisplay } from '../utils/propertyDisplay';
 export { resolveStyleWithSprites } from '../utils/spriteUtils';
@@ -87,6 +99,10 @@ export {
   tDuring,
   fromSimpleFilters,
   fromStructuredFilters,
+  fromFilterRuleGroup,
+  buildCql2Query,
+  resolveRelativeDate,
+  isFilterRuleGroup,
   serializeCql2,
   sIntersects,
   sWithin,
@@ -98,5 +114,7 @@ export {
   type CQL2Interval,
   type CQL2Geometry,
 } from '../utils/cql2';
-export { bboxFromGeometry, type BBox } from '../utils/geo';
+export { bboxFromGeometry, combineGeometries, type BBox } from '../utils/geo';
+export { extractQueryParameters, queryRequiresGeometry, type QueryParameter } from '../utils/queryParameters';
+export { getGeometryPropertyNames } from '../utils/queryableHelpers';
 export type { SelectionMode, SelectedFeature } from '../utils/selection';

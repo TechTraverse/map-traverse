@@ -743,10 +743,91 @@ function serializeCql2(expr: CQL2Expression): string
 
 Serializes a CQL2 expression to a JSON string for use as a query parameter.
 
+### Spatial Operators
+
+| Function | Signature | CQL2 `op` | Description |
+|---|---|---|---|
+| `sIntersects` | `(property, geometry) → CQL2Expression` | `s_intersects` | Geometry intersects the given geometry |
+| `sWithin` | `(property, geometry) → CQL2Expression` | `s_within` | Geometry is within the given geometry |
+| `sDwithin` | `(property, geometry, distance, units?) → CQL2Expression` | `s_dwithin` | Geometry is within a distance of the given geometry |
+
+`geometry` is any GeoJSON geometry object. `units` defaults to `'meters'`; also accepts `'kilometers'`, `'miles'`, `'feet'`.
+
+### Filter Rule Group Conversion
+
+These functions convert the visual query builder's `FilterRuleGroup` model into CQL2 expressions. They support parameterized templates, relative dates, computed ranges, and spatial operators.
+
+```ts
+import {
+  fromFilterRuleGroup,
+  buildCql2Query,
+  resolveRelativeDate,
+  isFilterRuleGroup,
+} from '@ogc-maps/storybook-components/hooks';
+```
+
+#### `fromFilterRuleGroup`
+
+```ts
+function fromFilterRuleGroup(
+  group: FilterRuleGroup,
+  params?: Record<string, unknown>,
+  selectionGeometry?: CQL2Geometry | null,
+): CQL2Expression | null
+```
+
+Recursively converts a `FilterRuleGroup` (from the visual query builder) into a CQL2 expression. Resolves parameterized values from `params`, uses `selectionGeometry` for spatial operators. Returns `null` if the group produces no valid expressions (e.g., all spatial rules with no geometry).
+
+```ts
+const group: FilterRuleGroup = {
+  id: 'g1', combinator: 'and',
+  rules: [
+    { id: 'r1', property: 'continent', operator: '=',
+      value: { kind: 'parameter', name: 'selectedContinent', label: 'Continent', inputType: 'select' } },
+    { id: 'r2', property: 'population', operator: '>',
+      value: { kind: 'static', value: 1000000 } },
+  ],
+};
+const cql2 = fromFilterRuleGroup(group, { selectedContinent: 'Europe' });
+// → { op: 'and', args: [{ op: '=', args: [{ property: 'continent' }, 'Europe'] }, { op: '>', args: [{ property: 'population' }, 1000000] }] }
+```
+
+#### `buildCql2Query`
+
+```ts
+function buildCql2Query(
+  group: FilterRuleGroup,
+  params?: Record<string, unknown>,
+  selectionGeometry?: CQL2Geometry | null,
+): Cql2QueryShape
+```
+
+Returns the full query shape `{ filter, sortby, limit }` from a `FilterRuleGroup`. Use this when you need sort and limit metadata in addition to the CQL2 filter.
+
+#### `resolveRelativeDate`
+
+```ts
+function resolveRelativeDate(
+  value: RelativeDateValue,
+  params?: Record<string, unknown>,
+  now?: Date,
+): string
+```
+
+Resolves a relative date value (e.g., "3 years ago") to an ISO timestamp string. The optional `now` parameter is useful for testing.
+
+#### `isFilterRuleGroup`
+
+```ts
+function isFilterRuleGroup(item: FilterRule | FilterRuleGroup): item is FilterRuleGroup
+```
+
+Type guard that distinguishes `FilterRuleGroup` (has `combinator`) from `FilterRule`.
+
 ### Usage Examples
 
 ```ts
-import { eq, gt, like, and, or, between, tDuring } from '@ogc-maps/storybook-components/hooks';
+import { eq, gt, like, and, or, between, tDuring, sIntersects, sDwithin } from '@ogc-maps/storybook-components/hooks';
 
 // Simple equality
 const filter1 = eq('continent', 'Europe');
@@ -759,6 +840,12 @@ const filter3 = like('name', '%land%');
 
 // Temporal range
 const filter4 = tDuring('created_at', { timestamp: '2024-01-01T00:00:00Z' }, { timestamp: '2024-12-31T23:59:59Z' });
+
+// Spatial: features intersecting a selection geometry
+const filter5 = sIntersects('geom', selectedFeature.geometry);
+
+// Spatial: features within 500 feet of a point
+const filter6 = sDwithin('geom', selectedFeature.geometry, 500, 'feet');
 
 // Combine with logical operators
 const combined = and(filter1, filter2, or(filter3, filter4));
@@ -786,6 +873,51 @@ import type {
 | `CQL2Date` | `{ date: string }` | ISO 8601 date literal (`"YYYY-MM-DD"`) |
 | `CQL2Timestamp` | `{ timestamp: string }` | ISO 8601 timestamp literal (`"YYYY-MM-DDTHH:MM:SSZ"`) |
 | `CQL2Interval` | `{ interval: [string, string] }` | Temporal interval with start/end strings |
+| `CQL2Geometry` | GeoJSON geometry object | Geometry literal for spatial operators |
+
+### Filter Builder Types
+
+These types support the visual CQL2 query builder (`Cql2FilterEditor` component) and the `fromFilterRuleGroup` / `buildCql2Query` conversion functions.
+
+```ts
+import type {
+  FilterRuleGroup,
+  FilterRule,
+  FilterRuleValue,
+  FilterOperator,
+  Cql2FilterConfig,
+  Cql2QueryShape,
+  SortField,
+  SpatialConfig,
+  RelativeDateValue,
+  DateRangeValue,
+  ComputedRangeValue,
+} from '@ogc-maps/storybook-components/hooks';
+```
+
+| Type | Description |
+|---|---|
+| `FilterRuleGroup` | Recursive group of rules combined with `'and'` or `'or'`. May include `sortby` and `limit`. |
+| `FilterRule` | A single filter rule: property + operator + value, with optional `spatial` config. |
+| `FilterRuleValue` | Discriminated union (`kind`) of 5 value types — see below. |
+| `FilterOperator` | All supported operators: `=`, `<>`, `>`, `>=`, `<`, `<=`, `like`, `in`, `isNull`, `between`, `t_after`, `t_before`, `t_during`, `s_intersects`, `s_within`, `s_dwithin` |
+| `Cql2FilterConfig` | Alias for `FilterRuleGroup` — stored in `LayerConfig.cql2Filter`. |
+| `Cql2QueryShape` | `{ filter: CQL2Expression \| null, sortby?: SortField[], limit?: number }` |
+| `SortField` | `{ property: string, direction: 'asc' \| 'desc' }` |
+| `SpatialConfig` | `{ distance?: number \| ParameterRef, units?: 'meters' \| 'kilometers' \| 'miles' \| 'feet' }` |
+| `RelativeDateValue` | Relative date: direction + offset + unit (e.g., "3 years ago") |
+| `DateRangeValue` | Temporal range with independently resolved start/end endpoints |
+| `ComputedRangeValue` | "Within N% (or absolute) of parameter X" — resolved to `between()` at runtime |
+
+#### FilterRuleValue kinds
+
+| Kind | Purpose | Example |
+|---|---|---|
+| `static` | Literal value | `{ kind: 'static', value: 'Europe' }` |
+| `parameter` | Runtime parameter (resolved from user input) | `{ kind: 'parameter', name: 'minPop', label: 'Min Population', inputType: 'number', default: 1000 }` |
+| `relativeDate` | Relative to "now" | `{ kind: 'relativeDate', direction: 'past', offset: { kind: 'static', value: 3 }, unit: 'years' }` |
+| `dateRange` | Temporal interval with relative/static/param endpoints | Used with `t_during` operator |
+| `computedRange` | Percentage or absolute offset from a parameter | Used with `between` operator |
 
 ---
 
@@ -833,6 +965,19 @@ import type {
   CQL2Date,
   CQL2Timestamp,
   CQL2Interval,
+  CQL2Geometry,
+  // CQL2 filter builder
+  FilterRuleGroup,
+  FilterRule,
+  FilterRuleValue,
+  FilterOperator,
+  Cql2FilterConfig,
+  Cql2QueryShape,
+  SortField,
+  SpatialConfig,
+  RelativeDateValue,
+  DateRangeValue,
+  ComputedRangeValue,
   // CSV export
   CsvExportOptions,
 } from '@ogc-maps/storybook-components/hooks';

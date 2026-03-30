@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { LayerConfigSchema } from '../config';
+import {
+  LayerConfigSchema,
+  FilterRuleSchema,
+  FilterRuleGroupSchema,
+  FilterRuleValueSchema,
+  Cql2FilterConfigSchema,
+} from '../config';
 
 describe('LayerConfigSchema backward-compat preprocess', () => {
   const base = {
@@ -55,5 +61,169 @@ describe('LayerConfigSchema backward-compat preprocess', () => {
     };
     const result = LayerConfigSchema.parse(input);
     expect(result.styles![0].geometryFilter).toEqual(['Polygon', 'MultiPolygon']);
+  });
+});
+
+describe('CQL2 Filter Schemas', () => {
+  describe('FilterRuleValueSchema', () => {
+    it('accepts static', () => {
+      const input = { kind: 'static', value: 'hello' };
+      const result = FilterRuleValueSchema.parse(input);
+      expect(result.kind).toBe('static');
+    });
+
+    it('accepts parameter', () => {
+      const input = { kind: 'parameter', name: 'foo', label: 'Foo', inputType: 'text' };
+      const result = FilterRuleValueSchema.parse(input);
+      expect(result.kind).toBe('parameter');
+    });
+
+    it('accepts relativeDate', () => {
+      const input = {
+        kind: 'relativeDate',
+        direction: 'past',
+        offset: { kind: 'static', value: 5 },
+        unit: 'days',
+      };
+      const result = FilterRuleValueSchema.parse(input);
+      expect(result.kind).toBe('relativeDate');
+    });
+
+    it('accepts dateRange', () => {
+      const input = {
+        kind: 'dateRange',
+        start: {
+          kind: 'relativeDate',
+          direction: 'past',
+          offset: { kind: 'static', value: 30 },
+          unit: 'days',
+        },
+        end: { kind: 'static', value: '2026-01-01' },
+      };
+      const result = FilterRuleValueSchema.parse(input);
+      expect(result.kind).toBe('dateRange');
+    });
+
+    it('accepts computedRange', () => {
+      const input = {
+        kind: 'computedRange',
+        baseParam: 'price',
+        baseLabel: 'Price',
+        offsetType: 'percentage',
+        offsetAmount: { kind: 'static', value: 20 },
+      };
+      const result = FilterRuleValueSchema.parse(input);
+      expect(result.kind).toBe('computedRange');
+    });
+
+    it('rejects unknown kind', () => {
+      const input = { kind: 'unknown' };
+      expect(() => FilterRuleValueSchema.parse(input)).toThrow();
+    });
+  });
+
+  describe('FilterRuleSchema', () => {
+    it('accepts valid rule', () => {
+      const input = {
+        id: 'r1',
+        property: 'name',
+        operator: '=',
+        value: { kind: 'static', value: 'test' },
+      };
+      const result = FilterRuleSchema.parse(input);
+      expect(result.id).toBe('r1');
+      expect(result.property).toBe('name');
+    });
+
+    it('rejects missing property', () => {
+      const input = {
+        id: 'r1',
+        operator: '=',
+        value: { kind: 'static', value: 'test' },
+      };
+      expect(() => FilterRuleSchema.parse(input)).toThrow();
+    });
+  });
+
+  describe('FilterRuleGroupSchema', () => {
+    it('accepts nested groups', () => {
+      const input = {
+        id: 'g1',
+        combinator: 'and',
+        rules: [
+          {
+            id: 'r1',
+            property: 'name',
+            operator: '=',
+            value: { kind: 'static', value: 'test' },
+          },
+          {
+            id: 'g2',
+            combinator: 'or',
+            rules: [
+              {
+                id: 'r2',
+                property: 'age',
+                operator: '>',
+                value: { kind: 'static', value: 18 },
+              },
+            ],
+          },
+        ],
+      };
+      const result = FilterRuleGroupSchema.parse(input);
+      expect(result.combinator).toBe('and');
+      expect(result.rules).toHaveLength(2);
+    });
+
+    it('accepts sortby and limit', () => {
+      const input = {
+        id: 'g1',
+        combinator: 'and',
+        rules: [
+          {
+            id: 'r1',
+            property: 'name',
+            operator: '=',
+            value: { kind: 'static', value: 'test' },
+          },
+        ],
+        sortby: [
+          { property: 'name', direction: 'asc' },
+          { property: 'date', direction: 'desc' },
+        ],
+        limit: 50,
+      };
+      const result = FilterRuleGroupSchema.parse(input);
+      expect(result.sortby).toHaveLength(2);
+      expect(result.limit).toBe(50);
+    });
+  });
+
+  describe('LayerConfigSchema with cql2Filter', () => {
+    it('accepts cql2Filter', () => {
+      const input = {
+        id: 'layer-1',
+        sourceId: 'source-1',
+        collection: 'my-collection',
+        label: 'Test Layer',
+        dataMode: 'vector-tiles',
+        cql2Filter: {
+          id: 'g1',
+          combinator: 'and',
+          rules: [
+            {
+              id: 'r1',
+              property: 'status',
+              operator: '=',
+              value: { kind: 'static', value: 'active' },
+            },
+          ],
+        },
+      };
+      const result = LayerConfigSchema.parse(input);
+      expect(result.cql2Filter).toBeDefined();
+      expect(result.cql2Filter!.id).toBe('g1');
+    });
   });
 });
