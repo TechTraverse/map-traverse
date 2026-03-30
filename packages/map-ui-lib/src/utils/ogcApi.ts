@@ -139,6 +139,7 @@ async function fetchJson<T>(url: string, auth?: SourceAuth): Promise<T> {
 
 /**
  * Fetch the list of collections from an OGC API endpoint.
+ * @throws {Error} If the request fails or the response status is not OK.
  */
 export async function fetchCollections(baseUrl: string, auth?: SourceAuth): Promise<OgcCollection[]> {
   const url = `${stripTrailingSlash(baseUrl)}/collections?f=json`;
@@ -148,6 +149,7 @@ export async function fetchCollections(baseUrl: string, auth?: SourceAuth): Prom
 
 /**
  * Fetch GeoJSON features from an OGC API collection.
+ * @throws {Error} If the request fails or the response status is not OK.
  */
 export async function fetchFeatures(
   baseUrl: string,
@@ -181,7 +183,13 @@ export async function fetchFeatures(
 
 /**
  * Fetch a single feature by ID from an OGC API collection.
- * Returns null if the feature is not found or the request fails.
+ *
+ * Unlike other fetch functions in this module, this function catches errors
+ * and returns `null` instead of throwing. This is intentional: "find by ID"
+ * is a lookup pattern where not-found (404) is an expected outcome, not an
+ * exceptional condition.
+ *
+ * @returns The feature if found, or `null` if not found or the request fails.
  */
 export async function fetchFeatureById(
   baseUrl: string,
@@ -200,6 +208,7 @@ export async function fetchFeatureById(
 
 /**
  * Fetch queryable properties for a collection.
+ * @throws {Error} If the request fails or the response status is not OK.
  */
 export async function fetchQueryables(
   baseUrl: string,
@@ -213,6 +222,7 @@ export async function fetchQueryables(
 
 /**
  * Fetch metadata for a single OGC API collection.
+ * @throws {Error} If the request fails or the response status is not OK.
  */
 export async function fetchCollectionDetail(
   baseUrl: string,
@@ -226,6 +236,7 @@ export async function fetchCollectionDetail(
 
 /**
  * Fetch the OGC API conformance declaration to discover server capabilities.
+ * @throws {Error} If the request fails or the response status is not OK.
  */
 export async function fetchConformance(baseUrl: string, auth?: SourceAuth): Promise<OgcConformance> {
   const url = `${stripTrailingSlash(baseUrl)}/conformance?f=json`;
@@ -234,6 +245,7 @@ export async function fetchConformance(baseUrl: string, auth?: SourceAuth): Prom
 
 /**
  * Fetch the TileJSON document for a collection's vector tiles.
+ * @throws {Error} If the request fails or the response status is not OK.
  */
 export async function fetchTileJson(
   baseUrl: string,
@@ -249,6 +261,7 @@ export async function fetchTileJson(
  * Fetch the total feature count for a collection (optionally filtered).
  * Uses limit=0 and reads `numberMatched` from the response.
  * Returns null if the server does not report numberMatched.
+ * @throws {Error} If the request fails or the response status is not OK.
  */
 export async function fetchFeatureCount(
   baseUrl: string,
@@ -303,8 +316,7 @@ export function getFilteredVectorTileUrl(
   tileMatrixSetId: string = 'WebMercatorQuad',
   auth?: SourceAuth,
 ): string {
-  const base = stripTrailingSlash(baseUrl);
-  let tileUrl = `${base}/collections/${encodeURIComponent(collection)}/tiles/${encodeURIComponent(tileMatrixSetId)}/{z}/{x}/{y}`;
+  let tileUrl = getVectorTileUrl(baseUrl, collection, tileMatrixSetId);
   if (filter && Object.keys(filter).length > 0) {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(filter)) {
@@ -318,6 +330,7 @@ export function getFilteredVectorTileUrl(
 /**
  * Fetch distinct non-null string values for a property in an OGC API collection.
  * Optionally filters by a substring query using a CQL2 `like` filter.
+ * @throws {Error} If the request fails or the response status is not OK.
  */
 export async function fetchDistinctValues(
   baseUrl: string,
@@ -387,8 +400,7 @@ export function getCql2FilteredVectorTileUrl(
   tileMatrixSetId: string = 'WebMercatorQuad',
   auth?: SourceAuth,
 ): string {
-  const base = stripTrailingSlash(baseUrl);
-  let tileUrl = `${base}/collections/${encodeURIComponent(collection)}/tiles/${encodeURIComponent(tileMatrixSetId)}/{z}/{x}/{y}`;
+  let tileUrl = getVectorTileUrl(baseUrl, collection, tileMatrixSetId);
   if (cql2Filter) {
     const params = new URLSearchParams({
       'filter-lang': 'cql2-json',
@@ -446,6 +458,7 @@ export function getImageryTileUrl(
 /**
  * Fetch a TileJSON document from any URL (not OGC-specific).
  * Works with MapTiler, Mapbox, and any TileJSON-compliant endpoint.
+ * @throws {Error} If the request fails or the response status is not OK.
  */
 export async function fetchGenericTileJson(
   tileJsonUrl: string,

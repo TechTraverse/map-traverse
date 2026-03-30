@@ -26,13 +26,22 @@ export type CQL2Timestamp = { timestamp: string };
 /** A temporal interval with start and end as date/timestamp strings or "..". */
 export type CQL2Interval = { interval: [string, string] };
 
+/** CQL2 operators that appear in serialized expression nodes. */
+export type CQL2Operator =
+  | '=' | '<>' | '>' | '>=' | '<' | '<='
+  | 'like' | 'in' | 'isNull'
+  | 'and' | 'or' | 'not'
+  | 't_after' | 't_before' | 't_during'
+  | 's_intersects' | 's_within';
+
 /**
- * A CQL2 expression node. Intentionally kept as a simple op+args structure
- * rather than a complex discriminated union — builders enforce correctness
- * and the type must remain JSON-serializable.
+ * A CQL2 expression node. The `op` field is constrained to operators
+ * that actually appear in serialized CQL2 JSON. UI-level operators like
+ * 'between' and 's_dwithin' decompose into simpler expressions before
+ * reaching this type.
  */
 export type CQL2Expression = {
-  op: string;
+  op: CQL2Operator;
   args: unknown[];
 };
 

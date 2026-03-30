@@ -12,7 +12,7 @@ export default defineConfig({
     libInjectCss(),
     dts({
       include: ['src'],
-      exclude: ['**/*.stories.tsx'],
+      exclude: ['**/*.stories.tsx', '**/__tests__/**'],
       entryRoot: 'src',
       rollupTypes: false,
       insertTypesEntry: true,
@@ -34,6 +34,7 @@ export default defineConfig({
         'hooks/index': resolve(__dirname, 'src/hooks/index.ts'),
         'schemas/index': resolve(__dirname, 'src/schemas/index.ts'),
         'types/index': resolve(__dirname, 'src/types/index.ts'),
+        'utils/index': resolve(__dirname, 'src/utils/index.ts'),
       },
       formats: ['es'],
     },
