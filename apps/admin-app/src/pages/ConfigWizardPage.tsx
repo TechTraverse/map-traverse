@@ -22,7 +22,7 @@ import {
   slugify,
 } from '@ogc-maps/storybook-components';
 import { safeValidateMapConfig, DEFAULT_HEADER_COLOR } from '@ogc-maps/storybook-components/schemas';
-import { detectTileSourceType } from '@ogc-maps/storybook-components/hooks';
+import { detectTileSourceType } from '@ogc-maps/storybook-components/utils';
 import type {
   OgcApiSource,
   LayerConfig,

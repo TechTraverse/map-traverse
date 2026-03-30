@@ -12,7 +12,7 @@ import type {
   BrandingConfig,
   SearchFilterValues,
 } from '@ogc-maps/storybook-components/types';
-import type { CQL2Expression, BBox } from '@ogc-maps/storybook-components/hooks';
+import type { CQL2Expression, BBox } from '@ogc-maps/storybook-components/utils';
 
 interface MapState {
   viewState: ViewConfig;

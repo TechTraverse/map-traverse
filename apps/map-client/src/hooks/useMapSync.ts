@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { fromStructuredFilters } from '@ogc-maps/storybook-components/hooks';
+import { fromStructuredFilters } from '@ogc-maps/storybook-components/utils';
 import type { SearchFilterValue, SearchFilterValues } from '@ogc-maps/storybook-components/types';
 import { useMapStore } from '../stores/mapStore';
 import { useMapUrlState } from './useMapUrlState';

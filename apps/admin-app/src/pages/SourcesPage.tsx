@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import { SourceEditor, BasemapEditor, ConfirmDialog } from '@ogc-maps/storybook-components';
 import type { OgcApiSource, SourceAuth, BasemapConfig } from '@ogc-maps/storybook-components';
-import { detectTileSourceType, appendAuth, authHeaders } from '@ogc-maps/storybook-components/hooks';
+import { detectTileSourceType, appendAuth, authHeaders } from '@ogc-maps/storybook-components/utils';
 import { SourceMetadataPanel } from '../components/SourceMetadataPanel';
 import type { InspectionResult } from '../components/SourceMetadataPanel';
 import { inspectSourceClientSide } from '../utils/inspectSource';

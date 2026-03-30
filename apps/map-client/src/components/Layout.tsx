@@ -10,15 +10,14 @@ import {
   type CoordinateFormatOption,
 } from '@ogc-maps/storybook-components';
 import type { ResultsDrawerTab } from '@ogc-maps/storybook-components';
+import { useMeasure, useSelection } from '@ogc-maps/storybook-components/hooks';
 import {
-  useMeasure,
-  useSelection,
   fetchFeatureById,
   resolvePropertyDisplay,
   buildCql2Query,
   fetchFeatures,
   combineGeometries,
-} from '@ogc-maps/storybook-components/hooks';
+} from '@ogc-maps/storybook-components/utils';
 import type { Cql2FilterConfig } from '@ogc-maps/storybook-components/types';
 import { useMapStore } from '../stores/mapStore';
 import { MapContainer } from './MapContainer';

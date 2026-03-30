@@ -9,3 +9,8 @@ export * from './expressionColors';
 export * from './measure';
 export * from './selection';
 export * from './boxDraw';
+export * from './geo';
+export * from './download';
+export * from './exportFormats';
+export * from './queryParameters';
+export * from './exportConverters';

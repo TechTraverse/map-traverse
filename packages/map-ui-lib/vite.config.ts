@@ -39,7 +39,17 @@ export default defineConfig({
       formats: ['es'],
     },
     rollupOptions: {
-      external: ['react', 'react-dom', 'react/jsx-runtime', 'react-icons', /^react-icons\//],
+      external: [
+        'react',
+        'react-dom',
+        'react/jsx-runtime',
+        'react-icons',
+        /^react-icons\//,
+        '@tmcw/tokml',
+        'shp-write',
+        'flatgeobuf/lib/mjs/geojson.js',
+        '@ngageoint/geopackage',
+      ],
       output: {
         preserveModules: false,
         entryFileNames: '[name].js',

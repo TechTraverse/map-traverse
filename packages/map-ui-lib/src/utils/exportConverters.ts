@@ -1,6 +1,7 @@
-import type { FormatConverter } from '@ogc-maps/storybook-components/hooks';
-import { featuresToCsv } from '@ogc-maps/storybook-components/hooks';
-import type { GeoJsonFeature } from '@ogc-maps/storybook-components/hooks';
+import type { FormatConverter } from '../hooks/useExport';
+export type { FormatConverter } from '../hooks/useExport';
+import { featuresToCsv } from './csvExport';
+import type { GeoJsonFeature } from './ogcApi';
 
 function toFeatureCollection(features: GeoJsonFeature[]) {
   return {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchDistinctValues } from '@ogc-maps/storybook-components/hooks';
+import { fetchDistinctValues } from '@ogc-maps/storybook-components/utils';
 import { useMapStore } from '../stores/mapStore';
 
 const CACHE_MAX = 200;

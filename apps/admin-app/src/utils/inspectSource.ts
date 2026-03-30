@@ -9,7 +9,7 @@ import type {
   CollectionMeta,
   QueryableMeta,
 } from '../../server/inspect.js';
-import { appendAuth, authHeaders, stripTrailingSlash, detectTileSourceType } from '@ogc-maps/storybook-components/hooks';
+import { appendAuth, authHeaders, stripTrailingSlash, detectTileSourceType } from '@ogc-maps/storybook-components/utils';
 import type { SourceAuth } from '@ogc-maps/storybook-components/types';
 
 const REQUEST_TIMEOUT_MS = 10_000;
