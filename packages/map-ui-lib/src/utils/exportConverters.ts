@@ -1,7 +1,10 @@
-import type { FormatConverter } from '../hooks/useExport';
-export type { FormatConverter } from '../hooks/useExport';
-import { featuresToCsv } from './csvExport';
 import type { GeoJsonFeature } from './ogcApi';
+import { featuresToCsv } from './csvExport';
+
+export type FormatConverter = (
+  features: GeoJsonFeature[],
+  collectionId: string,
+) => Promise<{ blob: Blob; filename: string }> | { blob: Blob; filename: string };
 
 function toFeatureCollection(features: GeoJsonFeature[]) {
   return {

@@ -91,6 +91,12 @@
     "@turf/length": "^7.3.4",
     "zod": "^3.24.1"
   },
+  "optionalDependencies": {
+    "@ngageoint/geopackage": "^4.2.0",
+    "@tmcw/tokml": "^1.0.0-alpha.0",
+    "flatgeobuf": "^3.32.0",
+    "shp-write": "^0.3.2"
+  },
   "devDependencies": {
     "@chromatic-com/storybook": "^3.2.2",
     "@storybook/addon-essentials": "^8.5.0",

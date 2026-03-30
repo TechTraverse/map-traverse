@@ -3,10 +3,8 @@ import { fetchFeatures, type GeoJsonFeature } from '../utils/ogcApi';
 import { downloadBlob } from '../utils/download';
 import type { CQL2Expression } from '../utils/cql2';
 
-export type FormatConverter = (
-  features: GeoJsonFeature[],
-  collectionId: string,
-) => Promise<{ blob: Blob; filename: string }> | { blob: Blob; filename: string };
+import type { FormatConverter } from '../utils/exportConverters';
+export type { FormatConverter };
 
 export interface UseExportOptions {
   /** Default base URL. Can be overridden per-call via runExport's baseUrl parameter. */
