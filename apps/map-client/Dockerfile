@@ -22,6 +22,7 @@ RUN pnpm --filter map-client build
 
 # Stage 2: Runtime
 FROM nginx:alpine AS runtime
+RUN apk update && apk upgrade --no-cache
 
 # Copy SPA fallback nginx config
 COPY apps/map-client/nginx.conf /etc/nginx/conf.d/default.conf

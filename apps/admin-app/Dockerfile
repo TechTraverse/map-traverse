@@ -27,6 +27,7 @@ RUN pnpm --filter admin-app build:server
 
 # Stage 2: Runtime
 FROM node:20-alpine AS runtime
+RUN apk update && apk upgrade --no-cache
 RUN corepack enable
 
 WORKDIR /app
