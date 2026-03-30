@@ -1,6 +1,6 @@
 {
   "name": "admin-app",
-  "version": "0.0.12",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -12,19 +12,27 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ngageoint/geopackage": "^4.2.0",
     "@ogc-maps/storybook-components": "workspace:*",
+    "@tmcw/tokml": "^1.0.0-alpha.0",
+    "@turf/bbox": "^7.3.4",
+    "@turf/boolean-intersects": "^7.3.4",
+    "@turf/boolean-point-in-polygon": "^7.3.4",
+    "@turf/helpers": "^7.3.4",
     "bcryptjs": "^2.4.3",
     "connect-pg-simple": "^9.0.1",
     "cors": "^2.8.5",
     "express": "^4.18.2",
+    "flatgeobuf": "^3.32.0",
     "express-session": "^1.18.0",
     "maplibre-gl": "^4.7.1",
     "pg": "^8.13.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-map-gl": "^7.1.7",
     "react-icons": "^5.0.0",
+    "react-map-gl": "^7.1.7",
     "react-router-dom": "^6.28.0",
+    "shp-write": "^0.3.2",
     "zod": "^3.25.76"
   },
   "devDependencies": {

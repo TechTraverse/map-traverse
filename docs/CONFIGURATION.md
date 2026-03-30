@@ -37,13 +37,37 @@ Describes an OGC API Features/Tiles server.
 | `url` | `string` (URL) | Yes | Base URL of the OGC API server |
 | `label` | `string` | No | Human-readable name |
 | `tileMatrixSetId` | `string` | No | Tile matrix set; default `"WebMercatorQuad"` |
+| `type` | `"features" \| "imagery"` | No | Source type; default `"features"` |
+| `auth` | `SourceAuth` | No | Authentication credentials (see below) |
+| `proxy` | `boolean` | No | Route requests through the admin server to protect credentials and bypass CORS. See [PROXY.md](./PROXY.md) |
+
+### SourceAuth
+
+Credentials attached to requests for authenticated sources.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `type` | `"query_param" \| "header"` | Yes | How the credential is sent |
+| `name` | `string` | Yes | Query parameter name or HTTP header name |
+| `value` | `string` | Yes | The credential value (e.g., API key) |
 
 ```ts
+// Public source — no auth
 {
   id: 'tipg-local',
   url: 'http://localhost:8000',
   label: 'Local tipg',
   tileMatrixSetId: 'WebMercatorQuad',
+}
+
+// Authenticated source with server-side proxy
+{
+  id: 'imagery-provider',
+  url: 'https://tiles.example.com/api/v1',
+  label: 'Aerial Imagery',
+  type: 'imagery',
+  auth: { type: 'query_param', name: 'access_token', value: 'sk_...' },
+  proxy: true,
 }
 ```
 

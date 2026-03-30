@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchCollections, type OgcCollection } from '../utils/ogcApi';
+import { fetchCollections, type OgcCollection, type SourceAuth } from '../utils/ogcApi';
 
 export interface UseOgcCollectionsResult {
   collections: OgcCollection[];
@@ -11,11 +11,15 @@ export interface UseOgcCollectionsResult {
  * Hook to fetch the list of collections from an OGC API endpoint.
  *
  * @param baseUrl - The base URL of the OGC API server (e.g. "http://localhost:8000")
+ * @param auth - Optional source authentication config
  */
-export function useOgcCollections(baseUrl: string | null): UseOgcCollectionsResult {
+export function useOgcCollections(baseUrl: string | null, auth?: SourceAuth): UseOgcCollectionsResult {
   const [collections, setCollections] = useState<OgcCollection[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+
+  // Serialize auth for stable dependency comparison
+  const authKey = auth ? `${auth.type}:${auth.name}:${auth.value}` : '';
 
   useEffect(() => {
     if (!baseUrl) return;
@@ -24,7 +28,7 @@ export function useOgcCollections(baseUrl: string | null): UseOgcCollectionsResu
     setLoading(true);
     setError(null);
 
-    fetchCollections(baseUrl)
+    fetchCollections(baseUrl, auth)
       .then((data) => {
         if (!cancelled) {
           setCollections(data);
@@ -44,7 +48,8 @@ export function useOgcCollections(baseUrl: string | null): UseOgcCollectionsResu
     return () => {
       cancelled = true;
     };
-  }, [baseUrl]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseUrl, authKey]);
 
   return { collections, loading, error };
 }

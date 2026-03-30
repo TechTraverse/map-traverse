@@ -102,11 +102,64 @@ export async function initDb(): Promise<void> {
     END $$
   `);
 
+  // Source type discriminator (features, imagery, or basemap)
+  await pool.query(`
+    ALTER TABLE ogc_sources ADD COLUMN IF NOT EXISTS source_type TEXT NOT NULL DEFAULT 'features'
+  `);
+
+  // Constrain source_type to valid values
+  await pool.query(`
+    DO $$ BEGIN
+      ALTER TABLE ogc_sources ADD CONSTRAINT ogc_sources_source_type_check
+        CHECK (source_type IN ('features', 'imagery', 'basemap'));
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END $$
+  `);
+
+  // Authentication config (JSONB: { type, name, value })
+  await pool.query(`
+    ALTER TABLE ogc_sources ADD COLUMN IF NOT EXISTS auth JSONB
+  `);
+
   // Cached metadata from OGC API inspection
   await pool.query(`
     ALTER TABLE ogc_sources ADD COLUMN IF NOT EXISTS metadata JSONB
   `);
   await pool.query(`
     ALTER TABLE ogc_sources ADD COLUMN IF NOT EXISTS metadata_updated_at TIMESTAMPTZ
+  `);
+
+  // Proxy flag: route requests through the server to protect API keys and bypass CORS
+  await pool.query(`
+    ALTER TABLE ogc_sources ADD COLUMN IF NOT EXISTS proxy BOOLEAN NOT NULL DEFAULT false
+  `);
+
+  // Site-wide branding / customization (single-row table)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS site_settings (
+      id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+      header_title TEXT NOT NULL DEFAULT 'Map Config Admin',
+      header_color TEXT NOT NULL DEFAULT '#1e293b',
+      browser_title TEXT NOT NULL DEFAULT 'Map Config Admin',
+      favicon_data_url TEXT,
+      logo_data_url TEXT,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+  await pool.query(`
+    INSERT INTO site_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING
+  `);
+  await pool.query(`
+    ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS logo_height INTEGER NOT NULL DEFAULT 32
+  `);
+
+  // Seed default basemap sources
+  await pool.query(`
+    INSERT INTO ogc_sources (source_id, url, label, source_type)
+    VALUES
+      ('carto-positron', 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json', 'Positron (Light)', 'basemap'),
+      ('carto-dark-matter', 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json', 'Dark Matter (Dark)', 'basemap'),
+      ('carto-voyager', 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json', 'Voyager (Streets)', 'basemap')
+    ON CONFLICT (source_id) DO NOTHING
   `);
 }

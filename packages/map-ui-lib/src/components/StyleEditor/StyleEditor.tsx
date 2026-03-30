@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { StyleConfig, FillStyle, LineStyle, CircleStyle, SymbolStyle, AvailableProperty } from '../../types';
+import type { StyleConfig, FillStyle, LineStyle, CircleStyle, SymbolStyle, AvailableProperty, FetchDistinctValuesFn } from '../../types';
 import { FormField } from '../admin/FormField';
 import { PropertyGroup } from './PropertyGroup';
 import { StylePreview } from './StylePreview';
@@ -12,7 +12,7 @@ export interface StyleEditorProps {
   suggestedTypes?: StyleConfig['type'][];
   availableIcons?: string[];
   availableProperties?: AvailableProperty[];
-  onFetchDistinctValues?: (property: string) => Promise<string[]>;
+  onFetchDistinctValues?: FetchDistinctValuesFn;
 }
 
 export const defaultFill: FillStyle = {

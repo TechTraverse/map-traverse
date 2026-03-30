@@ -1,8 +1,8 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { Map, Source, Layer, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
-import { useOgcFeatures, getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSourceKey, buildGeometryFilter } from '@ogc-maps/storybook-components/hooks';
-import type { CQL2Expression } from '@ogc-maps/storybook-components/hooks';
-import type { LayerConfig } from '@ogc-maps/storybook-components/types';
+import { useOgcFeatures, getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSourceKey, buildGeometryFilter, getImageryTileUrl } from '@ogc-maps/storybook-components/hooks';
+import type { CQL2Expression, SourceAuth } from '@ogc-maps/storybook-components/hooks';
+import type { LayerConfig, ImageryLayerConfig } from '@ogc-maps/storybook-components/types';
 import type { MeasureMode, SelectionMode } from '@ogc-maps/storybook-components';
 import { useMapStore } from '../stores/mapStore';
 
@@ -12,13 +12,15 @@ function VectorTileLayer({
   sourceUrl,
   tileMatrixSetId,
   cql2Filter,
+  auth,
 }: {
   layer: LayerConfig;
   sourceUrl: string;
   tileMatrixSetId?: string;
   cql2Filter?: CQL2Expression | null;
+  auth?: SourceAuth;
 }) {
-  const tileUrl = getCql2FilteredVectorTileUrl(sourceUrl, layer.collection, cql2Filter, tileMatrixSetId);
+  const tileUrl = getCql2FilteredVectorTileUrl(sourceUrl, layer.collection, cql2Filter, tileMatrixSetId, auth);
   const sourceKey = getVectorTileSourceKey(layer.id, cql2Filter);
   const sourceLayer = layer.collection.replace(/^[^.]+\./, '');
 
@@ -37,6 +39,8 @@ function VectorTileLayer({
           source-layer={sourceLayer}
           paint={style.paint as any}
           layout={{ ...(style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' }}
+          {...(layer.minZoom != null ? { minzoom: layer.minZoom } : {})}
+          {...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {})}
           {...(style.geometryFilter ? { filter: buildGeometryFilter(style.geometryFilter) } : {})}
         />
       ))}
@@ -45,11 +49,11 @@ function VectorTileLayer({
 }
 
 // Inline component for GeoJSON layers
-function GeoJsonLayer({ layer, sourceUrl, cql2Filter }: { layer: LayerConfig; sourceUrl: string; cql2Filter?: CQL2Expression | null }) {
+function GeoJsonLayer({ layer, sourceUrl, cql2Filter, auth }: { layer: LayerConfig; sourceUrl: string; cql2Filter?: CQL2Expression | null; auth?: SourceAuth }) {
   const { features, error } = useOgcFeatures(sourceUrl, layer.collection, {
     limit: 10000,
     cql2Filter: cql2Filter ?? undefined,
-  });
+  }, auth);
 
   const featureCollection = useMemo(
     () => ({
@@ -77,9 +81,46 @@ function GeoJsonLayer({ layer, sourceUrl, cql2Filter }: { layer: LayerConfig; so
           type={style.type}
           paint={style.paint as any}
           layout={{ ...(style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' }}
+          {...(layer.minZoom != null ? { minzoom: layer.minZoom } : {})}
+          {...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {})}
           {...(style.geometryFilter ? { filter: buildGeometryFilter(style.geometryFilter) } : {})}
         />
       ))}
+    </Source>
+  );
+}
+
+// Inline component for raster imagery layers
+function RasterImageryLayer({
+  layer,
+  sourceUrl,
+  tileMatrixSetId,
+  auth,
+}: {
+  layer: ImageryLayerConfig;
+  sourceUrl: string;
+  tileMatrixSetId?: string;
+  auth?: SourceAuth;
+}) {
+  const tileUrl = getImageryTileUrl(sourceUrl, layer.collection, tileMatrixSetId, layer.tileUrlTemplate, auth);
+  return (
+    <Source
+      id={`imagery-${layer.id}`}
+      key={`imagery-${layer.id}`}
+      type="raster"
+      tiles={[tileUrl]}
+      tileSize={layer.tileSize ?? 256}
+      {...(layer.minZoom != null ? { minzoom: layer.minZoom } : {})}
+      {...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {})}
+    >
+      <Layer
+        id={`imagery-${layer.id}`}
+        type="raster"
+        paint={{ 'raster-opacity': layer.opacity ?? 1 }}
+        layout={{ visibility: layer.visible ? 'visible' : 'none' }}
+        {...(layer.minZoom != null ? { minzoom: layer.minZoom } : {})}
+        {...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {})}
+      />
     </Source>
   );
 }
@@ -112,13 +153,18 @@ interface MapContainerProps {
   queryHighlightData?: GeoJSON.FeatureCollection | null;
   boxDrawData?: GeoJSON.Feature | null;
   onSelectionClick?: (features: Array<{ id?: string | number; properties: Record<string, unknown>; geometry: Record<string, unknown> }>) => void;
+  polygonDrawData?: GeoJSON.Feature | null;
+  polygonDrawPointsData?: GeoJSON.FeatureCollection | null;
+  onPolygonDrawClick?: (point: [number, number]) => void;
+  onPolygonDrawComplete?: () => void;
   externalMapRef?: React.RefObject<MapRef | null>;
   onMapRef?: (ref: MapRef | null) => void;
 }
 
-export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeatureHover, measureMode, measurePoints = [], measureGeometryData, measurePointsData, onMeasureClick, selectionMode, selectionLayerId, selectionHighlightData, queryHighlightData, boxDrawData, onSelectionClick, externalMapRef, onMapRef }: MapContainerProps = {}) {
+export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeatureHover, measureMode, measurePoints = [], measureGeometryData, measurePointsData, onMeasureClick, selectionMode, selectionLayerId, selectionHighlightData, queryHighlightData, boxDrawData, onSelectionClick, polygonDrawData, polygonDrawPointsData, onPolygonDrawClick, onPolygonDrawComplete, externalMapRef, onMapRef }: MapContainerProps = {}) {
   const viewState = useMapStore((s) => s.viewState);
   const layers = useMapStore((s) => s.layers);
+  const imageryLayers = useMapStore((s) => s.imageryLayers);
   const sources = useMapStore((s) => s.sources);
   const basemaps = useMapStore((s) => s.basemaps);
   const activeBasemapId = useMapStore((s) => s.activeBasemapId);
@@ -179,16 +225,30 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
     clearPendingFitBounds();
   }, [pendingFitBounds, clearPendingFitBounds]);
 
-  // Build source URL lookup map with tileMatrixSetId
+  // Build source URL lookup map with tileMatrixSetId and auth
   const sourceUrlMap = useMemo(() => {
-    const urlMap: Record<string, { url: string; tileMatrixSetId?: string }> = {};
+    const urlMap: Record<string, { url: string; tileMatrixSetId?: string; auth?: SourceAuth }> = {};
     sources.forEach((source) => {
       urlMap[source.id] = {
         url: source.url,
         tileMatrixSetId: source.tileMatrixSetId,
+        auth: source.auth,
       };
     });
     return urlMap;
+  }, [sources]);
+
+  // Inject auth headers for tile requests when sources use header auth
+  const transformRequest = useMemo(() => {
+    const headerSources = sources
+      .filter(s => s.auth?.type === 'header')
+      .map(s => ({ prefix: s.url.replace(/\/$/, ''), auth: s.auth! }));
+    if (headerSources.length === 0) return undefined;
+    return (url: string) => {
+      const match = headerSources.find(s => url.startsWith(s.prefix));
+      if (!match) return { url };
+      return { url, headers: { [match.auth.name]: match.auth.value } };
+    };
   }, [sources]);
 
   // Get active basemap URL
@@ -211,9 +271,45 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
 
   const [cursor, setCursor] = useState<string>('auto');
 
-  // Split layers by data mode
-  const vectorTileLayers = layers.filter((l) => l.dataMode === 'vector-tiles');
-  const geojsonLayers = layers.filter((l) => l.dataMode === 'geojson');
+  // Reverse so first layer in config (top of list) renders on top of the map
+  const reversedLayers = useMemo(() => [...layers].reverse(), [layers]);
+
+  const imageryLayerIds = useMemo(() => imageryLayers.map(l => l.id), [imageryLayers]);
+
+  // MapLibre doesn't reorder layers when JSX order changes,
+  // so we imperatively reorder after each layer change.
+  useEffect(() => {
+    if (!mapInstance) return;
+    const frame = requestAnimationFrame(() => {
+      const desiredOrder = reversedLayers
+        .filter(l => sourceUrlMap[l.sourceId] && l.styles?.length)
+        .flatMap(l => {
+          const sourceKey = l.dataMode === 'vector-tiles'
+            ? getVectorTileSourceKey(l.id, activeCql2Filters[l.id])
+            : l.id;
+          return (l.styles ?? []).map((s, i) => `${sourceKey}--${s.type}--${i}`);
+        })
+        .filter(id => mapInstance.getLayer(id));
+
+      for (let i = desiredOrder.length - 2; i >= 0; i--) {
+        try { mapInstance.moveLayer(desiredOrder[i], desiredOrder[i + 1]); }
+        catch { /* layer may not be on map yet */ }
+      }
+
+      // Keep imagery layers below all feature layers
+      const firstFeatureId = desiredOrder[0];
+      if (firstFeatureId) {
+        for (const id of imageryLayerIds) {
+          const imgLayerId = `imagery-${id}`;
+          if (mapInstance.getLayer(imgLayerId)) {
+            try { mapInstance.moveLayer(imgLayerId, firstFeatureId); }
+            catch { /* layer may not be on map yet */ }
+          }
+        }
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [mapInstance, reversedLayers, sourceUrlMap, activeCql2Filters, imageryLayerIds]);
 
   // IDs of visible layers for feature querying (one per sub-layer)
   const interactiveLayerIds = useMemo(
@@ -249,14 +345,19 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
       {...viewState}
       style={{ width: '100%', height: '100%' }}
       mapStyle={resolvedStyle as any}
+      transformRequest={transformRequest}
       cursor={measureMode ? 'crosshair' : selectionMode ? 'crosshair' : cursor}
-      interactiveLayerIds={measureMode ? undefined : selectionMode === 'box' ? undefined : interactiveLayerIds}
+      interactiveLayerIds={measureMode ? undefined : (selectionMode === 'box' || selectionMode === 'polygon') ? undefined : interactiveLayerIds}
       doubleClickZoom={!measureMode && !selectionMode}
       onLoad={handleMapLoad}
       onMove={(evt) => setViewState(evt.viewState)}
       onClick={(evt) => {
         if (measureMode && onMeasureClick) {
           onMeasureClick([evt.lngLat.lng, evt.lngLat.lat]);
+          return;
+        }
+        if (selectionMode === 'polygon' && onPolygonDrawClick) {
+          onPolygonDrawClick([evt.lngLat.lng, evt.lngLat.lat]);
           return;
         }
         if (selectionMode === 'click' && onSelectionClick) {
@@ -298,6 +399,11 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
       onDblClick={(evt) => {
         if (measureMode) {
           evt.preventDefault();
+          return;
+        }
+        if (selectionMode === 'polygon') {
+          evt.preventDefault();
+          onPolygonDrawComplete?.();
         }
       }}
       onMouseMove={(evt) => {
@@ -345,12 +451,30 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
     >
       <AttributionControl position="bottom-left" />
 
-      {/* Render vector tile layers */}
-      {vectorTileLayers.map((layer) => {
+      {/* Render raster imagery layers (above basemap, below feature layers) */}
+      {imageryLayers.map((layer) => {
+        const sourceInfo = sourceUrlMap[layer.sourceId];
+        if (!sourceInfo && !layer.tileUrlTemplate) return null;
+        return (
+          <RasterImageryLayer
+            key={layer.id}
+            layer={layer}
+            sourceUrl={sourceInfo?.url ?? ''}
+            tileMatrixSetId={sourceInfo?.tileMatrixSetId}
+            auth={sourceInfo?.auth}
+          />
+        );
+      })}
+
+      {/* Render feature layers (vector tiles + geojson) in unified order */}
+      {reversedLayers.map((layer) => {
         const sourceInfo = sourceUrlMap[layer.sourceId];
         if (!sourceInfo) {
           console.warn(`Source URL not found for layer ${layer.id}`);
           return null;
+        }
+        if (layer.dataMode === 'geojson') {
+          return <GeoJsonLayer key={`${layer.id}--${layer.styles?.length ?? 0}`} layer={layer} sourceUrl={sourceInfo.url} cql2Filter={activeCql2Filters[layer.id]} auth={sourceInfo.auth} />;
         }
         return (
           <VectorTileLayer
@@ -359,18 +483,9 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
             sourceUrl={sourceInfo.url}
             tileMatrixSetId={sourceInfo.tileMatrixSetId}
             cql2Filter={activeCql2Filters[layer.id]}
+            auth={sourceInfo.auth}
           />
         );
-      })}
-
-      {/* Render GeoJSON layers */}
-      {geojsonLayers.map((layer) => {
-        const sourceInfo = sourceUrlMap[layer.sourceId];
-        if (!sourceInfo) {
-          console.warn(`Source URL not found for layer ${layer.id}`);
-          return null;
-        }
-        return <GeoJsonLayer key={`${layer.id}--${layer.styles?.length ?? 0}`} layer={layer} sourceUrl={sourceInfo.url} cql2Filter={activeCql2Filters[layer.id]} />;
       })}
 
       {/* Measure tool GeoJSON */}
@@ -458,6 +573,36 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
             id="box-draw-line"
             type="line"
             paint={{ 'line-color': '#3b82f6', 'line-width': 2, 'line-dasharray': [3, 3] }}
+          />
+        </Source>
+      )}
+
+      {/* Polygon draw preview */}
+      {polygonDrawData && (
+        <Source id="polygon-draw-preview" type="geojson" data={polygonDrawData}>
+          <Layer
+            id="polygon-draw-fill"
+            type="fill"
+            paint={{ 'fill-color': '#3b82f6', 'fill-opacity': 0.15 }}
+          />
+          <Layer
+            id="polygon-draw-line"
+            type="line"
+            paint={{ 'line-color': '#3b82f6', 'line-width': 2, 'line-dasharray': [3, 3] }}
+          />
+        </Source>
+      )}
+      {polygonDrawPointsData && (
+        <Source id="polygon-draw-points" type="geojson" data={polygonDrawPointsData}>
+          <Layer
+            id="polygon-draw-points-layer"
+            type="circle"
+            paint={{
+              'circle-color': '#3b82f6',
+              'circle-radius': 5,
+              'circle-stroke-color': '#ffffff',
+              'circle-stroke-width': 2,
+            }}
           />
         </Source>
       )}

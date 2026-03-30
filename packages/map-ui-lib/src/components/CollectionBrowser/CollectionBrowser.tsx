@@ -1,7 +1,9 @@
 import { useOgcCollections } from '../../hooks/useOgcCollections';
+import type { SourceAuth } from '../../types';
 
 export interface CollectionBrowserProps {
   sourceUrl: string;
+  sourceAuth?: SourceAuth;
   selectedCollectionIds: string[];
   onSelect: (collectionId: string) => void;
   onDeselect: (collectionId: string) => void;
@@ -9,11 +11,12 @@ export interface CollectionBrowserProps {
 
 export function CollectionBrowser({
   sourceUrl,
+  sourceAuth,
   selectedCollectionIds,
   onSelect,
   onDeselect,
 }: CollectionBrowserProps) {
-  const { collections, loading, error } = useOgcCollections(sourceUrl || null);
+  const { collections, loading, error } = useOgcCollections(sourceUrl || null, sourceAuth);
 
   if (loading) {
     return (

@@ -1,4 +1,4 @@
-import { LuMousePointer2, LuSquareDashedMousePointer, LuTrash2, LuList } from 'react-icons/lu';
+import { LuMousePointer2, LuSquareDashedMousePointer, LuPenTool, LuTrash2, LuList } from 'react-icons/lu';
 import type { SelectionMode } from '../../utils/selection';
 import type { LayerConfig } from '../../types';
 
@@ -19,15 +19,17 @@ export interface SelectionPanelProps {
 const modeButtons: { mode: SelectionMode; icon: typeof LuMousePointer2; label: string }[] = [
   { mode: 'click', icon: LuMousePointer2, label: 'Click' },
   { mode: 'box', icon: LuSquareDashedMousePointer, label: 'Box' },
+  { mode: 'polygon', icon: LuPenTool, label: 'Polygon' },
 ];
 
 function getInstructionText(mode: SelectionMode | null, activeLayerId: string | null, selectedCount: number): string {
   if (!activeLayerId) return 'Select a layer to begin';
   if (!mode) return 'Choose a selection mode';
   if (selectedCount === 0) {
-    return mode === 'click'
-      ? 'Click on features to select them'
-      : 'Click and drag to draw a selection box';
+    if (mode === 'click') return 'Click on features to select them';
+    if (mode === 'box') return 'Click and drag to draw a selection box';
+    if (mode === 'polygon') return 'Click to add points, double-click to finish';
+    return 'Choose a selection mode';
   }
   return `${selectedCount} feature${selectedCount !== 1 ? 's' : ''} selected`;
 }

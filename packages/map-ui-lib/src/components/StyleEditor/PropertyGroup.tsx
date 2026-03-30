@@ -1,5 +1,5 @@
 import type { PropertyDefinition } from './propertyMetadata';
-import type { AvailableProperty } from '../../types';
+import type { AvailableProperty, FetchDistinctValuesFn } from '../../types';
 import { PropertyField } from './PropertyField';
 import { CollapsibleSection } from '../admin/CollapsibleSection';
 
@@ -11,7 +11,7 @@ interface PropertyGroupProps {
   defaultOpen?: boolean;
   availableIcons?: string[];
   availableProperties?: AvailableProperty[];
-  onFetchDistinctValues?: (property: string) => Promise<string[]>;
+  onFetchDistinctValues?: FetchDistinctValuesFn;
 }
 
 export function PropertyGroup({

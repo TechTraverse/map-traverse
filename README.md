@@ -141,13 +141,74 @@ pnpm build:lib
 pnpm build:app
 ```
 
-### Available Services
+### Available Services (Docker)
 
-- **Client App**: http://localhost:5173
-- **Storybook**: http://localhost:6006
-- **tipg API**: http://localhost:8000
-- **Admin UI**: http://localhost:5174
-- **PostGIS**: localhost:5432
+| URL | Service |
+|---|---|
+| http://localhost | Gateway (all services on one port) |
+| http://localhost:3000 | Map client (direct) |
+| http://localhost:3001 | Admin app (direct) |
+| http://localhost:8000 | tipg OGC API (direct) |
+
+### Available Services (Dev / Vite)
+
+| URL | Service |
+|---|---|
+| http://localhost:5173 | Map client (Vite) |
+| http://localhost:5174 | Admin UI (Vite) |
+| http://localhost:6006 | Storybook |
+| localhost:5432 | PostGIS |
+
+## Deployment Architecture
+
+A single nginx gateway exposes all services through one port. The map client is public; the admin app requires authentication for write operations.
+
+```
+                            Internet
+                               |
+                          [ Gateway ]
+                           nginx :80
+                               |
+            ┌──────────┬───────┴───────┬──────────┐
+            |          |               |          |
+        /api/*     /admin/*         /ogc/*        /*
+            |          |               |          |
+      ┌─────┴─────┐   |          ┌────┴────┐  ┌──┴──────────┐
+      | admin-app |   |          |  tipg   |  | map-client  |
+      |  Express  |───┘          | OGC API |  |  nginx SPA  |
+      |  :3001    |              |  :8000  |  |    :80      |
+      └─────┬─────┘              └────┬────┘  └─────────────┘
+            |                         |
+            └────────┬────────────────┘
+                     |
+               ┌─────┴─────┐
+               |  PostGIS  |
+               |   :5432   |
+               └───────────┘
+```
+
+### Route Map
+
+| Path | Upstream | Auth | Purpose |
+|---|---|---|---|
+| `/` | map-client | None | Public map viewer SPA |
+| `/api/configs` | admin-app | GET: none, POST: session | List / create map configs |
+| `/api/configs/:id` | admin-app | GET: none, PUT/DELETE: session | Read / update / delete a config |
+| `/api/configs/:id/publish` | admin-app | POST: session | Publish / unpublish a config |
+| `/api/sources` | admin-app | GET: none, POST: session | List / create OGC data sources |
+| `/api/settings` | admin-app | GET: none, PUT: session | Site branding settings |
+| `/api/auth/login` | admin-app | None | Session login |
+| `/api/health` | admin-app | None | Health check |
+| `/admin/*` | admin-app | Session (UI) | Admin SPA (config editor, source manager) |
+| `/ogc/*` | tipg | None | OGC API (tiles, features, collections) |
+
+### Auth Model
+
+Authentication is enforced at the Express API layer — the gateway passes all requests through. The admin-app's `requireAuth` middleware protects all mutating endpoints (POST, PUT, DELETE). All GET endpoints are public so the map client can fetch configurations without credentials.
+
+To enable auth, set `ADMIN_USERNAME` and `ADMIN_PASSWORD_HASH` (bcrypt) environment variables on the admin-app service. When unset, auth is disabled (development mode).
+
+Config names `admin`, `api`, and `ogc` are reserved to prevent conflicts with gateway routes.
 
 ## Key Features
 

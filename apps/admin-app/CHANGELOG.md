@@ -1,5 +1,61 @@
 # admin-app
 
+## 0.3.0
+
+### Minor Changes
+
+- 277bb19: imagery layers
+
+### Patch Changes
+
+- Updated dependencies [277bb19]
+  - @ogc-maps/storybook-components@0.14.0
+
+## 0.2.0
+
+### Minor Changes
+
+- 2f84854: export style improvements
+
+### Patch Changes
+
+- Updated dependencies [2f84854]
+  - @ogc-maps/storybook-components@0.13.0
+
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies [012878d]
+  - @ogc-maps/storybook-components@0.12.3
+
+## 0.1.2
+
+### Patch Changes
+
+- 8219573: polygon selection tool
+- Updated dependencies [8219573]
+  - @ogc-maps/storybook-components@0.12.2
+
+## 0.1.1
+
+### Patch Changes
+
+- aef3ba5: tool tips and layer flyout configurable per layer
+- Updated dependencies [aef3ba5]
+  - @ogc-maps/storybook-components@0.12.1
+
+## 0.1.0
+
+### Minor Changes
+
+- e3f0363: map branding configuration
+
+### Patch Changes
+
+- Updated dependencies [e3f0363]
+  - @ogc-maps/storybook-components@0.12.0
+
 ## 0.0.12
 
 ### Patch Changes

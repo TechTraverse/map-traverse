@@ -3,8 +3,10 @@ import maplibregl from 'maplibre-gl';
 import { Map, Source, Layer, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
 import {
   getCql2FilteredVectorTileUrl,
+  getImageryTileUrl,
   useOgcFeatures,
-  useCsvExport,
+  useExport,
+  DEFAULT_EXPORT_FORMATS,
   fromStructuredFilters,
   resolvePropertyDisplay,
   fetchDistinctValues,
@@ -22,6 +24,7 @@ import type { CQL2Expression } from '@ogc-maps/storybook-components/hooks';
 import {
   Legend,
   LayerPanel,
+  ImageryPanel,
   BasemapSwitcher,
   SearchPanel,
   CollapsibleControl,
@@ -29,6 +32,7 @@ import {
   FeatureDetailPanel,
   FeatureTooltip,
   ExportButton,
+  ExportModal,
   MeasurePanel,
   SelectionPanel,
   QueryPanel,
@@ -36,16 +40,12 @@ import {
   formatDecimal,
   formatDMS,
 } from '@ogc-maps/storybook-components';
-import type { CoordinateFormatOption, ResultsDrawerTab } from '@ogc-maps/storybook-components';
-import { useMeasure, useSelection } from '@ogc-maps/storybook-components/hooks';
-
-const coordinateFormats: CoordinateFormatOption[] = [
-  { id: 'decimal', label: 'Decimal', format: formatDecimal },
-  { id: 'dms', label: 'DMS', format: formatDMS },
-];
+import type { CoordinateFormatOption, ExportRequest, ResultsDrawerTab } from '@ogc-maps/storybook-components';
 import type {
   OgcApiSource,
+  SourceAuth,
   LayerConfig,
+  ImageryLayerConfig,
   BasemapConfig,
   SpriteSource,
   ViewConfig,
@@ -53,8 +53,17 @@ import type {
   ExportableLayer,
 } from '@ogc-maps/storybook-components';
 import type { SearchFilterValue, SearchFilterValues, Cql2FilterConfig } from '@ogc-maps/storybook-components/types';
-import { LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
+import { useMeasure, useSelection } from '@ogc-maps/storybook-components/hooks';
+import { LuDownload, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
+import { TbSatellite } from 'react-icons/tb';
 import { useBoxDraw } from '../hooks/useBoxDraw';
+import { usePolygonDraw } from '../hooks/usePolygonDraw';
+import { exportConverters } from '../utils/exportConverters';
+
+const coordinateFormats: CoordinateFormatOption[] = [
+  { id: 'decimal', label: 'Decimal', format: formatDecimal },
+  { id: 'dms', label: 'DMS', format: formatDMS },
+];
 
 const FALLBACK_BASEMAP_URL = 'https://demotiles.maplibre.org/style.json';
 
@@ -63,13 +72,15 @@ function PreviewVectorTileLayer({
   sourceUrl,
   tileMatrixSetId,
   cql2Filter,
+  auth,
 }: {
   layer: LayerConfig;
   sourceUrl: string;
   tileMatrixSetId?: string;
   cql2Filter?: CQL2Expression | null;
+  auth?: SourceAuth;
 }) {
-  const tileUrl = getCql2FilteredVectorTileUrl(sourceUrl, layer.collection, cql2Filter, tileMatrixSetId);
+  const tileUrl = getCql2FilteredVectorTileUrl(sourceUrl, layer.collection, cql2Filter, tileMatrixSetId, auth);
   const sourceKey = getVectorTileSourceKey(layer.id, cql2Filter);
   const sourceLayer = layer.collection.replace(/^[^.]+\./, '');
 
@@ -85,6 +96,8 @@ function PreviewVectorTileLayer({
           source-layer={sourceLayer}
           paint={style.paint as any}
           layout={{ ...(style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' } as any}
+          {...(layer.minZoom != null ? { minzoom: layer.minZoom } : {})}
+          {...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {})}
           {...(style.geometryFilter ? { filter: buildGeometryFilter(style.geometryFilter) as any } : {})}
         />
       ))}
@@ -96,12 +109,14 @@ function PreviewGeoJsonLayer({
   layer,
   sourceUrl,
   cql2Filter,
+  auth,
 }: {
   layer: LayerConfig;
   sourceUrl: string;
   cql2Filter?: CQL2Expression | null;
+  auth?: SourceAuth;
 }) {
-  const { features } = useOgcFeatures(sourceUrl, layer.collection, { limit: 10000, cql2Filter: cql2Filter ?? undefined });
+  const { features } = useOgcFeatures(sourceUrl, layer.collection, { limit: 10000, cql2Filter: cql2Filter ?? undefined }, auth);
 
   const featureCollection = useMemo(
     () => ({
@@ -122,6 +137,8 @@ function PreviewGeoJsonLayer({
           type={style.type}
           paint={style.paint as any}
           layout={{ ...(style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' } as any}
+          {...(layer.minZoom != null ? { minzoom: layer.minZoom } : {})}
+          {...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {})}
           {...(style.geometryFilter ? { filter: buildGeometryFilter(style.geometryFilter) as any } : {})}
         />
       ))}
@@ -129,14 +146,50 @@ function PreviewGeoJsonLayer({
   );
 }
 
+function PreviewRasterImageryLayer({
+  layer,
+  sourceUrl,
+  tileMatrixSetId,
+  auth,
+}: {
+  layer: ImageryLayerConfig;
+  sourceUrl: string;
+  tileMatrixSetId?: string;
+  auth?: SourceAuth;
+}) {
+  const tileUrl = getImageryTileUrl(sourceUrl, layer.collection, tileMatrixSetId, layer.tileUrlTemplate, auth);
+  return (
+    <Source
+      id={`imagery-${layer.id}`}
+      key={`imagery-${layer.id}`}
+      type="raster"
+      tiles={[tileUrl]}
+      tileSize={layer.tileSize ?? 256}
+      {...(layer.minZoom != null ? { minzoom: layer.minZoom } : {})}
+      {...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {})}
+    >
+      <Layer
+        id={`imagery-${layer.id}`}
+        type="raster"
+        paint={{ 'raster-opacity': layer.opacity ?? 1 }}
+        layout={{ visibility: layer.visible ? 'visible' : 'none' }}
+        {...(layer.minZoom != null ? { minzoom: layer.minZoom } : {})}
+        {...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {})}
+      />
+    </Source>
+  );
+}
+
 export interface MapPreviewProps {
   sources: OgcApiSource[];
   layers: LayerConfig[];
+  imageryLayers?: ImageryLayerConfig[];
   basemaps: BasemapConfig[];
   sprites?: SpriteSource[];
   viewState: ViewConfig;
   onViewStateChange?: (view: ViewConfig) => void;
   onLayersChange?: (layers: LayerConfig[]) => void;
+  onImageryLayersChange?: (layers: ImageryLayerConfig[]) => void;
   currentStep: string;
   uiConfig?: UIConfig;
 }
@@ -144,11 +197,13 @@ export interface MapPreviewProps {
 export function MapPreview({
   sources,
   layers,
+  imageryLayers: imageryLayersProp,
   basemaps,
   sprites,
   viewState,
   onViewStateChange,
   onLayersChange,
+  onImageryLayersChange,
   currentStep,
   uiConfig,
 }: MapPreviewProps) {
@@ -183,6 +238,44 @@ export function MapPreview({
   useEffect(() => () => clearTimeout(hoverTimerRef.current), []);
   const [mapInstance, setMapInstance] = useState<maplibregl.Map | null>(null);
   const mapRef = useRef<MapRef>(null);
+  const [imageryVisibility, setImageryVisibility] = useState<Record<string, boolean>>({});
+  const imageryLayers = useMemo(() =>
+    (imageryLayersProp ?? []).map(l => ({
+      ...l,
+      visible: imageryVisibility[l.id] ?? l.visible,
+    })),
+    [imageryLayersProp, imageryVisibility],
+  );
+  const imageryLayerIds = useMemo(
+    () => (imageryLayersProp ?? []).map(l => l.id),
+    [imageryLayersProp],
+  );
+
+  const handleToggleImageryVisibility = useCallback((layerId: string) => {
+    setImageryVisibility(prev => {
+      const current = prev[layerId] ?? imageryLayersProp?.find(l => l.id === layerId)?.visible ?? false;
+      const newVisible = !current;
+      const target = imageryLayersProp?.find(l => l.id === layerId);
+      if (!target) return prev;
+
+      const next: Record<string, boolean> = { ...prev, [layerId]: newVisible };
+      if (newVisible) {
+        for (const l of imageryLayersProp ?? []) {
+          if (l.id === layerId) continue;
+          if (target.exclusive) { next[l.id] = false; }
+          else if (l.exclusive && (prev[l.id] ?? l.visible)) { next[l.id] = false; }
+        }
+      }
+      return next;
+    });
+  }, [imageryLayersProp]);
+
+  const handleImageryOpacity = useCallback((layerId: string, opacity: number) => {
+    onImageryLayersChange?.(
+      (imageryLayersProp ?? []).map(l => l.id === layerId ? { ...l, opacity } : l),
+    );
+  }, [imageryLayersProp, onImageryLayersChange]);
+
   const measure = useMeasure();
   const selection = useSelection();
   const [resultsOpen, setResultsOpen] = useState(false);
@@ -271,16 +364,28 @@ export function MapPreview({
     return (layer.styles ?? []).map((s, i) => `${sourceKey}--${s.type}--${i}`);
   }, [selection.activeLayerId, layers, activeCql2Filters]);
 
-  const { boxDrawData } = useBoxDraw({
-    mapRef,
-    enabled: selection.mode === 'box' && selection.activeLayerId != null,
-    queryLayerIds: selectionQueryLayerIds,
-    onComplete: (features) => {
+  const handleSpatialSelectionComplete = useCallback(
+    (features: Array<{ id?: string | number; properties: Record<string, unknown>; geometry: Record<string, unknown> }>) => {
       if (!selection.activeLayerId) return;
       selection.addFeatures(
         features.map((f) => ({ id: f.id, layerId: selection.activeLayerId!, properties: f.properties, geometry: f.geometry })),
       );
     },
+    [selection.activeLayerId, selection.addFeatures],
+  );
+
+  const { boxDrawData } = useBoxDraw({
+    mapRef,
+    enabled: selection.mode === 'box' && selection.activeLayerId != null,
+    queryLayerIds: selectionQueryLayerIds,
+    onComplete: handleSpatialSelectionComplete,
+  });
+
+  const polygonDraw = usePolygonDraw({
+    mapRef,
+    enabled: selection.mode === 'polygon' && selection.activeLayerId != null,
+    queryLayerIds: selectionQueryLayerIds,
+    onComplete: handleSpatialSelectionComplete,
   });
 
   // Reset viewport when entering the view step or when the prop changes while on that step
@@ -299,11 +404,23 @@ export function MapPreview({
   }, [basemaps]);
 
   const sourceUrlMap = useMemo(() => {
-    const map: Record<string, { url: string; tileMatrixSetId?: string }> = {};
+    const map: Record<string, { url: string; tileMatrixSetId?: string; auth?: SourceAuth }> = {};
     sources.forEach((source) => {
-      map[source.id] = { url: source.url, tileMatrixSetId: source.tileMatrixSetId };
+      map[source.id] = { url: source.url, tileMatrixSetId: source.tileMatrixSetId, auth: source.auth };
     });
     return map;
+  }, [sources]);
+
+  const transformRequest = useMemo(() => {
+    const headerSources = sources
+      .filter(s => s.auth?.type === 'header')
+      .map(s => ({ prefix: s.url.replace(/\/$/, ''), auth: s.auth! }));
+    if (headerSources.length === 0) return undefined;
+    return (url: string) => {
+      const match = headerSources.find(s => url.startsWith(s.prefix));
+      if (!match) return { url };
+      return { url, headers: { [match.auth.name]: match.auth.value } };
+    };
   }, [sources]);
 
   // Cleanup debounce timers on unmount
@@ -329,7 +446,7 @@ export function MapPreview({
       if (options?.prefetch) {
         if (prefetchedRef.current.has(key)) return;
         prefetchedRef.current.add(key);
-        fetchDistinctValues(sourceInfo.url, layer.collection, property, { fetchAll: true })
+        fetchDistinctValues(sourceInfo.url, layer.collection, property, { fetchAll: true }, sourceInfo.auth)
           .then(values => setAutocompleteSuggestions(prev => ({ ...prev, [key]: values })))
           .catch(() => prefetchedRef.current.delete(key));
         return;
@@ -343,7 +460,7 @@ export function MapPreview({
 
       const timer = setTimeout(() => {
         delete debounceTimersRef.current[key];
-        fetchDistinctValues(sourceInfo.url, layer.collection, property, { query, limit: 50 })
+        fetchDistinctValues(sourceInfo.url, layer.collection, property, { query, limit: 50 }, sourceInfo.auth)
           .then(values => setAutocompleteSuggestions(prev => ({ ...prev, [key]: values })))
           .catch(() => {});
       }, 300);
@@ -370,6 +487,9 @@ export function MapPreview({
     }),
     [layers, opacityOverrides],
   );
+
+  // Reverse so first layer in config (top of list) renders on top of the map
+  const reversedLayers = useMemo(() => [...layersWithDefaults].reverse(), [layersWithDefaults]);
 
   const handleLayerOpacity = useCallback((layerId: string, opacity: number) => {
     setOpacityOverrides(prev => ({ ...prev, [layerId]: opacity }));
@@ -407,22 +527,27 @@ export function MapPreview({
     });
   }, [featureInteractionEnabled, layers, activeCql2Filters]);
 
-  // CSV export
-  const exportBaseUrl = sources[0]?.url ?? '';
-  const { exportCsv, loading: exportLoading } = useCsvExport({ baseUrl: exportBaseUrl });
+  const { runExport, loading: exportLoading, progress: exportProgress, error: exportError } = useExport({
+    converters: exportConverters,
+  });
+
+  const [exportModalOpen, setExportModalOpen] = useState(false);
 
   const exportableLayers: ExportableLayer[] = useMemo(
     () => layers.filter(l => l.visible).map(l => ({ id: l.id, label: l.label, collection: l.collection })),
     [layers],
   );
 
-  const handleExport = useCallback(
-    () => {
-      const layer = exportableLayers[0];
-      if (!layer) return;
-      exportCsv(layer.collection, `${layer.label}.csv`, activeCql2Filters[layer.id] ?? undefined);
+  const handleExportRequest = useCallback(
+    (request: ExportRequest) => {
+      const cql2Filter = request.filtered ? (activeCql2Filters[request.layer.id] ?? undefined) : undefined;
+      const filename = `${request.layer.label}${request.format.extension}`;
+      const layer = layers.find(l => l.id === request.layer.id);
+      const source = sources.find(s => s.id === layer?.sourceId);
+      const baseUrl = source?.url ?? '';
+      runExport(request.layer.collection, request.format.id, filename, cql2Filter, baseUrl);
     },
-    [exportCsv, activeCql2Filters, exportableLayers],
+    [runExport, activeCql2Filters, layers, sources],
   );
 
   const handleFilterChange = useCallback(
@@ -453,7 +578,7 @@ export function MapPreview({
       if (!sourceInfo) return;
 
       const cql2Filter = eq(property, value);
-      const data = await fetchFeatures(sourceInfo.url, layer.collection, { cql2Filter, limit: 1 });
+      const data = await fetchFeatures(sourceInfo.url, layer.collection, { cql2Filter, limit: 1 }, sourceInfo.auth);
       if (!data.features.length) return;
 
       const bbox = bboxFromGeometry(data.features[0].geometry as Record<string, unknown>);
@@ -516,7 +641,7 @@ export function MapPreview({
     if (!mapInstance) return;
 
     const frame = requestAnimationFrame(() => {
-      const desiredOrder = layersWithDefaults
+      const desiredOrder = reversedLayers
         .filter(l => sourceUrlMap[l.sourceId] && l.styles?.length)
         .flatMap(l => {
           const sourceKey = l.dataMode === 'vector-tiles'
@@ -534,10 +659,23 @@ export function MapPreview({
           // Layer may not be on the map yet
         }
       }
+
+      // Move imagery layers below all feature layers
+      const firstFeatureId = desiredOrder[0];
+      if (firstFeatureId) {
+        for (const id of imageryLayerIds) {
+          const imgLayerId = `imagery-${id}`;
+          if (mapInstance.getLayer(imgLayerId)) {
+            try {
+              mapInstance.moveLayer(imgLayerId, firstFeatureId);
+            } catch { /* layer may not be on map yet */ }
+          }
+        }
+      }
     });
 
     return () => cancelAnimationFrame(frame);
-  }, [mapInstance, layersWithDefaults, sourceUrlMap, activeCql2Filters]);
+  }, [mapInstance, reversedLayers, sourceUrlMap, activeCql2Filters, imageryLayerIds]);
 
   const handleMove = (evt: { viewState: { latitude: number; longitude: number; zoom: number; pitch: number; bearing: number } }) => {
     const next: ViewConfig = {
@@ -565,14 +703,19 @@ export function MapPreview({
         bearing={internalViewState.bearing}
         style={{ width: '100%', height: '100%' }}
         mapStyle={resolvedStyle as any}
+        transformRequest={transformRequest}
         cursor={measure.mode || selection.mode ? 'crosshair' : cursor}
-        interactiveLayerIds={measure.mode || selection.mode === 'box' ? undefined : interactiveLayerIds}
+        interactiveLayerIds={measure.mode || selection.mode === 'box' || selection.mode === 'polygon' ? undefined : interactiveLayerIds}
         doubleClickZoom={!measure.mode && !selection.mode}
         onLoad={handleMapLoad}
         onMove={handleMove}
         onClick={(evt) => {
           if (measure.mode) {
             measure.addPoint([evt.lngLat.lng, evt.lngLat.lat]);
+            return;
+          }
+          if (selection.mode === 'polygon') {
+            polygonDraw.addPoint([evt.lngLat.lng, evt.lngLat.lat]);
             return;
           }
           if (selection.mode === 'click') {
@@ -630,6 +773,7 @@ export function MapPreview({
             const infos: typeof selectedFeatures = [];
             for (const f of features) {
               const layer = findLayerForFeature(f.layer.id);
+              if (layer?.showDetailPanel === false) continue;
               const layerId = layer?.id ?? f.layer.id;
               if (seen.has(layerId)) continue;
               seen.add(layerId);
@@ -647,6 +791,11 @@ export function MapPreview({
         onDblClick={(evt) => {
           if (measure.mode) {
             evt.preventDefault();
+            return;
+          }
+          if (selection.mode === 'polygon') {
+            evt.preventDefault();
+            polygonDraw.complete();
           }
         }}
         onMouseMove={(evt) => {
@@ -662,6 +811,7 @@ export function MapPreview({
               const infos: typeof hoveredFeatures = [];
               for (const f of features) {
                 const layer = findLayerForFeature(f.layer.id);
+                if (layer?.showTooltip === false) continue;
                 const layerId = layer?.id ?? f.layer.id;
                 if (seen.has(layerId)) continue;
                 seen.add(layerId);
@@ -683,6 +833,7 @@ export function MapPreview({
           }
         }}
         onMouseOut={() => {
+          clearTimeout(hoverTimerRef.current);
           setCursor('auto');
           setMouseCoords(null);
           setHoveredFeatures([]);
@@ -692,7 +843,22 @@ export function MapPreview({
       >
         <AttributionControl position="bottom-left" />
 
-        {!showEmptyState && layersWithDefaults.map((layer) => {
+        {/* Render raster imagery layers (above basemap, below features) */}
+        {!showEmptyState && imageryLayers.map((layer) => {
+          const sourceInfo = sourceUrlMap[layer.sourceId];
+          if (!sourceInfo && !layer.tileUrlTemplate) return null;
+          return (
+            <PreviewRasterImageryLayer
+              key={layer.id}
+              layer={layer}
+              sourceUrl={sourceInfo?.url ?? ''}
+              tileMatrixSetId={sourceInfo?.tileMatrixSetId}
+              auth={sourceInfo?.auth}
+            />
+          );
+        })}
+
+        {!showEmptyState && reversedLayers.map((layer) => {
           const sourceInfo = sourceUrlMap[layer.sourceId];
           if (!sourceInfo || !layer.styles?.length) return null;
 
@@ -703,6 +869,7 @@ export function MapPreview({
                 layer={layer}
                 sourceUrl={sourceInfo.url}
                 cql2Filter={activeCql2Filters[layer.id]}
+                auth={sourceInfo.auth}
               />
             );
           }
@@ -714,6 +881,7 @@ export function MapPreview({
               sourceUrl={sourceInfo.url}
               tileMatrixSetId={sourceInfo.tileMatrixSetId}
               cql2Filter={activeCql2Filters[layer.id]}
+              auth={sourceInfo.auth}
             />
           );
         })}
@@ -780,6 +948,22 @@ export function MapPreview({
               paint={{ 'fill-color': '#3b82f6', 'fill-opacity': 0.15 }} />
             <Layer id="box-draw-line" type="line"
               paint={{ 'line-color': '#3b82f6', 'line-width': 2, 'line-dasharray': [3, 3] }} />
+          </Source>
+        )}
+
+        {/* Polygon draw preview */}
+        {polygonDraw.polygonDrawData && (
+          <Source id="polygon-draw-preview" type="geojson" data={polygonDraw.polygonDrawData}>
+            <Layer id="polygon-draw-fill" type="fill"
+              paint={{ 'fill-color': '#3b82f6', 'fill-opacity': 0.15 }} />
+            <Layer id="polygon-draw-line" type="line"
+              paint={{ 'line-color': '#3b82f6', 'line-width': 2, 'line-dasharray': [3, 3] }} />
+          </Source>
+        )}
+        {polygonDraw.polygonDrawPointsData && (
+          <Source id="polygon-draw-points" type="geojson" data={polygonDraw.polygonDrawPointsData}>
+            <Layer id="polygon-draw-points-layer" type="circle"
+              paint={{ 'circle-color': '#3b82f6', 'circle-radius': 5, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 }} />
           </Source>
         )}
       </Map>
@@ -868,6 +1052,11 @@ export function MapPreview({
                     onToggleVisibility={(layerId) => {
                       onLayersChange?.(layers.map(l => l.id === layerId ? { ...l, visible: !l.visible } : l));
                     }}
+                    onReorder={(layerIds) => {
+                      const layerById: Record<string, LayerConfig> = Object.fromEntries(layers.map(l => [l.id, l]));
+                      const reordered = layerIds.map(id => layerById[id]).filter((l): l is LayerConfig => !!l);
+                      onLayersChange?.(reordered);
+                    }}
                     hideTitle
                   />
                 </CollapsibleControl>
@@ -942,6 +1131,25 @@ export function MapPreview({
               </div>
             )}
 
+            {uiConfig.showImageryPanel && imageryLayers.length > 0 && (
+              <div className="mapui:pointer-events-auto">
+                <CollapsibleControl
+                  icon={TbSatellite}
+                  label="Imagery"
+                  collapsed={openControl !== 'imagery'}
+                  onToggle={(collapsed) => setOpenControl(collapsed ? null : 'imagery')}
+                >
+                  <ImageryPanel
+                    imageryLayers={imageryLayers}
+                    onToggleVisibility={handleToggleImageryVisibility}
+                    onOpacityChange={handleImageryOpacity}
+                    hideTitle
+                    className="mapui:p-3 mapui:max-w-xs"
+                  />
+                </CollapsibleControl>
+              </div>
+            )}
+
             {uiConfig.showBasemapSwitcher && (
               <div className="mapui:pointer-events-auto">
                 <CollapsibleControl
@@ -958,17 +1166,32 @@ export function MapPreview({
                 </CollapsibleControl>
               </div>
             )}
+
+            {uiConfig.showExportButton && (
+              <div className="mapui:pointer-events-auto">
+                <ExportButton
+                  icon={LuDownload}
+                  onExport={() => setExportModalOpen(true)}
+                  loading={exportLoading}
+                />
+              </div>
+            )}
           </div>
 
-          {/* Bottom-right: Export button */}
-          {uiConfig.showExportButton && (
-            <div className="mapui:absolute mapui:bottom-8 mapui:right-4 mapui:pointer-events-auto">
-              <ExportButton
-                onExport={handleExport}
-                loading={exportLoading}
-              />
-            </div>
-          )}
+          {/* Export modal */}
+          <div className="mapui:pointer-events-auto">
+            <ExportModal
+              open={exportModalOpen}
+              layers={exportableLayers}
+              availableFormats={DEFAULT_EXPORT_FORMATS}
+              hasActiveFilter={(layerId) => activeCql2Filters[layerId] != null}
+              loading={exportLoading}
+              progress={exportProgress}
+              error={exportError?.message}
+              onExport={handleExportRequest}
+              onClose={() => setExportModalOpen(false)}
+            />
+          </div>
 
           {/* Bottom-center: Coordinate display */}
           {uiConfig.showCoordinateDisplay && (

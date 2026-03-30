@@ -14,6 +14,7 @@ export interface LegendEditorProps {
   value: LegendConfig | undefined;
   onChange: (legend: LegendConfig | undefined) => void;
   styles?: StyleConfig[];
+  layerLabel?: string;
 }
 
 const defaultEntry = (): LegendEntry => ({ label: '', color: '#4a90d9', shape: 'square' });
@@ -29,7 +30,7 @@ type StyleEntries = {
   property: string | null;
 };
 
-export function LegendEditor({ value, onChange, styles }: LegendEditorProps) {
+export function LegendEditor({ value, onChange, styles, layerLabel }: LegendEditorProps) {
   const entries = value?.entries ?? [];
   const displayMode = value?.displayMode ?? 'simple';
 
@@ -54,12 +55,12 @@ export function LegendEditor({ value, onChange, styles }: LegendEditorProps) {
           mode = 'categorical';
         }
       } else if (typeof raw === 'string' && allEntries.length === 0) {
-        allEntries.push({ label: style.type, color: raw, shape });
+        allEntries.push({ label: layerLabel || style.type, color: raw, shape });
       }
     }
     if (allEntries.length === 0) return null;
     return { entries: allEntries, mode, property: gradientProperty };
-  }, [styles]);
+  }, [styles, layerLabel]);
 
   const handleAddEntry = () => {
     onChange({ ...value, entries: [...entries, defaultEntry()] } as LegendConfig);

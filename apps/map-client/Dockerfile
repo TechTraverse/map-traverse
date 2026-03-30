@@ -2,13 +2,10 @@
 FROM node:20-alpine AS builder
 RUN corepack enable
 
-ARG VITE_CONFIG_API_URL
-ENV VITE_CONFIG_API_URL=$VITE_CONFIG_API_URL
-
 WORKDIR /app
 
 # Copy workspace manifest files for dependency resolution
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json .npmrc ./
 COPY packages/map-ui-lib/package.json ./packages/map-ui-lib/
 COPY apps/map-client/package.json ./apps/map-client/
 

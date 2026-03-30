@@ -18,6 +18,9 @@ COPY packages/map-ui-lib/ ./packages/map-ui-lib/
 COPY apps/admin-app/ ./apps/admin-app/
 
 # Build lib then admin-ui SPA then server
+ARG VITE_BASE_PATH=/admin/
+ENV VITE_BASE_PATH=$VITE_BASE_PATH
+
 RUN pnpm --filter @ogc-maps/storybook-components build
 RUN pnpm --filter admin-app build
 RUN pnpm --filter admin-app build:server
@@ -29,7 +32,7 @@ RUN corepack enable
 WORKDIR /app
 
 # Copy workspace manifest files
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
 COPY packages/map-ui-lib/package.json ./packages/map-ui-lib/
 COPY apps/admin-app/package.json ./apps/admin-app/
 

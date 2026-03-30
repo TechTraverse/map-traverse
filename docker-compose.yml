@@ -28,7 +28,9 @@ services:
       DATABASE_URL: "postgresql://postgres:postgres@postgis:5432/gis"
       TIPG_DB_MAX_CONN_SIZE: "10"
       TIPG_SET_MVT_LAYERNAME: "true"
-      TIPG_DB_SCHEMAS: '["example"]'
+      TIPG_DB_SCHEMAS: '["example", "gunnison"]'
+      TIPG_CORS_ORIGIN: '*'
+      TIPG_ROOT_PATH: /ogc
     ports:
       - "8000:8000"
     command: uvicorn tipg.main:app --host 0.0.0.0 --port 8000
@@ -49,12 +51,15 @@ services:
       PGPASSWORD: postgres
     volumes:
       - ./docker/seed:/scripts
+      - ./GISData:/GISData:ro
     command: sh /scripts/seed.sh
 
   admin-app:
     build:
       context: .
       dockerfile: apps/admin-app/Dockerfile
+      args:
+        VITE_BASE_PATH: /admin/
     container_name: storybook-components-admin-app
     depends_on:
       postgis:
@@ -69,7 +74,8 @@ services:
       DB_PASSWORD: postgres
       PORT: 3001
       SESSION_SECRET: change-me-in-production
-      CORS_ORIGINS: http://localhost:3000
+      SPA_BASE_PATH: /admin/
+      CORS_ORIGINS: http://localhost:3000,http://localhost
       # Set ADMIN_USERNAME and ADMIN_PASSWORD_HASH to enable authentication
       # ADMIN_USERNAME: admin
       # ADMIN_PASSWORD_HASH: <bcrypt hash>
@@ -80,8 +86,6 @@ services:
     build:
       context: .
       dockerfile: apps/map-client/Dockerfile
-      args:
-        VITE_CONFIG_API_URL: http://localhost:3001
     container_name: storybook-components-map-client
     depends_on:
       tipg:
@@ -90,6 +94,18 @@ services:
         condition: service_completed_successfully
     ports:
       - "3000:80"
+
+  gateway:
+    image: nginx:alpine
+    container_name: storybook-components-gateway
+    depends_on:
+      - admin-app
+      - map-client
+      - tipg
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/gateway/nginx.conf:/etc/nginx/conf.d/default.conf:ro
 
 volumes:
   postgis_data:

@@ -1,5 +1,41 @@
 # @ogc-maps/storybook-components
 
+## 0.14.0
+
+### Minor Changes
+
+- 277bb19: imagery layers
+
+## 0.13.0
+
+### Minor Changes
+
+- 2f84854: export style improvements
+
+## 0.12.3
+
+### Patch Changes
+
+- 012878d: legend autogenerate label based on layer label
+
+## 0.12.2
+
+### Patch Changes
+
+- 8219573: polygon selection tool
+
+## 0.12.1
+
+### Patch Changes
+
+- aef3ba5: tool tips and layer flyout configurable per layer
+
+## 0.12.0
+
+### Minor Changes
+
+- e3f0363: map branding configuration
+
 ## 0.11.0
 
 ### Minor Changes

@@ -1,5 +1,6 @@
 // OGC API utility functions - pure fetch functions with no React dependencies
 import type { CQL2Expression } from './cql2';
+import type { SourceAuth } from '../types';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -81,6 +82,13 @@ export interface TileJson {
     description?: string;
     fields?: Record<string, string>;
   }>;
+  /** Non-standard extension (MapTiler): tile scale factor. "2.000000" or 2 means 512px tiles. */
+  scale?: string | number;
+}
+
+/** Derive tileSize from TileJSON scale field. Returns 512 for @2x tiles, 256 otherwise. */
+export function tileSizeFromTileJson(tj: TileJson): number {
+  return (Number(tj.scale) || 1) >= 2 ? 512 : 256;
 }
 
 /** Options for fetchFeatures. */
@@ -98,14 +106,29 @@ export interface FetchFeaturesOptions {
   sortby?: Array<{ property: string; direction: 'asc' | 'desc' }>;
 }
 
+export type { SourceAuth };
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function stripTrailingSlash(url: string): string {
+export function stripTrailingSlash(url: string): string {
   return url.endsWith('/') ? url.slice(0, -1) : url;
 }
 
-async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(url);
+/** Append query-param auth to a URL. No-op for header auth or undefined. */
+export function appendAuth(url: string, auth?: SourceAuth): string {
+  if (!auth || auth.type !== 'query_param') return url;
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}${encodeURIComponent(auth.name)}=${encodeURIComponent(auth.value)}`;
+}
+
+/** Build headers object for header auth. Empty for query-param auth or undefined. */
+export function authHeaders(auth?: SourceAuth): Record<string, string> {
+  if (!auth || auth.type !== 'header') return {};
+  return { [auth.name]: auth.value };
+}
+
+async function fetchJson<T>(url: string, auth?: SourceAuth): Promise<T> {
+  const res = await fetch(appendAuth(url, auth), { headers: authHeaders(auth) });
   if (!res.ok) {
     throw new Error(`OGC API request failed: ${res.status} ${res.statusText} (${url})`);
   }
@@ -117,9 +140,9 @@ async function fetchJson<T>(url: string): Promise<T> {
 /**
  * Fetch the list of collections from an OGC API endpoint.
  */
-export async function fetchCollections(baseUrl: string): Promise<OgcCollection[]> {
+export async function fetchCollections(baseUrl: string, auth?: SourceAuth): Promise<OgcCollection[]> {
   const url = `${stripTrailingSlash(baseUrl)}/collections?f=json`;
-  const data = await fetchJson<OgcCollectionsResponse>(url);
+  const data = await fetchJson<OgcCollectionsResponse>(url, auth);
   return data.collections;
 }
 
@@ -130,6 +153,7 @@ export async function fetchFeatures(
   baseUrl: string,
   collection: string,
   options: FetchFeaturesOptions = {},
+  auth?: SourceAuth,
 ): Promise<OgcFeatureCollection> {
   const base = stripTrailingSlash(baseUrl);
   const params = new URLSearchParams({ f: 'geojson' });
@@ -152,7 +176,7 @@ export async function fetchFeatures(
   }
 
   const url = `${base}/collections/${encodeURIComponent(collection)}/items?${params}`;
-  return fetchJson<OgcFeatureCollection>(url);
+  return fetchJson<OgcFeatureCollection>(url, auth);
 }
 
 /**
@@ -163,11 +187,12 @@ export async function fetchFeatureById(
   baseUrl: string,
   collection: string,
   featureId: string | number,
+  auth?: SourceAuth,
 ): Promise<GeoJsonFeature | null> {
   const base = stripTrailingSlash(baseUrl);
   const url = `${base}/collections/${encodeURIComponent(collection)}/items/${encodeURIComponent(String(featureId))}?f=geojson`;
   try {
-    return await fetchJson<GeoJsonFeature>(url);
+    return await fetchJson<GeoJsonFeature>(url, auth);
   } catch {
     return null;
   }
@@ -179,10 +204,11 @@ export async function fetchFeatureById(
 export async function fetchQueryables(
   baseUrl: string,
   collection: string,
+  auth?: SourceAuth,
 ): Promise<OgcQueryables> {
   const base = stripTrailingSlash(baseUrl);
   const url = `${base}/collections/${encodeURIComponent(collection)}/queryables?f=schemajson`;
-  return fetchJson<OgcQueryables>(url);
+  return fetchJson<OgcQueryables>(url, auth);
 }
 
 /**
@@ -191,18 +217,19 @@ export async function fetchQueryables(
 export async function fetchCollectionDetail(
   baseUrl: string,
   collectionId: string,
+  auth?: SourceAuth,
 ): Promise<OgcCollection> {
   const base = stripTrailingSlash(baseUrl);
   const url = `${base}/collections/${encodeURIComponent(collectionId)}?f=json`;
-  return fetchJson<OgcCollection>(url);
+  return fetchJson<OgcCollection>(url, auth);
 }
 
 /**
  * Fetch the OGC API conformance declaration to discover server capabilities.
  */
-export async function fetchConformance(baseUrl: string): Promise<OgcConformance> {
+export async function fetchConformance(baseUrl: string, auth?: SourceAuth): Promise<OgcConformance> {
   const url = `${stripTrailingSlash(baseUrl)}/conformance?f=json`;
-  return fetchJson<OgcConformance>(url);
+  return fetchJson<OgcConformance>(url, auth);
 }
 
 /**
@@ -212,9 +239,10 @@ export async function fetchTileJson(
   baseUrl: string,
   collection: string,
   tileMatrixSetId: string = 'WebMercatorQuad',
+  auth?: SourceAuth,
 ): Promise<TileJson> {
-  const url = getTileJsonUrl(baseUrl, collection, tileMatrixSetId);
-  return fetchJson<TileJson>(url);
+  const url = getTileJsonUrl(baseUrl, collection, tileMatrixSetId, auth);
+  return fetchJson<TileJson>(url, auth);
 }
 
 /**
@@ -226,11 +254,12 @@ export async function fetchFeatureCount(
   baseUrl: string,
   collection: string,
   options: Omit<FetchFeaturesOptions, 'limit' | 'offset' | 'properties'> = {},
+  auth?: SourceAuth,
 ): Promise<number | null> {
   const data = await fetchFeatures(baseUrl, collection, {
     ...options,
     limit: 0,
-  });
+  }, auth);
   return data.numberMatched ?? null;
 }
 
@@ -241,9 +270,11 @@ export function getTileJsonUrl(
   baseUrl: string,
   collection: string,
   tileMatrixSetId: string = 'WebMercatorQuad',
+  auth?: SourceAuth,
 ): string {
   const base = stripTrailingSlash(baseUrl);
-  return `${base}/collections/${encodeURIComponent(collection)}/tiles/${encodeURIComponent(tileMatrixSetId)}/tilejson.json`;
+  const url = `${base}/collections/${encodeURIComponent(collection)}/tiles/${encodeURIComponent(tileMatrixSetId)}/tilejson.json`;
+  return appendAuth(url, auth);
 }
 
 /**
@@ -254,9 +285,11 @@ export function getVectorTileUrl(
   baseUrl: string,
   collection: string,
   tileMatrixSetId: string = 'WebMercatorQuad',
+  auth?: SourceAuth,
 ): string {
   const base = stripTrailingSlash(baseUrl);
-  return `${base}/collections/${encodeURIComponent(collection)}/tiles/${encodeURIComponent(tileMatrixSetId)}/{z}/{x}/{y}`;
+  const url = `${base}/collections/${encodeURIComponent(collection)}/tiles/${encodeURIComponent(tileMatrixSetId)}/{z}/{x}/{y}`;
+  return appendAuth(url, auth);
 }
 
 /**
@@ -268,16 +301,18 @@ export function getFilteredVectorTileUrl(
   collection: string,
   filter?: Record<string, string | number>,
   tileMatrixSetId: string = 'WebMercatorQuad',
+  auth?: SourceAuth,
 ): string {
   const base = stripTrailingSlash(baseUrl);
-  const tileUrl = `${base}/collections/${encodeURIComponent(collection)}/tiles/${encodeURIComponent(tileMatrixSetId)}/{z}/{x}/{y}`;
-  if (!filter || Object.keys(filter).length === 0) return tileUrl;
-
-  const params = new URLSearchParams();
-  for (const [key, value] of Object.entries(filter)) {
-    params.set(key, String(value));
+  let tileUrl = `${base}/collections/${encodeURIComponent(collection)}/tiles/${encodeURIComponent(tileMatrixSetId)}/{z}/{x}/{y}`;
+  if (filter && Object.keys(filter).length > 0) {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(filter)) {
+      params.set(key, String(value));
+    }
+    tileUrl = `${tileUrl}?${params}`;
   }
-  return `${tileUrl}?${params}`;
+  return appendAuth(tileUrl, auth);
 }
 
 /**
@@ -289,6 +324,7 @@ export async function fetchDistinctValues(
   collection: string,
   property: string,
   options?: { query?: string; limit?: number; fetchAll?: boolean; maxFeatures?: number },
+  auth?: SourceAuth,
 ): Promise<string[]> {
   const cql2Filter: CQL2Expression | undefined =
     options?.query
@@ -317,7 +353,7 @@ export async function fetchDistinctValues(
         limit: batchSize,
         offset,
         cql2Filter,
-      });
+      }, auth);
 
       collectValues(page.features);
       fetched += page.features.length;
@@ -333,7 +369,7 @@ export async function fetchDistinctValues(
       properties: [property],
       limit: options?.limit ?? 50,
       cql2Filter,
-    });
+    }, auth);
     collectValues(data.features);
   }
 
@@ -349,16 +385,18 @@ export function getCql2FilteredVectorTileUrl(
   collection: string,
   cql2Filter?: CQL2Expression | null,
   tileMatrixSetId: string = 'WebMercatorQuad',
+  auth?: SourceAuth,
 ): string {
   const base = stripTrailingSlash(baseUrl);
-  const tileUrl = `${base}/collections/${encodeURIComponent(collection)}/tiles/${encodeURIComponent(tileMatrixSetId)}/{z}/{x}/{y}`;
-  if (!cql2Filter) return tileUrl;
-
-  const params = new URLSearchParams({
-    'filter-lang': 'cql2-json',
-    filter: JSON.stringify(cql2Filter),
-  });
-  return `${tileUrl}?${params}`;
+  let tileUrl = `${base}/collections/${encodeURIComponent(collection)}/tiles/${encodeURIComponent(tileMatrixSetId)}/{z}/{x}/{y}`;
+  if (cql2Filter) {
+    const params = new URLSearchParams({
+      'filter-lang': 'cql2-json',
+      filter: JSON.stringify(cql2Filter),
+    });
+    tileUrl = `${tileUrl}?${params}`;
+  }
+  return appendAuth(tileUrl, auth);
 }
 
 /**
@@ -378,4 +416,52 @@ export function buildGeometryFilter(types: string[]): any {
   return types.length === 1
     ? ['==', ['geometry-type'], types[0]]
     : ['in', ['geometry-type'], ['literal', types]];
+}
+
+/**
+ * Build a raster imagery tile URL template for MapLibre.
+ * If a custom tileUrlTemplate is provided, use it directly.
+ * Otherwise, construct the OGC API Tiles standard pattern.
+ */
+export function getImageryTileUrl(
+  baseUrl: string,
+  collection: string,
+  tileMatrixSetId: string = 'WebMercatorQuad',
+  tileUrlTemplate?: string,
+  auth?: SourceAuth,
+): string {
+  if (tileUrlTemplate) {
+    // Skip appending auth if the URL already contains the auth param
+    // (e.g. TileJSON tile URLs that bake in the API key)
+    if (auth?.type === 'query_param' && new RegExp(`[?&]${auth.name}=`).test(tileUrlTemplate)) {
+      return tileUrlTemplate;
+    }
+    return appendAuth(tileUrlTemplate, auth);
+  }
+  const base = stripTrailingSlash(baseUrl);
+  const url = `${base}/collections/${encodeURIComponent(collection)}/map/tiles/${encodeURIComponent(tileMatrixSetId)}/{z}/{x}/{y}.png`;
+  return appendAuth(url, auth);
+}
+
+/**
+ * Fetch a TileJSON document from any URL (not OGC-specific).
+ * Works with MapTiler, Mapbox, and any TileJSON-compliant endpoint.
+ */
+export async function fetchGenericTileJson(
+  tileJsonUrl: string,
+  auth?: SourceAuth,
+): Promise<TileJson> {
+  return fetchJson<TileJson>(tileJsonUrl, auth);
+}
+
+/**
+ * Detect the type of a tile source URL.
+ * Returns 'tilejson' if URL likely points to a TileJSON document,
+ * 'xyz' if it contains {z}/{x}/{y} placeholders,
+ * or 'ogc-api' otherwise.
+ */
+export function detectTileSourceType(url: string): 'tilejson' | 'xyz' | 'ogc-api' {
+  if (/\{z\}.*\{x\}.*\{y\}/i.test(url)) return 'xyz';
+  if (/tilejson\.json|tiles\.json/i.test(url)) return 'tilejson';
+  return 'ogc-api';
 }

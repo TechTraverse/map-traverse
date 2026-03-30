@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { safeValidateMapConfig } from '@ogc-maps/storybook-components/schemas';
+import type { BrandingConfig } from '@ogc-maps/storybook-components/types';
 import { useMapStore } from './stores/mapStore';
 import { useMapSync } from './hooks/useMapSync';
 import { Layout } from './components/Layout';
@@ -7,6 +8,19 @@ import { CachedConfigBanner } from './components/CachedConfigBanner';
 
 const CACHE_KEY = 'mapui:cached-config';
 const CACHE_TS_KEY = 'mapui:cached-config-timestamp';
+
+function applyBranding(branding: BrandingConfig | undefined) {
+  if (branding?.browserTitle) document.title = branding.browserTitle;
+  if (branding?.faviconDataUrl) {
+    let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
+    link.href = branding.faviconDataUrl;
+  }
+}
 
 function App() {
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -16,22 +30,15 @@ function App() {
   const hydrate = useMapStore((s) => s.hydrate);
 
   const loadConfig = useCallback(async () => {
-    const configApiUrl = import.meta.env.VITE_CONFIG_API_URL;
-
     // Extract config name from URL path (e.g., /demo → "demo", / → "default")
     const pathSegment = window.location.pathname.replace(/^\//, '').split('/')[0];
     const configName = pathSegment || 'default';
 
-    // Determine fetch URL: use admin API if configured, otherwise fall back to static file
-    const configUrl = configApiUrl
-      ? `${configApiUrl}/api/configs/${configName}`
-      : '/config.json';
-
     try {
-      const res = await fetch(configUrl);
+      const res = await fetch(`/api/configs/${configName}`);
 
-      // For "default" name via admin API, fall back to local config.json on 404
-      if (!res.ok && configApiUrl && configName === 'default') {
+      // For "default" config, fall back to local config.json on 404 (standalone mode)
+      if (!res.ok && configName === 'default') {
         const fallbackRes = await fetch('/config.json');
         if (!fallbackRes.ok) throw new Error(`HTTP ${fallbackRes.status} ${fallbackRes.statusText}`);
         const raw: unknown = await fallbackRes.json();
@@ -45,6 +52,7 @@ function App() {
         localStorage.setItem(CACHE_KEY, JSON.stringify(raw));
         localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
         hydrate(result.data);
+        applyBranding(result.data.branding);
         setUsingCachedConfig(false);
         setIsReady(true);
         return;
@@ -66,6 +74,7 @@ function App() {
       localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
 
       hydrate(result.data);
+      applyBranding(result.data.branding);
       setUsingCachedConfig(false);
       setIsReady(true);
     } catch {
@@ -79,6 +88,7 @@ function App() {
           const result = safeValidateMapConfig(parsed);
           if (result.success) {
             hydrate(result.data);
+            applyBranding(result.data.branding);
             setUsingCachedConfig(true);
             setCacheTimestamp(cachedTs ? Number(cachedTs) : Date.now());
             setIsReady(true);

@@ -13,6 +13,7 @@ const defaultSource = (): OgcApiSource => ({
   url: '',
   label: undefined,
   tileMatrixSetId: 'WebMercatorQuad',
+  type: 'features',
 });
 
 export function SourceList({ sources, onChange }: SourceListProps) {
@@ -113,9 +114,16 @@ export function SourceList({ sources, onChange }: SourceListProps) {
             ) : (
               <div className="mapui:flex mapui:items-start mapui:justify-between mapui:gap-2">
                 <div className="mapui:flex mapui:flex-col mapui:gap-0.5">
-                  <span className="mapui:text-sm mapui:font-medium mapui:text-gray-800">
-                    {source.label ?? source.id}
-                  </span>
+                  <div className="mapui:flex mapui:items-center mapui:gap-1.5">
+                    <span className="mapui:text-sm mapui:font-medium mapui:text-gray-800">
+                      {source.label ?? source.id}
+                    </span>
+                    {source.type === 'imagery' && (
+                      <span className="mapui:text-xs mapui:rounded-full mapui:bg-purple-100 mapui:text-purple-700 mapui:px-1.5 mapui:py-0.5">
+                        Imagery
+                      </span>
+                    )}
+                  </div>
                   <span className="mapui:font-mono mapui:text-xs mapui:text-gray-500">
                     {source.url}
                   </span>

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import proj4 from 'proj4';
 import type { MapRef } from 'react-map-gl/maplibre';
 import type { UIConfig } from '@ogc-maps/storybook-components/types';
+import { DEFAULT_HEADER_COLOR } from '@ogc-maps/storybook-components/schemas';
 import {
   formatDecimal,
   formatDMS,
@@ -23,6 +24,7 @@ import { useMapStore } from '../stores/mapStore';
 import { MapContainer } from './MapContainer';
 import { MapOverlay } from './MapOverlay';
 import { useBoxDraw } from '../hooks/useBoxDraw';
+import { usePolygonDraw } from '../hooks/usePolygonDraw';
 
 interface LayoutProps {
   uiConfig: UIConfig;
@@ -37,6 +39,7 @@ interface FeatureInfo {
 
 export function Layout({ uiConfig }: LayoutProps) {
   const layers = useMapStore((s) => s.layers);
+  const branding = useMapStore((s) => s.branding);
 
   const [mouseCoords, setMouseCoords] = useState<{
     latitude: number;
@@ -165,11 +168,8 @@ export function Layout({ uiConfig }: LayoutProps) {
     return (layer.styles ?? []).map((s, i) => `${sourceKey}--${s.type}--${i}`);
   }, [selection.activeLayerId, layers, activeCql2Filters]);
 
-  const { boxDrawData } = useBoxDraw({
-    mapRef: mapRefForBoxDraw,
-    enabled: selection.mode === 'box' && selection.activeLayerId != null,
-    queryLayerIds: selectionQueryLayerIds,
-    onComplete: (features) => {
+  const handleSpatialSelectionComplete = useCallback(
+    (features: Array<{ id?: string | number; properties: Record<string, unknown>; geometry: Record<string, unknown> }>) => {
       if (!selection.activeLayerId) return;
       selection.addFeatures(
         features.map((f) => ({
@@ -180,6 +180,21 @@ export function Layout({ uiConfig }: LayoutProps) {
         })),
       );
     },
+    [selection.activeLayerId, selection.addFeatures],
+  );
+
+  const { boxDrawData } = useBoxDraw({
+    mapRef: mapRefForBoxDraw,
+    enabled: selection.mode === 'box' && selection.activeLayerId != null,
+    queryLayerIds: selectionQueryLayerIds,
+    onComplete: handleSpatialSelectionComplete,
+  });
+
+  const polygonDraw = usePolygonDraw({
+    mapRef: mapRefForBoxDraw,
+    enabled: selection.mode === 'polygon' && selection.activeLayerId != null,
+    queryLayerIds: selectionQueryLayerIds,
+    onComplete: handleSpatialSelectionComplete,
   });
 
   // Define coordinate formats including projected CRS
@@ -198,10 +213,23 @@ export function Layout({ uiConfig }: LayoutProps) {
 
   return (
     <>
-      <header className="bg-slate-800 text-white px-6 py-4 shadow-lg">
-        <h1 className="text-lg font-semibold">
-          Example Map for OGC APIs with Storybook Components
-        </h1>
+      <header
+        className="relative z-10 overflow-visible text-white px-6 shadow-lg"
+        style={{ backgroundColor: branding?.headerColor ?? DEFAULT_HEADER_COLOR, height: 56 }}
+      >
+        <div className="flex h-full items-center gap-3">
+          {branding?.logoDataUrl && (
+            <img
+              src={branding.logoDataUrl}
+              alt=""
+              className="w-auto self-start"
+              style={{ height: branding?.logoHeight ?? 32 }}
+            />
+          )}
+          <h1 className="text-lg font-semibold">
+            {branding?.headerTitle ?? 'Map'}
+          </h1>
+        </div>
       </header>
       <div className="relative flex-grow w-full">
         <MapContainer
@@ -216,6 +244,10 @@ export function Layout({ uiConfig }: LayoutProps) {
           selectionHighlightData={selection.highlightData}
           queryHighlightData={queryHighlightData as unknown as GeoJSON.FeatureCollection | null}
           boxDrawData={boxDrawData}
+          polygonDrawData={polygonDraw.polygonDrawData}
+          polygonDrawPointsData={polygonDraw.polygonDrawPointsData}
+          onPolygonDrawClick={polygonDraw.addPoint}
+          onPolygonDrawComplete={polygonDraw.complete}
           onSelectionClick={(features) => {
             if (!selection.activeLayerId) return;
             const layer = layers.find((l) => l.id === selection.activeLayerId);
@@ -263,17 +295,18 @@ export function Layout({ uiConfig }: LayoutProps) {
           onMouseLeave={() => setMouseCoords(null)}
           onFeatureClick={(infos) => {
             setSelectedFeatures(
-              infos.map((info) => {
+              infos.flatMap((info) => {
                 const layer = layers.find(
                   (l) => info.layerId === l.id || info.layerId.startsWith(l.id + '--'),
                 );
+                if (layer?.showDetailPanel === false) return [];
                 const resolved = resolvePropertyDisplay(layer?.propertyDisplay);
-                return {
+                return [{
                   properties: info.properties,
                   title: layer?.label ?? (info.properties['name'] as string) ?? info.layerId,
                   fields: resolved?.fields,
                   labels: resolved?.labels,
-                };
+                }];
               }),
             );
           }}
@@ -287,17 +320,18 @@ export function Layout({ uiConfig }: LayoutProps) {
             hoverTimerRef.current = setTimeout(() => {
               setHoveredPoint(infos[0]?.point ?? null);
               setHoveredFeatures(
-                infos.map((info) => {
+                infos.flatMap((info) => {
                   const layer = layers.find(
                     (l) => info.layerId === l.id || info.layerId.startsWith(l.id + '--'),
                   );
+                  if (layer?.showTooltip === false) return [];
                   const resolved = resolvePropertyDisplay(layer?.propertyDisplay);
-                  return {
+                  return [{
                     properties: info.properties,
                     title: layer?.label ?? (info.properties['name'] as string),
                     fields: resolved?.fields,
                     labels: resolved?.labels,
-                  };
+                  }];
                 }),
               );
             }, 1000);

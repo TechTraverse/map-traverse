@@ -25,6 +25,14 @@ export const ViewConfigSchema = z.object({
   bearing: z.number().min(-180).max(180).default(0),
 });
 
+// --- Source Authentication ---
+
+export const SourceAuthSchema = z.object({
+  type: z.enum(['query_param', 'header']),
+  name: z.string().min(1),
+  value: z.string().min(1),
+});
+
 // --- OGC API Source ---
 
 export const OgcApiSourceSchema = z.object({
@@ -32,6 +40,9 @@ export const OgcApiSourceSchema = z.object({
   url: z.string().url(),
   label: z.string().optional(),
   tileMatrixSetId: z.string().optional().default('WebMercatorQuad'),
+  type: z.enum(['features', 'imagery']).optional(),
+  auth: SourceAuthSchema.optional(),
+  proxy: z.boolean().optional(),
 });
 
 // --- Paint Schemas (MapLibre GL JS conventions) ---
@@ -416,12 +427,16 @@ const layerConfigFields = {
   label: z.string(),
   visible: z.boolean().default(true),
   dataMode: z.enum(['vector-tiles', 'geojson']),
+  minZoom: z.number().min(0).max(24).optional(),
+  maxZoom: z.number().min(0).max(24).optional(),
   styles: z.array(StyleConfigSchema).optional(),
   legend: LegendConfigSchema.optional(),
   filters: FilterConfigSchema.optional(),
   search: SearchConfigSchema.optional(),
   propertyDisplay: PropertyDisplayConfigSchema.optional(),
   cql2Filter: Cql2FilterConfigSchema.optional(),
+  showTooltip: z.boolean().optional(),
+  showDetailPanel: z.boolean().optional(),
 };
 
 export const LayerConfigSchema = z.preprocess(
@@ -465,6 +480,45 @@ export const UIConfigSchema = z.object({
   showLegendOpacity: z.boolean().default(false),
   showMeasureTool: z.boolean().default(false),
   showSelectionTool: z.boolean().default(false),
+  showImageryPanel: z.boolean().default(false),
+});
+
+// --- Branding Config ---
+
+export const DEFAULT_HEADER_COLOR = '#1e293b';
+
+export const BrandingConfigSchema = z.object({
+  headerTitle: z.string().optional(),
+  headerColor: z.string().optional(),
+  browserTitle: z.string().optional(),
+  faviconDataUrl: z.string().optional(),
+  logoDataUrl: z.string().optional(),
+  logoHeight: z.number().int().min(16).max(200).optional(),
+});
+
+// --- Imagery Layer Config ---
+
+export const ImageryLayerConfigSchema = z.object({
+  id: z.string().min(1),
+  sourceId: z.string().default(''),
+  collection: z.string().default(''),
+  label: z.string(),
+  visible: z.boolean().default(false),
+  opacity: z.number().min(0).max(1).default(1),
+  exclusive: z.boolean().default(false),
+  minZoom: z.number().min(0).max(24).optional(),
+  maxZoom: z.number().min(0).max(24).optional(),
+  tileSize: z.number().default(256),
+  tileUrlTemplate: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (!data.tileUrlTemplate) {
+    if (!data.sourceId) {
+      ctx.addIssue({ code: z.ZodIssueCode.too_small, minimum: 1, type: 'string', inclusive: true, path: ['sourceId'], message: 'Source is required when not using a custom tile URL' });
+    }
+    if (!data.collection) {
+      ctx.addIssue({ code: z.ZodIssueCode.too_small, minimum: 1, type: 'string', inclusive: true, path: ['collection'], message: 'Collection is required when not using a custom tile URL' });
+    }
+  }
 });
 
 // --- Root Map Config ---
@@ -472,10 +526,12 @@ export const UIConfigSchema = z.object({
 export const MapConfigSchema = z.object({
   sources: z.array(OgcApiSourceSchema).min(1),
   layers: z.array(LayerConfigSchema),
+  imageryLayers: z.array(ImageryLayerConfigSchema).optional(),
   basemaps: z.array(BasemapConfigSchema).min(1),
   sprites: z.array(SpriteSourceSchema).optional(),
   ui: UIConfigSchema.default({}),
   initialView: ViewConfigSchema,
+  branding: BrandingConfigSchema.optional(),
 });
 
 // --- Validation Utilities ---

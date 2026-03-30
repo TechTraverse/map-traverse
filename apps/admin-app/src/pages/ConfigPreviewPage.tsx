@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import type { MapConfig, LayerConfig } from '@ogc-maps/storybook-components';
+import type { MapConfig, LayerConfig, ImageryLayerConfig } from '@ogc-maps/storybook-components';
 import { MapPreview } from '../components/MapPreview';
 
 const DEFAULT_VIEW = { latitude: 0, longitude: 0, zoom: 2, pitch: 0, bearing: 0 };
@@ -9,6 +9,7 @@ export function ConfigPreviewPage() {
   const { id } = useParams<{ id: string }>();
   const [config, setConfig] = useState<MapConfig | null>(null);
   const [layers, setLayers] = useState<LayerConfig[]>([]);
+  const [imageryLayers, setImageryLayers] = useState<ImageryLayerConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,6 +21,7 @@ export function ConfigPreviewPage() {
         if (data.config) {
           setConfig(data.config);
           setLayers(data.config.layers ?? []);
+          setImageryLayers(data.config.imageryLayers ?? []);
         }
       })
       .catch(err => setError(String(err)))
@@ -48,9 +50,11 @@ export function ConfigPreviewPage() {
         <MapPreview
           sources={config.sources ?? []}
           layers={layers}
+          imageryLayers={imageryLayers}
           basemaps={config.basemaps ?? []}
           viewState={config.initialView ?? DEFAULT_VIEW}
           onLayersChange={setLayers}
+          onImageryLayersChange={setImageryLayers}
           currentStep="preview"
           uiConfig={config.ui}
         />

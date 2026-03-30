@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:developmentseed.org)",
+      "WebFetch(domain:nuqs.47ng.com)",
+      "WebFetch(domain:nuqs.dev)",
+      "WebFetch(domain:storybook.js.org)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:visgl.github.io)",
+      "WebFetch(domain:maplibre.org)",
+      "WebFetch(domain:docs.ogc.org)",
+      "WebFetch(domain:pystac-client.readthedocs.io)",
+      "WebFetch(domain:deepwiki.com)",
+      "WebFetch(domain:localhost)",
+      "WebFetch(domain:basemaps.cartocdn.com)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm build:lib:*)",
+      "Bash(pnpm build:app:*)",
+      "Bash(pnpm dev:app:*)",
+      "Bash(pnpm storybook:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm exec eslint:*)",
+      "Bash(pnpm:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx vite:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker restart:*)",
+      "Bash(curl:*)",
+      "Bash(ls:*)",
+      "Bash(node:*)",
+      "Bash(python3:*)",
+      "mcp__postgres__query"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "postgres"
+  ]
+}

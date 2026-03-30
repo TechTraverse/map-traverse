@@ -4,6 +4,7 @@ import {
   type OgcFeatureCollection,
   type GeoJsonFeature,
   type FetchFeaturesOptions,
+  type SourceAuth,
 } from '../utils/ogcApi';
 
 export interface UseOgcFeaturesResult {
@@ -25,6 +26,7 @@ export function useOgcFeatures(
   baseUrl: string | null,
   collection: string | null,
   options: FetchFeaturesOptions = {},
+  auth?: SourceAuth,
 ): UseOgcFeaturesResult {
   const [features, setFeatures] = useState<GeoJsonFeature[]>([]);
   const [loading, setLoading] = useState(false);
@@ -33,6 +35,7 @@ export function useOgcFeatures(
 
   // Serialize options for the dependency array to avoid re-fetching on every render
   const optionsKey = JSON.stringify(options);
+  const authKey = auth ? `${auth.type}:${auth.name}:${auth.value}` : '';
 
   useEffect(() => {
     if (!baseUrl || !collection) return;
@@ -43,7 +46,7 @@ export function useOgcFeatures(
 
     const opts: FetchFeaturesOptions = JSON.parse(optionsKey);
 
-    fetchFeatures(baseUrl, collection, opts)
+    fetchFeatures(baseUrl, collection, opts, auth)
       .then((data: OgcFeatureCollection) => {
         if (!cancelled) {
           setFeatures(data.features);
@@ -76,7 +79,7 @@ export function useOgcFeatures(
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [baseUrl, collection, optionsKey]);
+  }, [baseUrl, collection, optionsKey, authKey]);
 
   return { features, loading, error, hasMore };
 }

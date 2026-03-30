@@ -1,5 +1,5 @@
 /** Mode for selecting features on the map. */
-export type SelectionMode = 'click' | 'box';
+export type SelectionMode = 'click' | 'box' | 'polygon';
 
 /** A feature selected on the map. */
 export interface SelectedFeature {

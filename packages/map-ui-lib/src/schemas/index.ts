@@ -1,5 +1,6 @@
 export {
   ViewConfigSchema,
+  SourceAuthSchema,
   OgcApiSourceSchema,
   FillPaintSchema,
   LinePaintSchema,
@@ -14,8 +15,11 @@ export {
   SearchConfigSchema,
   FilterConfigSchema,
   LayerConfigSchema,
+  ImageryLayerConfigSchema,
   BasemapConfigSchema,
   UIConfigSchema,
+  DEFAULT_HEADER_COLOR,
+  BrandingConfigSchema,
   MapConfigSchema,
   validateMapConfig,
   safeValidateMapConfig,

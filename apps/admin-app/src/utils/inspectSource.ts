@@ -1,20 +1,19 @@
 /**
- * Client-side OGC API source inspection.
+ * Client-side source inspection.
  * Mirrors server/inspect.ts logic but runs in the browser,
  * so the user can enter browser-reachable URLs (e.g. http://localhost:8000).
+ * Supports OGC API, TileJSON, and XYZ tile sources.
  */
 import type {
   InspectionResult,
   CollectionMeta,
   QueryableMeta,
 } from '../../server/inspect.js';
+import { appendAuth, authHeaders, stripTrailingSlash, detectTileSourceType } from '@ogc-maps/storybook-components/hooks';
+import type { SourceAuth } from '@ogc-maps/storybook-components/types';
 
 const REQUEST_TIMEOUT_MS = 10_000;
 const COLLECTION_BATCH_SIZE = 5;
-
-function stripTrailingSlash(url: string): string {
-  return url.endsWith('/') ? url.slice(0, -1) : url;
-}
 
 function normalizeUrl(url: string): string {
   const trimmed = url.trim();
@@ -24,10 +23,10 @@ function normalizeUrl(url: string): string {
   return trimmed;
 }
 
-async function fetchJson(url: string): Promise<unknown> {
-  const res = await fetch(url, {
+async function fetchJson(url: string, auth?: SourceAuth): Promise<unknown> {
+  const res = await fetch(appendAuth(url, auth), {
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    headers: { Accept: 'application/json' },
+    headers: { Accept: 'application/json', ...authHeaders(auth) },
   });
   if (!res.ok) {
     throw new Error(`HTTP ${res.status} ${res.statusText}`);
@@ -49,9 +48,10 @@ function errorMessage(err: unknown): string {
 
 async function fetchLanding(
   baseUrl: string,
+  auth?: SourceAuth,
 ): Promise<InspectionResult['landing']> {
   try {
-    const data = (await fetchJson(`${baseUrl}?f=json`)) as Record<
+    const data = (await fetchJson(`${baseUrl}?f=json`, auth)) as Record<
       string,
       unknown
     >;
@@ -67,9 +67,10 @@ async function fetchLanding(
 
 async function fetchConformance(
   baseUrl: string,
+  auth?: SourceAuth,
 ): Promise<{ conformance: string[] | null; error?: string }> {
   try {
-    const data = (await fetchJson(`${baseUrl}/conformance?f=json`)) as Record<
+    const data = (await fetchJson(`${baseUrl}/conformance?f=json`, auth)) as Record<
       string,
       unknown
     >;
@@ -96,9 +97,10 @@ interface RawCollection {
 
 async function fetchCollectionsList(
   baseUrl: string,
+  auth?: SourceAuth,
 ): Promise<{ collections: RawCollection[]; error?: string }> {
   try {
-    const data = (await fetchJson(`${baseUrl}/collections?f=json`)) as Record<
+    const data = (await fetchJson(`${baseUrl}/collections?f=json`, auth)) as Record<
       string,
       unknown
     >;
@@ -127,12 +129,13 @@ async function fetchCollectionsList(
 async function fetchItemCount(
   baseUrl: string,
   collectionId: string,
+  auth?: SourceAuth,
 ): Promise<{ count: number | null; error?: string }> {
   try {
     const url = `${baseUrl}/collections/${encodeURIComponent(collectionId)}/items?limit=0`;
-    const res = await fetch(url, {
+    const res = await fetch(appendAuth(url, auth), {
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-      headers: { Accept: 'application/geo+json' },
+      headers: { Accept: 'application/geo+json', ...authHeaders(auth) },
     });
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
     const data = (await res.json()) as Record<string, unknown>;
@@ -149,10 +152,12 @@ async function fetchItemCount(
 async function fetchQueryables(
   baseUrl: string,
   collectionId: string,
+  auth?: SourceAuth,
 ): Promise<{ queryables: QueryableMeta[] | null; error?: string }> {
   try {
     const data = (await fetchJson(
       `${baseUrl}/collections/${encodeURIComponent(collectionId)}/queryables`,
+      auth,
     )) as Record<string, unknown>;
     const properties = data.properties;
     if (!properties || typeof properties !== 'object') {
@@ -182,16 +187,17 @@ async function fetchQueryables(
 
 // --- Main client-side inspection ---
 
-export async function inspectSourceClientSide(
+async function inspectOgcSourceClientSide(
   url: string,
+  auth?: SourceAuth,
 ): Promise<InspectionResult> {
   const baseUrl = stripTrailingSlash(normalizeUrl(url));
   const errors: string[] = [];
 
   const [landing, conformanceResult, collectionsResult] = await Promise.all([
-    fetchLanding(baseUrl),
-    fetchConformance(baseUrl),
-    fetchCollectionsList(baseUrl),
+    fetchLanding(baseUrl, auth),
+    fetchConformance(baseUrl, auth),
+    fetchCollectionsList(baseUrl, auth),
   ]);
 
   if (collectionsResult.error) {
@@ -206,8 +212,8 @@ export async function inspectSourceClientSide(
     const batchResults = await Promise.allSettled(
       batch.map(async (col) => {
         const [countResult, queryablesResult] = await Promise.all([
-          fetchItemCount(baseUrl, col.id),
-          fetchQueryables(baseUrl, col.id),
+          fetchItemCount(baseUrl, col.id, auth),
+          fetchQueryables(baseUrl, col.id, auth),
         ]);
         const meta: CollectionMeta = {
           id: col.id,
@@ -242,4 +248,76 @@ export async function inspectSourceClientSide(
     inspectedAt: new Date().toISOString(),
     errors,
   };
+}
+
+async function inspectTileJsonSourceClientSide(
+  url: string,
+  auth?: SourceAuth,
+): Promise<InspectionResult> {
+  const normalizedUrl = normalizeUrl(url);
+  try {
+    const data = (await fetchJson(normalizedUrl, auth)) as Record<string, unknown>;
+    const tiles = data.tiles;
+    if (!Array.isArray(tiles) || tiles.length === 0) {
+      return {
+        landing: null,
+        conformance: null,
+        collections: [],
+        inspectedAt: new Date().toISOString(),
+        errors: ['Invalid TileJSON: missing tiles array'],
+      };
+    }
+    return {
+      landing: {
+        title: typeof data.name === 'string' ? data.name : undefined,
+        description: typeof data.description === 'string' ? data.description : undefined,
+      },
+      conformance: null,
+      collections: [],
+      inspectedAt: new Date().toISOString(),
+      errors: [],
+      tileJson: {
+        tilejson: typeof data.tilejson === 'string' ? data.tilejson : '',
+        tiles: tiles as string[],
+        name: typeof data.name === 'string' ? data.name : undefined,
+        description: typeof data.description === 'string' ? data.description : undefined,
+        minzoom: typeof data.minzoom === 'number' ? data.minzoom : undefined,
+        maxzoom: typeof data.maxzoom === 'number' ? data.maxzoom : undefined,
+        bounds: Array.isArray(data.bounds) ? data.bounds as [number, number, number, number] : undefined,
+        center: Array.isArray(data.center) ? data.center as [number, number, number] : undefined,
+      },
+    };
+  } catch (err) {
+    return {
+      landing: null,
+      conformance: null,
+      collections: [],
+      inspectedAt: new Date().toISOString(),
+      errors: [`TileJSON fetch failed: ${errorMessage(err)}`],
+    };
+  }
+}
+
+export async function inspectSourceClientSide(
+  url: string,
+  auth?: SourceAuth,
+): Promise<InspectionResult> {
+  const sourceType = detectTileSourceType(url);
+
+  if (sourceType === 'tilejson') {
+    return inspectTileJsonSourceClientSide(url, auth);
+  }
+
+  if (sourceType === 'xyz') {
+    // XYZ tile URLs have no metadata to inspect
+    return {
+      landing: null,
+      conformance: null,
+      collections: [],
+      inspectedAt: new Date().toISOString(),
+      errors: [],
+    };
+  }
+
+  return inspectOgcSourceClientSide(url, auth);
 }

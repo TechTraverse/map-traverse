@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { LuDownload } from 'react-icons/lu';
 import { ExportButton } from './ExportButton';
 import type { ExportButtonProps } from './ExportButton';
 
@@ -9,9 +10,12 @@ const meta: Meta<ExportButtonProps> = {
     docs: {
       description: {
         component:
-          'A simple trigger button that opens the ExportModal. Shows loading state while an export is in progress.',
+          'An icon button that matches the map control strip style. Clicking it directly triggers an action (typically opens the ExportModal).',
       },
     },
+  },
+  args: {
+    icon: LuDownload,
   },
   argTypes: {
     onExport: { action: 'export' },
@@ -25,7 +29,7 @@ type Story = StoryObj<ExportButtonProps>;
 /** Default state — clicking triggers the export action (typically opens ExportModal). */
 export const Default: Story = {};
 
-/** Loading state — shows "Exporting..." and disables the button. */
+/** Loading state — button shows reduced opacity while export is in progress. */
 export const Loading: Story = {
   args: {
     loading: true,

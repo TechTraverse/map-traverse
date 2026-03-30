@@ -2,6 +2,7 @@ import type { z } from 'zod';
 import {
   GeometryTypeSchema,
   ViewConfigSchema,
+  SourceAuthSchema,
   OgcApiSourceSchema,
   FillPaintSchema,
   LinePaintSchema,
@@ -27,10 +28,12 @@ import {
   FilterConfigSchema,
   PropertyDisplaySchema,
   PropertyDisplayConfigSchema,
+  ImageryLayerConfigSchema,
   LayerConfigSchema,
   BasemapConfigSchema,
   SpriteSourceSchema,
   UIConfigSchema,
+  BrandingConfigSchema,
   MapConfigSchema,
   FilterOperatorSchema,
   FilterRuleValueSchema,
@@ -48,6 +51,7 @@ import {
 // Inferred types from Zod schemas
 export type GeometryType = z.infer<typeof GeometryTypeSchema>;
 export type ViewConfig = z.infer<typeof ViewConfigSchema>;
+export type SourceAuth = z.infer<typeof SourceAuthSchema>;
 export type OgcApiSource = z.infer<typeof OgcApiSourceSchema>;
 
 export type FillPaint = z.infer<typeof FillPaintSchema>;
@@ -129,11 +133,19 @@ export interface Cql2QueryShape {
 export type PropertyDisplay = z.infer<typeof PropertyDisplaySchema>;
 export type PropertyDisplayConfig = z.infer<typeof PropertyDisplayConfigSchema>;
 export type PropertyDisplayConfigInput = z.input<typeof PropertyDisplayConfigSchema>;
+export type ImageryLayerConfig = z.infer<typeof ImageryLayerConfigSchema>;
 export type LayerConfig = z.infer<typeof LayerConfigSchema>;
 export type BasemapConfig = z.infer<typeof BasemapConfigSchema>;
 export type SpriteSource = z.infer<typeof SpriteSourceSchema>;
 export type UIConfig = z.infer<typeof UIConfigSchema>;
+export type BrandingConfig = z.infer<typeof BrandingConfigSchema>;
 export type MapConfig = z.infer<typeof MapConfigSchema>;
+
+/** Callback for fetching distinct property values from an OGC API collection. */
+export type FetchDistinctValuesFn = (
+  property: string,
+  options?: { maxFeatures?: number },
+) => Promise<string[]>;
 
 /** A queryable property from OGC API metadata, used to drive editor dropdowns. */
 export interface AvailableProperty {
@@ -150,6 +162,7 @@ export interface AvailableProperty {
 export {
   GeometryTypeSchema,
   ViewConfigSchema,
+  SourceAuthSchema,
   OgcApiSourceSchema,
   FillPaintSchema,
   LinePaintSchema,
@@ -175,10 +188,12 @@ export {
   FilterConfigSchema,
   PropertyDisplaySchema,
   PropertyDisplayConfigSchema,
+  ImageryLayerConfigSchema,
   LayerConfigSchema,
   BasemapConfigSchema,
   SpriteSourceSchema,
   UIConfigSchema,
+  BrandingConfigSchema,
   MapConfigSchema,
   FilterOperatorSchema,
   FilterRuleValueSchema,

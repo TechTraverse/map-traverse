@@ -1,5 +1,6 @@
 import { Fragment, useState } from 'react';
 import { CollapsibleSection } from '@ogc-maps/storybook-components';
+import { detectTileSourceType } from '@ogc-maps/storybook-components/hooks';
 import type { InspectionResult, QueryableMeta } from '../../server/inspect.js';
 
 export type { InspectionResult };
@@ -7,6 +8,7 @@ export type { InspectionResult };
 interface SourceMetadataPanelProps {
   metadata: InspectionResult | null;
   metadataUpdatedAt: string | null;
+  sourceUrl?: string;
   onRefresh: () => void;
   refreshing: boolean;
 }
@@ -76,7 +78,8 @@ function QueryablesTable({ queryables }: { queryables: QueryableMeta[] }) {
   );
 }
 
-export function SourceMetadataPanel({ metadata, metadataUpdatedAt, onRefresh, refreshing }: SourceMetadataPanelProps) {
+export function SourceMetadataPanel({ metadata, metadataUpdatedAt, sourceUrl, onRefresh, refreshing }: SourceMetadataPanelProps) {
+  const sourceType = sourceUrl ? detectTileSourceType(sourceUrl) : null;
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set());
 
   const toggleCollection = (id: string) => {
@@ -190,7 +193,63 @@ export function SourceMetadataPanel({ metadata, metadataUpdatedAt, onRefresh, re
         </div>
       )}
 
-      {/* Collections */}
+      {/* TileJSON Metadata (for non-OGC tile sources) */}
+      {metadata.tileJson && (
+        <CollapsibleSection title="TileJSON" defaultOpen={true}>
+          <div className="mapui:space-y-2 mapui:text-xs">
+            <div className="mapui:grid mapui:grid-cols-[auto_1fr] mapui:gap-x-3 mapui:gap-y-1">
+              {metadata.tileJson.minzoom != null && (
+                <>
+                  <span className="mapui:text-gray-500 mapui:font-medium">Zoom Range</span>
+                  <span className="mapui:text-gray-800">{metadata.tileJson.minzoom} – {metadata.tileJson.maxzoom ?? '?'}</span>
+                </>
+              )}
+              {metadata.tileJson.bounds && (
+                <>
+                  <span className="mapui:text-gray-500 mapui:font-medium">Bounds</span>
+                  <span className="mapui:text-gray-800">{formatBbox(metadata.tileJson.bounds)}</span>
+                </>
+              )}
+              {metadata.tileJson.tilejson && (
+                <>
+                  <span className="mapui:text-gray-500 mapui:font-medium">TileJSON Version</span>
+                  <span className="mapui:text-gray-800">{metadata.tileJson.tilejson}</span>
+                </>
+              )}
+            </div>
+            {metadata.tileJson.tiles.length > 0 && (
+              <div>
+                <span className="mapui:text-gray-500 mapui:font-medium">Tile URLs</span>
+                <ul className="mapui:mt-1 mapui:space-y-0.5">
+                  {metadata.tileJson.tiles.map((url, i) => (
+                    <li key={i} className="mapui:text-gray-600 mapui:font-mono mapui:break-all">{url}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {/* XYZ Tile Server info (for direct tile URL sources) */}
+      {!metadata.tileJson && sourceType === 'xyz' && (
+        <CollapsibleSection title="XYZ Tile Server" defaultOpen={true}>
+          <div className="mapui:space-y-2 mapui:text-xs">
+            <p className="mapui:text-gray-600">
+              This source provides raster tiles directly via a URL template. It does not expose OGC API collections.
+            </p>
+            <div className="mapui:grid mapui:grid-cols-[auto_1fr] mapui:gap-x-3 mapui:gap-y-1">
+              <span className="mapui:text-gray-500 mapui:font-medium">Type</span>
+              <span className="mapui:text-gray-800">XYZ Tile URL</span>
+              <span className="mapui:text-gray-500 mapui:font-medium">URL Template</span>
+              <span className="mapui:text-gray-800 mapui:font-mono mapui:break-all">{sourceUrl}</span>
+            </div>
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {/* Collections (for OGC API sources) */}
+      {!metadata.tileJson && sourceType !== 'xyz' && (
       <CollapsibleSection
         title="Collections"
         defaultOpen={true}
@@ -285,6 +344,7 @@ export function SourceMetadataPanel({ metadata, metadataUpdatedAt, onRefresh, re
           </div>
         )}
       </CollapsibleSection>
+      )}
     </div>
   );
 }

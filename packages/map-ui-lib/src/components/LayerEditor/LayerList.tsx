@@ -191,6 +191,11 @@ export function LayerList({ layers, onChange, availableSources, availableIcons }
                           {layer.search!.fields.length} search fields
                         </span>
                       )}
+                      {(layer.minZoom != null || layer.maxZoom != null) && (
+                        <span className="mapui:rounded mapui:bg-cyan-100 mapui:px-1.5 mapui:py-0.5 mapui:text-[10px] mapui:font-medium mapui:text-cyan-700">
+                          z{layer.minZoom ?? 0}–{layer.maxZoom ?? 24}
+                        </span>
+                      )}
                       {(layer.legend?.entries?.length ?? 0) > 0 && (
                         <span className="mapui:rounded mapui:bg-green-100 mapui:px-1.5 mapui:py-0.5 mapui:text-[10px] mapui:font-medium mapui:text-green-700">
                           {layer.legend!.entries.length} legend entries

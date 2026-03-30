@@ -1,5 +1,5 @@
 import type { PropertyDefinition } from './propertyMetadata';
-import type { AvailableProperty } from '../../types';
+import type { AvailableProperty, FetchDistinctValuesFn } from '../../types';
 import { ColorPicker } from '../admin/ColorPicker';
 import { FormField } from '../admin/FormField';
 import { IconImagePicker } from './IconImagePicker';
@@ -14,7 +14,7 @@ interface PropertyFieldProps {
   onChange: (key: string, value: unknown) => void;
   availableIcons?: string[];
   availableProperties?: AvailableProperty[];
-  onFetchDistinctValues?: (property: string) => Promise<string[]>;
+  onFetchDistinctValues?: FetchDistinctValuesFn;
 }
 
 function TranslateWidget({
@@ -89,7 +89,7 @@ function WidgetContent({
   onChange: (v: unknown) => void;
   availableIcons?: string[];
   availableProperties?: AvailableProperty[];
-  onFetchDistinctValues?: (property: string) => Promise<string[]>;
+  onFetchDistinctValues?: FetchDistinctValuesFn;
 }) {
   switch (def.widget) {
     case 'color': {
