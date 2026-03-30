@@ -1,6 +1,6 @@
 # Publishing Workflow
 
-This repository uses [Changesets](https://github.com/changesets/changesets) and GitHub Actions to automate versioning and publishing to npm.
+This repository uses [Changesets](https://github.com/changesets/changesets) and GitHub Actions to automate versioning and publishing to npm. For the full CI/CD pipeline overview (container builds, security scanning, docs deployment, Dependabot), see [CI.md](CI.md).
 
 ## Prerequisites
 
