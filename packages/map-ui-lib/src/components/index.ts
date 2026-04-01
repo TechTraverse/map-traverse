@@ -66,3 +66,5 @@ export { Cql2FilterEditor } from './Cql2FilterEditor';
 export type { Cql2FilterEditorProps } from './Cql2FilterEditor';
 export { QueryPanel } from './QueryPanel';
 export type { QueryPanelProps } from './QueryPanel';
+export { UserMenu } from './UserMenu';
+export type { UserMenuProps, UserMenuItem } from './UserMenu';

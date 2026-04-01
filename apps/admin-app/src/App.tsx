@@ -10,6 +10,7 @@ import { RequireAuth } from './components/RequireAuth';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useAuth } from './hooks/useAuth';
 import { useSettings } from './hooks/useSettings';
+import { UserMenu } from '@ogc-maps/storybook-components';
 
 function Header() {
   const location = useLocation();
@@ -54,17 +55,7 @@ function Header() {
 
           </nav>
           {showLogout && (
-            <div className="mapui:flex mapui:items-center mapui:gap-3 mapui:text-sm">
-              {username && (
-                <span className="mapui:text-slate-400">{username}</span>
-              )}
-              <button
-                onClick={() => logout()}
-                className="mapui:text-slate-400 mapui:hover:text-white"
-              >
-                logout
-              </button>
-            </div>
+            <UserMenu username={username ?? undefined} onLogout={() => logout()} />
           )}
         </div>
       </div>
