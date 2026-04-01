@@ -184,7 +184,7 @@ app.get('/api/health', async (_req, res) => {
   }
 });
 
-const NAME_REGEX = /^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$/;
+const NAME_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const RESERVED_CONFIG_NAMES = new Set(['admin', 'api', 'ogc']);
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-/;
 
@@ -194,7 +194,7 @@ function validateConfigName(name: string | undefined): string | null;
 function validateConfigName(name: string | undefined, required?: boolean): string | null {
   if (name === undefined) return required ? 'name is required' : null;
   if (!NAME_REGEX.test(name)) {
-    return 'name must contain only letters, numbers, and hyphens (e.g. "My-Config")';
+    return 'name must contain only lowercase letters, numbers, and hyphens (e.g. "my-config")';
   }
   if (RESERVED_CONFIG_NAMES.has(name.toLowerCase())) {
     return `"${name}" is a reserved name and cannot be used`;
@@ -319,11 +319,12 @@ app.get('/api/configs/:id', async (req, res) => {
 
 // POST /api/configs — create new config (protected)
 app.post('/api/configs', requireAuth, async (req, res) => {
-  const { name, description, config } = req.body as {
+  let { name, description, config } = req.body as {
     name: string;
     description?: string;
     config?: unknown;
   };
+  name = name?.toLowerCase();
   const nameError = validateConfigName(name, true);
   if (nameError) {
     res.status(400).json({ error: nameError });
@@ -351,12 +352,12 @@ app.post('/api/configs', requireAuth, async (req, res) => {
 
 // PUT /api/configs/:id — update config, snapshot current state as a version (protected)
 app.put('/api/configs/:id', requireAuth, async (req, res) => {
-  const { name, description, config } = req.body as {
+  let { name, description, config } = req.body as {
     name?: string;
     description?: string;
     config?: unknown;
   };
-
+  name = name?.toLowerCase();
   const nameError = validateConfigName(name);
   if (nameError) {
     res.status(400).json({ error: nameError });

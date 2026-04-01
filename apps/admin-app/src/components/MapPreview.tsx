@@ -977,7 +977,7 @@ export function MapPreview({
       />
 
       {/* Full overlay when uiConfig is provided */}
-      {!showEmptyState && uiConfig && (
+      {uiConfig && (
         <div className="mapui:absolute mapui:inset-0 mapui:pointer-events-none">
           {/* Tooltip: follows cursor */}
           {uiConfig.showFeatureTooltip && hoveredFeatures.length > 0 && hoveredPoint && (

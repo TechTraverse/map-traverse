@@ -55,19 +55,59 @@ const STEPS: { key: WizardStep; label: string }[] = [
 ];
 
 const DEFAULT_UI_CONFIG: UIConfig = {
-  showLayerPanel: true,
-  showLegend: true,
-  showBasemapSwitcher: true,
+  showLayerPanel: false,
+  showLegend: false,
+  showBasemapSwitcher: false,
   showSearchPanel: false,
-  showCoordinateDisplay: true,
-  showFeatureDetail: true,
-  showFeatureTooltip: true,
-  showExportButton: true,
+  showCoordinateDisplay: false,
+  showFeatureDetail: false,
+  showFeatureTooltip: false,
+  showExportButton: false,
   showLegendOpacity: false,
   showMeasureTool: false,
   showSelectionTool: false,
   showImageryPanel: false,
 };
+
+/** Derive which UI controls should be enabled based on current config state. */
+function computeSuggestedUI(
+  layers: LayerConfig[],
+  basemaps: BasemapConfig[],
+  imageryLayers: ImageryLayerConfig[],
+): Partial<UIConfig> {
+  const suggested: Partial<UIConfig> = {};
+
+  if (layers.length > 0) {
+    suggested.showLayerPanel = true;
+    suggested.showCoordinateDisplay = true;
+    suggested.showExportButton = true;
+    suggested.showFeatureDetail = true;
+    suggested.showFeatureTooltip = true;
+  }
+
+  if (basemaps.length > 1) {
+    suggested.showBasemapSwitcher = true;
+  }
+
+  if (layers.some(l => l.legend)) {
+    suggested.showLegend = true;
+    suggested.showLegendOpacity = true;
+  }
+
+  if (layers.some(l => l.search)) {
+    suggested.showSearchPanel = true;
+  }
+
+  if (layers.some(l => l.cql2Filter)) {
+    suggested.showSelectionTool = true;
+  }
+
+  if (imageryLayers.length > 0) {
+    suggested.showImageryPanel = true;
+  }
+
+  return suggested;
+}
 
 const DEFAULT_VIEW: ViewConfig = {
   latitude: 0,
@@ -105,8 +145,41 @@ export function ConfigWizardPage() {
   const [sprites, setSprites] = useState<SpriteSource[]>([]);
   const [availableIcons, setAvailableIcons] = useState<string[]>([]);
   const [imageryLayers, setImageryLayers] = useState<ImageryLayerConfig[]>([]);
-  const [uiConfig, setUiConfig] = useState<UIConfig>(DEFAULT_UI_CONFIG);
+  const [uiOverrides, setUiOverrides] = useState<Partial<UIConfig>>({});
   const [initialView, setInitialView] = useState<ViewConfig>(DEFAULT_VIEW);
+
+  // Derive effective UI config: all-false defaults → auto-suggestions → user overrides
+  const suggestedUI = useMemo(
+    () => computeSuggestedUI(layers, basemaps, imageryLayers),
+    [layers, basemaps, imageryLayers],
+  );
+
+  const { effectiveUIConfig, autoEnabledKeys } = useMemo(() => {
+    const effective = { ...DEFAULT_UI_CONFIG };
+    const auto = new Set<keyof UIConfig>();
+    for (const key of Object.keys(suggestedUI) as (keyof UIConfig)[]) {
+      if (suggestedUI[key]) {
+        effective[key] = true;
+        if (!(key in uiOverrides)) auto.add(key);
+      }
+    }
+    for (const key of Object.keys(uiOverrides) as (keyof UIConfig)[]) {
+      effective[key] = uiOverrides[key]!;
+    }
+    return { effectiveUIConfig: effective, autoEnabledKeys: auto };
+  }, [suggestedUI, uiOverrides]);
+
+  const handleUIChange = (newConfig: UIConfig) => {
+    setUiOverrides(prev => {
+      const updated = { ...prev };
+      for (const key of Object.keys(newConfig) as (keyof UIConfig)[]) {
+        if (newConfig[key] !== effectiveUIConfig[key]) {
+          updated[key] = newConfig[key];
+        }
+      }
+      return updated;
+    });
+  };
 
   // Resolve available icon names from basemap + custom sprites
   useEffect(() => {
@@ -138,7 +211,7 @@ export function ConfigWizardPage() {
   // Derived config object for save + preview
   const hasBranding = Object.keys(branding).length > 0;
 
-  const assembledConfig: MapConfig = { sources, layers, ...(imageryLayers.length > 0 ? { imageryLayers } : {}), basemaps, sprites: sprites.length > 0 ? sprites : undefined, ui: uiConfig, initialView, ...(hasBranding && { branding }) };
+  const assembledConfig: MapConfig = { sources, layers, ...(imageryLayers.length > 0 ? { imageryLayers } : {}), basemaps, sprites: sprites.length > 0 ? sprites : undefined, ui: effectiveUIConfig, initialView, ...(hasBranding && { branding }) };
 
   const isConfigValid = useMemo(() => {
     if (!name) return false;
@@ -166,7 +239,7 @@ export function ConfigWizardPage() {
           setImageryLayers(data.config.imageryLayers ?? []);
           setBasemaps(data.config.basemaps ?? []);
           setSprites(data.config.sprites ?? []);
-          setUiConfig(data.config.ui ?? DEFAULT_UI_CONFIG);
+          setUiOverrides(data.config.ui ?? DEFAULT_UI_CONFIG);
           setInitialView(data.config.initialView ?? DEFAULT_VIEW);
           if (data.config.branding) {
             setBranding(data.config.branding);
@@ -373,12 +446,13 @@ export function ConfigWizardPage() {
               <input
                 type="text"
                 value={name}
-                onChange={e => setName(e.target.value.replace(/[^a-zA-Z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, ''))}
-                placeholder="My-Map-Config"
+                onChange={e => setName(e.target.value.replace(/[^a-zA-Z0-9-]/g, '-').replace(/-+/g, '-'))}
+                onBlur={() => setName(name.replace(/^-|-$/g, '').toLowerCase())}
+                placeholder="my-map-config"
                 className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:font-mono mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
               />
               <p className="mapui:text-xs mapui:text-gray-400 mapui:mt-1">
-                Letters, numbers, and hyphens (e.g. &quot;My-Map-Config&quot;)
+                Lowercase letters, numbers, and hyphens (e.g. &quot;my-map-config&quot;)
               </p>
             </div>
             <div>
@@ -797,7 +871,7 @@ export function ConfigWizardPage() {
         {currentStep === 'ui' && (
           <div className="mapui:space-y-4">
             <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">UI Options</h2>
-            <UIConfigEditor value={uiConfig} onChange={setUiConfig} />
+            <UIConfigEditor value={effectiveUIConfig} onChange={handleUIChange} autoEnabled={autoEnabledKeys} />
           </div>
         )}
 
@@ -906,7 +980,7 @@ export function ConfigWizardPage() {
           onLayersChange={setLayers}
           onImageryLayersChange={setImageryLayers}
           currentStep={currentStep}
-          uiConfig={uiConfig}
+          uiConfig={effectiveUIConfig}
         />
       </div>
     </div>

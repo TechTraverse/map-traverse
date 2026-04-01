@@ -3,6 +3,8 @@ import type { UIConfig } from '../../types';
 export interface UIConfigEditorProps {
   value: UIConfig;
   onChange: (config: UIConfig) => void;
+  /** Keys that were auto-enabled by the wizard based on config state. */
+  autoEnabled?: Set<keyof UIConfig>;
 }
 
 const TOGGLE_LABELS: { key: keyof UIConfig; label: string; description: string }[] = [
@@ -20,7 +22,7 @@ const TOGGLE_LABELS: { key: keyof UIConfig; label: string; description: string }
   { key: 'showImageryPanel', label: 'Imagery Panel', description: 'Toggle satellite imagery layers' },
 ];
 
-export function UIConfigEditor({ value, onChange }: UIConfigEditorProps) {
+export function UIConfigEditor({ value, onChange, autoEnabled }: UIConfigEditorProps) {
   const handleToggle = (key: keyof UIConfig, checked: boolean) => {
     onChange({ ...value, [key]: checked });
   };
@@ -41,6 +43,9 @@ export function UIConfigEditor({ value, onChange }: UIConfigEditorProps) {
               <div className="mapui:flex mapui:flex-col mapui:gap-0.5">
                 <span className="mapui:text-sm mapui:font-medium mapui:text-gray-800">{label}</span>
                 <span className="mapui:text-xs mapui:text-gray-500">{description}</span>
+                {autoEnabled?.has(key) && (
+                  <span className="mapui:text-[10px] mapui:font-medium mapui:text-blue-500">Auto-enabled</span>
+                )}
               </div>
               <div className="mapui:relative mapui:flex mapui:shrink-0 mapui:items-center">
                 <input
