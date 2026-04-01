@@ -36,7 +36,7 @@ export type { ResultsDrawerProps, ResultsDrawerTab } from './ResultsDrawer';
 // Admin components
 export { FormField, ColorPicker, ConfirmDialog, CollapsibleSection } from './admin';
 export type { FormFieldProps, ColorPickerProps, ConfirmDialogProps, CollapsibleSectionProps } from './admin';
-export { SourceEditor, SourceList } from './SourceEditor';
+export { SourceEditor, SourceList, isFeatureSource, isSourceType } from './SourceEditor';
 export type { SourceEditorProps, SourceListProps } from './SourceEditor';
 export { CollectionBrowser } from './CollectionBrowser';
 export type { CollectionBrowserProps } from './CollectionBrowser';

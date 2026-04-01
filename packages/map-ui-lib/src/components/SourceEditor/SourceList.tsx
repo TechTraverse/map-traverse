@@ -6,17 +6,37 @@ import { SourceEditor } from './SourceEditor';
 export interface SourceListProps {
   sources: OgcApiSource[];
   onChange: (sources: OgcApiSource[]) => void;
+  /** When set, only shows sources of this type and locks new sources to it. */
+  sourceType?: 'features' | 'imagery';
 }
 
-const defaultSource = (): OgcApiSource => ({
+/** Check whether a source matches a given type (defaults to 'features' when unset). */
+export const isSourceType = (source: OgcApiSource, type: 'features' | 'imagery') =>
+  (source.type ?? 'features') === type;
+
+export const isFeatureSource = (source: OgcApiSource) => isSourceType(source, 'features');
+
+const defaultSource = (type?: 'features' | 'imagery'): OgcApiSource => ({
   id: '',
   url: '',
   label: undefined,
   tileMatrixSetId: 'WebMercatorQuad',
-  type: 'features',
+  type: type ?? 'features',
 });
 
-export function SourceList({ sources, onChange }: SourceListProps) {
+export function SourceList({ sources, onChange, sourceType }: SourceListProps) {
+  const displaySources = sourceType ? sources.filter(s => isSourceType(s, sourceType)) : sources;
+
+  // When filtered by type, merge changes back with sources of the other type
+  const emitChange = (updated: OgcApiSource[]) => {
+    if (!sourceType) {
+      onChange(updated);
+      return;
+    }
+    const otherSources = sources.filter(s => !isSourceType(s, sourceType));
+    onChange([...otherSources, ...updated]);
+  };
+
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingSource, setEditingSource] = useState<OgcApiSource | null>(null);
   const [addingNew, setAddingNew] = useState(false);
@@ -43,19 +63,19 @@ export function SourceList({ sources, onChange }: SourceListProps) {
 
   const handleSaveEdit = () => {
     if (!editingSource) return;
-    onChange(sources.map((s) => (s.id === editingId ? editingSource : s)));
+    emitChange(displaySources.map((s) => (s.id === editingId ? editingSource : s)));
     setEditingId(null);
     setEditingSource(null);
   };
 
   const handleSaveNew = () => {
-    onChange([...sources, newSource]);
+    emitChange([...displaySources, newSource]);
     setAddingNew(false);
-    setNewSource(defaultSource());
+    setNewSource(defaultSource(sourceType));
   };
 
   const handleDelete = (id: string) => {
-    onChange(sources.filter((s) => s.id !== id));
+    emitChange(displaySources.filter((s) => s.id !== id));
     setConfirmDeleteId(null);
   };
 
@@ -67,19 +87,19 @@ export function SourceList({ sources, onChange }: SourceListProps) {
         </h3>
         <button
           type="button"
-          onClick={() => { setAddingNew(true); setNewSource(defaultSource()); }}
+          onClick={() => { setAddingNew(true); setNewSource(defaultSource(sourceType)); }}
           className="mapui:cursor-pointer mapui:rounded mapui:bg-blue-600 mapui:px-3 mapui:py-1 mapui:text-xs mapui:font-medium mapui:text-white hover:mapui:bg-blue-700"
         >
           + Add Source
         </button>
       </div>
 
-      {sources.length === 0 && !addingNew && (
+      {displaySources.length === 0 && !addingNew && (
         <p className="mapui:m-0 mapui:text-sm mapui:text-gray-500">No sources configured.</p>
       )}
 
       <ul className="mapui:m-0 mapui:list-none mapui:flex mapui:flex-col mapui:gap-2 mapui:p-0">
-        {sources.map((source) => (
+        {displaySources.map((source) => (
           <li
             key={source.id}
             className="mapui:rounded-lg mapui:border mapui:border-gray-200 mapui:bg-white mapui:p-3"
@@ -92,6 +112,7 @@ export function SourceList({ sources, onChange }: SourceListProps) {
                   onTestConnection={(url) => handleTestConnection(`edit-${source.id}`, url)}
                   testStatus={testStatus[`edit-${source.id}`]}
                   testError={testError[`edit-${source.id}`]}
+                  sourceType={sourceType}
                 />
                 <div className="mapui:flex mapui:gap-2">
                   <button
@@ -166,6 +187,7 @@ export function SourceList({ sources, onChange }: SourceListProps) {
             onTestConnection={(url) => handleTestConnection('new', url)}
             testStatus={testStatus['new']}
             testError={testError['new']}
+            sourceType={sourceType}
           />
           <div className="mapui:mt-3 mapui:flex mapui:gap-2">
             <button

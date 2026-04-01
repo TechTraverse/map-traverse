@@ -43,3 +43,26 @@ export const Empty: Story = {
     );
   },
 };
+
+const mixedSources: OgcApiSource[] = [
+  { id: 'tipg', url: 'http://localhost:8000', label: 'Local TiPG', tileMatrixSetId: 'WebMercatorQuad', type: 'features' },
+  { id: 'imagery-naip', url: 'https://example.com/naip', label: 'NAIP Imagery', tileMatrixSetId: 'WebMercatorQuad', type: 'imagery' },
+  { id: 'remote', url: 'https://demo.pygeoapi.io', label: 'PyGeoAPI Demo', tileMatrixSetId: 'WebMercatorQuad', type: 'features' },
+];
+
+export const FeaturesOnly: Story = {
+  render: () => {
+    const [sources, setSources] = useState<OgcApiSource[]>(mixedSources);
+    return (
+      <div className="mapui:max-w-lg mapui:p-4">
+        <p className="mapui:text-xs mapui:text-gray-500 mapui:mb-2">
+          Only feature sources shown (imagery source &quot;NAIP Imagery&quot; is hidden)
+        </p>
+        <SourceList sources={sources} onChange={setSources} sourceType="features" />
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+          {JSON.stringify(sources, null, 2)}
+        </pre>
+      </div>
+    );
+  },
+};

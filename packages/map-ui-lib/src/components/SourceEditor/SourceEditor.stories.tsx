@@ -68,3 +68,17 @@ export const Empty: Story = {
     );
   },
 };
+
+export const LockedType: Story = {
+  render: () => {
+    const [source, setSource] = useState<OgcApiSource>(defaultSource);
+    return (
+      <div className="mapui:max-w-md mapui:p-4">
+        <SourceEditor value={source} onChange={setSource} sourceType="features" />
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+          {JSON.stringify(source, null, 2)}
+        </pre>
+      </div>
+    );
+  },
+};
