@@ -1,5 +1,6 @@
 import type { FilterRule, FilterRuleGroup, AvailableProperty } from '../../types';
 import { isFilterRuleGroup } from '../../utils/cql2';
+import { generateId } from '../../utils/id';
 import { FilterRuleEditor } from './FilterRuleEditor';
 import { getDefaultValue } from './operatorOptions';
 
@@ -11,9 +12,6 @@ export interface FilterRuleGroupEditorProps {
   depth: number;
 }
 
-function generateId(): string {
-  return crypto.randomUUID();
-}
 
 function createDefaultRule(): FilterRule {
   return {

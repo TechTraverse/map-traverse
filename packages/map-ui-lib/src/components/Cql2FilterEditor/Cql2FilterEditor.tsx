@@ -1,4 +1,5 @@
 import type { Cql2FilterConfig, AvailableProperty, SortField, SpatialConstraint } from '../../types';
+import { generateId } from '../../utils/id';
 import { FilterRuleGroupEditor } from './FilterRuleGroupEditor';
 import { Cql2Preview } from './Cql2Preview';
 import { inputClass } from './styles';
@@ -12,11 +13,11 @@ export interface Cql2FilterEditorProps {
 
 function createDefaultConfig(): Cql2FilterConfig {
   return {
-    id: crypto.randomUUID(),
+    id: generateId(),
     combinator: 'and',
     rules: [
       {
-        id: crypto.randomUUID(),
+        id: generateId(),
         property: '',
         operator: '=',
         value: { kind: 'static', value: '' },
