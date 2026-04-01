@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   SourceList,
+  isFeatureSource,
   LayerList,
   ImageryList,
   CollectionBrowser,
@@ -40,15 +41,14 @@ import { MapPreview } from '../components/MapPreview';
 
 interface SavedSourceSummary { id: string; source_id: string; url: string; label: string | null; tile_matrix_set_id: string; source_type?: string; auth?: SourceAuth | null; metadata?: { thumbnail?: string; tileJson?: { tiles: string[]; name?: string; minzoom?: number; maxzoom?: number } } | null }
 
-type WizardStep = 'metadata' | 'sources' | 'layer-select' | 'layer-config' | 'imagery' | 'basemaps' | 'ui' | 'view' | 'review';
+type WizardStep = 'metadata' | 'layer-select' | 'layer-config' | 'imagery' | 'basemaps' | 'ui' | 'view' | 'review';
 
 const STEPS: { key: WizardStep; label: string }[] = [
   { key: 'metadata', label: 'Metadata' },
   { key: 'basemaps', label: 'Basemaps' },
-  { key: 'sources', label: 'Sources' },
+  { key: 'layer-select', label: 'Layers' },
+  { key: 'layer-config', label: 'Style' },
   { key: 'imagery', label: 'Imagery' },
-  { key: 'layer-select', label: 'Layer selection' },
-  { key: 'layer-config', label: 'Layer configuration' },
   { key: 'ui', label: 'UI' },
   { key: 'view', label: 'View' },
   { key: 'review', label: 'Review' },
@@ -145,10 +145,10 @@ export function ConfigWizardPage() {
     return safeValidateMapConfig(assembledConfig).success;
   }, [name, assembledConfig]);
 
-  // Sync browseSourceId when sources change
+  // Sync browseSourceId when sources change (only consider feature sources)
   useEffect(() => {
-    if (sources.length > 0 && !sources.find(s => s.id === browseSourceId)) {
-      setBrowseSourceId(sources[0].id);
+    if (featureSources.length > 0 && !featureSources.find(s => s.id === browseSourceId)) {
+      setBrowseSourceId(featureSources[0].id);
     }
   }, [sources, browseSourceId]);
 
@@ -289,6 +289,7 @@ export function ConfigWizardPage() {
   const savedFeatureSources = savedSources.filter(s => (s.source_type ?? 'features') === 'features');
   const savedImagerySources = savedSources.filter(s => s.source_type === 'imagery');
   const savedBasemapSources = savedSources.filter(s => s.source_type === 'basemap');
+  const featureSources = sources.filter(isFeatureSource);
   const imageryOgcSources = sources.filter(s => s.type === 'imagery' && detectTileSourceType(s.url) === 'ogc-api');
 
   const isBasemapSelected = (saved: SavedSourceSummary) =>
@@ -454,14 +455,14 @@ export function ConfigWizardPage() {
           </div>
         )}
 
-        {currentStep === 'sources' && (
+        {currentStep === 'layer-select' && (
           <div className="mapui:space-y-6">
-            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">OGC API Sources</h2>
+            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">Layers</h2>
 
             {/* Saved feature sources picker */}
             {savedFeatureSources.length > 0 && (
               <div>
-                <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">Saved Feature Sources</h3>
+                <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">Feature Sources</h3>
                 <div className="mapui:flex mapui:flex-wrap mapui:gap-2">
                   {savedFeatureSources.map(saved => {
                     const alreadyAdded = sources.some(s => s.id === saved.source_id);
@@ -503,22 +504,15 @@ export function ConfigWizardPage() {
               </div>
             )}
 
-            {/* Inline source editor */}
-            <div>
-              {savedFeatureSources.length > 0 && (
-                <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">All Sources</h3>
-              )}
-              <SourceList sources={sources} onChange={setSources} />
-            </div>
-          </div>
-        )}
+            {/* Custom source editor */}
+            <CollapsibleSection title="Add or Edit Feature Layer Sources" defaultOpen={false}>
+              <SourceList sources={sources} onChange={setSources} sourceType="features" />
+            </CollapsibleSection>
 
-        {currentStep === 'layer-select' && (
-          <div className="mapui:space-y-6">
-            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">Select Layers</h2>
-            {sources.length === 0 ? (
+            {/* Browse collections from selected source */}
+            {featureSources.length === 0 ? (
               <div className="mapui:rounded mapui:bg-yellow-50 mapui:border mapui:border-yellow-200 mapui:p-4 mapui:text-sm mapui:text-yellow-800">
-                No sources configured. Go back to the <strong>Sources</strong> step to add at least one OGC API source before adding layers.
+                Select a saved feature source above or add a custom source to start browsing collections.
               </div>
             ) : (
               <div className="mapui:space-y-4">
@@ -538,7 +532,7 @@ export function ConfigWizardPage() {
                       onChange={e => setBrowseSourceId(e.target.value)}
                       className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
                     >
-                      {sources.filter(s => (s.type ?? 'features') !== 'imagery').map(s => (
+                      {featureSources.map(s => (
                         <option key={s.id} value={s.id}>
                           {s.label ?? s.id}
                         </option>
