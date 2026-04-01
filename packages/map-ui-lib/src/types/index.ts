@@ -33,6 +33,8 @@ import {
   BasemapConfigSchema,
   SpriteSourceSchema,
   UIConfigSchema,
+  ORDERABLE_CONTROLS,
+  resolveControlOrder,
   BrandingConfigSchema,
   MapConfigSchema,
   FilterOperatorSchema,
@@ -138,6 +140,7 @@ export type LayerConfig = z.infer<typeof LayerConfigSchema>;
 export type BasemapConfig = z.infer<typeof BasemapConfigSchema>;
 export type SpriteSource = z.infer<typeof SpriteSourceSchema>;
 export type UIConfig = z.infer<typeof UIConfigSchema>;
+export type { OrderableControlKey } from '../schemas/config';
 export type BrandingConfig = z.infer<typeof BrandingConfigSchema>;
 export type MapConfig = z.infer<typeof MapConfigSchema>;
 
@@ -193,6 +196,8 @@ export {
   BasemapConfigSchema,
   SpriteSourceSchema,
   UIConfigSchema,
+  ORDERABLE_CONTROLS,
+  resolveControlOrder,
   BrandingConfigSchema,
   MapConfigSchema,
   FilterOperatorSchema,

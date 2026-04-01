@@ -18,6 +18,8 @@ export {
   ImageryLayerConfigSchema,
   BasemapConfigSchema,
   UIConfigSchema,
+  ORDERABLE_CONTROLS,
+  resolveControlOrder,
   DEFAULT_HEADER_COLOR,
   BrandingConfigSchema,
   MapConfigSchema,

@@ -468,6 +468,20 @@ export const SpriteSourceSchema = z.object({
 
 // --- UI Config ---
 
+/** Controls that appear in the top-right stack and can be reordered. */
+export const ORDERABLE_CONTROLS = [
+  'showLegend',
+  'showSearchPanel',
+  'showLayerPanel',
+  'showMeasureTool',
+  'showSelectionTool',
+  'showImageryPanel',
+  'showBasemapSwitcher',
+  'showExportButton',
+] as const;
+
+export type OrderableControlKey = (typeof ORDERABLE_CONTROLS)[number];
+
 export const UIConfigSchema = z.object({
   showLayerPanel: z.boolean().default(true),
   showLegend: z.boolean().default(true),
@@ -481,7 +495,18 @@ export const UIConfigSchema = z.object({
   showMeasureTool: z.boolean().default(false),
   showSelectionTool: z.boolean().default(false),
   showImageryPanel: z.boolean().default(false),
+  controlOrder: z.array(z.enum(ORDERABLE_CONTROLS)).optional(),
 });
+
+/** Returns the effective control order, falling back to defaults and appending any missing keys. */
+export function resolveControlOrder(config: z.infer<typeof UIConfigSchema>): readonly OrderableControlKey[] {
+  if (!config.controlOrder || config.controlOrder.length === 0) {
+    return ORDERABLE_CONTROLS;
+  }
+  const seen = new Set(config.controlOrder);
+  const extra = ORDERABLE_CONTROLS.filter((k) => !seen.has(k));
+  return [...config.controlOrder, ...extra];
+}
 
 // --- Branding Config ---
 

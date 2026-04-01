@@ -10,7 +10,7 @@ const meta: Meta<typeof UIConfigEditor> = {
     docs: {
       description: {
         component:
-          'Grid of toggle switches for all 8 UI visibility flags with human-readable labels.',
+          'Reorderable list of map controls with toggle switches. Drag or use arrow buttons to set display order.',
       },
     },
   },
@@ -27,6 +27,10 @@ const defaultUI: UIConfig = {
   showFeatureDetail: true,
   showFeatureTooltip: true,
   showExportButton: true,
+  showLegendOpacity: false,
+  showMeasureTool: false,
+  showSelectionTool: false,
+  showImageryPanel: false,
 };
 
 export const Default: Story = {
@@ -54,10 +58,40 @@ export const AllOff: Story = {
       showFeatureDetail: false,
       showFeatureTooltip: false,
       showExportButton: false,
+      showLegendOpacity: false,
+      showMeasureTool: false,
+      showSelectionTool: false,
+      showImageryPanel: false,
     });
     return (
       <div className="mapui:max-w-xl mapui:p-4">
         <UIConfigEditor value={config} onChange={setConfig} />
+      </div>
+    );
+  },
+};
+
+export const CustomOrder: Story = {
+  render: () => {
+    const [config, setConfig] = useState<UIConfig>({
+      ...defaultUI,
+      controlOrder: [
+        'showBasemapSwitcher',
+        'showLayerPanel',
+        'showLegend',
+        'showExportButton',
+        'showSearchPanel',
+        'showMeasureTool',
+        'showSelectionTool',
+        'showImageryPanel',
+      ],
+    });
+    return (
+      <div className="mapui:max-w-xl mapui:p-4">
+        <UIConfigEditor value={config} onChange={setConfig} />
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+          {JSON.stringify(config, null, 2)}
+        </pre>
       </div>
     );
   },

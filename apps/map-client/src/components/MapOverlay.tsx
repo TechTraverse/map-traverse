@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { Fragment, useCallback, useMemo, useState } from 'react';
 import {
   LayerPanel,
   ImageryPanel,
@@ -22,7 +22,8 @@ import type { MeasureMode, MeasureUnit, Measurement, SelectionMode } from '@ogc-
 import type { FilterRuleGroup } from '@ogc-maps/storybook-components/types';
 import { useExport } from '@ogc-maps/storybook-components/hooks';
 import { DEFAULT_EXPORT_FORMATS, fromStructuredFilters, fetchFeatures, eq, bboxFromGeometry, exportConverters } from '@ogc-maps/storybook-components/utils';
-import type { UIConfig, SearchFilterValue, SearchFilterValues } from '@ogc-maps/storybook-components/types';
+import type { UIConfig, SearchFilterValue, SearchFilterValues, OrderableControlKey } from '@ogc-maps/storybook-components/types';
+import { resolveControlOrder } from '@ogc-maps/storybook-components';
 import { useMapStore, useActiveLayerIds } from '../stores/mapStore';
 import { useAutocompleteSuggestions } from '../hooks/useAutocompleteSuggestions';
 import { LuDownload, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
@@ -205,170 +206,179 @@ export function MapOverlay({
         </div>
       )}
 
-      {/* Top-right: Legend and controls stacked vertically */}
+      {/* Top-right: Legend and controls stacked vertically, order driven by config */}
       <div className="absolute top-4 right-4 flex flex-col gap-4 items-end">
-        {uiConfig.showLegend && (
-          <div className="pointer-events-auto">
-            <Legend layers={layers} visibleLayerIds={activeLayerIds} onOpacityChange={uiConfig.showLegendOpacity ? setLayerOpacity : undefined} />
-          </div>
-        )}
+        {(() => {
+          const controlNodes: Record<OrderableControlKey, React.ReactNode> = {
+            showLegend: uiConfig.showLegend ? (
+              <div className="pointer-events-auto">
+                <Legend layers={layers} visibleLayerIds={activeLayerIds} onOpacityChange={uiConfig.showLegendOpacity ? setLayerOpacity : undefined} />
+              </div>
+            ) : null,
 
-        {uiConfig.showSearchPanel && (
-          <div className="pointer-events-auto">
-            <CollapsibleControl
-              icon={LuSearch}
-              label="Search"
-              collapsed={openControl !== 'search'}
-              onToggle={(collapsed) => setOpenControl(collapsed ? null : 'search')}
-            >
-              <SearchPanel
-                layers={layers}
-                activeFilters={activeFilters}
-                onFilterChange={handleFilterChange}
-                onClearFilters={clearLayerFilters}
-                autocompleteSuggestions={autocompleteSuggestions}
-                onFetchSuggestions={fetchSuggestions}
-                onZoomToFeature={handleZoomToFeature}
-                className="p-3 max-w-xs"
-                hideTitle
-              />
-            </CollapsibleControl>
-          </div>
-        )}
+            showSearchPanel: uiConfig.showSearchPanel ? (
+              <div className="pointer-events-auto">
+                <CollapsibleControl
+                  icon={LuSearch}
+                  label="Search"
+                  collapsed={openControl !== 'search'}
+                  onToggle={(collapsed) => setOpenControl(collapsed ? null : 'search')}
+                >
+                  <SearchPanel
+                    layers={layers}
+                    activeFilters={activeFilters}
+                    onFilterChange={handleFilterChange}
+                    onClearFilters={clearLayerFilters}
+                    autocompleteSuggestions={autocompleteSuggestions}
+                    onFetchSuggestions={fetchSuggestions}
+                    onZoomToFeature={handleZoomToFeature}
+                    className="p-3 max-w-xs"
+                    hideTitle
+                  />
+                </CollapsibleControl>
+              </div>
+            ) : null,
 
-        {uiConfig.showLayerPanel && (
-          <div className="pointer-events-auto">
-            <CollapsibleControl
-              icon={LuLayers3}
-              label="Layers"
-              collapsed={openControl !== 'layers'}
-              onToggle={(collapsed) => setOpenControl(collapsed ? null : 'layers')}
-            >
-              <LayerPanel
-                layers={layers}
-                activeLayerIds={activeLayerIds}
-                onToggleVisibility={toggleLayerVisibility}
-                onReorder={reorderLayers}
-                hideTitle
-              />
-            </CollapsibleControl>
-          </div>
-        )}
+            showLayerPanel: uiConfig.showLayerPanel ? (
+              <div className="pointer-events-auto">
+                <CollapsibleControl
+                  icon={LuLayers3}
+                  label="Layers"
+                  collapsed={openControl !== 'layers'}
+                  onToggle={(collapsed) => setOpenControl(collapsed ? null : 'layers')}
+                >
+                  <LayerPanel
+                    layers={layers}
+                    activeLayerIds={activeLayerIds}
+                    onToggleVisibility={toggleLayerVisibility}
+                    onReorder={reorderLayers}
+                    hideTitle
+                  />
+                </CollapsibleControl>
+              </div>
+            ) : null,
 
-        {uiConfig.showMeasureTool && (
-          <div className="pointer-events-auto">
-            <CollapsibleControl
-              icon={LuRuler}
-              label="Measure"
-              collapsed={openControl !== 'measure'}
-              onToggle={(collapsed) => {
-                setOpenControl(collapsed ? null : 'measure');
-                if (collapsed) {
-                  onMeasureModeChange(null);
-                  onMeasureClear();
-                }
-              }}
-            >
-              <MeasurePanel
-                mode={measureMode}
-                onModeChange={onMeasureModeChange}
-                points={measurePoints}
-                measurement={measurement}
-                unit={measureUnit}
-                onUnitChange={onMeasureUnitChange}
-                onClear={onMeasureClear}
-                className="p-3 max-w-xs"
-              />
-            </CollapsibleControl>
-          </div>
-        )}
+            showMeasureTool: uiConfig.showMeasureTool ? (
+              <div className="pointer-events-auto">
+                <CollapsibleControl
+                  icon={LuRuler}
+                  label="Measure"
+                  collapsed={openControl !== 'measure'}
+                  onToggle={(collapsed) => {
+                    setOpenControl(collapsed ? null : 'measure');
+                    if (collapsed) {
+                      onMeasureModeChange(null);
+                      onMeasureClear();
+                    }
+                  }}
+                >
+                  <MeasurePanel
+                    mode={measureMode}
+                    onModeChange={onMeasureModeChange}
+                    points={measurePoints}
+                    measurement={measurement}
+                    unit={measureUnit}
+                    onUnitChange={onMeasureUnitChange}
+                    onClear={onMeasureClear}
+                    className="p-3 max-w-xs"
+                  />
+                </CollapsibleControl>
+              </div>
+            ) : null,
 
-        {uiConfig.showSelectionTool && (
-          <div className="pointer-events-auto">
-            <CollapsibleControl
-              icon={LuMousePointer2}
-              label="Select"
-              collapsed={openControl !== 'selection'}
-              onToggle={(collapsed) => {
-                setOpenControl(collapsed ? null : 'selection');
-                if (collapsed) {
-                  onSelectionModeChange(null);
-                }
-              }}
-            >
-              <SelectionPanel
-                mode={selectionMode}
-                onModeChange={onSelectionModeChange}
-                layers={layers}
-                activeLayerId={selectionActiveLayerId}
-                onActiveLayerChange={onSelectionActiveLayerChange}
-                selectedCount={selectionCount}
-                onClear={onSelectionClear}
-                onViewResults={onSelectionViewResults}
-                queryPanel={queryFilter && onRunQuery ? (
-                  <>
-                    <QueryPanel
-                      cql2Filter={queryFilter}
-                      onRun={onRunQuery}
-                      loading={queryLoading}
-                      hasSelectionGeometry={hasSelectionGeometry}
-                    />
-                    {queryError && (
-                      <p className="m-0 text-xs text-red-600 mt-1">{queryError}</p>
-                    )}
-                  </>
-                ) : undefined}
-                className="p-3 max-w-xs"
-              />
-            </CollapsibleControl>
-          </div>
-        )}
+            showSelectionTool: uiConfig.showSelectionTool ? (
+              <div className="pointer-events-auto">
+                <CollapsibleControl
+                  icon={LuMousePointer2}
+                  label="Select"
+                  collapsed={openControl !== 'selection'}
+                  onToggle={(collapsed) => {
+                    setOpenControl(collapsed ? null : 'selection');
+                    if (collapsed) {
+                      onSelectionModeChange(null);
+                    }
+                  }}
+                >
+                  <SelectionPanel
+                    mode={selectionMode}
+                    onModeChange={onSelectionModeChange}
+                    layers={layers}
+                    activeLayerId={selectionActiveLayerId}
+                    onActiveLayerChange={onSelectionActiveLayerChange}
+                    selectedCount={selectionCount}
+                    onClear={onSelectionClear}
+                    onViewResults={onSelectionViewResults}
+                    queryPanel={queryFilter && onRunQuery ? (
+                      <>
+                        <QueryPanel
+                          cql2Filter={queryFilter}
+                          onRun={onRunQuery}
+                          loading={queryLoading}
+                          hasSelectionGeometry={hasSelectionGeometry}
+                        />
+                        {queryError && (
+                          <p className="m-0 text-xs text-red-600 mt-1">{queryError}</p>
+                        )}
+                      </>
+                    ) : undefined}
+                    className="p-3 max-w-xs"
+                  />
+                </CollapsibleControl>
+              </div>
+            ) : null,
 
-        {uiConfig.showImageryPanel && imageryLayers.length > 0 && (
-          <div className="pointer-events-auto">
-            <CollapsibleControl
-              icon={TbSatellite}
-              label="Imagery"
-              collapsed={openControl !== 'imagery'}
-              onToggle={(collapsed) => setOpenControl(collapsed ? null : 'imagery')}
-            >
-              <ImageryPanel
-                imageryLayers={imageryLayers}
-                onToggleVisibility={toggleImageryLayerVisibility}
-                onOpacityChange={setImageryLayerOpacity}
-                hideTitle
-                className="p-3 max-w-xs"
-              />
-            </CollapsibleControl>
-          </div>
-        )}
+            showImageryPanel: uiConfig.showImageryPanel && imageryLayers.length > 0 ? (
+              <div className="pointer-events-auto">
+                <CollapsibleControl
+                  icon={TbSatellite}
+                  label="Imagery"
+                  collapsed={openControl !== 'imagery'}
+                  onToggle={(collapsed) => setOpenControl(collapsed ? null : 'imagery')}
+                >
+                  <ImageryPanel
+                    imageryLayers={imageryLayers}
+                    onToggleVisibility={toggleImageryLayerVisibility}
+                    onOpacityChange={setImageryLayerOpacity}
+                    hideTitle
+                    className="p-3 max-w-xs"
+                  />
+                </CollapsibleControl>
+              </div>
+            ) : null,
 
-        {uiConfig.showBasemapSwitcher && (
-          <div className="pointer-events-auto">
-            <CollapsibleControl
-              icon={LuMap}
-              label="Basemap"
-              collapsed={openControl !== 'basemap'}
-              onToggle={(collapsed) => setOpenControl(collapsed ? null : 'basemap')}
-            >
-              <BasemapSwitcher
-                basemaps={basemaps}
-                activeBasemapId={activeBasemapId}
-                onSelect={setActiveBasemap}
-              />
-            </CollapsibleControl>
-          </div>
-        )}
+            showBasemapSwitcher: uiConfig.showBasemapSwitcher ? (
+              <div className="pointer-events-auto">
+                <CollapsibleControl
+                  icon={LuMap}
+                  label="Basemap"
+                  collapsed={openControl !== 'basemap'}
+                  onToggle={(collapsed) => setOpenControl(collapsed ? null : 'basemap')}
+                >
+                  <BasemapSwitcher
+                    basemaps={basemaps}
+                    activeBasemapId={activeBasemapId}
+                    onSelect={setActiveBasemap}
+                  />
+                </CollapsibleControl>
+              </div>
+            ) : null,
 
-        {uiConfig.showExportButton && (
-          <div className="pointer-events-auto">
-            <ExportButton
-              icon={LuDownload}
-              onExport={() => setExportModalOpen(true)}
-              loading={exportLoading}
-            />
-          </div>
-        )}
+            showExportButton: uiConfig.showExportButton ? (
+              <div className="pointer-events-auto">
+                <ExportButton
+                  icon={LuDownload}
+                  onExport={() => setExportModalOpen(true)}
+                  loading={exportLoading}
+                />
+              </div>
+            ) : null,
+          };
+
+          return resolveControlOrder(uiConfig).map((key) => {
+            const node = controlNodes[key];
+            return node ? <Fragment key={key}>{node}</Fragment> : null;
+          });
+        })()}
       </div>
 
       {/* Export modal */}

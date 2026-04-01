@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { Fragment, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import { Map, Source, Layer, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
 import { useOgcFeatures, useExport } from '@ogc-maps/storybook-components/hooks';
@@ -38,6 +38,7 @@ import {
   ResultsDrawer,
   formatDecimal,
   formatDMS,
+  resolveControlOrder,
 } from '@ogc-maps/storybook-components';
 import type { CoordinateFormatOption, ExportRequest, ResultsDrawerTab } from '@ogc-maps/storybook-components';
 import type {
@@ -50,6 +51,7 @@ import type {
   ViewConfig,
   UIConfig,
   ExportableLayer,
+  OrderableControlKey,
 } from '@ogc-maps/storybook-components';
 import type { SearchFilterValue, SearchFilterValues, Cql2FilterConfig } from '@ogc-maps/storybook-components/types';
 import { useMeasure, useSelection } from '@ogc-maps/storybook-components/hooks';
@@ -1007,175 +1009,184 @@ export function MapPreview({
             </div>
           )}
 
-          {/* Top-right: Legend and controls stacked vertically */}
+          {/* Top-right: Legend and controls stacked vertically, order driven by config */}
           <div className="mapui:absolute mapui:top-4 mapui:right-4 mapui:flex mapui:flex-col mapui:gap-4 mapui:items-end">
-            {uiConfig.showLegend && (
-              <div className="mapui:pointer-events-auto">
-                <Legend layers={layersWithDefaults} visibleLayerIds={visibleLayerIds} onOpacityChange={uiConfig.showLegendOpacity ? handleLayerOpacity : undefined} />
-              </div>
-            )}
+            {(() => {
+              const controlNodes: Record<OrderableControlKey, React.ReactNode> = {
+                showLegend: uiConfig.showLegend ? (
+                  <div className="mapui:pointer-events-auto">
+                    <Legend layers={layersWithDefaults} visibleLayerIds={visibleLayerIds} onOpacityChange={uiConfig.showLegendOpacity ? handleLayerOpacity : undefined} />
+                  </div>
+                ) : null,
 
-            {uiConfig.showSearchPanel && (
-              <div className="mapui:pointer-events-auto">
-                <CollapsibleControl
-                  icon={LuSearch}
-                  label="Search"
-                  collapsed={openControl !== 'search'}
-                  onToggle={(collapsed) => setOpenControl(collapsed ? null : 'search')}
-                >
-                  <SearchPanel
-                    layers={layersWithDefaults}
-                    activeFilters={activeFilters}
-                    onFilterChange={handleFilterChange}
-                    onClearFilters={handleClearLayerFilters}
-                    onZoomToFeature={handleZoomToFeature}
-                    autocompleteSuggestions={autocompleteSuggestions}
-                    onFetchSuggestions={fetchSuggestions}
-                    className="p-3 max-w-xs"
-                    hideTitle
-                  />
-                </CollapsibleControl>
-              </div>
-            )}
+                showSearchPanel: uiConfig.showSearchPanel ? (
+                  <div className="mapui:pointer-events-auto">
+                    <CollapsibleControl
+                      icon={LuSearch}
+                      label="Search"
+                      collapsed={openControl !== 'search'}
+                      onToggle={(collapsed) => setOpenControl(collapsed ? null : 'search')}
+                    >
+                      <SearchPanel
+                        layers={layersWithDefaults}
+                        activeFilters={activeFilters}
+                        onFilterChange={handleFilterChange}
+                        onClearFilters={handleClearLayerFilters}
+                        onZoomToFeature={handleZoomToFeature}
+                        autocompleteSuggestions={autocompleteSuggestions}
+                        onFetchSuggestions={fetchSuggestions}
+                        className="p-3 max-w-xs"
+                        hideTitle
+                      />
+                    </CollapsibleControl>
+                  </div>
+                ) : null,
 
-            {uiConfig.showLayerPanel && (
-              <div className="mapui:pointer-events-auto">
-                <CollapsibleControl
-                  icon={LuLayers3}
-                  label="Layers"
-                  collapsed={openControl !== 'layers'}
-                  onToggle={(collapsed) => setOpenControl(collapsed ? null : 'layers')}
-                >
-                  <LayerPanel
-                    layers={layersWithDefaults}
-                    activeLayerIds={visibleLayerIds}
-                    onToggleVisibility={(layerId) => {
-                      onLayersChange?.(layers.map(l => l.id === layerId ? { ...l, visible: !l.visible } : l));
-                    }}
-                    onReorder={(layerIds) => {
-                      const layerById: Record<string, LayerConfig> = Object.fromEntries(layers.map(l => [l.id, l]));
-                      const reordered = layerIds.map(id => layerById[id]).filter((l): l is LayerConfig => !!l);
-                      onLayersChange?.(reordered);
-                    }}
-                    hideTitle
-                  />
-                </CollapsibleControl>
-              </div>
-            )}
+                showLayerPanel: uiConfig.showLayerPanel ? (
+                  <div className="mapui:pointer-events-auto">
+                    <CollapsibleControl
+                      icon={LuLayers3}
+                      label="Layers"
+                      collapsed={openControl !== 'layers'}
+                      onToggle={(collapsed) => setOpenControl(collapsed ? null : 'layers')}
+                    >
+                      <LayerPanel
+                        layers={layersWithDefaults}
+                        activeLayerIds={visibleLayerIds}
+                        onToggleVisibility={(layerId) => {
+                          onLayersChange?.(layers.map(l => l.id === layerId ? { ...l, visible: !l.visible } : l));
+                        }}
+                        onReorder={(layerIds) => {
+                          const layerById: Record<string, LayerConfig> = Object.fromEntries(layers.map(l => [l.id, l]));
+                          const reordered = layerIds.map(id => layerById[id]).filter((l): l is LayerConfig => !!l);
+                          onLayersChange?.(reordered);
+                        }}
+                        hideTitle
+                      />
+                    </CollapsibleControl>
+                  </div>
+                ) : null,
 
-            {uiConfig.showMeasureTool && (
-              <div className="mapui:pointer-events-auto">
-                <CollapsibleControl
-                  icon={LuRuler}
-                  label="Measure"
-                  collapsed={openControl !== 'measure'}
-                  onToggle={(collapsed) => {
-                    setOpenControl(collapsed ? null : 'measure');
-                    if (collapsed) {
-                      measure.setMode(null);
-                    }
-                  }}
-                >
-                  <MeasurePanel
-                    mode={measure.mode}
-                    onModeChange={measure.setMode}
-                    points={measure.points}
-                    measurement={measure.measurement}
-                    unit={measure.unit}
-                    onUnitChange={measure.setUnit}
-                    onClear={measure.clear}
-                    className="mapui:p-3 mapui:max-w-xs"
-                  />
-                </CollapsibleControl>
-              </div>
-            )}
+                showMeasureTool: uiConfig.showMeasureTool ? (
+                  <div className="mapui:pointer-events-auto">
+                    <CollapsibleControl
+                      icon={LuRuler}
+                      label="Measure"
+                      collapsed={openControl !== 'measure'}
+                      onToggle={(collapsed) => {
+                        setOpenControl(collapsed ? null : 'measure');
+                        if (collapsed) {
+                          measure.setMode(null);
+                        }
+                      }}
+                    >
+                      <MeasurePanel
+                        mode={measure.mode}
+                        onModeChange={measure.setMode}
+                        points={measure.points}
+                        measurement={measure.measurement}
+                        unit={measure.unit}
+                        onUnitChange={measure.setUnit}
+                        onClear={measure.clear}
+                        className="mapui:p-3 mapui:max-w-xs"
+                      />
+                    </CollapsibleControl>
+                  </div>
+                ) : null,
 
-            {uiConfig.showSelectionTool && (
-              <div className="mapui:pointer-events-auto">
-                <CollapsibleControl
-                  icon={LuMousePointer2}
-                  label="Select"
-                  collapsed={openControl !== 'selection'}
-                  onToggle={(collapsed) => {
-                    setOpenControl(collapsed ? null : 'selection');
-                    if (collapsed) {
-                      selection.setMode(null);
-                    }
-                  }}
-                >
-                  <SelectionPanel
-                    mode={selection.mode}
-                    onModeChange={selection.setMode}
-                    layers={layersWithDefaults}
-                    activeLayerId={selection.activeLayerId}
-                    onActiveLayerChange={selection.setActiveLayerId}
-                    selectedCount={selection.features.length}
-                    onClear={selection.clearFeatures}
-                    onViewResults={() => setResultsOpen(true)}
-                    queryPanel={activeLayer?.cql2Filter ? (
-                      <>
-                        <QueryPanel
-                          cql2Filter={activeLayer.cql2Filter as Cql2FilterConfig}
-                          onRun={handleRunQuery}
-                          loading={queryLoading}
-                          hasSelectionGeometry={selection.features.length > 0}
-                        />
-                        {queryError && (
-                          <p className="mapui:m-0 mapui:text-xs mapui:text-red-600 mapui:mt-1">{queryError}</p>
-                        )}
-                      </>
-                    ) : undefined}
-                    className="mapui:p-3 mapui:max-w-xs"
-                  />
-                </CollapsibleControl>
-              </div>
-            )}
+                showSelectionTool: uiConfig.showSelectionTool ? (
+                  <div className="mapui:pointer-events-auto">
+                    <CollapsibleControl
+                      icon={LuMousePointer2}
+                      label="Select"
+                      collapsed={openControl !== 'selection'}
+                      onToggle={(collapsed) => {
+                        setOpenControl(collapsed ? null : 'selection');
+                        if (collapsed) {
+                          selection.setMode(null);
+                        }
+                      }}
+                    >
+                      <SelectionPanel
+                        mode={selection.mode}
+                        onModeChange={selection.setMode}
+                        layers={layersWithDefaults}
+                        activeLayerId={selection.activeLayerId}
+                        onActiveLayerChange={selection.setActiveLayerId}
+                        selectedCount={selection.features.length}
+                        onClear={selection.clearFeatures}
+                        onViewResults={() => setResultsOpen(true)}
+                        queryPanel={activeLayer?.cql2Filter ? (
+                          <>
+                            <QueryPanel
+                              cql2Filter={activeLayer.cql2Filter as Cql2FilterConfig}
+                              onRun={handleRunQuery}
+                              loading={queryLoading}
+                              hasSelectionGeometry={selection.features.length > 0}
+                            />
+                            {queryError && (
+                              <p className="mapui:m-0 mapui:text-xs mapui:text-red-600 mapui:mt-1">{queryError}</p>
+                            )}
+                          </>
+                        ) : undefined}
+                        className="mapui:p-3 mapui:max-w-xs"
+                      />
+                    </CollapsibleControl>
+                  </div>
+                ) : null,
 
-            {uiConfig.showImageryPanel && imageryLayers.length > 0 && (
-              <div className="mapui:pointer-events-auto">
-                <CollapsibleControl
-                  icon={TbSatellite}
-                  label="Imagery"
-                  collapsed={openControl !== 'imagery'}
-                  onToggle={(collapsed) => setOpenControl(collapsed ? null : 'imagery')}
-                >
-                  <ImageryPanel
-                    imageryLayers={imageryLayers}
-                    onToggleVisibility={handleToggleImageryVisibility}
-                    onOpacityChange={handleImageryOpacity}
-                    hideTitle
-                    className="mapui:p-3 mapui:max-w-xs"
-                  />
-                </CollapsibleControl>
-              </div>
-            )}
+                showImageryPanel: uiConfig.showImageryPanel && imageryLayers.length > 0 ? (
+                  <div className="mapui:pointer-events-auto">
+                    <CollapsibleControl
+                      icon={TbSatellite}
+                      label="Imagery"
+                      collapsed={openControl !== 'imagery'}
+                      onToggle={(collapsed) => setOpenControl(collapsed ? null : 'imagery')}
+                    >
+                      <ImageryPanel
+                        imageryLayers={imageryLayers}
+                        onToggleVisibility={handleToggleImageryVisibility}
+                        onOpacityChange={handleImageryOpacity}
+                        hideTitle
+                        className="mapui:p-3 mapui:max-w-xs"
+                      />
+                    </CollapsibleControl>
+                  </div>
+                ) : null,
 
-            {uiConfig.showBasemapSwitcher && (
-              <div className="mapui:pointer-events-auto">
-                <CollapsibleControl
-                  icon={LuMap}
-                  label="Basemap"
-                  collapsed={openControl !== 'basemap'}
-                  onToggle={(collapsed) => setOpenControl(collapsed ? null : 'basemap')}
-                >
-                  <BasemapSwitcher
-                    basemaps={basemaps}
-                    activeBasemapId={activeBasemapId ?? ''}
-                    onSelect={setActiveBasemapId}
-                  />
-                </CollapsibleControl>
-              </div>
-            )}
+                showBasemapSwitcher: uiConfig.showBasemapSwitcher ? (
+                  <div className="mapui:pointer-events-auto">
+                    <CollapsibleControl
+                      icon={LuMap}
+                      label="Basemap"
+                      collapsed={openControl !== 'basemap'}
+                      onToggle={(collapsed) => setOpenControl(collapsed ? null : 'basemap')}
+                    >
+                      <BasemapSwitcher
+                        basemaps={basemaps}
+                        activeBasemapId={activeBasemapId ?? ''}
+                        onSelect={setActiveBasemapId}
+                      />
+                    </CollapsibleControl>
+                  </div>
+                ) : null,
 
-            {uiConfig.showExportButton && (
-              <div className="mapui:pointer-events-auto">
-                <ExportButton
-                  icon={LuDownload}
-                  onExport={() => setExportModalOpen(true)}
-                  loading={exportLoading}
-                />
-              </div>
-            )}
+                showExportButton: uiConfig.showExportButton ? (
+                  <div className="mapui:pointer-events-auto">
+                    <ExportButton
+                      icon={LuDownload}
+                      onExport={() => setExportModalOpen(true)}
+                      loading={exportLoading}
+                    />
+                  </div>
+                ) : null,
+              };
+
+              return resolveControlOrder(uiConfig).map((key) => {
+                const node = controlNodes[key];
+                return node ? <Fragment key={key}>{node}</Fragment> : null;
+              });
+            })()}
           </div>
 
           {/* Export modal */}

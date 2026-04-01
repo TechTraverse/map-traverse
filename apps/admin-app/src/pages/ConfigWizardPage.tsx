@@ -155,15 +155,20 @@ export function ConfigWizardPage() {
   );
 
   const { effectiveUIConfig, autoEnabledKeys } = useMemo(() => {
-    const effective = { ...DEFAULT_UI_CONFIG };
+    const effective: UIConfig = { ...DEFAULT_UI_CONFIG };
     const auto = new Set<keyof UIConfig>();
     for (const key of Object.keys(suggestedUI) as (keyof UIConfig)[]) {
+      if (key === 'controlOrder') continue;
       if (suggestedUI[key]) {
         effective[key] = true;
         if (!(key in uiOverrides)) auto.add(key);
       }
     }
     for (const key of Object.keys(uiOverrides) as (keyof UIConfig)[]) {
+      if (key === 'controlOrder') {
+        effective.controlOrder = uiOverrides.controlOrder;
+        continue;
+      }
       effective[key] = uiOverrides[key]!;
     }
     return { effectiveUIConfig: effective, autoEnabledKeys: auto };
@@ -171,8 +176,12 @@ export function ConfigWizardPage() {
 
   const handleUIChange = (newConfig: UIConfig) => {
     setUiOverrides(prev => {
-      const updated = { ...prev };
+      const updated: Partial<UIConfig> = { ...prev };
       for (const key of Object.keys(newConfig) as (keyof UIConfig)[]) {
+        if (key === 'controlOrder') {
+          updated.controlOrder = newConfig.controlOrder;
+          continue;
+        }
         if (newConfig[key] !== effectiveUIConfig[key]) {
           updated[key] = newConfig[key];
         }
