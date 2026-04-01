@@ -1,8 +1,10 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const { refetch } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +26,7 @@ export function LoginPage() {
         setError(data.error ?? 'Login failed');
         return;
       }
+      refetch();
       navigate('/configs', { replace: true });
     } catch (err) {
       setError(String(err));

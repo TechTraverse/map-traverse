@@ -62,7 +62,7 @@ function Header() {
                 onClick={() => logout()}
                 className="mapui:text-slate-400 mapui:hover:text-white"
               >
-                Logout
+                logout
               </button>
             </div>
           )}
