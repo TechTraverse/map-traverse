@@ -1,6 +1,9 @@
 import type { FilterRule, FilterRuleGroup } from '../types';
+import { DISTANCE_UNITS } from '../schemas/config';
 import { isFilterRuleGroup } from './cql2';
 import { isSpatialOperator } from '../components/Cql2FilterEditor/operatorOptions';
+
+const UNIT_OPTIONS: readonly string[] = DISTANCE_UNITS;
 
 /**
  * A user-facing parameter extracted from a CQL2 filter template.
@@ -11,6 +14,7 @@ export interface QueryParameter {
   label: string;
   inputType: 'text' | 'number' | 'date' | 'select';
   default?: string | number;
+  options?: string[];
 }
 
 /**
@@ -24,6 +28,18 @@ export function extractQueryParameters(group: FilterRuleGroup): QueryParameter[]
     if (!seen.has(param.name)) {
       seen.set(param.name, param);
     }
+  }
+
+  /** Adds a parameter if `value` is a `{kind:'parameter'}` reference. No-op otherwise. */
+  function addIfParam(
+    value: unknown,
+    inputType: QueryParameter['inputType'],
+    options?: string[],
+  ) {
+    if (!value || typeof value !== 'object') return;
+    const p = value as { kind?: string; name?: string; label?: string; default?: string | number };
+    if (p.kind !== 'parameter' || !p.name) return;
+    add({ name: p.name, label: p.label ?? p.name, inputType, default: p.default, options });
   }
 
   function extractFromOffset(offset: { kind: string; name?: string; label?: string; default?: number }) {
@@ -48,13 +64,7 @@ export function extractQueryParameters(group: FilterRuleGroup): QueryParameter[]
       extractFromOffset(value.offset);
     }
 
-    // Parameterized spatial distance
-    if (spatial?.distance && typeof spatial.distance === 'object') {
-      const d = spatial.distance as { kind: string; name?: string; label?: string; default?: number };
-      if (d.kind === 'parameter' && d.name) {
-        add({ name: d.name, label: d.label ?? d.name, inputType: 'number', default: d.default });
-      }
-    }
+    addIfParam(spatial?.distance, 'number');
   }
 
   function extractFromEndpoint(endpoint: { kind: string; name?: string; label?: string; default?: string | number; offset?: { kind: string; name?: string; label?: string; default?: number } }) {
@@ -73,6 +83,9 @@ export function extractQueryParameters(group: FilterRuleGroup): QueryParameter[]
         extractFromRule(item);
       }
     }
+
+    addIfParam(group.spatialConstraint?.distance, 'number');
+    addIfParam(group.spatialConstraint?.distanceUnits, 'select', UNIT_OPTIONS as string[]);
   }
 
   walk(group);

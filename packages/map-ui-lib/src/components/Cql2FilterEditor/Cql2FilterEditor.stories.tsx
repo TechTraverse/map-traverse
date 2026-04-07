@@ -272,6 +272,36 @@ export const SalesComparable: Story = {
   },
 };
 
+/** Spatial constraint with parameterized distance — user specifies search radius at runtime */
+export const ParameterizedSpatialConstraint: Story = {
+  render: () => {
+    const [value, setValue] = useState<Cql2FilterConfig | undefined>({
+      id: 'g1',
+      combinator: 'and',
+      rules: [
+        {
+          id: 'r1',
+          property: 'name',
+          operator: 'like',
+          value: { kind: 'static', value: '' },
+        },
+      ],
+      spatialConstraint: {
+        operator: 's_dwithin',
+        geometryProperty: 'geom',
+        distance: { kind: 'parameter', name: 'searchRadius', label: 'Search Radius', default: 500 },
+        distanceUnits: { kind: 'parameter', name: 'searchUnits', label: 'Units', default: 'meters' },
+      },
+    });
+    return (
+      <div className="mapui:max-w-2xl mapui:p-4">
+        <h3 className="mapui:mb-2 mapui:text-sm mapui:font-semibold">Spatial constraint with parameterized distance</h3>
+        <Cql2FilterEditor value={value} onChange={setValue} availableProperties={sampleProperties} geometryProperties={['geom']} />
+      </div>
+    );
+  },
+};
+
 export const AllPropertyTypes: Story = {
   render: () => {
     const [value, setValue] = useState<Cql2FilterConfig | undefined>({

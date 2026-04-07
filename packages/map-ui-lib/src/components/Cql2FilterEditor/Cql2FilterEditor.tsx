@@ -1,8 +1,9 @@
-import type { Cql2FilterConfig, AvailableProperty, SortField, SpatialConstraint } from '../../types';
+import type { Cql2FilterConfig, AvailableProperty, SortField, SpatialConstraint, Cql2DistanceUnit } from '../../types';
 import { generateId } from '../../utils/id';
 import { FilterRuleGroupEditor } from './FilterRuleGroupEditor';
 import { Cql2Preview } from './Cql2Preview';
 import { inputClass } from './styles';
+import { ParameterizableField, UnitsSelect } from './ParameterizableField';
 
 export interface Cql2FilterEditorProps {
   value: Cql2FilterConfig | undefined;
@@ -226,41 +227,34 @@ export function Cql2FilterEditor({ value, onChange, availableProperties, geometr
                 </button>
               </div>
               {value.spatialConstraint.operator === 's_dwithin' && (
-                <div className="mapui:flex mapui:items-center mapui:gap-1.5">
-                  <input
-                    type="number"
-                    value={value.spatialConstraint.distance ?? ''}
-                    onChange={(e) =>
-                      onChange({
-                        ...value,
-                        spatialConstraint: {
-                          ...value.spatialConstraint!,
-                          distance: e.target.value ? parseFloat(e.target.value) : undefined,
-                        },
-                      })
+                <div className="mapui:flex mapui:flex-wrap mapui:items-center mapui:gap-1.5">
+                  <ParameterizableField<number>
+                    value={value.spatialConstraint.distance}
+                    onChange={(distance) =>
+                      onChange({ ...value, spatialConstraint: { ...value.spatialConstraint!, distance } })
                     }
-                    placeholder="Distance"
-                    className={`${inputClass} mapui:w-24`}
-                    min={0}
+                    defaultParamLabel="Distance"
+                    emptyValue={0}
+                    renderInput={(v, set) => (
+                      <input
+                        type="number"
+                        value={v ?? ''}
+                        onChange={(e) => set(e.target.value ? parseFloat(e.target.value) : undefined)}
+                        placeholder="Distance"
+                        className={`${inputClass} mapui:w-24`}
+                        min={0}
+                      />
+                    )}
                   />
-                  <select
-                    value={value.spatialConstraint.distanceUnits ?? 'meters'}
-                    onChange={(e) =>
-                      onChange({
-                        ...value,
-                        spatialConstraint: {
-                          ...value.spatialConstraint!,
-                          distanceUnits: e.target.value,
-                        },
-                      })
+                  <ParameterizableField<Cql2DistanceUnit>
+                    value={value.spatialConstraint.distanceUnits}
+                    onChange={(distanceUnits) =>
+                      onChange({ ...value, spatialConstraint: { ...value.spatialConstraint!, distanceUnits } })
                     }
-                    className={inputClass}
-                  >
-                    <option value="meters">meters</option>
-                    <option value="kilometers">kilometers</option>
-                    <option value="miles">miles</option>
-                    <option value="feet">feet</option>
-                  </select>
+                    defaultParamLabel="Units"
+                    emptyValue="meters"
+                    renderInput={(v, set) => <UnitsSelect value={v} onChange={set} />}
+                  />
                 </div>
               )}
             </div>

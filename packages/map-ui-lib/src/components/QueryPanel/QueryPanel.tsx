@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { FilterRuleGroup } from '../../types';
 import { extractQueryParameters, queryRequiresGeometry } from '../../utils/queryParameters';
 import { inputClass } from '../Cql2FilterEditor/styles';
@@ -25,13 +25,19 @@ export function QueryPanel({
   const parameters = useMemo(() => extractQueryParameters(cql2Filter), [cql2Filter]);
   const needsGeometry = useMemo(() => queryRequiresGeometry(cql2Filter), [cql2Filter]);
 
-  const [values, setValues] = useState<Record<string, unknown>>(() => {
-    const defaults: Record<string, unknown> = {};
-    for (const p of parameters) {
-      if (p.default !== undefined) defaults[p.name] = p.default;
-    }
-    return defaults;
-  });
+  const [values, setValues] = useState<Record<string, unknown>>({});
+
+  // Reset values when the parameter set changes (e.g. filter edited or layer switched).
+  // Preserve user-entered values for parameters that still exist; seed new ones with defaults.
+  useEffect(() => {
+    setValues((prev) => {
+      const next: Record<string, unknown> = {};
+      for (const p of parameters) {
+        next[p.name] = prev[p.name] !== undefined ? prev[p.name] : p.default;
+      }
+      return next;
+    });
+  }, [parameters]);
 
   const updateValue = (name: string, value: unknown) => {
     setValues((prev) => ({ ...prev, [name]: value }));
@@ -66,6 +72,17 @@ export function QueryPanel({
               onChange={(e) => updateValue(param.name, e.target.value || undefined)}
               className={inputClass}
             />
+          ) : param.inputType === 'select' ? (
+            <select
+              value={(values[param.name] as string) ?? ''}
+              onChange={(e) => updateValue(param.name, e.target.value || undefined)}
+              className={inputClass}
+            >
+              <option value="">Select...</option>
+              {param.options?.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
           ) : (
             <input
               type="text"

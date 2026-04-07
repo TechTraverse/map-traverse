@@ -363,16 +363,26 @@ export const FilterRuleValueSchema = z.discriminatedUnion('kind', [
   ComputedRangeValueSchema,
 ]);
 
-const SpatialDistanceParamSchema = z.object({
+export const DISTANCE_UNITS = ['meters', 'kilometers', 'miles', 'feet'] as const;
+const DistanceUnitSchema = z.enum(DISTANCE_UNITS);
+
+export const SpatialDistanceParamSchema = z.object({
   kind: z.literal('parameter'),
   name: z.string().min(1),
   label: z.string(),
   default: z.number().optional(),
 });
 
+export const SpatialUnitsParamSchema = z.object({
+  kind: z.literal('parameter'),
+  name: z.string().min(1),
+  label: z.string(),
+  default: DistanceUnitSchema.optional(),
+});
+
 export const SpatialConfigSchema = z.object({
   distance: z.union([z.number(), SpatialDistanceParamSchema]).optional(),
-  units: z.enum(['meters', 'kilometers', 'miles', 'feet']).optional(),
+  units: DistanceUnitSchema.optional(),
 });
 
 export const FilterRuleSchema = z.object({
@@ -391,8 +401,8 @@ export const SortFieldSchema = z.object({
 export const SpatialConstraintSchema = z.object({
   operator: z.enum(['s_intersects', 's_within', 's_dwithin']),
   geometryProperty: z.string(),
-  distance: z.number().optional(),
-  distanceUnits: z.string().optional(),
+  distance: z.union([z.number(), SpatialDistanceParamSchema]).optional(),
+  distanceUnits: z.union([DistanceUnitSchema, SpatialUnitsParamSchema]).optional(),
 });
 
 export const FilterRuleGroupSchema: z.ZodType<{

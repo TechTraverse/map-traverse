@@ -48,6 +48,7 @@ import {
   FilterRuleGroupSchema,
   SortFieldSchema,
   Cql2FilterConfigSchema,
+  DISTANCE_UNITS,
 } from '../schemas/config';
 
 // Inferred types from Zod schemas
@@ -102,6 +103,8 @@ export type DateRangeValue = z.infer<typeof DateRangeValueSchema>;
 export type ComputedRangeValue = z.infer<typeof ComputedRangeValueSchema>;
 export type SpatialConfig = z.infer<typeof SpatialConfigSchema>;
 export type SpatialConstraint = z.infer<typeof SpatialConstraintSchema>;
+/** CQL2 spatial distance unit. Distinct from `DistanceUnit` in `utils/measure` (which uses abbreviations). */
+export type Cql2DistanceUnit = (typeof DISTANCE_UNITS)[number];
 export type FilterRule = z.infer<typeof FilterRuleSchema>;
 export type SortField = z.infer<typeof SortFieldSchema>;
 
@@ -211,4 +214,5 @@ export {
   FilterRuleGroupSchema,
   SortFieldSchema,
   Cql2FilterConfigSchema,
+  DISTANCE_UNITS,
 };

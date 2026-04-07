@@ -371,14 +371,28 @@ export function isFilterRuleGroup(item: FilterRule | FilterRuleGroup): item is F
   return 'combinator' in item;
 }
 
+/**
+ * Resolves a value that may be either a literal or a `{kind:'parameter'}` reference
+ * against a runtime params dict, falling back to the parameter's default and then `fallback`.
+ */
+function resolveParam<T>(
+  value: T | { kind: 'parameter'; name: string; default?: T } | undefined,
+  params: Record<string, unknown> | undefined,
+  fallback: T,
+): T {
+  if (value === undefined || value === null) return fallback;
+  if (typeof value === 'object' && (value as { kind?: string }).kind === 'parameter') {
+    const ref = value as { name: string; default?: T };
+    return (params?.[ref.name] as T) ?? ref.default ?? fallback;
+  }
+  return value as T;
+}
+
 function resolveSpatialDistance(
   spatial: FilterRule['spatial'],
   params?: Record<string, unknown>,
 ): number {
-  if (!spatial?.distance) return 0;
-  if (typeof spatial.distance === 'number') return spatial.distance;
-  // parameter
-  return (params?.[spatial.distance.name] as number) ?? spatial.distance.default ?? 0;
+  return resolveParam(spatial?.distance, params, 0);
 }
 
 function filterRuleToCql2(
@@ -495,7 +509,12 @@ export function buildCql2Query(
         spatial = sWithin(geometryProperty, selectionGeometry);
         break;
       case 's_dwithin':
-        spatial = sDwithin(geometryProperty, selectionGeometry, distance ?? 0, distanceUnits ?? 'meters');
+        spatial = sDwithin(
+          geometryProperty,
+          selectionGeometry,
+          resolveParam(distance, params, 0),
+          resolveParam(distanceUnits, params, 'meters'),
+        );
         break;
       default: // s_intersects
         spatial = sIntersects(geometryProperty, selectionGeometry);
