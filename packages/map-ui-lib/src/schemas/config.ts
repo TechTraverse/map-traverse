@@ -462,11 +462,19 @@ export const LayerConfigSchema = z.preprocess(
 
 // --- Basemap Config ---
 
+// A basemap URL is either an absolute http(s) URL or a same-origin relative
+// path like "/api/basemaps/<id>/style.json" — the admin app generates the
+// latter for basemaps derived from imagery sources.
+const basemapUrl = z.string().refine(
+  (v) => v.startsWith('/') || /^https?:\/\//i.test(v),
+  { message: 'Must be an absolute http(s) URL or a path starting with "/"' },
+);
+
 export const BasemapConfigSchema = z.object({
   id: z.string().min(1),
   label: z.string(),
-  url: z.string().url(),
-  thumbnail: z.string().url().optional(),
+  url: basemapUrl,
+  thumbnail: basemapUrl.optional(),
 });
 
 // --- Sprite Source Config ---

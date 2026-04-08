@@ -14,6 +14,16 @@ const TAB_LABELS: Record<SourceTab, string> = {
   basemap: 'Basemaps',
 };
 
+type BasemapMode = 'style-url' | 'from-imagery';
+
+interface ImageryBasemapDraft {
+  source_id: string;
+  label: string;
+  imagery_source_id: string;
+  collection_id: string;
+  thumbnail: string;
+}
+
 interface SavedSource {
   id: string;
   source_id: string;
@@ -23,7 +33,7 @@ interface SavedSource {
   source_type: string;
   auth: SourceAuth | null;
   proxy: boolean;
-  metadata: (InspectionResult & { thumbnail?: string }) | null;
+  metadata: (InspectionResult & { thumbnail?: string; imagerySourceId?: string; collectionId?: string }) | null;
   metadata_updated_at: string | null;
   created_at: string;
   updated_at: string;
@@ -48,6 +58,105 @@ function toBasemapConfig(s: SavedSource): BasemapConfig {
     url: s.url,
     thumbnail: s.metadata?.thumbnail,
   };
+}
+
+function ImageryBasemapForm({
+  draft,
+  onChange,
+  imagerySources,
+}: {
+  draft: ImageryBasemapDraft;
+  onChange: (draft: ImageryBasemapDraft) => void;
+  imagerySources: SavedSource[];
+}) {
+  const update = (patch: Partial<ImageryBasemapDraft>) => onChange({ ...draft, ...patch });
+  const selected = imagerySources.find(s => s.id === draft.imagery_source_id);
+  const sourceTypeKind = selected ? detectTileSourceType(selected.url) : null;
+  const needsCollection = sourceTypeKind === 'ogc-api';
+  const collections = selected?.metadata?.collections ?? [];
+
+  const inputClass =
+    'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
+
+  return (
+    <div className="mapui:flex mapui:flex-col mapui:gap-3">
+      <label className="mapui:flex mapui:flex-col mapui:gap-1">
+        <span className="mapui:text-xs mapui:font-medium mapui:text-gray-700">ID *</span>
+        <input
+          type="text"
+          value={draft.source_id}
+          onChange={(e) => update({ source_id: e.target.value })}
+          placeholder="usgs-topo"
+          className={inputClass}
+        />
+      </label>
+
+      <label className="mapui:flex mapui:flex-col mapui:gap-1">
+        <span className="mapui:text-xs mapui:font-medium mapui:text-gray-700">Label</span>
+        <input
+          type="text"
+          value={draft.label}
+          onChange={(e) => update({ label: e.target.value })}
+          placeholder="USGS Topo"
+          className={inputClass}
+        />
+      </label>
+
+      <label className="mapui:flex mapui:flex-col mapui:gap-1">
+        <span className="mapui:text-xs mapui:font-medium mapui:text-gray-700">Imagery source *</span>
+        <select
+          value={draft.imagery_source_id}
+          onChange={(e) => update({ imagery_source_id: e.target.value, collection_id: '' })}
+          className={inputClass}
+        >
+          <option value="">— Select an imagery source —</option>
+          {imagerySources.map(s => (
+            <option key={s.id} value={s.id}>
+              {s.label ?? s.source_id} ({detectTileSourceType(s.url)})
+              {s.auth?.type === 'header' ? ' • header auth → proxied' : ''}
+            </option>
+          ))}
+        </select>
+        {imagerySources.length === 0 && (
+          <span className="mapui:text-xs mapui:text-gray-500">
+            No imagery sources available. Add one in the Imagery tab first.
+          </span>
+        )}
+      </label>
+
+      {needsCollection && (
+        <label className="mapui:flex mapui:flex-col mapui:gap-1">
+          <span className="mapui:text-xs mapui:font-medium mapui:text-gray-700">Collection *</span>
+          <select
+            value={draft.collection_id}
+            onChange={(e) => update({ collection_id: e.target.value })}
+            className={inputClass}
+          >
+            <option value="">— Select a collection —</option>
+            {collections.map(c => (
+              <option key={c.id} value={c.id}>{c.title ?? c.id}</option>
+            ))}
+          </select>
+          {collections.length === 0 && (
+            <span className="mapui:text-xs mapui:text-gray-500">
+              No collections found in metadata — refresh the imagery source's metadata first.
+            </span>
+          )}
+        </label>
+      )}
+
+      <label className="mapui:flex mapui:flex-col mapui:gap-1">
+        <span className="mapui:text-xs mapui:font-medium mapui:text-gray-700">Thumbnail URL (optional)</span>
+        <input
+          type="url"
+          value={draft.thumbnail}
+          onChange={(e) => update({ thumbnail: e.target.value })}
+          placeholder="https://example.com/thumbnail.png"
+          className={inputClass}
+        />
+      </label>
+    </div>
+  );
 }
 
 function DismissibleAlert({ message, variant, onDismiss }: { message: string; variant: 'error' | 'success'; onDismiss: () => void }) {
@@ -81,6 +190,14 @@ export function SourcesPage() {
   const [addingNewBasemap, setAddingNewBasemap] = useState(false);
   const [newBasemap, setNewBasemap] = useState<BasemapConfig>({ id: '', label: '', url: '' });
   const [editingBasemap, setEditingBasemap] = useState<BasemapConfig | null>(null);
+
+  // Mode for the basemap create form: a hand-typed Style URL, or one derived
+  // from an existing imagery source (the server synthesizes the style.json).
+  const [basemapMode, setBasemapMode] = useState<BasemapMode>('style-url');
+  const [newImageryBasemap, setNewImageryBasemap] = useState<ImageryBasemapDraft>({
+    source_id: '', label: '', imagery_source_id: '', collection_id: '', thumbnail: '',
+  });
+  const [editingImageryBasemap, setEditingImageryBasemap] = useState<ImageryBasemapDraft | null>(null);
 
   // Connection test state
   const [testStatus, setTestStatus] = useState<Record<string, 'idle' | 'loading' | 'success' | 'error'>>({});
@@ -118,6 +235,9 @@ export function SourcesPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Imagery sources available as the basis for an imagery-derived basemap
+  const imagerySourcesForBasemap = sources.filter(s => s.source_type === 'imagery');
+
   // Reset create/edit state when switching tabs
   useEffect(() => {
     setAddingNew(false);
@@ -125,6 +245,8 @@ export function SourcesPage() {
     setEditingId(null);
     setEditingSource(null);
     setEditingBasemap(null);
+    setEditingImageryBasemap(null);
+    setBasemapMode('style-url');
   }, [activeTab]);
 
   const handleTestConnection = async (key: string, url: string, auth?: SourceAuth) => {
@@ -256,6 +378,88 @@ export function SourcesPage() {
       }
       setAddingNewBasemap(false);
       setNewBasemap({ id: '', label: '', url: '' });
+      await fetchSources();
+    } catch (err) {
+      setActionError(String(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCreateImageryBasemap = async () => {
+    setSaving(true);
+    setActionError(null);
+    try {
+      const draft = newImageryBasemap;
+      const imagerySource = sources.find(s => s.id === draft.imagery_source_id);
+      const sourceTypeKind = imagerySource ? detectTileSourceType(imagerySource.url) : 'ogc-api';
+      const needsCollection = sourceTypeKind === 'ogc-api';
+      if (needsCollection && !draft.collection_id) {
+        setActionError('Pick a collection for this OGC API imagery source.');
+        return;
+      }
+      const res = await fetch('/api/sources', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          source_id: draft.source_id,
+          label: draft.label || null,
+          source_type: 'basemap',
+          imagery_source_id: draft.imagery_source_id,
+          collection_id: needsCollection ? draft.collection_id : null,
+          thumbnail: draft.thumbnail || null,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json() as { error: string };
+        setActionError(data.error);
+        return;
+      }
+      setAddingNewBasemap(false);
+      setNewImageryBasemap({ source_id: '', label: '', imagery_source_id: '', collection_id: '', thumbnail: '' });
+      setBasemapMode('style-url');
+      await fetchSources();
+    } catch (err) {
+      setActionError(String(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateImageryBasemap = async () => {
+    if (!editingId || !editingImageryBasemap) return;
+    setSaving(true);
+    setActionError(null);
+    try {
+      const draft = editingImageryBasemap;
+      const imagerySource = sources.find(s => s.id === draft.imagery_source_id);
+      const sourceTypeKind = imagerySource ? detectTileSourceType(imagerySource.url) : 'ogc-api';
+      const needsCollection = sourceTypeKind === 'ogc-api';
+      if (needsCollection && !draft.collection_id) {
+        setActionError('Pick a collection for this OGC API imagery source.');
+        return;
+      }
+      const res = await fetch(`/api/sources/${editingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          source_id: draft.source_id,
+          label: draft.label || null,
+          source_type: 'basemap',
+          imagery_source_id: draft.imagery_source_id,
+          collection_id: needsCollection ? draft.collection_id : null,
+          thumbnail: draft.thumbnail || null,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json() as { error: string };
+        setActionError(data.error);
+        return;
+      }
+      setEditingId(null);
+      setEditingImageryBasemap(null);
       await fetchSources();
     } catch (err) {
       setActionError(String(err));
@@ -440,6 +644,8 @@ export function SourcesPage() {
     if (activeTab === 'basemap') {
       setAddingNewBasemap(true);
       setNewBasemap({ id: '', label: '', url: '' });
+      setNewImageryBasemap({ source_id: '', label: '', imagery_source_id: '', collection_id: '', thumbnail: '' });
+      setBasemapMode('style-url');
     } else {
       setAddingNew(true);
       setNewSource({ id: '', url: '', tileMatrixSetId: 'WebMercatorQuad', type: activeTab });
@@ -533,25 +739,72 @@ export function SourcesPage() {
       {addingNewBasemap && isBasemapTab && (
         <div className="mapui:mb-6 mapui:bg-white mapui:rounded-lg mapui:shadow mapui:p-6">
           <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800 mapui:mb-4">New Basemap</h2>
-          <BasemapEditor
-            value={newBasemap}
-            onChange={setNewBasemap}
-          />
-          <div className="mapui:mt-4 mapui:flex mapui:gap-2">
-            <button
-              onClick={handleCreateBasemap}
-              disabled={saving || !newBasemap.id || !newBasemap.url}
-              className="mapui:bg-blue-600 mapui:text-white mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:hover:bg-blue-700 mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
-            >
-              {saving ? 'Saving...' : 'Save Basemap'}
-            </button>
-            <button
-              onClick={() => setAddingNewBasemap(false)}
-              className="mapui:border mapui:border-gray-300 mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:hover:bg-gray-50"
-            >
-              Cancel
-            </button>
+
+          <div className="mapui:mb-4 mapui:flex mapui:gap-4 mapui:text-sm">
+            <label className="mapui:flex mapui:items-center mapui:gap-1.5">
+              <input
+                type="radio"
+                name="basemap-mode-new"
+                checked={basemapMode === 'style-url'}
+                onChange={() => setBasemapMode('style-url')}
+              />
+              Style URL
+            </label>
+            <label className="mapui:flex mapui:items-center mapui:gap-1.5">
+              <input
+                type="radio"
+                name="basemap-mode-new"
+                checked={basemapMode === 'from-imagery'}
+                onChange={() => setBasemapMode('from-imagery')}
+              />
+              From imagery source
+            </label>
           </div>
+
+          {basemapMode === 'style-url' ? (
+            <>
+              <BasemapEditor value={newBasemap} onChange={setNewBasemap} />
+              <div className="mapui:mt-4 mapui:flex mapui:gap-2">
+                <button
+                  onClick={handleCreateBasemap}
+                  disabled={saving || !newBasemap.id || !newBasemap.url}
+                  className="mapui:bg-blue-600 mapui:text-white mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:hover:bg-blue-700 mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
+                >
+                  {saving ? 'Saving...' : 'Save Basemap'}
+                </button>
+                <button
+                  onClick={() => setAddingNewBasemap(false)}
+                  className="mapui:border mapui:border-gray-300 mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          ) : (
+            <ImageryBasemapForm
+              draft={newImageryBasemap}
+              onChange={setNewImageryBasemap}
+              imagerySources={imagerySourcesForBasemap}
+            />
+          )}
+
+          {basemapMode === 'from-imagery' && (
+            <div className="mapui:mt-4 mapui:flex mapui:gap-2">
+              <button
+                onClick={handleCreateImageryBasemap}
+                disabled={saving || !newImageryBasemap.source_id || !newImageryBasemap.imagery_source_id}
+                className="mapui:bg-blue-600 mapui:text-white mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:hover:bg-blue-700 mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
+              >
+                {saving ? 'Saving...' : 'Save Basemap'}
+              </button>
+              <button
+                onClick={() => setAddingNewBasemap(false)}
+                className="mapui:border mapui:border-gray-300 mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -614,27 +867,54 @@ export function SourcesPage() {
                         </div>
                       </td>
                     ) : editingId === source.id && isBasemapTab ? (
-                      /* Editing row (basemap) */
+                      /* Editing row (basemap) — either Style URL or imagery-derived */
                       <td colSpan={colCount} className="mapui:px-6 mapui:py-4">
-                        <BasemapEditor
-                          value={editingBasemap ?? toBasemapConfig(source)}
-                          onChange={setEditingBasemap}
-                        />
-                        <div className="mapui:mt-3 mapui:flex mapui:gap-2">
-                          <button
-                            onClick={handleUpdateBasemap}
-                            disabled={saving || !editingBasemap?.id || !editingBasemap?.url}
-                            className="mapui:bg-blue-600 mapui:text-white mapui:px-3 mapui:py-1.5 mapui:rounded mapui:text-sm mapui:hover:bg-blue-700 mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
-                          >
-                            {saving ? 'Saving...' : 'Save'}
-                          </button>
-                          <button
-                            onClick={() => { setEditingId(null); setEditingBasemap(null); }}
-                            className="mapui:border mapui:border-gray-300 mapui:px-3 mapui:py-1.5 mapui:rounded mapui:text-sm mapui:hover:bg-gray-50"
-                          >
-                            Cancel
-                          </button>
-                        </div>
+                        {editingImageryBasemap ? (
+                          <>
+                            <ImageryBasemapForm
+                              draft={editingImageryBasemap}
+                              onChange={setEditingImageryBasemap}
+                              imagerySources={imagerySourcesForBasemap}
+                            />
+                            <div className="mapui:mt-3 mapui:flex mapui:gap-2">
+                              <button
+                                onClick={handleUpdateImageryBasemap}
+                                disabled={saving || !editingImageryBasemap.source_id || !editingImageryBasemap.imagery_source_id}
+                                className="mapui:bg-blue-600 mapui:text-white mapui:px-3 mapui:py-1.5 mapui:rounded mapui:text-sm mapui:hover:bg-blue-700 mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
+                              >
+                                {saving ? 'Saving...' : 'Save'}
+                              </button>
+                              <button
+                                onClick={() => { setEditingId(null); setEditingImageryBasemap(null); }}
+                                className="mapui:border mapui:border-gray-300 mapui:px-3 mapui:py-1.5 mapui:rounded mapui:text-sm mapui:hover:bg-gray-50"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <BasemapEditor
+                              value={editingBasemap ?? toBasemapConfig(source)}
+                              onChange={setEditingBasemap}
+                            />
+                            <div className="mapui:mt-3 mapui:flex mapui:gap-2">
+                              <button
+                                onClick={handleUpdateBasemap}
+                                disabled={saving || !editingBasemap?.id || !editingBasemap?.url}
+                                className="mapui:bg-blue-600 mapui:text-white mapui:px-3 mapui:py-1.5 mapui:rounded mapui:text-sm mapui:hover:bg-blue-700 mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
+                              >
+                                {saving ? 'Saving...' : 'Save'}
+                              </button>
+                              <button
+                                onClick={() => { setEditingId(null); setEditingBasemap(null); }}
+                                className="mapui:border mapui:border-gray-300 mapui:px-3 mapui:py-1.5 mapui:rounded mapui:text-sm mapui:hover:bg-gray-50"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </td>
                     ) : (
                       /* Display row */
@@ -663,7 +943,18 @@ export function SourcesPage() {
                           </td>
                         )}
                         <td className="mapui:px-4 mapui:py-4 mapui:font-medium mapui:font-mono mapui:text-sm mapui:text-gray-900">{source.source_id}</td>
-                        <td className="mapui:px-4 mapui:py-4 mapui:text-gray-500 mapui:text-sm mapui:font-mono mapui:max-w-xs mapui:truncate">{source.url}</td>
+                        <td className="mapui:px-4 mapui:py-4 mapui:text-gray-500 mapui:text-sm mapui:font-mono mapui:max-w-xs mapui:truncate">
+                          {source.url}
+                          {isBasemapTab && source.metadata?.imagerySourceId && (() => {
+                            const linked = sources.find(s => s.id === source.metadata!.imagerySourceId);
+                            return (
+                              <div className="mapui:text-xs mapui:text-gray-400 mapui:mt-0.5">
+                                ↳ from imagery: {linked?.label ?? linked?.source_id ?? source.metadata.imagerySourceId}
+                                {source.metadata.collectionId ? ` / ${source.metadata.collectionId}` : ''}
+                              </div>
+                            );
+                          })()}
+                        </td>
                         <td className="mapui:px-4 mapui:py-4 mapui:text-gray-500 mapui:text-sm">{source.label ?? '—'}</td>
                         {isBasemapTab ? (
                           <td className="mapui:px-4 mapui:py-4 mapui:text-sm">
@@ -691,7 +982,19 @@ export function SourcesPage() {
                               onClick={() => {
                                 setEditingId(source.id);
                                 if (isBasemapTab) {
-                                  setEditingBasemap(toBasemapConfig(source));
+                                  if (source.metadata?.imagerySourceId) {
+                                    setEditingImageryBasemap({
+                                      source_id: source.source_id,
+                                      label: source.label ?? '',
+                                      imagery_source_id: source.metadata.imagerySourceId,
+                                      collection_id: source.metadata.collectionId ?? '',
+                                      thumbnail: source.metadata.thumbnail ?? '',
+                                    });
+                                    setEditingBasemap(null);
+                                  } else {
+                                    setEditingBasemap(toBasemapConfig(source));
+                                    setEditingImageryBasemap(null);
+                                  }
                                 } else {
                                   setEditingSource(toOgcApiSource(source));
                                 }

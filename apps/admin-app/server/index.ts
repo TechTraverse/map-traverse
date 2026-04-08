@@ -759,9 +759,21 @@ app.post('/api/sources/test-connection', requireAuth, async (req, res) => {
 // POST /api/sources — create a new source (protected)
 app.post('/api/sources', requireAuth, async (req, res) => {
   const { source_id, url, label, tile_matrix_set_id, source_type, auth, metadata, proxy } = req.body as SourceRequestBody;
+  const { thumbnail, imagery_source_id, collection_id } = req.body as {
+    thumbnail?: string;
+    imagery_source_id?: string;
+    collection_id?: string | null;
+  };
 
-  if (!source_id || !url) {
-    res.status(400).json({ error: 'source_id and url are required' });
+  if (!source_id) {
+    res.status(400).json({ error: 'source_id is required' });
+    return;
+  }
+  // For basemaps linked to an imagery source, the URL is generated server-side,
+  // so it's not required in the request body.
+  const isImageryBasemap = source_type === 'basemap' && !!imagery_source_id;
+  if (!isImageryBasemap && !url) {
+    res.status(400).json({ error: 'url is required' });
     return;
   }
   if (!SOURCE_ID_REGEX.test(source_id)) {
@@ -771,7 +783,41 @@ app.post('/api/sources', requireAuth, async (req, res) => {
 
   try {
     const effectiveType = source_type ?? 'features';
-    const { thumbnail } = req.body as { thumbnail?: string };
+
+    // Imagery-derived basemap: validate the linked imagery row exists, then insert
+    // a basemap row with a placeholder URL and update it with the synthesized URL.
+    if (isImageryBasemap) {
+      const imageryResult = await pool.query(
+        "SELECT id, source_type FROM ogc_sources WHERE id = $1",
+        [imagery_source_id],
+      );
+      if (imageryResult.rows.length === 0) {
+        res.status(400).json({ error: 'imagery_source_id does not reference an existing source' });
+        return;
+      }
+      const imageryRow = imageryResult.rows[0] as { id: string; source_type: string };
+      if (imageryRow.source_type !== 'imagery') {
+        res.status(400).json({ error: 'Referenced source must have source_type = "imagery"' });
+        return;
+      }
+      const basemapMeta: Record<string, unknown> = { imagerySourceId: imageryRow.id };
+      if (collection_id) basemapMeta.collectionId = collection_id;
+      if (thumbnail) basemapMeta.thumbnail = thumbnail;
+
+      const inserted = await pool.query(
+        `INSERT INTO ogc_sources (source_id, url, label, source_type, metadata, metadata_updated_at)
+         VALUES ($1, $2, $3, 'basemap', $4, now()) RETURNING id`,
+        [source_id, '', label ?? null, JSON.stringify(basemapMeta)],
+      );
+      const newId = (inserted.rows[0] as { id: string }).id;
+      const synthesizedUrl = `/api/basemaps/${newId}/style.json`;
+      const updated = await pool.query(
+        'UPDATE ogc_sources SET url = $1, updated_at = now() WHERE id = $2 RETURNING *',
+        [synthesizedUrl, newId],
+      );
+      res.status(201).json(updated.rows[0]);
+      return;
+    }
 
     // For basemaps, store thumbnail in metadata and skip OGC inspection
     const basemapMetadata = effectiveType === 'basemap' && thumbnail
@@ -801,9 +847,11 @@ app.post('/api/sources', requireAuth, async (req, res) => {
       );
       res.status(201).json(updated.rows[0]);
     } else {
-      // No metadata provided — auto-inspect server-side (fallback)
+      // No metadata provided — auto-inspect server-side (fallback).
+      // url is guaranteed defined here: the basemap-from-imagery branch returned
+      // earlier, and the !isImageryBasemap path is gated on url being present.
       try {
-        const inspected = await inspectSource(url);
+        const inspected = await inspectSource(url!);
         const updated = await pool.query(
           'UPDATE ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
           [JSON.stringify(inspected), row.id],
@@ -826,6 +874,11 @@ app.post('/api/sources', requireAuth, async (req, res) => {
 // PUT /api/sources/:id — update a source (protected)
 app.put('/api/sources/:id', requireAuth, async (req, res) => {
   const { source_id, url, label, tile_matrix_set_id, source_type, auth, metadata, proxy } = req.body as SourceRequestBody;
+  const { thumbnail, imagery_source_id, collection_id } = req.body as {
+    thumbnail?: string;
+    imagery_source_id?: string | null;
+    collection_id?: string | null;
+  };
 
   if (source_id !== undefined && !SOURCE_ID_REGEX.test(source_id)) {
     res.status(400).json({ error: 'source_id must be a slug (lowercase letters, numbers, hyphens only)' });
@@ -846,11 +899,56 @@ app.put('/api/sources/:id', requireAuth, async (req, res) => {
       source_type: string;
       auth: SourceAuth | null;
       proxy: boolean;
+      metadata: Record<string, unknown> | null;
     };
 
-    const newUrl = url ?? row.url;
     const effectiveType = source_type ?? row.source_type;
-    const { thumbnail } = req.body as { thumbnail?: string };
+
+    // Imagery-derived basemap update path: rewrite url + metadata to point at the
+    // synthesized style endpoint. Triggered when imagery_source_id is provided
+    // (use null to detach an existing link and revert to a plain Style URL basemap).
+    if (effectiveType === 'basemap' && imagery_source_id !== undefined) {
+      if (imagery_source_id !== null) {
+        const imageryResult = await pool.query(
+          "SELECT id, source_type FROM ogc_sources WHERE id = $1",
+          [imagery_source_id],
+        );
+        if (imageryResult.rows.length === 0) {
+          res.status(400).json({ error: 'imagery_source_id does not reference an existing source' });
+          return;
+        }
+        const imageryRow = imageryResult.rows[0] as { id: string; source_type: string };
+        if (imageryRow.source_type !== 'imagery') {
+          res.status(400).json({ error: 'Referenced source must have source_type = "imagery"' });
+          return;
+        }
+        const newMeta: Record<string, unknown> = { imagerySourceId: imageryRow.id };
+        if (collection_id) newMeta.collectionId = collection_id;
+        if (thumbnail !== undefined ? thumbnail : (row.metadata as { thumbnail?: string } | null)?.thumbnail) {
+          newMeta.thumbnail = thumbnail !== undefined ? thumbnail : (row.metadata as { thumbnail?: string }).thumbnail;
+        }
+        const synthesizedUrl = `/api/basemaps/${req.params.id}/style.json`;
+        const updated = await pool.query(
+          `UPDATE ogc_sources
+             SET source_id = $1, label = $2, url = $3, source_type = 'basemap',
+                 metadata = $4, metadata_updated_at = now(), updated_at = now()
+             WHERE id = $5 RETURNING *`,
+          [
+            source_id ?? row.source_id,
+            label !== undefined ? (label || null) : row.label,
+            synthesizedUrl,
+            JSON.stringify(newMeta),
+            req.params.id,
+          ],
+        );
+        res.json(updated.rows[0]);
+        return;
+      }
+      // imagery_source_id explicitly null → fall through to the normal basemap branch
+      // below, which will treat the request as a regular Style URL basemap update.
+    }
+
+    const newUrl = url ?? row.url;
 
     const result = await pool.query(
       `UPDATE ogc_sources SET source_id = $1, url = $2, label = $3, tile_matrix_set_id = $4, source_type = $5, auth = $6, proxy = $7, updated_at = now()
@@ -1103,6 +1201,214 @@ app.post('/api/sources/import', requireAuth, async (_req, res) => {
     });
   } catch (err) {
     handleServerError(res, err);
+  }
+});
+
+// --- Basemap-from-imagery endpoints ---
+
+// Shape we read out of an imagery source row's metadata column for tile resolution
+interface ImageryRowMetadata {
+  tileJson?: { tiles?: string[]; minzoom?: number; maxzoom?: number; bounds?: [number, number, number, number] };
+}
+
+// Resolved imagery row joined to a basemap row
+interface BasemapImageryLink {
+  basemapId: string;
+  imagerySourceType: string;
+  imageryUrl: string;
+  imageryAuth: SourceAuth | null;
+  imageryMetadata: ImageryRowMetadata | null;
+  collectionId: string | null;
+}
+
+/** Build the synthesized tile URL for a basemap-from-imagery, applying the auth strategy. */
+function buildBasemapTileUrl(link: BasemapImageryLink): {
+  tileUrl: string;
+  tileSize: number;
+  minzoom?: number;
+  maxzoom?: number;
+  bounds?: [number, number, number, number];
+} {
+  const sourceType = detectTileSourceType(link.imageryUrl);
+  let template: string;
+  let minzoom: number | undefined;
+  let maxzoom: number | undefined;
+  let bounds: [number, number, number, number] | undefined;
+
+  if (sourceType === 'xyz') {
+    template = link.imageryUrl;
+  } else if (sourceType === 'tilejson') {
+    const tj = link.imageryMetadata?.tileJson;
+    if (!tj?.tiles?.length) {
+      throw new Error('TileJSON metadata missing — re-inspect the imagery source before using as a basemap');
+    }
+    template = tj.tiles[0]!;
+    minzoom = tj.minzoom;
+    maxzoom = tj.maxzoom;
+    bounds = tj.bounds;
+  } else {
+    if (!link.collectionId) {
+      throw new Error('OGC API imagery sources require a collection to be selected');
+    }
+    const base = link.imageryUrl.replace(/\/$/, '');
+    template = `${base}/collections/${encodeURIComponent(link.collectionId)}/map/tiles/WebMercatorQuad/{z}/{x}/{y}.png`;
+  }
+
+  // Auth strategy
+  if (link.imageryAuth?.type === 'header') {
+    // Route through the basemap tile proxy so headers can be injected server-side
+    template = `/api/basemaps/${link.basemapId}/tiles/{z}/{x}/{y}`;
+  } else if (link.imageryAuth?.type === 'query_param') {
+    template = appendAuth(template, link.imageryAuth);
+  }
+
+  return { tileUrl: template, tileSize: 256, minzoom, maxzoom, bounds };
+}
+
+/** Look up a basemap row by uuid and resolve its linked imagery source, if any. */
+async function resolveBasemapImageryLink(basemapId: string): Promise<BasemapImageryLink | null> {
+  const result = await pool.query(
+    `SELECT b.id AS basemap_id,
+            b.metadata AS basemap_metadata,
+            i.source_type AS imagery_source_type,
+            i.url AS imagery_url,
+            i.auth AS imagery_auth,
+            i.metadata AS imagery_metadata
+     FROM ogc_sources b
+     LEFT JOIN ogc_sources i
+       ON i.id = (b.metadata->>'imagerySourceId')::uuid
+     WHERE b.id = $1 AND b.source_type = 'basemap'`,
+    [basemapId],
+  );
+  if (result.rows.length === 0) return null;
+  const row = result.rows[0] as {
+    basemap_id: string;
+    basemap_metadata: { imagerySourceId?: string; collectionId?: string } | null;
+    imagery_source_type: string | null;
+    imagery_url: string | null;
+    imagery_auth: SourceAuth | null;
+    imagery_metadata: ImageryRowMetadata | null;
+  };
+  if (!row.basemap_metadata?.imagerySourceId || !row.imagery_url) return null;
+  return {
+    basemapId: row.basemap_id,
+    imagerySourceType: row.imagery_source_type ?? 'imagery',
+    imageryUrl: row.imagery_url,
+    imageryAuth: row.imagery_auth,
+    imageryMetadata: row.imagery_metadata,
+    collectionId: row.basemap_metadata.collectionId ?? null,
+  };
+}
+
+// GET /api/basemaps/:id/style.json — public; synthesizes a minimal MapLibre style
+// for a basemap row that references an imagery source.
+app.get('/api/basemaps/:id/style.json', async (req, res) => {
+  try {
+    const link = await resolveBasemapImageryLink(req.params.id);
+    if (!link) {
+      res.status(404).json({ error: 'Basemap not found or not linked to an imagery source' });
+      return;
+    }
+    const tile = buildBasemapTileUrl(link);
+    const sourceDef: Record<string, unknown> = {
+      type: 'raster',
+      tiles: [tile.tileUrl],
+      tileSize: tile.tileSize,
+    };
+    if (tile.minzoom != null) sourceDef.minzoom = tile.minzoom;
+    if (tile.maxzoom != null) sourceDef.maxzoom = tile.maxzoom;
+    if (tile.bounds) sourceDef.bounds = tile.bounds;
+
+    res.setHeader('Cache-Control', 'no-store');
+    res.json({
+      version: 8,
+      sources: { imagery: sourceDef },
+      layers: [{ id: 'imagery', type: 'raster', source: 'imagery' }],
+    });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Failed to build style' });
+  }
+});
+
+// GET /api/basemaps/:id/tiles/:z/:x/:y — public; tile proxy that injects header auth
+// from the linked imagery source. Used only when the imagery source has header auth.
+app.get('/api/basemaps/:id/tiles/:z/:x/:y', async (req, res) => {
+  try {
+    const link = await resolveBasemapImageryLink(req.params.id);
+    if (!link) {
+      res.status(404).json({ error: 'Basemap not found or not linked to an imagery source' });
+      return;
+    }
+
+    const sourceType = detectTileSourceType(link.imageryUrl);
+    let template: string;
+    if (sourceType === 'xyz') {
+      template = link.imageryUrl;
+    } else if (sourceType === 'tilejson') {
+      const tj = link.imageryMetadata?.tileJson;
+      if (!tj?.tiles?.length) {
+        res.status(500).json({ error: 'TileJSON metadata missing on imagery source' });
+        return;
+      }
+      template = tj.tiles[0]!;
+    } else {
+      if (!link.collectionId) {
+        res.status(500).json({ error: 'OGC API imagery source has no collection' });
+        return;
+      }
+      const base = link.imageryUrl.replace(/\/$/, '');
+      template = `${base}/collections/${encodeURIComponent(link.collectionId)}/map/tiles/WebMercatorQuad/{z}/{x}/{y}.png`;
+    }
+
+    // Strip the (extension-less) path params and substitute. The .y param may include
+    // an extension via Express routing, so we accept it as-is.
+    const { z, x, y } = req.params as Record<string, string>;
+    let upstreamUrl = template
+      .replace('{z}', encodeURIComponent(z))
+      .replace('{x}', encodeURIComponent(x))
+      .replace('{y}', encodeURIComponent(y));
+
+    if (link.imageryAuth?.type === 'query_param') {
+      upstreamUrl = appendAuth(upstreamUrl, link.imageryAuth);
+    }
+
+    const upstreamHeaders: Record<string, string> = { Accept: '*/*' };
+    if (link.imageryAuth?.type === 'header') {
+      upstreamHeaders[link.imageryAuth.name] = link.imageryAuth.value;
+    }
+
+    const upstream = await fetch(upstreamUrl, {
+      headers: upstreamHeaders,
+      signal: AbortSignal.timeout(30_000),
+    });
+
+    res.status(upstream.status);
+    for (const h of ['content-type', 'content-length', 'content-encoding', 'etag', 'last-modified']) {
+      const v = upstream.headers.get(h);
+      if (v) res.setHeader(h, v);
+    }
+    res.setHeader('Cache-Control', 'public, max-age=300');
+
+    if (upstream.body) {
+      // @ts-expect-error Node 18+ ReadableStream is compatible with Readable.fromWeb
+      const stream = Readable.fromWeb(upstream.body);
+      stream.on('error', (err: Error) => {
+        console.error('Basemap tile proxy stream error:', err);
+        if (!res.headersSent) res.status(502).json({ error: 'Upstream stream failed' });
+        else res.destroy();
+      });
+      res.on('close', () => { stream.destroy(); });
+      stream.pipe(res);
+    } else {
+      res.end();
+    }
+  } catch (err) {
+    if (err instanceof Error && err.name === 'TimeoutError') {
+      res.status(504).json({ error: 'Upstream request timed out' });
+    } else {
+      console.error('Basemap tile proxy error:', err);
+      res.status(502).json({ error: 'Failed to reach upstream tile' });
+    }
   }
 });
 
