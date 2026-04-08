@@ -67,6 +67,7 @@ const DEFAULT_UI_CONFIG: UIConfig = {
   showMeasureTool: false,
   showSelectionTool: false,
   showImageryPanel: false,
+  showCompass: false,
 };
 
 /** Derive which UI controls should be enabled based on current config state. */

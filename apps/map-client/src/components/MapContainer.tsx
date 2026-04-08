@@ -173,6 +173,8 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
   const activeCql2Filters = useMapStore((s) => s.activeCql2Filters);
   const pendingFitBounds = useMapStore((s) => s.pendingFitBounds);
   const clearPendingFitBounds = useMapStore((s) => s.clearPendingFitBounds);
+  const pendingBearing = useMapStore((s) => s.pendingBearing);
+  const clearPendingBearing = useMapStore((s) => s.clearPendingBearing);
   const setViewState = useMapStore((s) => s.setViewState);
 
   const [mapInstance, setMapInstance] = useState<ReturnType<MapRef['getMap']> | null>(null);
@@ -225,6 +227,13 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
     mapRef.current.fitBounds(pendingFitBounds, { padding: 50, maxZoom: 12 });
     clearPendingFitBounds();
   }, [pendingFitBounds, clearPendingFitBounds]);
+
+  // Animate to pending bearing (e.g., compass reset)
+  useEffect(() => {
+    if (pendingBearing == null || !mapRef.current) return;
+    mapRef.current.easeTo({ bearing: pendingBearing, duration: 300 });
+    clearPendingBearing();
+  }, [pendingBearing, clearPendingBearing]);
 
   // Build source URL lookup map with tileMatrixSetId and auth
   const sourceUrlMap = useMemo(() => {

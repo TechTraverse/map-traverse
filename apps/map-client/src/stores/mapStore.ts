@@ -29,6 +29,7 @@ interface MapState {
   activeCql2Filters: Record<string, CQL2Expression | null>;
   imageryLayers: ImageryLayerConfig[];
   pendingFitBounds: BBox | null;
+  pendingBearing: number | null;
 
   toggleImageryLayerVisibility: (layerId: string) => void;
   setImageryLayerOpacity: (layerId: string, opacity: number) => void;
@@ -43,6 +44,8 @@ interface MapState {
   clearLayerFilters: (layerId: string) => void;
   fitBounds: (bbox: BBox) => void;
   clearPendingFitBounds: () => void;
+  requestBearing: (bearing: number) => void;
+  clearPendingBearing: () => void;
   hydrate: (config: MapConfig) => void;
 }
 
@@ -72,12 +75,14 @@ export const useMapStore = create<MapState>((set) => ({
     showMeasureTool: false,
     showSelectionTool: false,
     showImageryPanel: false,
+    showCompass: true,
   },
   branding: undefined,
   imageryLayers: [],
   activeFilters: {},
   activeCql2Filters: {},
   pendingFitBounds: null,
+  pendingBearing: null,
 
   toggleImageryLayerVisibility: (layerId) =>
     set((state) => {
@@ -175,6 +180,9 @@ export const useMapStore = create<MapState>((set) => ({
 
   fitBounds: (bbox) => set({ pendingFitBounds: bbox }),
   clearPendingFitBounds: () => set({ pendingFitBounds: null }),
+
+  requestBearing: (bearing) => set({ pendingBearing: bearing }),
+  clearPendingBearing: () => set({ pendingBearing: null }),
 
   hydrate: (config) =>
     set({

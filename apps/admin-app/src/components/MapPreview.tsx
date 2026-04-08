@@ -27,6 +27,7 @@ import {
   BasemapSwitcher,
   SearchPanel,
   CollapsibleControl,
+  CompassControl,
   CoordinateDisplay,
   FeatureDetailPanel,
   FeatureTooltip,
@@ -1177,6 +1178,15 @@ export function MapPreview({
                       icon={LuDownload}
                       onExport={() => setExportModalOpen(true)}
                       loading={exportLoading}
+                    />
+                  </div>
+                ) : null,
+
+                showCompass: uiConfig.showCompass ? (
+                  <div className="mapui:pointer-events-auto">
+                    <CompassControl
+                      bearing={internalViewState.bearing}
+                      onReset={() => mapRef.current?.easeTo({ bearing: 0, duration: 300 })}
                     />
                   </div>
                 ) : null,

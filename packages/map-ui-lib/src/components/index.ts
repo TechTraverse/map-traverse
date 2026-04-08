@@ -2,6 +2,8 @@ export { BasemapSwitcher } from './BasemapSwitcher';
 export type { BasemapSwitcherProps } from './BasemapSwitcher';
 export { CollapsibleControl } from './CollapsibleControl';
 export type { CollapsibleControlProps } from './CollapsibleControl';
+export { CompassControl } from './CompassControl';
+export type { CompassControlProps } from './CompassControl';
 export {
   CoordinateDisplay,
   formatDecimal,

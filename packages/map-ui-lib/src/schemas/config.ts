@@ -488,6 +488,7 @@ export const ORDERABLE_CONTROLS = [
   'showImageryPanel',
   'showBasemapSwitcher',
   'showExportButton',
+  'showCompass',
 ] as const;
 
 export type OrderableControlKey = (typeof ORDERABLE_CONTROLS)[number];
@@ -505,6 +506,7 @@ export const UIConfigSchema = z.object({
   showMeasureTool: z.boolean().default(false),
   showSelectionTool: z.boolean().default(false),
   showImageryPanel: z.boolean().default(false),
+  showCompass: z.boolean().default(true),
   controlOrder: z.array(z.enum(ORDERABLE_CONTROLS)).optional(),
 });
 
@@ -577,6 +579,7 @@ export const MapConfigSchema = z.object({
     showMeasureTool: false,
     showSelectionTool: false,
     showImageryPanel: false,
+    showCompass: true,
   }),
   initialView: ViewConfigSchema,
   branding: BrandingConfigSchema.optional(),

@@ -224,6 +224,7 @@ export const mapConfig: MapConfig = {
     showMeasureTool: false,
     showSelectionTool: true,
     showImageryPanel: false,
+    showCompass: true,
   },
   initialView: {
     latitude: 0,

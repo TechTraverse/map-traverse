@@ -6,6 +6,7 @@ import {
   BasemapSwitcher,
   SearchPanel,
   CollapsibleControl,
+  CompassControl,
   CoordinateDisplay,
   FeatureDetailPanel,
   FeatureTooltip,
@@ -112,6 +113,8 @@ export function MapOverlay({
   const setLayerFilters = useMapStore((s) => s.setLayerFilters);
   const setLayerCql2Filter = useMapStore((s) => s.setLayerCql2Filter);
   const setLayerOpacity = useMapStore((s) => s.setLayerOpacity);
+  const bearing = useMapStore((s) => s.viewState.bearing);
+  const requestBearing = useMapStore((s) => s.requestBearing);
   const clearLayerFilters = useMapStore((s) => s.clearLayerFilters);
   const imageryLayers = useMapStore((s) => s.imageryLayers);
   const toggleImageryLayerVisibility = useMapStore((s) => s.toggleImageryLayerVisibility);
@@ -370,6 +373,12 @@ export function MapOverlay({
                   onExport={() => setExportModalOpen(true)}
                   loading={exportLoading}
                 />
+              </div>
+            ) : null,
+
+            showCompass: uiConfig.showCompass ? (
+              <div className="pointer-events-auto">
+                <CompassControl bearing={bearing} onReset={() => requestBearing(0)} />
               </div>
             ) : null,
           };

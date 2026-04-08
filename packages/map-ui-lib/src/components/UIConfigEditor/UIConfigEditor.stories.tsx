@@ -31,6 +31,7 @@ const defaultUI: UIConfig = {
   showMeasureTool: false,
   showSelectionTool: false,
   showImageryPanel: false,
+  showCompass: true,
 };
 
 export const Default: Story = {
@@ -62,6 +63,7 @@ export const AllOff: Story = {
       showMeasureTool: false,
       showSelectionTool: false,
       showImageryPanel: false,
+      showCompass: false,
     });
     return (
       <div className="mapui:max-w-xl mapui:p-4">
@@ -84,6 +86,7 @@ export const CustomOrder: Story = {
         'showMeasureTool',
         'showSelectionTool',
         'showImageryPanel',
+        'showCompass',
       ],
     });
     return (

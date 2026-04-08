@@ -22,6 +22,7 @@ const TOGGLE_LABELS: { key: keyof UIConfig; label: string; description: string }
   { key: 'showMeasureTool', label: 'Measure Tool', description: 'Measure distances and areas on the map' },
   { key: 'showSelectionTool', label: 'Selection Tool', description: 'Select features by click or box draw' },
   { key: 'showImageryPanel', label: 'Imagery Panel', description: 'Toggle satellite imagery layers' },
+  { key: 'showCompass', label: 'Compass', description: 'Show map compass; click to reset to north' },
 ];
 
 const ORDERABLE_SET = new Set<string>(ORDERABLE_CONTROLS);
@@ -32,7 +33,7 @@ const TOGGLE_INFO = new Map(TOGGLE_LABELS.map((t) => [t.key, t]));
 
 function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
-    <div className="mapui:relative mapui:flex mapui:shrink-0 mapui:items-center">
+    <label className="mapui:relative mapui:flex mapui:shrink-0 mapui:cursor-pointer mapui:items-center">
       <input
         type="checkbox"
         checked={checked}
@@ -40,20 +41,20 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
         className="mapui:sr-only"
         aria-label={label}
       />
-      <div
+      <span
         className={[
-          'mapui:relative mapui:h-5 mapui:w-9 mapui:rounded-full mapui:transition-colors',
+          'mapui:relative mapui:block mapui:h-5 mapui:w-9 mapui:rounded-full mapui:transition-colors',
           checked ? 'mapui:bg-blue-600' : 'mapui:bg-gray-300',
         ].join(' ')}
       >
-        <div
+        <span
           className={[
-            'mapui:absolute mapui:top-0.5 mapui:h-4 mapui:w-4 mapui:rounded-full mapui:bg-white mapui:shadow mapui:transition-transform',
+            'mapui:absolute mapui:top-0.5 mapui:block mapui:h-4 mapui:w-4 mapui:rounded-full mapui:bg-white mapui:shadow mapui:transition-transform',
             checked ? 'mapui:translate-x-4' : 'mapui:translate-x-0.5',
           ].join(' ')}
         />
-      </div>
-    </div>
+      </span>
+    </label>
   );
 }
 
