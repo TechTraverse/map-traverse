@@ -23,3 +23,13 @@
 
 ## Workflows
 - See `.agent/workflows/development.md` for detailed setup and troubleshooting.
+
+## Claude Skills
+This repo ships task-specific skills under `.claude/skills/`. Read the relevant `SKILL.md` *before* starting any non-trivial change — they encode the project's architectural rules and the *why* behind them, so you don't have to rediscover them mid-task.
+
+- **`project-conventions`** — Read first for any non-trivial change. The non-negotiables (no MapLibre in lib, controlled components, `mapui:` prefix, Config→Zod→Zustand→nuqs) with rationale.
+- **`add-map-component`** — Adding a UI component to `packages/map-ui-lib`.
+- **`add-ogc-hook`** — Adding a React hook that fetches from an OGC API endpoint.
+- **`extend-map-config`** — Adding or modifying a field in the Zod `MapConfig` schema and propagating it through the store/URL/components/admin editor.
+- **`load-gis-data`** — Ingesting shapefiles, GeoPackages, GeoJSON, FlatGeobuf, etc. into PostGIS so tipg serves them at `/collections`.
+- **`ogc-api-troubleshoot`** — Triage flow for "data exists in PostGIS but isn't reaching the browser".
