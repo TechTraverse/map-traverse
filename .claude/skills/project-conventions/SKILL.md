@@ -90,7 +90,20 @@ This is what makes the lib reusable against any OGC API server, and what lets us
 
 Stories are how consumers discover the lib (literally — its name is "storybook-components"), how visual changes get reviewed, and how you debug a component in isolation when something goes wrong in the app. A component without a story is a component nobody else will use correctly.
 
-### 8. Versioning via changesets
+### 8. Always run `pnpm verify` before declaring a task done
+
+> `pnpm verify` runs `pnpm build && pnpm test`. If it isn't green, the task isn't done.
+
+This is the contract the agent automation pipeline relies on. Both the local
+Claude Code workflow and the GitHub Action at `.github/workflows/claude.yml`
+expect that "I'm finished" means "`pnpm verify` exits 0 on this branch". Don't
+hand off, open a PR, or comment "ready for review" until you've run it.
+
+If `pnpm verify` fails, fix the failure or — if the failure is real and
+out of scope — say so explicitly in the PR description rather than silently
+skipping.
+
+### 9. Versioning via changesets
 
 > Public changes to `@ogc-maps/storybook-components` need a changeset.
 
