@@ -12,7 +12,8 @@
     "build:app": "pnpm --filter map-client build",
     "release": "pnpm build && changeset publish",
     "changeset": "changeset",
-    "test": "pnpm --filter @ogc-maps/storybook-components test"
+    "test": "pnpm --filter @ogc-maps/storybook-components test",
+    "verify": "pnpm build && pnpm test"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.8",
