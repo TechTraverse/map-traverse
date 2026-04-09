@@ -9,6 +9,7 @@ import {
   BasemapList,
   SpriteSourceList,
   UIConfigEditor,
+  GlobalSearchConfigEditor,
   ViewEditor,
   ConfigPreview,
   CollapsibleSection,
@@ -35,9 +36,19 @@ import type {
   MapConfig,
   BrandingConfig,
   SourceAuth,
+  GlobalSearchConfig,
 } from '@ogc-maps/storybook-components';
 import { ImageUploadField } from '../components/ImageUploadField';
 import { MapPreview } from '../components/MapPreview';
+import { useQueryablesByLayer } from '../hooks/useQueryablesByLayer';
+
+const DEFAULT_GLOBAL_SEARCH: GlobalSearchConfig = {
+  enabled: true,
+  layers: [],
+  maxResultsPerLayer: 10,
+  debounceMs: 250,
+  minQueryLength: 2,
+};
 
 interface SavedSourceSummary { id: string; source_id: string; url: string; label: string | null; tile_matrix_set_id: string; source_type?: string; auth?: SourceAuth | null; metadata?: { thumbnail?: string; tileJson?: { tiles: string[]; name?: string; minzoom?: number; maxzoom?: number } } | null }
 
@@ -68,6 +79,7 @@ const DEFAULT_UI_CONFIG: UIConfig = {
   showSelectionTool: false,
   showImageryPanel: false,
   showCompass: false,
+  showGlobalSearch: false,
 };
 
 /** Derive which UI controls should be enabled based on current config state. */
@@ -147,6 +159,7 @@ export function ConfigWizardPage() {
   const [availableIcons, setAvailableIcons] = useState<string[]>([]);
   const [imageryLayers, setImageryLayers] = useState<ImageryLayerConfig[]>([]);
   const [uiOverrides, setUiOverrides] = useState<Partial<UIConfig>>({});
+  const [globalSearch, setGlobalSearch] = useState<GlobalSearchConfig | undefined>(undefined);
   const [initialView, setInitialView] = useState<ViewConfig>(DEFAULT_VIEW);
 
   // Derive effective UI config: all-false defaults → auto-suggestions → user overrides
@@ -218,10 +231,13 @@ export function ConfigWizardPage() {
   const isEditing = !!id;
   const currentStepIndex = STEPS.findIndex(s => s.key === currentStep);
 
+  // Queryables for global search config editor (eager fetch per layer)
+  const { queryablesByLayer, queryablesLoading } = useQueryablesByLayer(layers, sources);
+
   // Derived config object for save + preview
   const hasBranding = Object.keys(branding).length > 0;
 
-  const assembledConfig: MapConfig = { sources, layers, ...(imageryLayers.length > 0 ? { imageryLayers } : {}), basemaps, sprites: sprites.length > 0 ? sprites : undefined, ui: effectiveUIConfig, initialView, ...(hasBranding && { branding }) };
+  const assembledConfig: MapConfig = { sources, layers, ...(imageryLayers.length > 0 ? { imageryLayers } : {}), basemaps, sprites: sprites.length > 0 ? sprites : undefined, ui: effectiveUIConfig, initialView, ...(hasBranding && { branding }), ...(globalSearch ? { globalSearch } : {}) };
 
   const isConfigValid = useMemo(() => {
     if (!name) return false;
@@ -250,6 +266,7 @@ export function ConfigWizardPage() {
           setBasemaps(data.config.basemaps ?? []);
           setSprites(data.config.sprites ?? []);
           setUiOverrides(data.config.ui ?? DEFAULT_UI_CONFIG);
+          setGlobalSearch(data.config.globalSearch);
           setInitialView(data.config.initialView ?? DEFAULT_VIEW);
           if (data.config.branding) {
             setBranding(data.config.branding);
@@ -882,6 +899,15 @@ export function ConfigWizardPage() {
           <div className="mapui:space-y-4">
             <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">UI Options</h2>
             <UIConfigEditor value={effectiveUIConfig} onChange={handleUIChange} autoEnabled={autoEnabledKeys} />
+            {effectiveUIConfig.showGlobalSearch && (
+              <GlobalSearchConfigEditor
+                value={globalSearch ?? DEFAULT_GLOBAL_SEARCH}
+                onChange={(gs) => setGlobalSearch(gs)}
+                layers={layers}
+                propertiesByLayer={queryablesByLayer}
+                isLoadingProperties={queryablesLoading}
+              />
+            )}
           </div>
         )}
 

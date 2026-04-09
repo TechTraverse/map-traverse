@@ -23,6 +23,7 @@ const TOGGLE_LABELS: { key: keyof UIConfig; label: string; description: string }
   { key: 'showSelectionTool', label: 'Selection Tool', description: 'Select features by click or box draw' },
   { key: 'showImageryPanel', label: 'Imagery Panel', description: 'Toggle satellite imagery layers' },
   { key: 'showCompass', label: 'Compass', description: 'Show map compass; click to reset to north' },
+  { key: 'showGlobalSearch', label: 'Global Search', description: 'Cross-layer search bar above the map' },
 ];
 
 const ORDERABLE_SET = new Set<string>(ORDERABLE_CONTROLS);

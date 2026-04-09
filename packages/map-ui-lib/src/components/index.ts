@@ -33,6 +33,12 @@ export { SelectionPanel } from './SelectionPanel';
 export type { SelectionPanelProps } from './SelectionPanel';
 export { SearchPanel } from './SearchPanel';
 export type { SearchPanelProps } from './SearchPanel';
+export { GlobalSearchBar } from './GlobalSearchBar';
+export type {
+  GlobalSearchBarProps,
+  FeatureMatch as GlobalSearchFeatureMatch,
+  GroupedResults as GlobalSearchGroupedResults,
+} from './GlobalSearchBar';
 export { ResultsDrawer } from './ResultsDrawer';
 export type { ResultsDrawerProps, ResultsDrawerTab } from './ResultsDrawer';
 // Admin components
@@ -48,6 +54,8 @@ export { LegendEntryEditor, LegendEditor } from './LegendEditor';
 export type { LegendEntryEditorProps, LegendEditorProps } from './LegendEditor';
 export { SearchFieldEditor, SearchFieldList } from './SearchFieldEditor';
 export type { SearchFieldEditorProps, SearchFieldListProps } from './SearchFieldEditor';
+export { GlobalSearchConfigEditor } from './GlobalSearchConfigEditor';
+export type { GlobalSearchConfigEditorProps } from './GlobalSearchConfigEditor';
 export { PropertyDisplayEditor } from './PropertyDisplayEditor';
 export type { PropertyDisplayEditorProps } from './PropertyDisplayEditor';
 export { LayerEditor, LayerList } from './LayerEditor';

@@ -127,8 +127,8 @@ export function authHeaders(auth?: SourceAuth): Record<string, string> {
   return { [auth.name]: auth.value };
 }
 
-async function fetchJson<T>(url: string, auth?: SourceAuth): Promise<T> {
-  const res = await fetch(appendAuth(url, auth), { headers: authHeaders(auth) });
+async function fetchJson<T>(url: string, auth?: SourceAuth, signal?: AbortSignal): Promise<T> {
+  const res = await fetch(appendAuth(url, auth), { headers: authHeaders(auth), signal });
   if (!res.ok) {
     throw new Error(`OGC API request failed: ${res.status} ${res.statusText} (${url})`);
   }
@@ -156,6 +156,7 @@ export async function fetchFeatures(
   collection: string,
   options: FetchFeaturesOptions = {},
   auth?: SourceAuth,
+  signal?: AbortSignal,
 ): Promise<OgcFeatureCollection> {
   const base = stripTrailingSlash(baseUrl);
   const params = new URLSearchParams({ f: 'geojson' });
@@ -178,7 +179,7 @@ export async function fetchFeatures(
   }
 
   const url = `${base}/collections/${encodeURIComponent(collection)}/items?${params}`;
-  return fetchJson<OgcFeatureCollection>(url, auth);
+  return fetchJson<OgcFeatureCollection>(url, auth, signal);
 }
 
 /**
@@ -338,6 +339,7 @@ export async function fetchDistinctValues(
   property: string,
   options?: { query?: string; limit?: number; fetchAll?: boolean; maxFeatures?: number },
   auth?: SourceAuth,
+  signal?: AbortSignal,
 ): Promise<string[]> {
   const cql2Filter: CQL2Expression | undefined =
     options?.query
@@ -366,7 +368,7 @@ export async function fetchDistinctValues(
         limit: batchSize,
         offset,
         cql2Filter,
-      }, auth);
+      }, auth, signal);
 
       collectValues(page.features);
       fetched += page.features.length;
@@ -382,7 +384,7 @@ export async function fetchDistinctValues(
       properties: [property],
       limit: options?.limit ?? 50,
       cql2Filter,
-    }, auth);
+    }, auth, signal);
     collectValues(data.features);
   }
 

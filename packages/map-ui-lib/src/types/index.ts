@@ -25,6 +25,9 @@ import {
   SelectSearchFieldSchema,
   SearchFieldSchema,
   SearchConfigSchema,
+  GlobalSearchPropertySchema,
+  GlobalSearchLayerConfigSchema,
+  GlobalSearchConfigSchema,
   FilterConfigSchema,
   PropertyDisplaySchema,
   PropertyDisplayConfigSchema,
@@ -82,6 +85,10 @@ export type DatetimeSearchField = z.infer<typeof DatetimeSearchFieldSchema>;
 export type SelectSearchField = z.infer<typeof SelectSearchFieldSchema>;
 export type SearchField = z.infer<typeof SearchFieldSchema>;
 export type SearchConfig = z.infer<typeof SearchConfigSchema>;
+
+export type GlobalSearchProperty = z.infer<typeof GlobalSearchPropertySchema>;
+export type GlobalSearchLayerConfig = z.infer<typeof GlobalSearchLayerConfigSchema>;
+export type GlobalSearchConfig = z.infer<typeof GlobalSearchConfigSchema>;
 
 export type SearchFilterValue =
   | string
@@ -191,6 +198,9 @@ export {
   SelectSearchFieldSchema,
   SearchFieldSchema,
   SearchConfigSchema,
+  GlobalSearchPropertySchema,
+  GlobalSearchLayerConfigSchema,
+  GlobalSearchConfigSchema,
   FilterConfigSchema,
   PropertyDisplaySchema,
   PropertyDisplayConfigSchema,

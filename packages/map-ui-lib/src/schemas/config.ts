@@ -273,6 +273,29 @@ export const SearchConfigSchema = z.object({
   fields: z.array(SearchFieldSchema).min(1),
 });
 
+// --- Global Search Config ---
+
+export const GlobalSearchPropertySchema = z.object({
+  property: z.string().min(1),
+  label: z.string().optional(),
+  autocomplete: z.boolean().optional(),
+  prefetch: z.boolean().optional(),
+});
+
+export const GlobalSearchLayerConfigSchema = z.object({
+  layerId: z.string().min(1),
+  properties: z.array(GlobalSearchPropertySchema).min(1),
+});
+
+export const GlobalSearchConfigSchema = z.object({
+  enabled: z.boolean().default(true),
+  placeholder: z.string().optional(),
+  maxResultsPerLayer: z.number().int().min(1).max(50).default(10),
+  debounceMs: z.number().int().min(0).default(250),
+  minQueryLength: z.number().int().min(1).default(2),
+  layers: z.array(GlobalSearchLayerConfigSchema).default([]),
+});
+
 // --- Property Display Config ---
 
 export const PropertyDisplaySchema = z.object({
@@ -507,6 +530,7 @@ export const UIConfigSchema = z.object({
   showSelectionTool: z.boolean().default(false),
   showImageryPanel: z.boolean().default(false),
   showCompass: z.boolean().default(true),
+  showGlobalSearch: z.boolean().default(false),
   controlOrder: z.array(z.enum(ORDERABLE_CONTROLS)).optional(),
 });
 
@@ -580,9 +604,11 @@ export const MapConfigSchema = z.object({
     showSelectionTool: false,
     showImageryPanel: false,
     showCompass: true,
+    showGlobalSearch: false,
   }),
   initialView: ViewConfigSchema,
   branding: BrandingConfigSchema.optional(),
+  globalSearch: GlobalSearchConfigSchema.optional(),
 });
 
 // --- Validation Utilities ---

@@ -11,8 +11,10 @@ import type {
   UIConfig,
   BrandingConfig,
   SearchFilterValues,
+  GlobalSearchConfig,
 } from '@ogc-maps/storybook-components/types';
 import type { CQL2Expression, BBox } from '@ogc-maps/storybook-components/utils';
+import type { GlobalSearchGroupedResults } from '@ogc-maps/storybook-components';
 
 interface MapState {
   viewState: ViewConfig;
@@ -31,6 +33,17 @@ interface MapState {
   pendingFitBounds: BBox | null;
   pendingBearing: number | null;
 
+  /** Top-level global search config (from MapConfig.globalSearch). */
+  globalSearchConfig: GlobalSearchConfig | undefined;
+  /** Current query string typed into the global search bar. */
+  globalSearchQuery: string;
+  /** Latest grouped results for the global search. */
+  globalSearchResults: GlobalSearchGroupedResults;
+  /** Loading state for the global search. */
+  globalSearchIsLoading: boolean;
+  /** Cached distinct values for properties with `prefetch: true`. Key: `${layerId}:${property}`. */
+  prefetchedDistinctValues: Record<string, string[]>;
+
   toggleImageryLayerVisibility: (layerId: string) => void;
   setImageryLayerOpacity: (layerId: string, opacity: number) => void;
   setViewState: (vs: Partial<ViewConfig>) => void;
@@ -46,6 +59,13 @@ interface MapState {
   clearPendingFitBounds: () => void;
   requestBearing: (bearing: number) => void;
   clearPendingBearing: () => void;
+
+  setGlobalSearchQuery: (q: string) => void;
+  setGlobalSearchResults: (r: GlobalSearchGroupedResults) => void;
+  setGlobalSearchIsLoading: (loading: boolean) => void;
+  cacheDistinctValues: (key: string, values: string[]) => void;
+  clearGlobalSearch: () => void;
+
   hydrate: (config: MapConfig) => void;
 }
 
@@ -76,6 +96,7 @@ export const useMapStore = create<MapState>((set) => ({
     showSelectionTool: false,
     showImageryPanel: false,
     showCompass: true,
+    showGlobalSearch: false,
   },
   branding: undefined,
   imageryLayers: [],
@@ -83,6 +104,12 @@ export const useMapStore = create<MapState>((set) => ({
   activeCql2Filters: {},
   pendingFitBounds: null,
   pendingBearing: null,
+
+  globalSearchConfig: undefined,
+  globalSearchQuery: '',
+  globalSearchResults: {},
+  globalSearchIsLoading: false,
+  prefetchedDistinctValues: {},
 
   toggleImageryLayerVisibility: (layerId) =>
     set((state) => {
@@ -184,6 +211,31 @@ export const useMapStore = create<MapState>((set) => ({
   requestBearing: (bearing) => set({ pendingBearing: bearing }),
   clearPendingBearing: () => set({ pendingBearing: null }),
 
+  setGlobalSearchQuery: (q) =>
+    set((s) => (s.globalSearchQuery === q ? s : { globalSearchQuery: q })),
+  setGlobalSearchResults: (r) =>
+    set((s) => {
+      if (s.globalSearchResults === r) return s;
+      // Treat any two empty result sets as equal so sub-min-length keystrokes
+      // don't republish a fresh `{}` and re-render every subscriber.
+      if (Object.keys(r).length === 0 && Object.keys(s.globalSearchResults).length === 0) {
+        return s;
+      }
+      return { globalSearchResults: r };
+    }),
+  setGlobalSearchIsLoading: (loading) =>
+    set((s) => (s.globalSearchIsLoading === loading ? s : { globalSearchIsLoading: loading })),
+  cacheDistinctValues: (key, values) =>
+    set((state) => ({
+      prefetchedDistinctValues: { ...state.prefetchedDistinctValues, [key]: values },
+    })),
+  clearGlobalSearch: () =>
+    set({
+      globalSearchQuery: '',
+      globalSearchResults: {},
+      globalSearchIsLoading: false,
+    }),
+
   hydrate: (config) =>
     set({
       viewState: config.initialView,
@@ -197,6 +249,11 @@ export const useMapStore = create<MapState>((set) => ({
       branding: config.branding,
       activeFilters: {},
       activeCql2Filters: {},
+      globalSearchConfig: config.globalSearch,
+      globalSearchQuery: '',
+      globalSearchResults: {},
+      globalSearchIsLoading: false,
+      prefetchedDistinctValues: {},
     }),
 }));
 
