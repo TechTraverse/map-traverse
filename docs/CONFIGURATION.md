@@ -23,6 +23,7 @@ import { MapConfigSchema, validateMapConfig, safeValidateMapConfig } from '@ogc-
 | `basemaps` | `BasemapConfig[]` | Yes (min 1) | Background map styles |
 | `sprites` | `SpriteSource[]` | No | Icon sprite definitions for symbol layers |
 | `ui` | `UIConfig` | No (has defaults) | UI panel visibility flags |
+| `info` | `InfoConfig` | No | "About this map" modal launched from a map control button |
 | `initialView` | `ViewConfig` | Yes | Starting camera position |
 
 ---
@@ -447,6 +448,40 @@ Controls which UI panels are visible. All fields default to shown, except `showS
 | `showFeatureTooltip` | `boolean` | `true` | Show/hide `FeatureTooltip` |
 | `showExportButton` | `boolean` | `true` | Show/hide `ExportButton` |
 | `showLegendOpacity` | `boolean` | `false` | Show per-layer opacity sliders in `Legend` (requires `onOpacityChange` prop) |
+
+---
+
+## InfoConfig
+
+Attaches an "About this map" modal to the map, launched by an info-icon control button. Omit the section (or set `enabled: false`) to hide the button entirely — existing configs remain backwards compatible.
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `enabled` | `boolean` | No | `false` | When `false`, no button is rendered |
+| `title` | `string` | No | `"About this map"` | Modal heading |
+| `markdown` | `string` | No | `""` | Body content, rendered with `react-markdown` + GFM |
+| `position` | `"top-right" \| "top-left" \| "bottom-right" \| "bottom-left"` | No | `"top-right"` | Corner the control button is anchored to |
+
+**Markdown rendering:**
+
+- GitHub Flavored Markdown is supported — tables, task lists, strikethrough, and autolinks all work.
+- Links open in a new tab automatically (`target="_blank"` with safe `rel` attributes).
+
+**Positioning:**
+
+- `"top-right"` places the button in the reorderable top-right control stack; its order relative to other top-right controls can be adjusted via the UI Config editor's `controlOrder`.
+- `"top-left"`, `"bottom-right"`, and `"bottom-left"` render the button as a standalone overlay anchored to that corner.
+
+```json
+{
+  "info": {
+    "enabled": true,
+    "title": "About this map",
+    "position": "top-right",
+    "markdown": "# Methodology\n\nThis map shows...\n\n- Layer A is sourced from...\n- Layer B is...\n\n[Full methodology PDF](https://example.com/methods.pdf)\n\n## Coordinate system\n\nEPSG:4326"
+  }
+}
+```
 
 ---
 

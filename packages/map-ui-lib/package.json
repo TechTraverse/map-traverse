@@ -46,6 +46,10 @@
       "types": "./dist/components/FeatureTooltip/index.d.ts",
       "import": "./dist/components/FeatureTooltip/index.js"
     },
+    "./components/InfoControl": {
+      "types": "./dist/components/InfoControl/index.d.ts",
+      "import": "./dist/components/InfoControl/index.js"
+    },
     "./components/SearchPanel": {
       "types": "./dist/components/SearchPanel/index.d.ts",
       "import": "./dist/components/SearchPanel/index.js"
@@ -89,6 +93,8 @@
     "@turf/buffer": "^7.3.4",
     "@turf/helpers": "^7.3.4",
     "@turf/length": "^7.3.4",
+    "react-markdown": "^9.0.1",
+    "remark-gfm": "^4.0.0",
     "zod": "^4.3.6"
   },
   "optionalDependencies": {

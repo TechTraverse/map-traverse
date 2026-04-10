@@ -39,6 +39,8 @@ import {
   ORDERABLE_CONTROLS,
   resolveControlOrder,
   BrandingConfigSchema,
+  InfoConfigSchema,
+  INFO_POSITIONS,
   MapConfigSchema,
   FilterOperatorSchema,
   FilterRuleValueSchema,
@@ -152,6 +154,8 @@ export type SpriteSource = z.infer<typeof SpriteSourceSchema>;
 export type UIConfig = z.infer<typeof UIConfigSchema>;
 export type { OrderableControlKey } from '../schemas/config';
 export type BrandingConfig = z.infer<typeof BrandingConfigSchema>;
+export type InfoConfig = z.infer<typeof InfoConfigSchema>;
+export type { InfoPosition } from '../schemas/config';
 export type MapConfig = z.infer<typeof MapConfigSchema>;
 
 /** Callback for fetching distinct property values from an OGC API collection. */
@@ -212,6 +216,8 @@ export {
   ORDERABLE_CONTROLS,
   resolveControlOrder,
   BrandingConfigSchema,
+  InfoConfigSchema,
+  INFO_POSITIONS,
   MapConfigSchema,
   FilterOperatorSchema,
   FilterRuleValueSchema,

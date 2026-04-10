@@ -23,6 +23,8 @@ export { FeatureTooltip } from './FeatureTooltip';
 export type { FeatureTooltipProps } from './FeatureTooltip';
 export { ImageryPanel } from './ImageryPanel';
 export type { ImageryPanelProps } from './ImageryPanel';
+export { InfoControl, InfoModal } from './InfoControl';
+export type { InfoControlProps, InfoModalProps } from './InfoControl';
 export { LayerPanel } from './LayerPanel';
 export type { LayerPanelProps } from './LayerPanel';
 export { Legend } from './Legend';

@@ -37,6 +37,8 @@ import {
   SelectionPanel,
   QueryPanel,
   ResultsDrawer,
+  InfoControl,
+  InfoModal,
   formatDecimal,
   formatDMS,
   resolveControlOrder,
@@ -53,8 +55,9 @@ import type {
   UIConfig,
   ExportableLayer,
   OrderableControlKey,
+  InfoConfig,
 } from '@ogc-maps/storybook-components';
-import type { SearchFilterValue, SearchFilterValues, Cql2FilterConfig } from '@ogc-maps/storybook-components/types';
+import type { SearchFilterValue, SearchFilterValues, Cql2FilterConfig, InfoPosition } from '@ogc-maps/storybook-components/types';
 import { useMeasure, useSelection } from '@ogc-maps/storybook-components/hooks';
 
 import { LuDownload, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
@@ -69,6 +72,13 @@ const coordinateFormats: CoordinateFormatOption[] = [
 ];
 
 const FALLBACK_BASEMAP_URL = 'https://demotiles.maplibre.org/style.json';
+
+const INFO_CORNER_CLASSES: Record<InfoPosition, string> = {
+  'top-right': 'mapui:absolute mapui:top-4 mapui:right-4 mapui:pointer-events-auto mapui:z-10',
+  'top-left': 'mapui:absolute mapui:top-4 mapui:left-4 mapui:pointer-events-auto mapui:z-10',
+  'bottom-right': 'mapui:absolute mapui:bottom-4 mapui:right-4 mapui:pointer-events-auto mapui:z-10',
+  'bottom-left': 'mapui:absolute mapui:bottom-4 mapui:left-4 mapui:pointer-events-auto mapui:z-10',
+};
 
 function PreviewVectorTileLayer({
   layer,
@@ -195,6 +205,7 @@ export interface MapPreviewProps {
   onImageryLayersChange?: (layers: ImageryLayerConfig[]) => void;
   currentStep: string;
   uiConfig?: UIConfig;
+  info?: InfoConfig;
 }
 
 export function MapPreview({
@@ -209,7 +220,9 @@ export function MapPreview({
   onImageryLayersChange,
   currentStep,
   uiConfig,
+  info,
 }: MapPreviewProps) {
+  const [infoModalOpen, setInfoModalOpen] = useState(false);
   const [internalViewState, setInternalViewState] = useState<ViewConfig>(viewState);
   const [activeBasemapId, setActiveBasemapId] = useState<string | undefined>(basemaps[0]?.id);
   const [resolvedStyle, setResolvedStyle] = useState<string | object>(
@@ -1190,6 +1203,12 @@ export function MapPreview({
                     />
                   </div>
                 ) : null,
+
+                showInfoControl: info?.enabled && info.position === 'top-right' ? (
+                  <div className="mapui:pointer-events-auto">
+                    <InfoControl onClick={() => setInfoModalOpen(true)} />
+                  </div>
+                ) : null,
               };
 
               return resolveControlOrder(uiConfig).map((key) => {
@@ -1227,6 +1246,23 @@ export function MapPreview({
             </div>
           )}
         </div>
+      )}
+
+      {/* Standalone info control: rendered for non-top-right corners, or when uiConfig
+          is absent (legacy mode) — top-right with uiConfig is rendered inside controlNodes. */}
+      {info?.enabled && (info.position !== 'top-right' || !uiConfig) && (
+        <div className={INFO_CORNER_CLASSES[info.position]}>
+          <InfoControl onClick={() => setInfoModalOpen(true)} />
+        </div>
+      )}
+
+      {info?.enabled && (
+        <InfoModal
+          open={infoModalOpen}
+          title={info.title}
+          markdown={info.markdown ?? ''}
+          onClose={() => setInfoModalOpen(false)}
+        />
       )}
 
       {/* Legacy overlay when uiConfig is not provided */}

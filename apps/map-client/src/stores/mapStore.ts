@@ -12,6 +12,7 @@ import type {
   BrandingConfig,
   SearchFilterValues,
   GlobalSearchConfig,
+  InfoConfig,
 } from '@ogc-maps/storybook-components/types';
 import type { CQL2Expression, BBox } from '@ogc-maps/storybook-components/utils';
 import type { GlobalSearchGroupedResults } from '@ogc-maps/storybook-components';
@@ -25,6 +26,7 @@ interface MapState {
   sprites: SpriteSource[];
   uiConfig: UIConfig;
   branding: BrandingConfig | undefined;
+  info: InfoConfig | undefined;
   /** Form values for the SearchPanel UI and URL serialization. */
   activeFilters: Record<string, SearchFilterValues>;
   /** Derived CQL2 expressions for API calls. Kept in sync with activeFilters. */
@@ -99,6 +101,7 @@ export const useMapStore = create<MapState>((set) => ({
     showGlobalSearch: false,
   },
   branding: undefined,
+  info: undefined,
   imageryLayers: [],
   activeFilters: {},
   activeCql2Filters: {},
@@ -247,6 +250,7 @@ export const useMapStore = create<MapState>((set) => ({
       sprites: config.sprites ?? [],
       uiConfig: config.ui,
       branding: config.branding,
+      info: config.info,
       activeFilters: {},
       activeCql2Filters: {},
       globalSearchConfig: config.globalSearch,

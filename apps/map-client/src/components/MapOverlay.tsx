@@ -12,6 +12,8 @@ import {
   FeatureTooltip,
   ExportButton,
   ExportModal,
+  InfoControl,
+  InfoModal,
   MeasurePanel,
   SelectionPanel,
   QueryPanel,
@@ -23,12 +25,19 @@ import type { MeasureMode, MeasureUnit, Measurement, SelectionMode } from '@ogc-
 import type { FilterRuleGroup } from '@ogc-maps/storybook-components/types';
 import { useExport } from '@ogc-maps/storybook-components/hooks';
 import { DEFAULT_EXPORT_FORMATS, fromStructuredFilters, fetchFeatures, eq, bboxFromGeometry, exportConverters } from '@ogc-maps/storybook-components/utils';
-import type { UIConfig, SearchFilterValue, SearchFilterValues, OrderableControlKey } from '@ogc-maps/storybook-components/types';
+import type { UIConfig, SearchFilterValue, SearchFilterValues, OrderableControlKey, InfoPosition } from '@ogc-maps/storybook-components/types';
 import { resolveControlOrder } from '@ogc-maps/storybook-components';
 import { useMapStore, useActiveLayerIds } from '../stores/mapStore';
 import { useAutocompleteSuggestions } from '../hooks/useAutocompleteSuggestions';
 import { LuDownload, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
 import { TbSatellite } from 'react-icons/tb';
+
+const INFO_CORNER_CLASSES: Record<InfoPosition, string> = {
+  'top-right': 'absolute top-4 right-4 pointer-events-auto',
+  'top-left': 'absolute top-4 left-4 pointer-events-auto',
+  'bottom-right': 'absolute bottom-4 right-4 pointer-events-auto',
+  'bottom-left': 'absolute bottom-4 left-4 pointer-events-auto',
+};
 
 interface MapOverlayProps {
   uiConfig: UIConfig;
@@ -117,6 +126,7 @@ export function MapOverlay({
   const requestBearing = useMapStore((s) => s.requestBearing);
   const clearLayerFilters = useMapStore((s) => s.clearLayerFilters);
   const imageryLayers = useMapStore((s) => s.imageryLayers);
+  const info = useMapStore((s) => s.info);
   const toggleImageryLayerVisibility = useMapStore((s) => s.toggleImageryLayerVisibility);
   const setImageryLayerOpacity = useMapStore((s) => s.setImageryLayerOpacity);
   const activeLayerIds = useActiveLayerIds();
@@ -128,6 +138,7 @@ export function MapOverlay({
   });
 
   const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [infoModalOpen, setInfoModalOpen] = useState(false);
 
   const exportableLayers: ExportableLayer[] = useMemo(
     () => layers.filter((l) => l.visible).map((l) => ({ id: l.id, label: l.label, collection: l.collection })),
@@ -381,6 +392,12 @@ export function MapOverlay({
                 <CompassControl bearing={bearing} onReset={() => requestBearing(0)} />
               </div>
             ) : null,
+
+            showInfoControl: info?.enabled && info.position === 'top-right' ? (
+              <div className="pointer-events-auto">
+                <InfoControl onClick={() => setInfoModalOpen(true)} title={info.title} />
+              </div>
+            ) : null,
           };
 
           return resolveControlOrder(uiConfig).map((key) => {
@@ -404,6 +421,21 @@ export function MapOverlay({
         onClose={() => setExportModalOpen(false)}
         />
       </div>
+
+      {info?.enabled && info.position !== 'top-right' && (
+        <div className={INFO_CORNER_CLASSES[info.position]}>
+          <InfoControl onClick={() => setInfoModalOpen(true)} title={info.title} />
+        </div>
+      )}
+
+      {info?.enabled && (
+        <InfoModal
+          open={infoModalOpen}
+          title={info.title}
+          markdown={info.markdown ?? ''}
+          onClose={() => setInfoModalOpen(false)}
+        />
+      )}
 
       {/* Bottom-center: Coordinate Display */}
       {uiConfig.showCoordinateDisplay && (

@@ -5,7 +5,24 @@ import {
   FilterRuleGroupSchema,
   FilterRuleValueSchema,
   Cql2FilterConfigSchema,
+  InfoConfigSchema,
+  MapConfigSchema,
 } from '../config';
+
+const baseMapConfig = {
+  sources: [{ id: 'src-1', url: 'https://example.com/ogc' }],
+  layers: [
+    {
+      id: 'layer-1',
+      sourceId: 'src-1',
+      collection: 'my-collection',
+      label: 'Test Layer',
+      dataMode: 'vector-tiles' as const,
+    },
+  ],
+  basemaps: [{ id: 'osm', label: 'OSM', url: 'https://example.com/style.json' }],
+  initialView: { latitude: 0, longitude: 0, zoom: 2 },
+};
 
 describe('LayerConfigSchema backward-compat preprocess', () => {
   const base = {
@@ -225,5 +242,36 @@ describe('CQL2 Filter Schemas', () => {
       expect(result.cql2Filter).toBeDefined();
       expect(result.cql2Filter!.id).toBe('g1');
     });
+  });
+});
+
+describe('InfoConfigSchema', () => {
+  it('parses a MapConfig without an info field (back-compat)', () => {
+    const result = MapConfigSchema.parse(baseMapConfig);
+    expect(result.info).toBeUndefined();
+  });
+
+  it('populates defaults from empty input', () => {
+    const result = InfoConfigSchema.parse({});
+    expect(result).toEqual({
+      enabled: false,
+      markdown: '',
+      position: 'top-right',
+    });
+  });
+
+  it('rejects an invalid position', () => {
+    expect(() => InfoConfigSchema.parse({ position: 'invalid' })).toThrow();
+  });
+
+  it('round-trips a fully populated info object', () => {
+    const input = {
+      enabled: true,
+      title: 'About this map',
+      markdown: '# Hello\n\nThis is a map.',
+      position: 'bottom-left' as const,
+    };
+    const result = InfoConfigSchema.parse(input);
+    expect(result).toEqual(input);
   });
 });

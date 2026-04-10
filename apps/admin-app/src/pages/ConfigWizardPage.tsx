@@ -22,6 +22,7 @@ import {
   defaultSymbol,
   resolveAvailableIcons,
   slugify,
+  INFO_POSITIONS,
 } from '@ogc-maps/storybook-components';
 import { safeValidateMapConfig, DEFAULT_HEADER_COLOR } from '@ogc-maps/storybook-components/schemas';
 import { detectTileSourceType } from '@ogc-maps/storybook-components/utils';
@@ -37,6 +38,7 @@ import type {
   BrandingConfig,
   SourceAuth,
   GlobalSearchConfig,
+  InfoConfig,
 } from '@ogc-maps/storybook-components';
 import { ImageUploadField } from '../components/ImageUploadField';
 import { MapPreview } from '../components/MapPreview';
@@ -50,12 +52,24 @@ const DEFAULT_GLOBAL_SEARCH: GlobalSearchConfig = {
   minQueryLength: 2,
 };
 
+const DEFAULT_INFO: InfoConfig = {
+  enabled: false,
+  markdown: '',
+  position: 'top-right',
+};
+
+const INFO_POSITION_OPTIONS = INFO_POSITIONS.map((pos) => ({
+  value: pos,
+  label: pos.replace('-', ' ').replace(/^./, (c) => c.toUpperCase()),
+}));
+
 interface SavedSourceSummary { id: string; source_id: string; url: string; label: string | null; tile_matrix_set_id: string; source_type?: string; auth?: SourceAuth | null; metadata?: { thumbnail?: string; tileJson?: { tiles: string[]; name?: string; minzoom?: number; maxzoom?: number } } | null }
 
-type WizardStep = 'metadata' | 'layer-select' | 'layer-config' | 'imagery' | 'basemaps' | 'ui' | 'view' | 'review';
+type WizardStep = 'metadata' | 'info' | 'layer-select' | 'layer-config' | 'imagery' | 'basemaps' | 'ui' | 'view' | 'review';
 
 const STEPS: { key: WizardStep; label: string }[] = [
   { key: 'metadata', label: 'Metadata' },
+  { key: 'info', label: 'Info' },
   { key: 'basemaps', label: 'Basemaps' },
   { key: 'layer-select', label: 'Layers' },
   { key: 'layer-config', label: 'Style' },
@@ -160,6 +174,7 @@ export function ConfigWizardPage() {
   const [imageryLayers, setImageryLayers] = useState<ImageryLayerConfig[]>([]);
   const [uiOverrides, setUiOverrides] = useState<Partial<UIConfig>>({});
   const [globalSearch, setGlobalSearch] = useState<GlobalSearchConfig | undefined>(undefined);
+  const [info, setInfo] = useState<InfoConfig | undefined>(undefined);
   const [initialView, setInitialView] = useState<ViewConfig>(DEFAULT_VIEW);
 
   // Derive effective UI config: all-false defaults → auto-suggestions → user overrides
@@ -237,7 +252,7 @@ export function ConfigWizardPage() {
   // Derived config object for save + preview
   const hasBranding = Object.keys(branding).length > 0;
 
-  const assembledConfig: MapConfig = { sources, layers, ...(imageryLayers.length > 0 ? { imageryLayers } : {}), basemaps, sprites: sprites.length > 0 ? sprites : undefined, ui: effectiveUIConfig, initialView, ...(hasBranding && { branding }), ...(globalSearch ? { globalSearch } : {}) };
+  const assembledConfig: MapConfig = { sources, layers, ...(imageryLayers.length > 0 ? { imageryLayers } : {}), basemaps, sprites: sprites.length > 0 ? sprites : undefined, ui: effectiveUIConfig, initialView, ...(hasBranding && { branding }), ...(globalSearch ? { globalSearch } : {}), ...(info ? { info } : {}) };
 
   const isConfigValid = useMemo(() => {
     if (!name) return false;
@@ -267,6 +282,7 @@ export function ConfigWizardPage() {
           setSprites(data.config.sprites ?? []);
           setUiOverrides(data.config.ui ?? DEFAULT_UI_CONFIG);
           setGlobalSearch(data.config.globalSearch);
+          setInfo(data.config.info);
           setInitialView(data.config.initialView ?? DEFAULT_VIEW);
           if (data.config.branding) {
             setBranding(data.config.branding);
@@ -553,6 +569,75 @@ export function ConfigWizardPage() {
                 </FormField>
               </div>
             </CollapsibleSection>
+          </div>
+        )}
+
+        {currentStep === 'info' && (
+          <div className="mapui:space-y-4">
+            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">Info Control</h2>
+            <p className="mapui:text-sm mapui:text-gray-500">
+              Add an informational modal accessible from a floating button on the map. Useful for map credits,
+              data sources, usage notes, or a welcome message.
+            </p>
+
+            {(() => {
+              const current = info ?? DEFAULT_INFO;
+              const enabled = current.enabled;
+              return (
+                <>
+                  <FormField label="Enable">
+                    <label className="mapui:inline-flex mapui:items-center mapui:gap-2 mapui:text-sm mapui:text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={enabled}
+                        onChange={e => setInfo({ ...current, enabled: e.target.checked })}
+                      />
+                      Show info control on the map
+                    </label>
+                  </FormField>
+
+                  <FormField label="Modal title" description="Defaults to 'About this map' if blank">
+                    <input
+                      type="text"
+                      value={current.title ?? ''}
+                      onChange={e => {
+                        const title = e.target.value;
+                        setInfo({ ...current, title: title === '' ? undefined : title });
+                      }}
+                      placeholder="About this map"
+                      className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
+                    />
+                  </FormField>
+
+                  <FormField label="Position">
+                    <select
+                      value={current.position}
+                      onChange={e => setInfo({ ...current, position: e.target.value as InfoConfig['position'] })}
+                      className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
+                    >
+                      {INFO_POSITION_OPTIONS.map(({ value, label }) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </FormField>
+
+                  <FormField label="Markdown content">
+                    <textarea
+                      value={current.markdown}
+                      onChange={e => setInfo({ ...current, markdown: e.target.value })}
+                      placeholder={'# About this map\n\nDescribe your map, data sources, or usage notes here.'}
+                      rows={16}
+                      className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:font-mono mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
+                    />
+                    <p className="mapui:text-xs mapui:text-gray-500 mapui:mt-1">
+                      Markdown supports headings, lists, links, tables, and code blocks. Links open in a new tab.
+                    </p>
+                  </FormField>
+                </>
+              );
+            })()}
           </div>
         )}
 
@@ -924,6 +1009,17 @@ export function ConfigWizardPage() {
             <div className="mapui:bg-gray-50 mapui:rounded mapui:p-4 mapui:text-sm mapui:text-gray-600">
               <p><strong>Name:</strong> {name || '(not set)'}</p>
               <p><strong>Description:</strong> {description || '(not set)'}</p>
+              <p>
+                <strong>Info control:</strong>{' '}
+                {info?.enabled ? `enabled (${info.position})` : 'disabled'}
+              </p>
+              {info?.enabled && info.markdown && (
+                <p className="mapui:mt-1 mapui:text-gray-500 mapui:whitespace-pre-wrap">
+                  <strong>Info preview:</strong>{' '}
+                  {info.markdown.slice(0, 200)}
+                  {info.markdown.length > 200 ? '…' : ''}
+                </p>
+              )}
             </div>
             <ConfigPreview config={assembledConfig} />
             {validationErrors.length > 0 && (
@@ -1017,6 +1113,7 @@ export function ConfigWizardPage() {
           onImageryLayersChange={setImageryLayers}
           currentStep={currentStep}
           uiConfig={effectiveUIConfig}
+          info={info}
         />
       </div>
     </div>

@@ -25,6 +25,8 @@ export {
   resolveControlOrder,
   DEFAULT_HEADER_COLOR,
   BrandingConfigSchema,
+  InfoConfigSchema,
+  INFO_POSITIONS,
   MapConfigSchema,
   validateMapConfig,
   safeValidateMapConfig,

@@ -520,6 +520,7 @@ export const ORDERABLE_CONTROLS = [
   'showBasemapSwitcher',
   'showExportButton',
   'showCompass',
+  'showInfoControl',
 ] as const;
 
 export type OrderableControlKey = (typeof ORDERABLE_CONTROLS)[number];
@@ -590,6 +591,19 @@ export const ImageryLayerConfigSchema = z.object({
   }
 });
 
+// --- Info Config ---
+
+export const INFO_POSITIONS = ['top-right', 'top-left', 'bottom-right', 'bottom-left'] as const;
+export type InfoPosition = (typeof INFO_POSITIONS)[number];
+
+export const InfoConfigSchema = z.object({
+  enabled: z.boolean().default(false),
+  title: z.string().optional(),
+  markdown: z.string().default(''),
+  position: z.enum(INFO_POSITIONS).default('top-right'),
+});
+export type InfoConfig = z.infer<typeof InfoConfigSchema>;
+
 // --- Root Map Config ---
 
 export const MapConfigSchema = z.object({
@@ -617,6 +631,7 @@ export const MapConfigSchema = z.object({
   initialView: ViewConfigSchema,
   branding: BrandingConfigSchema.optional(),
   globalSearch: GlobalSearchConfigSchema.optional(),
+  info: InfoConfigSchema.optional(),
 });
 
 // --- Validation Utilities ---
