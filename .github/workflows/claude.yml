@@ -1,0 +1,222 @@
+name: Claude Agent
+
+# PR-triggered, human-initiated agent runs with three modes:
+#
+#   @claude plan <task>      → reads the issue + relevant skills, posts a
+#                              plan and clarifying questions as a comment.
+#                              Does NOT modify any files or open a PR.
+#
+#   @claude implement        → finds the most recent plan in the issue's
+#                              comment thread, implements it, runs
+#                              `pnpm verify`, and opens a PR.
+#
+#   @claude <anything else>  → falls back to the action's default behavior
+#                              (e.g. "@claude review this PR", "@claude fix
+#                              the failing test").
+#
+# Typical flow:
+#   1. Open an issue using the "Agent task" template.
+#   2. Comment "@claude plan" to get a plan posted as a reply.
+#   3. Read it, ask clarifying questions or refine it in a comment.
+#   4. When happy, comment "@claude implement" to get a PR.
+#
+# Cost controls:
+#   - --max-turns caps tool-call cycles per run.
+#   - Concurrency is per issue/PR so duplicate comments don't fan out.
+#   - 30-minute hard timeout so a stuck agent can't burn budget overnight.
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+
+concurrency:
+  group: claude-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+
+jobs:
+  claude:
+    # Outer gate: only run when the trigger mentions @claude and isn't from a bot.
+    # Mode-specific dispatch happens at the step level below.
+    if: |
+      github.event.sender.type != 'Bot' && (
+        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+        (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Determine which mode the human asked for. We look at the comment body
+      # (for comment events) or the issue body (for issue events) and pick the
+      # first matching keyword: "plan", "implement", or fall through to "default".
+      - name: Detect mode
+        id: mode
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          body="${COMMENT_BODY:-$ISSUE_BODY}"
+          # Case-insensitive match. The pattern requires "@claude" followed by
+          # whitespace and the mode keyword, so "@claude planning ahead" still
+          # matches "plan" but a mention of the word "plan" elsewhere doesn't.
+          if echo "$body" | grep -qiE '@claude[[:space:]]+plan'; then
+            echo "mode=plan" >> "$GITHUB_OUTPUT"
+          elif echo "$body" | grep -qiE '@claude[[:space:]]+implement'; then
+            echo "mode=implement" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=default" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Detected mode: $(grep mode= "$GITHUB_OUTPUT" | cut -d= -f2)"
+
+      # ─── PLAN MODE ──────────────────────────────────────────────────────
+      - name: Run Claude (plan)
+        if: steps.mode.outputs.mode == 'plan'
+        uses: anthropics/claude-code-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: |
+            --max-turns 20
+          prompt: |
+            You are in PLAN MODE. The human has asked you to plan an
+            implementation, NOT to write code. Producing a thoughtful plan is
+            the entire deliverable for this run.
+
+            Steps:
+
+            1. Read the issue body carefully. It's the issue this comment is
+               attached to. If the issue uses the "Agent task" template, pay
+               special attention to the "What needs to happen", "Acceptance
+               criteria", and "Pointers" sections.
+
+            2. Read `.claude/skills/project-conventions/SKILL.md` first. Then
+               look at the other skills in `.claude/skills/` and read whichever
+               ones are relevant to the task (their descriptions are in the
+               frontmatter — pick based on those).
+
+            3. Read the existing files the task touches so your plan is
+               grounded in the real code, not assumptions.
+
+            4. Post a single comment on the issue with this exact structure:
+
+               ## Plan
+
+               **Task as I understand it:** (one paragraph)
+
+               **Files I'll touch:**
+               - `path/to/file.ts` — what changes
+               - `path/to/other.ts` — what changes
+
+               **Approach:**
+               1. Step one
+               2. Step two
+               3. ...
+
+               **Skills I'll follow:** list the .claude/skills/ entries you'll
+               read during implementation, with one-line reasons.
+
+               **Open questions:** any clarifications you need from the human
+               before implementing. If there are none, write "None — ready to
+               implement."
+
+               **Risks / things to watch for:** anything that could go sideways
+               (schema migrations, breaking changes, missing test coverage).
+
+            HARD CONSTRAINTS — these are non-negotiable in plan mode:
+            - DO NOT modify any files in the repository.
+            - DO NOT create branches, commits, or pull requests.
+            - DO NOT run `pnpm verify`, `pnpm build`, or any code-modifying tool.
+            - DO read files freely; reading is the whole point.
+
+            When you're done posting the plan comment, stop. The human will
+            review and either ask follow-up questions in another comment or
+            comment `@claude implement` to proceed.
+
+      # ─── IMPLEMENT MODE ─────────────────────────────────────────────────
+      - name: Run Claude (implement)
+        if: steps.mode.outputs.mode == 'implement'
+        uses: anthropics/claude-code-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: |
+            --max-turns 60
+          prompt: |
+            You are in IMPLEMENT MODE. A plan was previously posted in this
+            issue's comment thread. Your job is to execute it and open a PR.
+
+            Steps:
+
+            1. Read the issue body and ALL of its comments in chronological
+               order. Find the most recent comment that contains a "## Plan"
+               section — that's the plan you're implementing. If the human
+               added clarifications in comments AFTER the plan, those
+               clarifications override the plan where they conflict.
+
+            2. If you can't find a plan, stop and post a comment asking the
+               human to first run `@claude plan` so there's something to
+               implement against. Do not start coding from a blank slate in
+               implement mode.
+
+            3. Read `.claude/skills/project-conventions/SKILL.md` and any
+               other skills the plan referenced.
+
+            4. Implement the plan. Follow the project conventions strictly —
+               in particular: no MapLibre in `packages/map-ui-lib`, fully
+               controlled components, the `mapui:` Tailwind prefix in lib
+               code, and the Config→Zod→Zustand→nuqs data flow.
+
+            5. Run `pnpm verify` (which is `pnpm build && pnpm test`). It
+               must exit 0 before you hand off. If it fails:
+               - First try to fix the failure.
+               - If the failure is genuine and out of scope for this task,
+                 open the PR as a DRAFT and explain the failure clearly in
+                 the PR description rather than silently skipping it.
+
+            6. Open a pull request that:
+               - Has a clear title summarizing the change
+               - Links the issue with `Closes #<issue-number>`
+               - In the body, summarizes what you did, lists the files you
+                 changed, and notes any deviations from the plan with the
+                 reason
+               - Is marked draft only if `pnpm verify` is failing
+
+            7. Post a comment on the original issue linking to the PR.
+
+            Operate from the plan, not from your own re-interpretation of
+            the issue. If the plan is wrong or incomplete, stop and ask in a
+            comment instead of guessing.
+
+      # ─── DEFAULT (UNCHANGED FALLBACK) ───────────────────────────────────
+      - name: Run Claude (default)
+        if: steps.mode.outputs.mode == 'default'
+        uses: anthropics/claude-code-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: |
+            --max-turns 30
