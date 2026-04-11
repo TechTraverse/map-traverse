@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
-import type { UIConfig, OrderableControlKey, LayerConfig } from '../../types';
-import { ORDERABLE_CONTROLS, resolveControlOrder, COORDINATE_FORMATS } from '../../schemas/config';
+import type { UIConfig, OrderableControlKey, LayerConfig, ControlCorner, ControlLayout } from '../../types';
+import { ORDERABLE_CONTROLS, resolveControlOrder, resolveControlCorner, CONTROL_CORNERS, CONTROL_LAYOUTS, COORDINATE_FORMATS } from '../../schemas/config';
+import { CONTROL_ICON_MAP, CONTROL_ICON_NAMES } from '../shared/controlIcons';
 
 export interface UIConfigEditorProps {
   value: UIConfig;
@@ -13,6 +14,19 @@ export interface UIConfigEditorProps {
    */
   layers?: LayerConfig[];
 }
+
+const CORNER_LABELS: Record<ControlCorner, string> = {
+  'top-right': 'Top right',
+  'top-left': 'Top left',
+  'bottom-right': 'Bottom right',
+  'bottom-left': 'Bottom left',
+};
+
+const LAYOUT_LABELS: Record<ControlLayout, { label: string; description: string }> = {
+  individual: { label: 'Individual', description: 'Each control in its configured corner.' },
+  'side-menu': { label: 'Side menu', description: 'Controls grouped in a slide-in menu.' },
+  auto: { label: 'Auto', description: 'Side menu on narrow screens, individual otherwise.' },
+};
 
 const COORDINATE_FORMAT_LABELS: Record<(typeof COORDINATE_FORMATS)[number], string> = {
   'decimal-degrees': 'Decimal degrees (38.887500, -104.824167)',
@@ -127,6 +141,30 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers }: UIConfi
     onChange({ ...value, controlOrder: newOrder });
   };
 
+  const handleCornerChange = (key: OrderableControlKey, corner: ControlCorner) => {
+    const next = { ...(value.controlPositions ?? {}) } as Record<OrderableControlKey, ControlCorner>;
+    if (corner === 'top-right') {
+      delete next[key];
+    } else {
+      next[key] = corner;
+    }
+    const hasAny = Object.keys(next).length > 0;
+    onChange({ ...value, controlPositions: hasAny ? next : undefined });
+  };
+
+  const handleIconChange = (key: OrderableControlKey, iconName: string) => {
+    const next = { ...(value.controlIcons ?? {}) } as Record<OrderableControlKey, string>;
+    if (!iconName) {
+      delete next[key];
+    } else {
+      next[key] = iconName;
+    }
+    const hasAny = Object.keys(next).length > 0;
+    onChange({ ...value, controlIcons: hasAny ? next : undefined });
+  };
+
+  const [iconPickerFor, setIconPickerFor] = useState<OrderableControlKey | null>(null);
+
   const handleMoveUp = (index: number) => {
     if (index === 0) return;
     const updated = [...controlOrder];
@@ -183,6 +221,41 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers }: UIConfi
 
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-4">
+      {/* Control layout */}
+      <div className="mapui:flex mapui:flex-col mapui:gap-1">
+        <h4 className="mapui:m-0 mapui:text-xs mapui:font-semibold mapui:text-gray-700">
+          Control Layout
+        </h4>
+        <p className="mapui:m-0 mapui:mb-1 mapui:text-xs mapui:text-gray-500">
+          How controls are displayed on the map.
+        </p>
+        <div className="mapui:flex mapui:flex-col mapui:gap-1.5">
+          {CONTROL_LAYOUTS.map((layout) => (
+            <label
+              key={layout}
+              className="mapui:flex mapui:cursor-pointer mapui:items-start mapui:gap-2 mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:px-3 mapui:py-2 hover:mapui:bg-gray-50"
+            >
+              <input
+                type="radio"
+                name="controlLayout"
+                value={layout}
+                checked={value.controlLayout === layout}
+                onChange={() => onChange({ ...value, controlLayout: layout })}
+                className="mapui:mt-0.5"
+              />
+              <span className="mapui:flex mapui:flex-col mapui:gap-0.5">
+                <span className="mapui:text-sm mapui:font-medium mapui:text-gray-800">
+                  {LAYOUT_LABELS[layout].label}
+                </span>
+                <span className="mapui:text-xs mapui:text-gray-500">
+                  {LAYOUT_LABELS[layout].description}
+                </span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+
       {/* Orderable controls */}
       <div className="mapui:flex mapui:flex-col mapui:gap-1">
         <h4 className="mapui:m-0 mapui:text-xs mapui:font-semibold mapui:text-gray-700">
@@ -245,6 +318,83 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers }: UIConfi
                   <span className="mapui:text-xs mapui:text-gray-500">{info.description}</span>
                   {autoEnabled?.has(key as keyof UIConfig) && (
                     <span className="mapui:text-[10px] mapui:font-medium mapui:text-blue-500">Auto-enabled</span>
+                  )}
+                </div>
+                <select
+                  value={resolveControlCorner(value, key)}
+                  onChange={(e) => handleCornerChange(key, e.target.value as ControlCorner)}
+                  aria-label={`${info.label} position`}
+                  className="mapui:shrink-0 mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-1.5 mapui:py-1 mapui:text-xs mapui:text-gray-700 focus:mapui:border-blue-500 focus:mapui:outline-none"
+                >
+                  {CONTROL_CORNERS.map((c) => (
+                    <option key={c} value={c}>
+                      {CORNER_LABELS[c]}
+                    </option>
+                  ))}
+                </select>
+                <div className="mapui:relative">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setIconPickerFor(iconPickerFor === key ? null : (key as OrderableControlKey))
+                    }
+                    aria-label={`${info.label} icon`}
+                    title="Change icon"
+                    className="mapui:flex mapui:h-7 mapui:w-7 mapui:shrink-0 mapui:cursor-pointer mapui:items-center mapui:justify-center mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white hover:mapui:bg-gray-50"
+                  >
+                    {(() => {
+                      const iconName = value.controlIcons?.[key as OrderableControlKey];
+                      const Icon = iconName ? CONTROL_ICON_MAP[iconName] : null;
+                      return Icon ? (
+                        <Icon size={14} className="mapui:text-gray-700" />
+                      ) : (
+                        <span className="mapui:text-[10px] mapui:text-gray-500">icon</span>
+                      );
+                    })()}
+                  </button>
+                  {iconPickerFor === key && (
+                    <div className="mapui:absolute mapui:right-0 mapui:top-8 mapui:z-10 mapui:w-48 mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:p-2 mapui:shadow-lg">
+                      <div className="mapui:mb-1 mapui:flex mapui:items-center mapui:justify-between">
+                        <span className="mapui:text-[10px] mapui:font-semibold mapui:text-gray-600">
+                          Pick an icon
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleIconChange(key as OrderableControlKey, '');
+                            setIconPickerFor(null);
+                          }}
+                          className="mapui:cursor-pointer mapui:border-none mapui:bg-transparent mapui:text-[10px] mapui:text-blue-600 hover:mapui:underline"
+                        >
+                          reset
+                        </button>
+                      </div>
+                      <div className="mapui:grid mapui:grid-cols-6 mapui:gap-1">
+                        {CONTROL_ICON_NAMES.map((name) => {
+                          const Icon = CONTROL_ICON_MAP[name];
+                          const selected =
+                            value.controlIcons?.[key as OrderableControlKey] === name;
+                          return (
+                            <button
+                              key={name}
+                              type="button"
+                              onClick={() => {
+                                handleIconChange(key as OrderableControlKey, name);
+                                setIconPickerFor(null);
+                              }}
+                              title={name}
+                              className={`mapui:flex mapui:h-6 mapui:w-6 mapui:cursor-pointer mapui:items-center mapui:justify-center mapui:rounded mapui:border ${
+                                selected
+                                  ? 'mapui:border-blue-500 mapui:bg-blue-50'
+                                  : 'mapui:border-gray-200 mapui:bg-white hover:mapui:bg-gray-50'
+                              }`}
+                            >
+                              <Icon size={14} className="mapui:text-gray-700" />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   )}
                 </div>
                 <Toggle

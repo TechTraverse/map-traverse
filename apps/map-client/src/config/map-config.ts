@@ -229,6 +229,7 @@ export const mapConfig: MapConfig = {
     showGlobalSearch: false,
     showScaleBar: false,
     coordinateFormat: 'decimal-degrees',
+    controlLayout: 'individual',
   },
   initialView: {
     latitude: 0,

@@ -23,7 +23,7 @@ export function ConfirmDialog({
       aria-labelledby="confirm-dialog-title"
       aria-describedby="confirm-dialog-description"
     >
-      <div className="mapui:w-full mapui:max-w-sm mapui:rounded-lg mapui:bg-white mapui:p-6 mapui:shadow-xl">
+      <div className="mapui:mx-4 mapui:w-full mapui:max-w-sm mapui:rounded-lg mapui:bg-white mapui:p-6 mapui:shadow-xl">
         <h2
           id="confirm-dialog-title"
           className="mapui:m-0 mapui:mb-2 mapui:text-base mapui:font-semibold mapui:text-gray-900"

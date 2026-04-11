@@ -45,6 +45,12 @@ export {
   metersPerPixel,
 } from './ScaleBarControl';
 export type { ScaleBarControlProps, ScaleBarUnit } from './ScaleBarControl';
+export { SideMenuPanel, SideMenuToggle } from './SideMenuPanel';
+export type {
+  SideMenuPanelProps,
+  SideMenuPanelItem,
+  SideMenuToggleProps,
+} from './SideMenuPanel';
 export { MeasurePanel } from './MeasurePanel';
 export type { MeasurePanelProps } from './MeasurePanel';
 export { SelectionPanel } from './SelectionPanel';
@@ -101,3 +107,4 @@ export { QueryPanel } from './QueryPanel';
 export type { QueryPanelProps } from './QueryPanel';
 export { UserMenu } from './UserMenu';
 export type { UserMenuProps, UserMenuItem } from './UserMenu';
+export { CONTROL_ICON_MAP, CONTROL_ICON_NAMES, getControlIcon } from './shared/controlIcons';
