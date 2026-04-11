@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { ResultsDrawer } from './ResultsDrawer';
-import type { ResultsDrawerTab } from './ResultsDrawer';
+import type { ResultsDrawerSort, ResultsDrawerTab } from './ResultsDrawer';
 
 const meta: Meta<typeof ResultsDrawer> = {
   title: 'Map UI/ResultsDrawer',
@@ -89,6 +89,33 @@ export const WithTabs: Story = {
         activeTabId={activeTab}
         onTabChange={setActiveTab}
         onClose={() => {}}
+      />
+    );
+  },
+};
+
+export const InteractiveTable: Story = {
+  render: () => {
+    const [columnOrder, setColumnOrder] = useState<string[]>([
+      'name',
+      'continent',
+      'population',
+      'area_km2',
+    ]);
+    const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
+    const [sortBy, setSortBy] = useState<ResultsDrawerSort | null>(null);
+    return (
+      <ResultsDrawer
+        open={true}
+        features={sampleFeatures}
+        title="Countries — interactive"
+        onClose={() => {}}
+        columnOrder={columnOrder}
+        onColumnOrderChange={setColumnOrder}
+        hiddenColumns={hiddenColumns}
+        onHiddenColumnsChange={setHiddenColumns}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
       />
     );
   },

@@ -85,3 +85,14 @@ export const ErrorState: Story = {
     error: 'Failed to fetch features: Network error',
   },
 };
+
+export const WithSelection: Story = {
+  args: {
+    open: true,
+    layers: sampleLayers,
+    availableFormats: sampleFormats,
+    hasActiveFilter: () => false,
+    selectionCount: 12,
+    selectionLayerId: 'countries',
+  },
+};

@@ -21,6 +21,16 @@ export interface UseExportResult {
     cql2Filter?: CQL2Expression,
     baseUrl?: string,
   ) => Promise<void>;
+  /**
+   * Export an explicit list of already-in-memory features without hitting the
+   * OGC API. Used by the ExportModal's "Selected only" mode.
+   */
+  exportFeatures: (
+    features: GeoJsonFeature[],
+    collectionId: string,
+    formatId: string,
+    filename: string,
+  ) => Promise<void>;
   loading: boolean;
   progress: string | null;
   error: Error | null;
@@ -97,5 +107,35 @@ export function useExport({
     [defaultBaseUrl, limit, converters],
   );
 
-  return { runExport, loading, progress, error };
+  const exportFeatures = useCallback(
+    async (
+      features: GeoJsonFeature[],
+      collectionId: string,
+      formatId: string,
+      filename: string,
+    ) => {
+      const converter = converters[formatId];
+      if (!converter) {
+        setError(new Error(`Unknown export format: ${formatId}`));
+        return;
+      }
+
+      setLoading(true);
+      setProgress('Converting...');
+      setError(null);
+
+      try {
+        const result = await converter(features, collectionId);
+        downloadBlob(result.blob, filename);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error(String(err)));
+      } finally {
+        setLoading(false);
+        setProgress(null);
+      }
+    },
+    [converters],
+  );
+
+  return { runExport, exportFeatures, loading, progress, error };
 }

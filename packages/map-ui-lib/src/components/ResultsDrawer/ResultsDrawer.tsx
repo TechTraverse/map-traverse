@@ -1,5 +1,15 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { LuX, LuDownload, LuTrash2, LuGripHorizontal } from 'react-icons/lu';
+import {
+  LuX,
+  LuDownload,
+  LuTrash2,
+  LuGripHorizontal,
+  LuColumns3,
+  LuArrowUp,
+  LuArrowDown,
+  LuArrowLeft,
+  LuArrowRight,
+} from 'react-icons/lu';
 
 /** Format a property value for table display. */
 function formatCellValue(value: unknown): string {
@@ -7,6 +17,13 @@ function formatCellValue(value: unknown): string {
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
   if (typeof value === 'object') return JSON.stringify(value);
   return String(value);
+}
+
+export type SortDirection = 'asc' | 'desc';
+
+export interface ResultsDrawerSort {
+  property: string;
+  direction: SortDirection;
 }
 
 export interface ResultsDrawerTab {
@@ -37,11 +54,35 @@ export interface ResultsDrawerProps {
   tabs?: ResultsDrawerTab[];
   activeTabId?: string;
   onTabChange?: (tabId: string) => void;
+
+  // Controlled column ordering (optional — falls back to internal state).
+  columnOrder?: string[];
+  onColumnOrderChange?: (order: string[]) => void;
+
+  // Controlled column visibility (optional — falls back to internal state).
+  hiddenColumns?: string[];
+  onHiddenColumnsChange?: (hidden: string[]) => void;
+
+  // Controlled sort (optional — falls back to internal state; sorting is
+  // applied locally when this is uncontrolled).
+  sortBy?: ResultsDrawerSort | null;
+  onSortChange?: (sort: ResultsDrawerSort | null) => void;
 }
 
 const MIN_HEIGHT = 200;
 const MAX_HEIGHT_RATIO = 0.6;
 const DEFAULT_HEIGHT = 300;
+
+function compareValues(a: unknown, b: unknown): number {
+  if (a == null && b == null) return 0;
+  if (a == null) return -1;
+  if (b == null) return 1;
+  if (typeof a === 'number' && typeof b === 'number') return a - b;
+  const na = Number(a);
+  const nb = Number(b);
+  if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
+  return String(a).localeCompare(String(b));
+}
 
 export function ResultsDrawer({
   open,
@@ -55,18 +96,40 @@ export function ResultsDrawer({
   tabs,
   activeTabId,
   onTabChange,
+  columnOrder: columnOrderProp,
+  onColumnOrderChange,
+  hiddenColumns: hiddenColumnsProp,
+  onHiddenColumnsChange,
+  sortBy: sortByProp,
+  onSortChange,
 }: ResultsDrawerProps) {
   const [height, setHeight] = useState(DEFAULT_HEIGHT);
   const dragging = useRef(false);
   const startY = useRef(0);
   const startHeight = useRef(0);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    dragging.current = true;
-    startY.current = e.clientY;
-    startHeight.current = height;
-  }, [height]);
+  const [internalColumnOrder, setInternalColumnOrder] = useState<string[] | undefined>(undefined);
+  const [internalHidden, setInternalHidden] = useState<string[]>([]);
+  const [internalSort, setInternalSort] = useState<ResultsDrawerSort | null>(null);
+  const [columnMenuOpen, setColumnMenuOpen] = useState(false);
+
+  const columnOrderControlled = columnOrderProp != null;
+  const hiddenControlled = hiddenColumnsProp != null;
+  const sortControlled = sortByProp !== undefined;
+
+  const effectiveColumnOrder = columnOrderControlled ? columnOrderProp : internalColumnOrder;
+  const hiddenColumns = hiddenControlled ? hiddenColumnsProp! : internalHidden;
+  const sortBy = sortControlled ? sortByProp ?? null : internalSort;
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      dragging.current = true;
+      startY.current = e.clientY;
+      startHeight.current = height;
+    },
+    [height],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -102,13 +165,115 @@ export function ResultsDrawer({
   const onClear = isTabMode ? activeTab!.onClear : onClearSelection;
   const displayTitle = isTabMode ? activeTab!.label : title;
 
-  // Determine columns from the first feature if not specified
-  const displayColumns = useMemo(
-    () => columns ?? (features.length > 0
-      ? Object.keys(features[0].properties).filter((k) => k !== 'geometry')
-      : []),
+  // Base columns before reorder/hide: use explicit `columns` prop, then fall
+  // back to the property keys from the first feature.
+  const baseColumns = useMemo(
+    () =>
+      columns ??
+      (features.length > 0
+        ? Object.keys(features[0].properties).filter((k) => k !== 'geometry')
+        : []),
     [columns, features],
   );
+
+  // Reset per-tab/context UI state when the set of base columns changes.
+  // We compare by identity of baseColumns (it's memoized above) and also reset
+  // when the active tab changes.
+  const activeContextKey = isTabMode ? activeTab?.id : '__single__';
+  const previousContextKey = useRef<string | undefined>(activeContextKey);
+  useEffect(() => {
+    if (previousContextKey.current !== activeContextKey) {
+      previousContextKey.current = activeContextKey;
+      if (!columnOrderControlled) setInternalColumnOrder(undefined);
+      if (!hiddenControlled) setInternalHidden([]);
+      if (!sortControlled) setInternalSort(null);
+    }
+  }, [activeContextKey, columnOrderControlled, hiddenControlled, sortControlled]);
+
+  // Apply column order (controlled or internal) on top of baseColumns.
+  // Unknown reordered columns are ignored; new baseColumns missing from the
+  // order are appended to the end so the user can see them.
+  const orderedColumns = useMemo(() => {
+    if (!effectiveColumnOrder || effectiveColumnOrder.length === 0) return baseColumns;
+    const known = new Set(baseColumns);
+    const kept = effectiveColumnOrder.filter((c) => known.has(c));
+    const leftover = baseColumns.filter((c) => !kept.includes(c));
+    return [...kept, ...leftover];
+  }, [baseColumns, effectiveColumnOrder]);
+
+  const visibleColumns = useMemo(
+    () => orderedColumns.filter((c) => !hiddenColumns.includes(c)),
+    [orderedColumns, hiddenColumns],
+  );
+
+  // Always sort features locally for display. Consumers may additionally
+  // receive `onSortChange` to trigger server-side sorting (e.g. CQL2 sortby),
+  // but the local sort ensures the visible rows reflect the active sort even
+  // when the underlying data source hasn't re-fetched.
+  const displayedFeatures = useMemo(() => {
+    if (!sortBy) return features;
+    const { property, direction } = sortBy;
+    const sorted = [...features].sort((a, b) =>
+      compareValues(a.properties[property], b.properties[property]),
+    );
+    if (direction === 'desc') sorted.reverse();
+    return sorted;
+  }, [features, sortBy]);
+
+  const updateColumnOrder = (next: string[]) => {
+    if (columnOrderControlled) {
+      onColumnOrderChange?.(next);
+    } else {
+      setInternalColumnOrder(next);
+      onColumnOrderChange?.(next);
+    }
+  };
+
+  const updateHidden = (next: string[]) => {
+    if (hiddenControlled) {
+      onHiddenColumnsChange?.(next);
+    } else {
+      setInternalHidden(next);
+      onHiddenColumnsChange?.(next);
+    }
+  };
+
+  const updateSort = (next: ResultsDrawerSort | null) => {
+    if (sortControlled) {
+      onSortChange?.(next);
+    } else {
+      setInternalSort(next);
+      onSortChange?.(next);
+    }
+  };
+
+  const toggleColumnHidden = (col: string) => {
+    const next = hiddenColumns.includes(col)
+      ? hiddenColumns.filter((c) => c !== col)
+      : [...hiddenColumns, col];
+    updateHidden(next);
+  };
+
+  const moveColumn = (col: string, direction: -1 | 1) => {
+    const current = orderedColumns;
+    const idx = current.indexOf(col);
+    if (idx < 0) return;
+    const target = idx + direction;
+    if (target < 0 || target >= current.length) return;
+    const next = [...current];
+    [next[idx], next[target]] = [next[target], next[idx]];
+    updateColumnOrder(next);
+  };
+
+  const cycleSort = (col: string) => {
+    if (!sortBy || sortBy.property !== col) {
+      updateSort({ property: col, direction: 'asc' });
+    } else if (sortBy.direction === 'asc') {
+      updateSort({ property: col, direction: 'desc' });
+    } else {
+      updateSort(null);
+    }
+  };
 
   if (!open) return null;
 
@@ -145,12 +310,14 @@ export function ResultsDrawer({
                   ].join(' ')}
                 >
                   {tab.label}
-                  <span className={[
-                    'mapui:rounded-full mapui:px-1.5 mapui:py-0.5 mapui:text-xs mapui:font-medium',
-                    (activeTab?.id ?? tabs[0].id) === tab.id
-                      ? 'mapui:bg-blue-500 mapui:text-white'
-                      : 'mapui:bg-gray-100 mapui:text-gray-600',
-                  ].join(' ')}>
+                  <span
+                    className={[
+                      'mapui:rounded-full mapui:px-1.5 mapui:py-0.5 mapui:text-xs mapui:font-medium',
+                      (activeTab?.id ?? tabs[0].id) === tab.id
+                        ? 'mapui:bg-blue-500 mapui:text-white'
+                        : 'mapui:bg-gray-100 mapui:text-gray-600',
+                    ].join(' ')}
+                  >
                     {tab.features.length}
                   </span>
                 </button>
@@ -166,6 +333,47 @@ export function ResultsDrawer({
           )}
         </div>
         <div className="mapui:flex mapui:items-center mapui:gap-1">
+          {baseColumns.length > 0 && (
+            <div className="mapui:relative">
+              <button
+                type="button"
+                onClick={() => setColumnMenuOpen((v) => !v)}
+                title="Show/hide columns"
+                aria-haspopup="true"
+                aria-expanded={columnMenuOpen}
+                className="mapui:flex mapui:items-center mapui:justify-center mapui:w-7 mapui:h-7 mapui:rounded hover:mapui:bg-gray-100 mapui:text-gray-500"
+              >
+                <LuColumns3 size={16} />
+              </button>
+              {columnMenuOpen && (
+                <div
+                  role="menu"
+                  className="mapui:absolute mapui:right-0 mapui:top-full mapui:mt-1 mapui:z-30 mapui:min-w-[180px] mapui:rounded-md mapui:border mapui:border-gray-200 mapui:bg-white mapui:shadow-lg mapui:py-1"
+                >
+                  <div className="mapui:px-3 mapui:py-1 mapui:text-xs mapui:font-semibold mapui:text-gray-500 mapui:uppercase mapui:tracking-wide">
+                    Columns
+                  </div>
+                  {orderedColumns.map((col) => {
+                    const checked = !hiddenColumns.includes(col);
+                    return (
+                      <label
+                        key={col}
+                        className="mapui:flex mapui:items-center mapui:gap-2 mapui:px-3 mapui:py-1 mapui:cursor-pointer mapui:text-sm mapui:text-gray-700 hover:mapui:bg-gray-50"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleColumnHidden(col)}
+                          className="mapui:accent-blue-600"
+                        />
+                        <span>{col}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
           {onExport && (
             <button
               type="button"
@@ -199,7 +407,7 @@ export function ResultsDrawer({
 
       {/* Table */}
       <div className="mapui:overflow-auto mapui:flex-1">
-        {features.length === 0 ? (
+        {displayedFeatures.length === 0 ? (
           <div className="mapui:flex mapui:items-center mapui:justify-center mapui:h-full mapui:text-sm mapui:text-gray-400">
             No features to display
           </div>
@@ -207,19 +415,78 @@ export function ResultsDrawer({
           <table className="mapui:w-full mapui:text-xs mapui:border-collapse">
             <thead>
               <tr className="mapui:bg-gray-50 mapui:sticky mapui:top-0">
-                <th className="mapui:px-3 mapui:py-2 mapui:text-left mapui:font-medium mapui:text-gray-600 mapui:border-b mapui:border-gray-200">#</th>
-                {displayColumns.map((col) => (
-                  <th
-                    key={col}
-                    className="mapui:px-3 mapui:py-2 mapui:text-left mapui:font-medium mapui:text-gray-600 mapui:border-b mapui:border-gray-200 mapui:whitespace-nowrap"
-                  >
-                    {col}
-                  </th>
-                ))}
+                <th className="mapui:px-3 mapui:py-2 mapui:text-left mapui:font-medium mapui:text-gray-600 mapui:border-b mapui:border-gray-200">
+                  #
+                </th>
+                {visibleColumns.map((col) => {
+                  const orderIdx = orderedColumns.indexOf(col);
+                  const canMoveLeft = orderIdx > 0;
+                  const canMoveRight = orderIdx < orderedColumns.length - 1;
+                  const sortIcon =
+                    sortBy?.property === col
+                      ? sortBy.direction === 'asc'
+                        ? <LuArrowUp size={11} />
+                        : <LuArrowDown size={11} />
+                      : null;
+                  return (
+                    <th
+                      key={col}
+                      scope="col"
+                      aria-sort={
+                        sortBy?.property === col
+                          ? sortBy.direction === 'asc'
+                            ? 'ascending'
+                            : 'descending'
+                          : 'none'
+                      }
+                      className="mapui:px-2 mapui:py-2 mapui:text-left mapui:font-medium mapui:text-gray-600 mapui:border-b mapui:border-gray-200 mapui:whitespace-nowrap"
+                    >
+                      <div className="mapui:flex mapui:items-center mapui:gap-1">
+                        <button
+                          type="button"
+                          onClick={() => moveColumn(col, -1)}
+                          disabled={!canMoveLeft}
+                          title="Move column left"
+                          className={[
+                            'mapui:flex mapui:items-center mapui:justify-center mapui:w-4 mapui:h-4 mapui:rounded',
+                            canMoveLeft
+                              ? 'mapui:text-gray-400 hover:mapui:text-gray-700 hover:mapui:bg-gray-200 mapui:cursor-pointer'
+                              : 'mapui:text-gray-200 mapui:cursor-not-allowed',
+                          ].join(' ')}
+                        >
+                          <LuArrowLeft size={11} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => cycleSort(col)}
+                          className="mapui:flex mapui:items-center mapui:gap-1 mapui:cursor-pointer mapui:select-none hover:mapui:text-gray-900"
+                          title="Sort"
+                        >
+                          <span>{col}</span>
+                          {sortIcon}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveColumn(col, 1)}
+                          disabled={!canMoveRight}
+                          title="Move column right"
+                          className={[
+                            'mapui:flex mapui:items-center mapui:justify-center mapui:w-4 mapui:h-4 mapui:rounded',
+                            canMoveRight
+                              ? 'mapui:text-gray-400 hover:mapui:text-gray-700 hover:mapui:bg-gray-200 mapui:cursor-pointer'
+                              : 'mapui:text-gray-200 mapui:cursor-not-allowed',
+                          ].join(' ')}
+                        >
+                          <LuArrowRight size={11} />
+                        </button>
+                      </div>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
-              {features.map((feature, i) => (
+              {displayedFeatures.map((feature, i) => (
                 <tr
                   key={i}
                   onClick={() => onFeatureClick?.(i)}
@@ -232,7 +499,7 @@ export function ResultsDrawer({
                   <td className="mapui:px-3 mapui:py-1.5 mapui:text-gray-400 mapui:border-b mapui:border-gray-100">
                     {i + 1}
                   </td>
-                  {displayColumns.map((col) => (
+                  {visibleColumns.map((col) => (
                     <td
                       key={col}
                       className="mapui:px-3 mapui:py-1.5 mapui:text-gray-700 mapui:border-b mapui:border-gray-100 mapui:whitespace-nowrap"

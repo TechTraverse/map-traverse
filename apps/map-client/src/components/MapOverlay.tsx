@@ -22,10 +22,11 @@ import {
   type ExportableLayer,
   type ExportRequest,
 } from '@ogc-maps/storybook-components';
-import type { MeasureMode, MeasureUnit, Measurement, SelectionMode } from '@ogc-maps/storybook-components';
+import type { MeasureMode, MeasureUnit, Measurement, SelectedFeature, SelectionMode } from '@ogc-maps/storybook-components';
 import type { FilterRuleGroup } from '@ogc-maps/storybook-components/types';
 import { useExport } from '@ogc-maps/storybook-components/hooks';
-import { DEFAULT_EXPORT_FORMATS, fromStructuredFilters, fetchFeatures, eq, exportConverters, zoomToFeature } from '@ogc-maps/storybook-components/utils';
+import { DEFAULT_EXPORT_FORMATS, fromStructuredFilters, fetchFeatures, eq, bboxFromGeometry, exportConverters, zoomToFeature } from '@ogc-maps/storybook-components/utils';
+import type { GeoJsonFeature } from '@ogc-maps/storybook-components/utils';
 import type { UIConfig, SearchFilterValue, SearchFilterValues, OrderableControlKey, InfoPosition } from '@ogc-maps/storybook-components/types';
 import { resolveControlOrder } from '@ogc-maps/storybook-components';
 import { useMapStore, useActiveLayerIds } from '../stores/mapStore';
@@ -72,6 +73,7 @@ interface MapOverlayProps {
   selectionActiveLayerId: string | null;
   onSelectionActiveLayerChange: (layerId: string | null) => void;
   selectionCount: number;
+  selectionFeatures: SelectedFeature[];
   onSelectionClear: () => void;
   onSelectionViewResults: () => void;
   queryFilter?: FilterRuleGroup;
@@ -103,6 +105,7 @@ export function MapOverlay({
   selectionActiveLayerId,
   onSelectionActiveLayerChange,
   selectionCount,
+  selectionFeatures,
   onSelectionClear,
   onSelectionViewResults,
   queryFilter,
@@ -136,7 +139,13 @@ export function MapOverlay({
 
   const { autocompleteSuggestions, fetchSuggestions } = useAutocompleteSuggestions();
 
-  const { runExport, loading: exportLoading, progress: exportProgress, error: exportError } = useExport({
+  const {
+    runExport,
+    exportFeatures: runExportFromFeatures,
+    loading: exportLoading,
+    progress: exportProgress,
+    error: exportError,
+  } = useExport({
     converters: exportConverters,
   });
 
@@ -150,14 +159,27 @@ export function MapOverlay({
 
   const handleExportRequest = useCallback(
     (request: ExportRequest) => {
-      const cql2Filter = request.filtered ? (activeCql2Filters[request.layer.id] ?? undefined) : undefined;
       const filename = `${request.layer.label}${request.format.extension}`;
+      if (request.mode === 'selected') {
+        const features: GeoJsonFeature[] = selectionFeatures
+          .filter((f) => f.layerId === request.layer.id)
+          .map((f) => ({
+            type: 'Feature',
+            id: f.id,
+            properties: f.properties,
+            geometry: f.geometry as GeoJsonFeature['geometry'],
+          }));
+        if (features.length === 0) return;
+        runExportFromFeatures(features, request.layer.collection, request.format.id, filename);
+        return;
+      }
+      const cql2Filter = request.filtered ? (activeCql2Filters[request.layer.id] ?? undefined) : undefined;
       const layer = useMapStore.getState().layers.find((l) => l.id === request.layer.id);
       const source = sources.find((s) => s.id === layer?.sourceId);
       const baseUrl = source?.url ?? '';
       runExport(request.layer.collection, request.format.id, filename, cql2Filter, baseUrl);
     },
-    [runExport, activeCql2Filters, sources],
+    [runExport, runExportFromFeatures, activeCql2Filters, sources, selectionFeatures],
   );
 
   const handleZoomToFeature = useCallback(
@@ -440,6 +462,8 @@ export function MapOverlay({
         layers={exportableLayers}
         availableFormats={DEFAULT_EXPORT_FORMATS}
         hasActiveFilter={(layerId) => activeCql2Filters[layerId] != null}
+        selectionCount={selectionCount}
+        selectionLayerId={selectionActiveLayerId}
         loading={exportLoading}
         progress={exportProgress}
         error={exportError?.message}
