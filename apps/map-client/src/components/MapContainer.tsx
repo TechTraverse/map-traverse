@@ -349,10 +349,21 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
     return map;
   }, [layers, activeCql2Filters]);
 
+  // Only forward zoom constraints when the min/max pair is coherent. Invalid
+  // intermediate states (e.g. user mid-typing) would otherwise throw in MapLibre.
+  const zoomConstraintsValid =
+    viewState.minZoom == null || viewState.maxZoom == null || viewState.minZoom <= viewState.maxZoom;
+
   return (
     <Map
       ref={mapRef as React.Ref<MapRef>}
-      {...viewState}
+      latitude={viewState.latitude}
+      longitude={viewState.longitude}
+      zoom={viewState.zoom}
+      pitch={viewState.pitch}
+      bearing={viewState.bearing}
+      {...(zoomConstraintsValid && viewState.minZoom != null ? { minZoom: viewState.minZoom } : {})}
+      {...(zoomConstraintsValid && viewState.maxZoom != null ? { maxZoom: viewState.maxZoom } : {})}
       style={{ width: '100%', height: '100%' }}
       mapStyle={resolvedStyle as any}
       transformRequest={transformRequest}

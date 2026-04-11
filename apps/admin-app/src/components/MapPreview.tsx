@@ -700,6 +700,8 @@ export function MapPreview({
       zoom: evt.viewState.zoom,
       pitch: evt.viewState.pitch,
       bearing: evt.viewState.bearing,
+      ...(internalViewState.minZoom != null ? { minZoom: internalViewState.minZoom } : {}),
+      ...(internalViewState.maxZoom != null ? { maxZoom: internalViewState.maxZoom } : {}),
     };
     if (onViewStateChange) {
       onViewStateChange(next);
@@ -707,6 +709,13 @@ export function MapPreview({
       setInternalViewState(next);
     }
   };
+
+  // Only forward zoom constraints when the min/max pair is coherent. Invalid
+  // intermediate states (e.g. user mid-typing) would otherwise throw in MapLibre.
+  const zoomConstraintsValid =
+    internalViewState.minZoom == null ||
+    internalViewState.maxZoom == null ||
+    internalViewState.minZoom <= internalViewState.maxZoom;
 
   return (
     <div className="mapui:relative mapui:w-full mapui:h-full">
@@ -717,6 +726,8 @@ export function MapPreview({
         zoom={internalViewState.zoom}
         pitch={internalViewState.pitch}
         bearing={internalViewState.bearing}
+        {...(zoomConstraintsValid && internalViewState.minZoom != null ? { minZoom: internalViewState.minZoom } : {})}
+        {...(zoomConstraintsValid && internalViewState.maxZoom != null ? { maxZoom: internalViewState.maxZoom } : {})}
         style={{ width: '100%', height: '100%' }}
         mapStyle={resolvedStyle as any}
         transformRequest={transformRequest}

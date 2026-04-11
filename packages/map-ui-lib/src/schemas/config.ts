@@ -17,13 +17,39 @@ const colorOrExprOptional = () => z.union([z.string(), ExpressionSchema]).option
 
 // --- View Configuration ---
 
-export const ViewConfigSchema = z.object({
-  latitude: z.number().min(-90).max(90),
-  longitude: z.number().min(-180).max(180),
-  zoom: z.number().min(0).max(24),
-  pitch: z.number().min(0).max(85).default(0),
-  bearing: z.number().min(-180).max(180).default(0),
-});
+export const ViewConfigSchema = z
+  .object({
+    latitude: z.number().min(-90).max(90),
+    longitude: z.number().min(-180).max(180),
+    zoom: z.number().min(0).max(24),
+    pitch: z.number().min(0).max(85).default(0),
+    bearing: z.number().min(-180).max(180).default(0),
+    minZoom: z.number().min(0).max(24).optional(),
+    maxZoom: z.number().min(0).max(24).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.minZoom != null && data.maxZoom != null && data.minZoom > data.maxZoom) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['minZoom'],
+        message: 'minZoom must be less than or equal to maxZoom',
+      });
+    }
+    if (data.minZoom != null && data.zoom < data.minZoom) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['zoom'],
+        message: `Zoom must be at least ${data.minZoom} (minZoom)`,
+      });
+    }
+    if (data.maxZoom != null && data.zoom > data.maxZoom) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['zoom'],
+        message: `Zoom must be at most ${data.maxZoom} (maxZoom)`,
+      });
+    }
+  });
 
 // --- Source Authentication ---
 

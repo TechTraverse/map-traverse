@@ -7,6 +7,7 @@ import {
   Cql2FilterConfigSchema,
   InfoConfigSchema,
   MapConfigSchema,
+  ViewConfigSchema,
 } from '../config';
 
 const baseMapConfig = {
@@ -242,6 +243,56 @@ describe('CQL2 Filter Schemas', () => {
       expect(result.cql2Filter).toBeDefined();
       expect(result.cql2Filter!.id).toBe('g1');
     });
+  });
+});
+
+describe('ViewConfigSchema', () => {
+  const base = { latitude: 0, longitude: 0, zoom: 10, pitch: 0, bearing: 0 };
+
+  it('parses without minZoom/maxZoom (backward compat)', () => {
+    const result = ViewConfigSchema.parse(base);
+    expect(result.minZoom).toBeUndefined();
+    expect(result.maxZoom).toBeUndefined();
+  });
+
+  it('parses with valid minZoom only', () => {
+    const result = ViewConfigSchema.parse({ ...base, minZoom: 2 });
+    expect(result.minZoom).toBe(2);
+    expect(result.maxZoom).toBeUndefined();
+  });
+
+  it('parses with valid maxZoom only', () => {
+    const result = ViewConfigSchema.parse({ ...base, maxZoom: 18 });
+    expect(result.maxZoom).toBe(18);
+    expect(result.minZoom).toBeUndefined();
+  });
+
+  it('parses with valid minZoom and maxZoom', () => {
+    const result = ViewConfigSchema.parse({ ...base, minZoom: 2, maxZoom: 18 });
+    expect(result.minZoom).toBe(2);
+    expect(result.maxZoom).toBe(18);
+  });
+
+  it('rejects minZoom > maxZoom', () => {
+    expect(() => ViewConfigSchema.parse({ ...base, minZoom: 18, maxZoom: 2 })).toThrow();
+  });
+
+  it('rejects zoom below minZoom', () => {
+    expect(() => ViewConfigSchema.parse({ ...base, zoom: 1, minZoom: 5 })).toThrow();
+  });
+
+  it('rejects zoom above maxZoom', () => {
+    expect(() => ViewConfigSchema.parse({ ...base, zoom: 20, maxZoom: 15 })).toThrow();
+  });
+
+  it('rejects minZoom out of range', () => {
+    expect(() => ViewConfigSchema.parse({ ...base, minZoom: -1 })).toThrow();
+    expect(() => ViewConfigSchema.parse({ ...base, minZoom: 25 })).toThrow();
+  });
+
+  it('rejects maxZoom out of range', () => {
+    expect(() => ViewConfigSchema.parse({ ...base, maxZoom: -1 })).toThrow();
+    expect(() => ViewConfigSchema.parse({ ...base, maxZoom: 25 })).toThrow();
   });
 });
 

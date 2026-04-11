@@ -54,3 +54,25 @@ export const WorldView: Story = {
     );
   },
 };
+
+export const WithZoomConstraints: Story = {
+  render: () => {
+    const [view, setView] = useState<ViewConfig>({
+      latitude: 51.505,
+      longitude: -0.09,
+      zoom: 13,
+      pitch: 0,
+      bearing: 0,
+      minZoom: 5,
+      maxZoom: 18,
+    });
+    return (
+      <div className="mapui:max-w-md mapui:p-4">
+        <ViewEditor value={view} onChange={setView} />
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+          {JSON.stringify(view, null, 2)}
+        </pre>
+      </div>
+    );
+  },
+};
