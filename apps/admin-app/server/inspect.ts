@@ -324,5 +324,17 @@ export async function inspectSource(url: string): Promise<InspectionResult> {
     };
   }
 
+  if (sourceType === 'style') {
+    return {
+      landing: null,
+      conformance: null,
+      collections: [],
+      inspectedAt: new Date().toISOString(),
+      errors: [
+        'Style URLs are not valid as imagery sources. Use the Basemaps tab → "Style URL" mode instead.',
+      ],
+    };
+  }
+
   return inspectOgcSource(url);
 }

@@ -393,6 +393,12 @@ export function SourcesPage() {
       const draft = newImageryBasemap;
       const imagerySource = sources.find(s => s.id === draft.imagery_source_id);
       const sourceTypeKind = imagerySource ? detectTileSourceType(imagerySource.url) : 'ogc-api';
+      if (sourceTypeKind === 'style') {
+        setActionError(
+          'This imagery source is a MapLibre style document. Create the basemap in "Style URL" mode instead.',
+        );
+        return;
+      }
       const needsCollection = sourceTypeKind === 'ogc-api';
       if (needsCollection && !draft.collection_id) {
         setActionError('Pick a collection for this OGC API imagery source.');
@@ -435,6 +441,12 @@ export function SourcesPage() {
       const draft = editingImageryBasemap;
       const imagerySource = sources.find(s => s.id === draft.imagery_source_id);
       const sourceTypeKind = imagerySource ? detectTileSourceType(imagerySource.url) : 'ogc-api';
+      if (sourceTypeKind === 'style') {
+        setActionError(
+          'This imagery source is a MapLibre style document. Create the basemap in "Style URL" mode instead.',
+        );
+        return;
+      }
       const needsCollection = sourceTypeKind === 'ogc-api';
       if (needsCollection && !draft.collection_id) {
         setActionError('Pick a collection for this OGC API imagery source.');

@@ -136,6 +136,26 @@ describe('detectTileSourceType', () => {
   it('defaults to ogc-api for standard OGC URL', () => {
     expect(detectTileSourceType('https://example.com/collections/my-layer')).toBe('ogc-api');
   });
+
+  it('detects MapLibre style URL (style.json)', () => {
+    expect(detectTileSourceType('https://api.maptiler.com/maps/hybrid-v4/style.json')).toBe(
+      'style',
+    );
+  });
+
+  it('detects style URL with query string', () => {
+    expect(
+      detectTileSourceType('https://api.maptiler.com/maps/hybrid-v4/style.json?key=abc123'),
+    ).toBe('style');
+  });
+
+  it('detects style URL with mixed case extension', () => {
+    expect(detectTileSourceType('https://example.com/maps/basemap/Style.JSON')).toBe('style');
+  });
+
+  it('detects style URL with fragment', () => {
+    expect(detectTileSourceType('https://example.com/style.json#layer-a')).toBe('style');
+  });
 });
 
 describe('buildGeometryFilter', () => {

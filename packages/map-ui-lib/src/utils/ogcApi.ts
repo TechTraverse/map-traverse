@@ -471,12 +471,18 @@ export async function fetchGenericTileJson(
 
 /**
  * Detect the type of a tile source URL.
- * Returns 'tilejson' if URL likely points to a TileJSON document,
- * 'xyz' if it contains {z}/{x}/{y} placeholders,
+ * Returns 'xyz' if it contains {z}/{x}/{y} placeholders,
+ * 'tilejson' if URL likely points to a TileJSON document,
+ * 'style' if the URL path ends in `style.json` (a MapLibre/Mapbox GL style document),
  * or 'ogc-api' otherwise.
+ *
+ * Note: a 'style' URL is NOT a valid imagery source — it describes a whole basemap
+ * (multiple sources + layers). Callers should route style URLs to basemap handling
+ * instead of the imagery inspector.
  */
-export function detectTileSourceType(url: string): 'tilejson' | 'xyz' | 'ogc-api' {
+export function detectTileSourceType(url: string): 'tilejson' | 'xyz' | 'style' | 'ogc-api' {
   if (/\{z\}.*\{x\}.*\{y\}/i.test(url)) return 'xyz';
   if (/tilejson\.json|tiles\.json/i.test(url)) return 'tilejson';
+  if (/\/style\.json(?:$|[?#])/i.test(url)) return 'style';
   return 'ogc-api';
 }

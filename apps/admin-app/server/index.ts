@@ -725,6 +725,15 @@ app.post('/api/sources/test-connection', requireAuth, async (req, res) => {
     let testEndpoint: string;
     let acceptHeader = 'application/json';
 
+    if (sourceType === 'style') {
+      res.json({
+        status: 'error',
+        error:
+          'Style URLs are not valid as imagery sources. Use the Basemaps tab → "Style URL" mode instead.',
+      });
+      return;
+    }
+
     if (sourceType === 'xyz') {
       testEndpoint = testUrl.replace('{z}', '0').replace('{x}', '0').replace('{y}', '0');
       acceptHeader = '*/*';
@@ -1246,6 +1255,10 @@ function buildBasemapTileUrl(link: BasemapImageryLink): {
     minzoom = tj.minzoom;
     maxzoom = tj.maxzoom;
     bounds = tj.bounds;
+  } else if (sourceType === 'style') {
+    throw new Error(
+      'Imagery source URL is a MapLibre style document; cannot derive a basemap tile URL from it. Recreate the basemap in "Style URL" mode instead.',
+    );
   } else {
     if (!link.collectionId) {
       throw new Error('OGC API imagery sources require a collection to be selected');
@@ -1351,6 +1364,9 @@ app.get('/api/basemaps/:id/tiles/:z/:x/:y', async (req, res) => {
         return;
       }
       template = tj.tiles[0]!;
+    } else if (sourceType === 'style') {
+      res.status(500).json({ error: 'Imagery source URL is a style document; cannot proxy tiles' });
+      return;
     } else {
       if (!link.collectionId) {
         res.status(500).json({ error: 'OGC API imagery source has no collection' });
