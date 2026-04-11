@@ -85,7 +85,7 @@ export function InfoModal({
       onClick={onClose}
     >
       <div
-        className="mapui:relative mapui:flex mapui:w-full mapui:max-w-[640px] mapui:max-h-[80vh] mapui:flex-col mapui:rounded-lg mapui:bg-white mapui:shadow-xl"
+        className="mapui:relative mapui:mx-4 mapui:flex mapui:w-full mapui:max-w-[640px] mapui:max-h-[80vh] mapui:flex-col mapui:rounded-lg mapui:bg-white mapui:shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mapui:flex mapui:items-start mapui:justify-between mapui:gap-4 mapui:border-b mapui:border-gray-200 mapui:px-6 mapui:py-4">

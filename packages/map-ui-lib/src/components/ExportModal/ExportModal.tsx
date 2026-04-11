@@ -103,7 +103,7 @@ export function ExportModal({
       aria-modal="true"
       aria-labelledby="export-modal-title"
     >
-      <div className="mapui:w-full mapui:max-w-md mapui:rounded-lg mapui:bg-white mapui:p-6 mapui:shadow-xl">
+      <div className="mapui:mx-4 mapui:w-full mapui:max-w-md mapui:max-h-[90vh] mapui:overflow-y-auto mapui:rounded-lg mapui:bg-white mapui:p-6 mapui:shadow-xl">
         <h2
           id="export-modal-title"
           className="mapui:m-0 mapui:mb-4 mapui:text-base mapui:font-semibold mapui:text-gray-900"

@@ -341,7 +341,7 @@ export function MapOverlay({
 
       {/* Top-left: Feature detail panels */}
       {uiConfig.showFeatureDetail && selectedFeatures.length > 0 && (
-        <div className="absolute top-4 left-4 pointer-events-auto z-10 flex flex-col gap-2 max-h-[calc(100vh-4rem)] overflow-y-auto">
+        <div className="absolute top-4 left-4 right-4 sm:right-auto pointer-events-auto z-10 flex flex-col gap-2 max-h-[calc(100vh-4rem)] max-w-sm overflow-y-auto">
           {selectedFeatures.map((feature, i) => (
             <FeatureDetailPanel
               key={i}
@@ -710,7 +710,7 @@ export function MapOverlay({
 
       {/* Bottom-center: Coordinate Display */}
       {uiConfig.showCoordinateDisplay && (
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 pointer-events-auto">
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 pointer-events-auto max-w-[calc(100vw-2rem)]">
           <CoordinateDisplay
             latitude={mouseCoords?.latitude ?? null}
             longitude={mouseCoords?.longitude ?? null}
