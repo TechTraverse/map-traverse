@@ -45,6 +45,12 @@ export {
   metersPerPixel,
 } from './ScaleBarControl';
 export type { ScaleBarControlProps, ScaleBarUnit } from './ScaleBarControl';
+export { SideMenuPanel, SideMenuToggle } from './SideMenuPanel';
+export type {
+  SideMenuPanelProps,
+  SideMenuPanelItem,
+  SideMenuToggleProps,
+} from './SideMenuPanel';
 export { MeasurePanel } from './MeasurePanel';
 export type { MeasurePanelProps } from './MeasurePanel';
 export { SelectionPanel } from './SelectionPanel';
