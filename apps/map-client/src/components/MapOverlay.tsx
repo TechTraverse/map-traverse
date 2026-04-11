@@ -25,7 +25,7 @@ import {
 import type { MeasureMode, MeasureUnit, Measurement, SelectionMode } from '@ogc-maps/storybook-components';
 import type { FilterRuleGroup } from '@ogc-maps/storybook-components/types';
 import { useExport } from '@ogc-maps/storybook-components/hooks';
-import { DEFAULT_EXPORT_FORMATS, fromStructuredFilters, fetchFeatures, eq, bboxFromGeometry, exportConverters } from '@ogc-maps/storybook-components/utils';
+import { DEFAULT_EXPORT_FORMATS, fromStructuredFilters, fetchFeatures, eq, exportConverters, zoomToFeature } from '@ogc-maps/storybook-components/utils';
 import type { UIConfig, SearchFilterValue, SearchFilterValues, OrderableControlKey, InfoPosition } from '@ogc-maps/storybook-components/types';
 import { resolveControlOrder } from '@ogc-maps/storybook-components';
 import { useMapStore, useActiveLayerIds } from '../stores/mapStore';
@@ -162,17 +162,34 @@ export function MapOverlay({
 
   const handleZoomToFeature = useCallback(
     async (layerId: string, property: string, value: string) => {
-      const layer = useMapStore.getState().layers.find((l) => l.id === layerId);
+      const state = useMapStore.getState();
+      const layer = state.layers.find((l) => l.id === layerId);
       if (!layer) return;
-      const source = useMapStore.getState().sources.find((s) => s.id === layer.sourceId);
+      const source = state.sources.find((s) => s.id === layer.sourceId);
       if (!source) return;
 
       const cql2Filter = eq(property, value);
       const data = await fetchFeatures(source.url, layer.collection, { cql2Filter, limit: 1 });
       if (!data.features.length) return;
 
-      const bbox = bboxFromGeometry(data.features[0].geometry as Record<string, unknown>);
-      if (bbox) useMapStore.getState().fitBounds(bbox);
+      const instruction = zoomToFeature(
+        data.features[0].geometry as Record<string, unknown>,
+        {
+          layerMinZoom: layer.minZoom,
+          layerMaxZoom: layer.maxZoom,
+          pointZoom: layer.zoomToLevel,
+        },
+      );
+      if (!instruction) return;
+
+      if (instruction.type === 'flyTo') {
+        useMapStore.getState().flyTo(instruction.center, instruction.zoom);
+      } else {
+        useMapStore.getState().fitBounds(instruction.bbox, {
+          padding: instruction.padding,
+          maxZoom: instruction.maxZoom,
+        });
+      }
     },
     [],
   );
@@ -462,6 +479,7 @@ export function MapOverlay({
             activeFormat={activeCoordFormat}
             formats={coordinateFormats}
             onFormatChange={onCoordFormatChange}
+            onNavigate={(lat, lng) => useMapStore.getState().flyTo([lng, lat], 14)}
           />
         </div>
       )}

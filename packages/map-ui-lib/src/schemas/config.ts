@@ -488,6 +488,8 @@ const layerConfigFields = {
   dataMode: z.enum(['vector-tiles', 'geojson']),
   minZoom: z.number().min(0).max(24).optional(),
   maxZoom: z.number().min(0).max(24).optional(),
+  /** Preferred zoom level used when zooming to a point/zero-area feature in this layer. */
+  zoomToLevel: z.number().min(0).max(24).optional(),
   styles: z.array(StyleConfigSchema).optional(),
   legend: LegendConfigSchema.optional(),
   filters: FilterConfigSchema.optional(),
