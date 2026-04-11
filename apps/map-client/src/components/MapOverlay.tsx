@@ -23,14 +23,15 @@ import {
   type ExportRequest,
 } from '@ogc-maps/storybook-components';
 import type { MeasureMode, MeasureUnit, Measurement, SelectedFeature, SelectionMode } from '@ogc-maps/storybook-components';
-import type { FilterRuleGroup } from '@ogc-maps/storybook-components/types';
+import type { FilterRuleGroup, FilterRule } from '@ogc-maps/storybook-components/types';
 import { useExport } from '@ogc-maps/storybook-components/hooks';
-import { DEFAULT_EXPORT_FORMATS, fromStructuredFilters, fetchFeatures, eq, exportConverters, zoomToFeature } from '@ogc-maps/storybook-components/utils';
+import { DEFAULT_EXPORT_FORMATS, fromStructuredFilters, fromFilterRuleGroup, and, fetchFeatures, eq, exportConverters, zoomToFeature } from '@ogc-maps/storybook-components/utils';
 import type { GeoJsonFeature } from '@ogc-maps/storybook-components/utils';
 import type { UIConfig, SearchFilterValue, SearchFilterValues, OrderableControlKey, InfoPosition } from '@ogc-maps/storybook-components/types';
 import { resolveControlOrder } from '@ogc-maps/storybook-components';
 import { useMapStore, useActiveLayerIds } from '../stores/mapStore';
 import { useAutocompleteSuggestions } from '../hooks/useAutocompleteSuggestions';
+import { useLayerQueryables } from '../hooks/useLayerQueryables';
 import { LuDownload, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
 import { TbSatellite } from 'react-icons/tb';
 
@@ -219,17 +220,43 @@ export function MapOverlay({
   // Accordion state: track which control is currently open
   const [openControl, setOpenControl] = useState<string | null>(null);
 
+  // Expanded search modal state
+  const [searchExpanded, setSearchExpanded] = useState(false);
+  const [customFilterRules, setCustomFilterRules] = useState<Record<string, FilterRule[]>>({});
+  const layerQueryables = useLayerQueryables(layers);
+
+  const computeMergedCql2 = useCallback(
+    (layerId: string, structured: SearchFilterValues, customs: FilterRule[]) => {
+      const layer = useMapStore.getState().layers.find((l) => l.id === layerId);
+      const fields = layer?.search?.fields ?? [];
+      const structuredCql2 = fromStructuredFilters(structured, fields);
+      const customCql2 = customs.length > 0
+        ? fromFilterRuleGroup({ id: `${layerId}-custom`, combinator: 'and', rules: customs })
+        : null;
+      return and(structuredCql2, customCql2);
+    },
+    [],
+  );
+
   const handleFilterChange = useCallback(
     (layerId: string, property: string, value: SearchFilterValue) => {
       const current = useMapStore.getState().activeFilters[layerId] ?? {};
       const updated: SearchFilterValues = { ...current, [property]: value };
       setLayerFilters(layerId, updated);
 
-      const layer = useMapStore.getState().layers.find((l) => l.id === layerId);
-      const fields = layer?.search?.fields ?? [];
-      setLayerCql2Filter(layerId, fromStructuredFilters(updated, fields));
+      const customs = customFilterRules[layerId] ?? [];
+      setLayerCql2Filter(layerId, computeMergedCql2(layerId, updated, customs));
     },
-    [setLayerFilters, setLayerCql2Filter],
+    [setLayerFilters, setLayerCql2Filter, customFilterRules, computeMergedCql2],
+  );
+
+  const handleCustomRulesChange = useCallback(
+    (layerId: string, rules: FilterRule[]) => {
+      setCustomFilterRules((prev) => ({ ...prev, [layerId]: rules }));
+      const structured = useMapStore.getState().activeFilters[layerId] ?? {};
+      setLayerCql2Filter(layerId, computeMergedCql2(layerId, structured, rules));
+    },
+    [setLayerCql2Filter, computeMergedCql2],
   );
 
   return (
@@ -296,6 +323,12 @@ export function MapOverlay({
                     onZoomToFeature={handleZoomToFeature}
                     className="p-3 max-w-xs"
                     hideTitle
+                    expandable
+                    expanded={searchExpanded}
+                    onExpandedChange={setSearchExpanded}
+                    availableProperties={layerQueryables}
+                    customRules={customFilterRules}
+                    onCustomRulesChange={handleCustomRulesChange}
                   />
                 </CollapsibleControl>
               </div>
