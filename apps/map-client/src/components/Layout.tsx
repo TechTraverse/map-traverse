@@ -356,6 +356,7 @@ export function Layout({ uiConfig }: LayoutProps) {
           selectionActiveLayerId={selection.activeLayerId}
           onSelectionActiveLayerChange={selection.setActiveLayerId}
           selectionCount={selection.features.length}
+          selectionFeatures={selection.features}
           onSelectionClear={selection.clearFeatures}
           onSelectionViewResults={() => setResultsOpen(true)}
           queryFilter={activeLayer?.cql2Filter as Cql2FilterConfig | undefined}

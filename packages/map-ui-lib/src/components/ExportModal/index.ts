@@ -1,2 +1,8 @@
 export { ExportModal } from './ExportModal';
-export type { ExportModalProps, ExportFormatOption, ExportRequest, ExportableLayer } from './ExportModal';
+export type {
+  ExportModalProps,
+  ExportFormatOption,
+  ExportRequest,
+  ExportableLayer,
+  ExportMode,
+} from './ExportModal';

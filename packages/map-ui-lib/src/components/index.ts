@@ -17,7 +17,13 @@ export type {
 export { ExportButton } from './ExportButton';
 export type { ExportButtonProps } from './ExportButton';
 export { ExportModal } from './ExportModal';
-export type { ExportModalProps, ExportFormatOption, ExportRequest, ExportableLayer } from './ExportModal';
+export type {
+  ExportModalProps,
+  ExportFormatOption,
+  ExportRequest,
+  ExportableLayer,
+  ExportMode,
+} from './ExportModal';
 export { FeatureDetailPanel } from './FeatureDetailPanel';
 export type { FeatureDetailPanelProps } from './FeatureDetailPanel';
 export { FeatureTooltip } from './FeatureTooltip';
@@ -50,7 +56,12 @@ export type {
   GroupedResults as GlobalSearchGroupedResults,
 } from './GlobalSearchBar';
 export { ResultsDrawer } from './ResultsDrawer';
-export type { ResultsDrawerProps, ResultsDrawerTab } from './ResultsDrawer';
+export type {
+  ResultsDrawerProps,
+  ResultsDrawerTab,
+  ResultsDrawerSort,
+  SortDirection,
+} from './ResultsDrawer';
 // Admin components
 export { FormField, ColorPicker, ConfirmDialog, CollapsibleSection } from './admin';
 export type { FormFieldProps, ColorPickerProps, ConfirmDialogProps, CollapsibleSectionProps } from './admin';

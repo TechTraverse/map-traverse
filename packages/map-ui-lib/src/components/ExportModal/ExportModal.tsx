@@ -13,10 +13,13 @@ export interface ExportFormatOption {
   description?: string;
 }
 
+export type ExportMode = 'all' | 'selected';
+
 export interface ExportRequest {
   layer: ExportableLayer;
   format: ExportFormatOption;
   filtered: boolean;
+  mode: ExportMode;
 }
 
 export interface ExportModalProps {
@@ -24,6 +27,10 @@ export interface ExportModalProps {
   layers: ExportableLayer[];
   availableFormats: ExportFormatOption[];
   hasActiveFilter: (layerId: string) => boolean;
+  /** Number of currently-selected features. When > 0, the "Selected only" mode becomes available. */
+  selectionCount?: number;
+  /** If provided, the modal preselects and locks onto this layer id for "Selected only" exports. */
+  selectionLayerId?: string | null;
   loading?: boolean;
   progress?: string | null;
   error?: string | null;
@@ -36,6 +43,8 @@ export function ExportModal({
   layers,
   availableFormats,
   hasActiveFilter,
+  selectionCount = 0,
+  selectionLayerId = null,
   loading = false,
   progress,
   error,
@@ -45,22 +54,37 @@ export function ExportModal({
   const [selectedLayerId, setSelectedLayerId] = useState<string>('');
   const [selectedFormatId, setSelectedFormatId] = useState<string>('');
   const [applyFilters, setApplyFilters] = useState(true);
+  const [exportMode, setExportMode] = useState<ExportMode>('all');
+
+  const hasSelection = selectionCount > 0;
 
   // Reset state when modal opens
   useEffect(() => {
     if (open) {
-      setSelectedLayerId(layers.length === 1 ? layers[0].id : '');
+      const initialMode: ExportMode = hasSelection ? 'selected' : 'all';
+      setExportMode(initialMode);
+      const initialLayerId =
+        initialMode === 'selected' && selectionLayerId
+          ? selectionLayerId
+          : layers.length === 1
+            ? layers[0].id
+            : '';
+      setSelectedLayerId(initialLayerId);
       setSelectedFormatId(availableFormats.length > 0 ? availableFormats[0].id : '');
       setApplyFilters(true);
     }
-  }, [open, layers, availableFormats]);
+  }, [open, layers, availableFormats, hasSelection, selectionLayerId]);
 
   if (!open) return null;
 
-  const selectedLayer = layers.find((l) => l.id === selectedLayerId);
+  const effectiveLayerId =
+    exportMode === 'selected' && selectionLayerId ? selectionLayerId : selectedLayerId;
+  const selectedLayer = layers.find((l) => l.id === effectiveLayerId);
   const selectedFormat = availableFormats.find((f) => f.id === selectedFormatId);
-  const showFilterToggle = selectedLayer != null && hasActiveFilter(selectedLayer.id);
+  const showFilterToggle =
+    exportMode === 'all' && selectedLayer != null && hasActiveFilter(selectedLayer.id);
   const canExport = selectedLayer != null && selectedFormat != null && !loading;
+  const layerLocked = exportMode === 'selected' && selectionLayerId != null;
 
   const handleExport = () => {
     if (!selectedLayer || !selectedFormat) return;
@@ -68,6 +92,7 @@ export function ExportModal({
       layer: selectedLayer,
       format: selectedFormat,
       filtered: showFilterToggle ? applyFilters : false,
+      mode: exportMode,
     });
   };
 
@@ -86,6 +111,48 @@ export function ExportModal({
           Export Data
         </h2>
 
+        {/* Export mode toggle — only shown when there is an active selection */}
+        {hasSelection && (
+          <fieldset className="mapui:mb-4">
+            <legend className="mapui:mb-1 mapui:text-sm mapui:font-medium mapui:text-gray-700">
+              Source
+            </legend>
+            <div
+              role="radiogroup"
+              className="mapui:inline-flex mapui:rounded-md mapui:border mapui:border-gray-300 mapui:text-sm mapui:overflow-hidden"
+            >
+              <button
+                type="button"
+                role="radio"
+                aria-checked={exportMode === 'all'}
+                onClick={() => setExportMode('all')}
+                className={[
+                  'mapui:cursor-pointer mapui:px-3 mapui:py-1.5',
+                  exportMode === 'all'
+                    ? 'mapui:bg-blue-600 mapui:text-white'
+                    : 'mapui:bg-white mapui:text-gray-700 hover:mapui:bg-gray-50',
+                ].join(' ')}
+              >
+                All (filtered)
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={exportMode === 'selected'}
+                onClick={() => setExportMode('selected')}
+                className={[
+                  'mapui:cursor-pointer mapui:px-3 mapui:py-1.5 mapui:border-l mapui:border-gray-300',
+                  exportMode === 'selected'
+                    ? 'mapui:bg-blue-600 mapui:text-white'
+                    : 'mapui:bg-white mapui:text-gray-700 hover:mapui:bg-gray-50',
+                ].join(' ')}
+              >
+                Selected only ({selectionCount})
+              </button>
+            </div>
+          </fieldset>
+        )}
+
         {/* Layer select */}
         <div className="mapui:mb-4">
           <label
@@ -94,9 +161,9 @@ export function ExportModal({
           >
             Layer
           </label>
-          {layers.length === 1 ? (
+          {layerLocked || layers.length === 1 ? (
             <div className="mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-gray-50 mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-gray-700">
-              {layers[0].label}
+              {selectedLayer?.label ?? layers[0]?.label ?? '—'}
             </div>
           ) : (
             <select
