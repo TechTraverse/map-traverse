@@ -9,6 +9,11 @@ const MOCK_LAYERS: ImageryLayerConfig[] = [
   { id: 'band02', sourceId: 'noaa', collection: 'GOESEastCONUSBand02', label: 'Visible Band (0.64µm)', visible: false, opacity: 1, exclusive: false, tileSize: 256 },
 ];
 
+const MOCK_LAYERS_WITH_THUMBS: ImageryLayerConfig[] = MOCK_LAYERS.map((l, i) => ({
+  ...l,
+  thumbnailUrl: `https://placehold.co/64x64/${['1e40af', 'dc2626', '16a34a'][i]}/ffffff?text=${encodeURIComponent(l.label.slice(0, 3))}`,
+}));
+
 const meta: Meta<typeof ImageryPanel> = {
   title: 'Controls/ImageryPanel',
   component: ImageryPanel,
@@ -16,8 +21,8 @@ const meta: Meta<typeof ImageryPanel> = {
 export default meta;
 type Story = StoryObj<typeof ImageryPanel>;
 
-function ImageryPanelDemo({ withOpacity }: { withOpacity?: boolean }) {
-  const [layers, setLayers] = useState(MOCK_LAYERS);
+function ImageryPanelDemo({ withOpacity, withThumbnails }: { withOpacity?: boolean; withThumbnails?: boolean }) {
+  const [layers, setLayers] = useState(withThumbnails ? MOCK_LAYERS_WITH_THUMBS : MOCK_LAYERS);
 
   const handleToggle = (layerId: string) => {
     setLayers(prev => {
@@ -55,4 +60,8 @@ export const Default: Story = {
 
 export const WithOpacity: Story = {
   render: () => <ImageryPanelDemo withOpacity />,
+};
+
+export const WithThumbnails: Story = {
+  render: () => <ImageryPanelDemo withOpacity withThumbnails />,
 };

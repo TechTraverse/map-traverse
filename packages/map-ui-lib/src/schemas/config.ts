@@ -621,6 +621,8 @@ export const ImageryLayerConfigSchema = z.object({
   maxZoom: z.number().min(0).max(24).optional(),
   tileSize: z.number().default(256),
   tileUrlTemplate: z.string().optional(),
+  /** Optional thumbnail image URL rendered beside the layer in ImageryPanel. */
+  thumbnailUrl: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (!data.tileUrlTemplate) {
     if (!data.sourceId) {
