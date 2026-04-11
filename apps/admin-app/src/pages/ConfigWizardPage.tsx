@@ -444,7 +444,7 @@ export function ConfigWizardPage() {
     return (
       <div className="mapui:flex mapui:items-center mapui:justify-center mapui:p-16 mapui:text-gray-500">
         <span className="mapui:inline-block mapui:h-6 mapui:w-6 mapui:animate-spin mapui:rounded-full mapui:border-2 mapui:border-gray-300 mapui:border-t-blue-600 mapui:mr-3" />
-        Loading configuration…
+        Loading map…
       </div>
     );
   }
@@ -455,7 +455,7 @@ export function ConfigWizardPage() {
       <div className="mapui:flex-1 mapui:min-w-0 mapui:overflow-y-auto mapui:p-8">
         <div className="mapui:max-w-3xl mapui:mx-auto">
       <h1 className="mapui:text-2xl mapui:font-bold mapui:text-gray-900 mapui:mb-6">
-        {isEditing ? 'Edit Configuration' : 'Create Configuration'}
+        {isEditing ? 'Edit Map' : 'Create Map'}
       </h1>
 
       {/* Step progress */}
@@ -481,7 +481,7 @@ export function ConfigWizardPage() {
       <div className="mapui:bg-white mapui:rounded-lg mapui:shadow mapui:p-6 mapui:mb-6">
         {currentStep === 'metadata' && (
           <div className="mapui:space-y-4">
-            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">Configuration Metadata</h2>
+            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">Map Metadata</h2>
             <div>
               <label className="mapui:block mapui:text-sm mapui:font-medium mapui:text-gray-700 mapui:mb-1">
                 Name <span className="mapui:text-red-500">*</span>
@@ -505,7 +505,7 @@ export function ConfigWizardPage() {
               <textarea
                 value={description}
                 onChange={e => setDescription(e.target.value)}
-                placeholder="Describe what this configuration is for..."
+                placeholder="Describe what this map is for..."
                 rows={3}
                 className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
               />

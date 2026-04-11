@@ -50,7 +50,7 @@ function Header() {
               to="/configs"
               className={`mapui:hover:text-slate-300 ${location.pathname.startsWith('/configs') ? 'mapui:text-white mapui:font-medium' : 'mapui:text-slate-400'}`}
             >
-              Configurations
+              Maps
             </Link>
 
           </nav>
