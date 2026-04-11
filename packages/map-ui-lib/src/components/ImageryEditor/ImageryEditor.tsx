@@ -281,6 +281,19 @@ export function ImageryEditor({
         </FormField>
       </div>
 
+      <FormField
+        label="Thumbnail URL"
+        description="Optional preview image shown next to this layer in the imagery panel."
+      >
+        <input
+          type="text"
+          value={value.thumbnailUrl ?? ''}
+          onChange={(e) => update({ thumbnailUrl: e.target.value || undefined })}
+          placeholder="https://example.com/thumb.png"
+          className={`${inputClass} mapui:w-full`}
+        />
+      </FormField>
+
       <div className="mapui:grid mapui:grid-cols-2 mapui:gap-3">
         <FormField label="Min Zoom">
           <input

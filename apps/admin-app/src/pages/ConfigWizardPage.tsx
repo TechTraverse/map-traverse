@@ -89,6 +89,7 @@ const DEFAULT_UI_CONFIG: UIConfig = {
   showFeatureDetail: false,
   showFeatureTooltip: false,
   showExportButton: false,
+  showExportPdf: false,
   showLegendOpacity: false,
   showMeasureTool: false,
   showSelectionTool: false,

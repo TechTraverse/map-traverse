@@ -364,6 +364,7 @@ export function Layout({ uiConfig }: LayoutProps) {
           queryLoading={queryLoading}
           queryError={queryError}
           hasSelectionGeometry={selection.features.length > 0}
+          mapRef={mapRefForBoxDraw}
         />
         <ResultsDrawer
           open={resultsOpen}

@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { SearchPanel } from './SearchPanel';
 import type { SearchPanelProps } from './SearchPanel';
-import type { LayerConfig, SearchFilterValues, SearchFilterValue } from '../../types';
+import type { LayerConfig, SearchFilterValues, SearchFilterValue, FilterRule, AvailableProperty } from '../../types';
 
 const countriesLayer: LayerConfig = {
   id: 'countries',
@@ -266,12 +266,20 @@ function InteractiveSearchPanel(props: SearchPanelProps) {
     [props.onClearFilters],
   );
 
+  const [expanded, setExpanded] = useState(props.expanded ?? false);
+  const [customRules, setCustomRules] = useState<Record<string, FilterRule[]>>(props.customRules ?? {});
+
   return (
     <SearchPanel
       {...props}
       activeFilters={filters}
       onFilterChange={handleFilterChange}
       onClearFilters={handleClearFilters}
+      expanded={props.expandable ? expanded : undefined}
+      onExpandedChange={props.expandable ? setExpanded : undefined}
+      customRules={props.expandable ? customRules : undefined}
+      onCustomRulesChange={props.expandable ? (layerId, rules) =>
+        setCustomRules((prev) => ({ ...prev, [layerId]: rules })) : undefined}
     />
   );
 }
@@ -584,5 +592,46 @@ export const BackwardCompatible: Story = {
   args: {
     layers: [backwardCompatibleLayer],
     activeFilters: {},
+  },
+};
+
+const mockQueryables: Record<string, AvailableProperty[]> = {
+  countries: [
+    { name: 'name', title: 'Country Name', type: 'string' },
+    { name: 'continent', title: 'Continent', type: 'string', enum: ['Africa', 'Asia', 'Europe', 'North America', 'Oceania', 'South America'] },
+    { name: 'pop_est', title: 'Population', type: 'number' },
+    { name: 'gdp_md_est', title: 'GDP (millions)', type: 'number' },
+  ],
+  cities: [
+    { name: 'name', title: 'City Name', type: 'string' },
+    { name: 'pop_min', title: 'Min Population', type: 'integer' },
+    { name: 'pop_max', title: 'Max Population', type: 'integer' },
+  ],
+};
+
+/**
+ * Expandable search panel with the "All Filters" builder. Click Expand to open
+ * the full modal. The builder lets users pick a property, operator, and value
+ * for any queryable field, combining with search filters via AND.
+ */
+export const Expandable: Story = {
+  args: {
+    layers: [countriesLayer, citiesLayer],
+    activeFilters: {},
+    expandable: true,
+    availableProperties: mockQueryables,
+    customRules: {},
+  },
+};
+
+/** Expanded by default, showing the All Filters builder and modal layout. */
+export const ExpandedWithAllFilters: Story = {
+  args: {
+    layers: [countriesLayer, citiesLayer],
+    activeFilters: {},
+    expandable: true,
+    expanded: true,
+    availableProperties: mockQueryables,
+    customRules: {},
   },
 };

@@ -2,6 +2,7 @@ import type { PropertyDefinition } from './propertyMetadata';
 import type { AvailableProperty, FetchDistinctValuesFn } from '../../types';
 import { PropertyField } from './PropertyField';
 import { CollapsibleSection } from '../admin/CollapsibleSection';
+import type { ColorThemeId } from '../../utils/colorThemes';
 
 interface PropertyGroupProps {
   title: string;
@@ -12,6 +13,8 @@ interface PropertyGroupProps {
   availableIcons?: string[];
   availableProperties?: AvailableProperty[];
   onFetchDistinctValues?: FetchDistinctValuesFn;
+  colorTheme?: ColorThemeId;
+  onColorThemeChange?: (theme: ColorThemeId) => void;
 }
 
 export function PropertyGroup({
@@ -23,6 +26,8 @@ export function PropertyGroup({
   availableIcons,
   availableProperties,
   onFetchDistinctValues,
+  colorTheme,
+  onColorThemeChange,
 }: PropertyGroupProps) {
   const enabledCount = properties.filter(
     (p) => p.enableDefault !== undefined && values[p.key] !== undefined,
@@ -40,6 +45,8 @@ export function PropertyGroup({
             availableIcons={availableIcons}
             availableProperties={availableProperties}
             onFetchDistinctValues={onFetchDistinctValues}
+            colorTheme={colorTheme}
+            onColorThemeChange={onColorThemeChange}
           />
         ))}
       </div>

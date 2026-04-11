@@ -2,12 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 import type { AvailableProperty, FetchDistinctValuesFn } from '../../types';
 import { ColorPicker } from '../admin/ColorPicker';
 import { getColorFromPalette } from '../../utils/colorPalettes';
+import { COLOR_THEMES, COLOR_THEME_IDS, type ColorThemeId } from '../../utils/colorThemes';
 
 export interface DataDrivenColorEditorProps {
   value: unknown[];
   onChange: (expr: unknown[]) => void;
   availableProperties?: AvailableProperty[];
   onFetchDistinctValues?: FetchDistinctValuesFn;
+  /** Optional color theme controlling autogenerate/auto-populate color selection. */
+  theme?: ColorThemeId;
+  /** Called when the user picks a new theme from the dropdown. */
+  onThemeChange?: (theme: ColorThemeId) => void;
 }
 
 type ExprMode = 'match' | 'interpolate';
@@ -118,6 +123,8 @@ export function DataDrivenColorEditor({
   onChange,
   availableProperties = [],
   onFetchDistinctValues,
+  theme,
+  onThemeChange,
 }: DataDrivenColorEditorProps) {
   const [mode, setMode] = useState<ExprMode>(() => detectMode(value));
   const [autoPopulating, setAutoPopulating] = useState(false);
@@ -192,7 +199,7 @@ export function DataDrivenColorEditor({
   };
 
   const handleMatchPairAdd = () => {
-    const next = [...matchPairs, { value: '', color: getColorFromPalette(matchPairs.length) }];
+    const next = [...matchPairs, { value: '', color: getColorFromPalette(matchPairs.length, theme) }];
     updateMatch(matchProperty, next, matchFallback);
   };
 
@@ -206,7 +213,7 @@ export function DataDrivenColorEditor({
       );
       const pairs = values.map((v, i) => ({
         value: v,
-        color: getColorFromPalette(i),
+        color: getColorFromPalette(i, theme),
       }));
       updateMatch(matchProperty, pairs, matchFallback);
     } finally {
@@ -271,6 +278,23 @@ export function DataDrivenColorEditor({
 
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-2">
+      {onThemeChange && (
+        <div className="mapui:flex mapui:items-center mapui:gap-2">
+          <label className="mapui:text-xs mapui:text-gray-600 mapui:shrink-0">Color theme:</label>
+          <select
+            value={theme ?? 'default'}
+            onChange={(e) => onThemeChange(e.target.value as ColorThemeId)}
+            className={`${inputClass} mapui:flex-1`}
+            aria-label="Autogenerate color theme"
+          >
+            {COLOR_THEME_IDS.map((id) => (
+              <option key={id} value={id}>
+                {COLOR_THEMES[id].label} — {COLOR_THEMES[id].description}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       {/* Mode toggle */}
       <div className="mapui:flex mapui:overflow-hidden mapui:rounded mapui:border mapui:border-gray-300">
         {(['match', 'interpolate'] as ExprMode[]).map((m) => (

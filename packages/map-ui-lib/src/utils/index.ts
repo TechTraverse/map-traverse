@@ -5,6 +5,7 @@ export * from './propertyDisplay';
 export * from './queryableHelpers';
 export * from './spriteUtils';
 export * from './colorPalettes';
+export * from './colorThemes';
 export * from './expressionColors';
 export * from './measure';
 export * from './selection';

@@ -1,8 +1,9 @@
 import { useEffect, useMemo } from 'react';
-import type { LayerConfig, SearchFilterValues, SearchFilterValue, SearchField, NumberSearchField, DatetimeSearchField, TextSearchField, SelectSearchField } from '../../types';
+import type { LayerConfig, SearchFilterValues, SearchFilterValue, SearchField, NumberSearchField, DatetimeSearchField, TextSearchField, SelectSearchField, FilterRule, AvailableProperty } from '../../types';
 import { AutocompleteInput } from './AutocompleteInput';
 import { DateRangeInput } from './DateRangeInput';
 import { NumberInput } from './NumberInput';
+import { AllFiltersBuilder } from './AllFiltersBuilder';
 
 export interface SearchPanelProps {
   layers: LayerConfig[];
@@ -14,6 +15,18 @@ export interface SearchPanelProps {
   onZoomToFeature?: (layerId: string, property: string, value: string) => void;
   className?: string;
   hideTitle?: boolean;
+  /** When true, shows an expand button that toggles a centered modal view with the All Filters builder. */
+  expandable?: boolean;
+  /** Controlled expanded state. Only honored when `expandable` is true. */
+  expanded?: boolean;
+  /** Callback when the user toggles the expand button. */
+  onExpandedChange?: (expanded: boolean) => void;
+  /** Per-layer queryable properties, keyed by layer id. Enables typed property pickers in the All Filters builder. */
+  availableProperties?: Record<string, AvailableProperty[]>;
+  /** Ad-hoc filter rules per layer for the All Filters builder. Controlled. */
+  customRules?: Record<string, FilterRule[]>;
+  /** Callback when the user edits ad-hoc custom rules. */
+  onCustomRulesChange?: (layerId: string, rules: FilterRule[]) => void;
 }
 
 function isFilterActive(value: SearchFilterValue): boolean {
@@ -38,6 +51,12 @@ export function SearchPanel({
   onFetchSuggestions,
   className = '',
   hideTitle,
+  expandable = false,
+  expanded = false,
+  onExpandedChange,
+  availableProperties,
+  customRules,
+  onCustomRulesChange,
 }: SearchPanelProps) {
   const searchableLayers = useMemo(
     () => layers.filter((layer) => layer.search?.fields.length),
@@ -55,28 +74,58 @@ export function SearchPanel({
     }
   }, [searchableLayers, onFetchSuggestions]);
 
+  const showExpandButton = expandable && !expanded;
+  const showCollapseButton = expandable && expanded;
+  const showAllFiltersBuilder = expanded && customRules !== undefined && onCustomRulesChange !== undefined;
+
+  const header = !hideTitle || expandable ? (
+    <div className="mapui:flex mapui:items-center mapui:justify-between mapui:mb-2">
+      {!hideTitle ? (
+        <h3 className="mapui:m-0 mapui:text-sm mapui:font-semibold mapui:text-gray-700">
+          Search &amp; Filter
+        </h3>
+      ) : <span />}
+      {showExpandButton && (
+        <button
+          type="button"
+          onClick={() => onExpandedChange?.(true)}
+          title="Expand to full search builder"
+          className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-1.5 mapui:py-0.5 mapui:text-xs mapui:text-gray-600 hover:mapui:border-blue-400 hover:mapui:text-blue-600"
+        >
+          Expand
+        </button>
+      )}
+      {showCollapseButton && (
+        <button
+          type="button"
+          onClick={() => onExpandedChange?.(false)}
+          title="Close"
+          className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:p-1 mapui:text-gray-500 hover:mapui:text-gray-800"
+          aria-label="Close expanded search"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="mapui:h-4 mapui:w-4">
+            <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+          </svg>
+        </button>
+      )}
+    </div>
+  ) : null;
+
   if (searchableLayers.length === 0) {
-    return (
+    const body = (
       <div className={`mapui:flex mapui:flex-col mapui:gap-1 ${className}`.trim()}>
-        {!hideTitle && (
-          <h3 className="mapui:m-0 mapui:mb-2 mapui:text-sm mapui:font-semibold mapui:text-gray-700">
-            Search &amp; Filter
-          </h3>
-        )}
+        {header}
         <p className="mapui:m-0 mapui:text-xs mapui:text-gray-500">
           No searchable layers configured.
         </p>
       </div>
     );
+    return expanded ? <ModalShell onClose={() => onExpandedChange?.(false)}>{body}</ModalShell> : body;
   }
 
-  return (
-    <div className={`mapui:flex mapui:flex-col mapui:gap-3 ${className}`.trim()}>
-      {!hideTitle && (
-        <h3 className="mapui:m-0 mapui:mb-2 mapui:text-sm mapui:font-semibold mapui:text-gray-700">
-          Search &amp; Filter
-        </h3>
-      )}
+  const panelBody = (
+    <div className={`mapui:flex mapui:flex-col mapui:gap-3 ${expanded ? '' : className}`.trim()}>
+      {header}
 
       {searchableLayers.map((layer) => {
         const layerFilters = activeFilters[layer.id] ?? {};
@@ -227,6 +276,37 @@ export function SearchPanel({
           </div>
         );
       })}
+
+      {showAllFiltersBuilder && (
+        <div className="mapui:mt-2 mapui:border-t mapui:border-gray-200 mapui:pt-3">
+          <AllFiltersBuilder
+            layers={layers}
+            availableProperties={availableProperties}
+            customRules={customRules!}
+            onCustomRulesChange={onCustomRulesChange!}
+          />
+        </div>
+      )}
+    </div>
+  );
+
+  if (expanded) {
+    return <ModalShell onClose={() => onExpandedChange?.(false)}>{panelBody}</ModalShell>;
+  }
+  return panelBody;
+}
+
+function ModalShell({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
+  return (
+    <div
+      className="mapui:fixed mapui:inset-0 mapui:z-50 mapui:flex mapui:items-center mapui:justify-center mapui:bg-black/40 mapui:p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="mapui:relative mapui:flex mapui:max-h-[90vh] mapui:w-full mapui:max-w-2xl mapui:flex-col mapui:overflow-y-auto mapui:rounded-lg mapui:bg-white mapui:p-4 mapui:shadow-xl">
+        {children}
+      </div>
     </div>
   );
 }
