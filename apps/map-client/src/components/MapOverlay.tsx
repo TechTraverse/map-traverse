@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { MapRef } from 'react-map-gl/maplibre';
 import {
   LayerPanel,
@@ -21,6 +21,9 @@ import {
   SelectionPanel,
   QueryPanel,
   ScaleBarControl,
+  SideMenuPanel,
+  SideMenuToggle,
+  type SideMenuPanelItem,
   type CoordinateFormatOption,
   type ExportableLayer,
   type ExportRequest,
@@ -262,6 +265,26 @@ export function MapOverlay({
 
   // Accordion state: track which control is currently open
   const [openControl, setOpenControl] = useState<string | null>(null);
+  const [sideMenuOpen, setSideMenuOpen] = useState(false);
+
+  // Resolve controlLayout: 'auto' → 'side-menu' below 768px, else 'individual'
+  const [isNarrowViewport, setIsNarrowViewport] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 767px)').matches;
+  });
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(max-width: 767px)');
+    const handler = (e: MediaQueryListEvent) => setIsNarrowViewport(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  const effectiveLayout: 'individual' | 'side-menu' =
+    uiConfig.controlLayout === 'auto'
+      ? isNarrowViewport
+        ? 'side-menu'
+        : 'individual'
+      : uiConfig.controlLayout;
 
   // Expanded search modal state
   const [searchExpanded, setSearchExpanded] = useState(false);
@@ -333,230 +356,299 @@ export function MapOverlay({
         </div>
       )}
 
-      {/* Map controls stacked in their configured corner, order driven by config */}
+      {/* Map controls — render per effective layout */}
       {(() => {
-        const controlNodes: Record<OrderableControlKey, React.ReactNode> = {
-            showLegend: uiConfig.showLegend ? (
-              <div className="pointer-events-auto" ref={legendContainerRef}>
-                <Legend
-                  layers={layers}
-                  visibleLayerIds={activeLayerIds}
-                  legendOrder={uiConfig.legendOrder}
-                  onOpacityChange={uiConfig.showLegendOpacity ? setLayerOpacity : undefined}
+        // Inner panel content (no wrapper) reused by both layouts
+        const legendInner = uiConfig.showLegend ? (
+          <Legend
+            layers={layers}
+            visibleLayerIds={activeLayerIds}
+            legendOrder={uiConfig.legendOrder}
+            onOpacityChange={uiConfig.showLegendOpacity ? setLayerOpacity : undefined}
+          />
+        ) : null;
+
+        const searchInner = uiConfig.showSearchPanel ? (
+          <SearchPanel
+            layers={layers}
+            activeFilters={activeFilters}
+            onFilterChange={handleFilterChange}
+            onClearFilters={clearLayerFilters}
+            autocompleteSuggestions={autocompleteSuggestions}
+            onFetchSuggestions={fetchSuggestions}
+            onZoomToFeature={handleZoomToFeature}
+            className="p-3 max-w-xs"
+            hideTitle
+            expandable
+            expanded={searchExpanded}
+            onExpandedChange={setSearchExpanded}
+            availableProperties={layerQueryables}
+            customRules={customFilterRules}
+            onCustomRulesChange={handleCustomRulesChange}
+          />
+        ) : null;
+
+        const layerInner = uiConfig.showLayerPanel ? (
+          <LayerPanel
+            layers={layers}
+            activeLayerIds={activeLayerIds}
+            onToggleVisibility={toggleLayerVisibility}
+            onReorder={reorderLayers}
+            hideTitle
+          />
+        ) : null;
+
+        const measureInner = uiConfig.showMeasureTool ? (
+          <MeasurePanel
+            mode={measureMode}
+            onModeChange={onMeasureModeChange}
+            points={measurePoints}
+            measurement={measurement}
+            unit={measureUnit}
+            onUnitChange={onMeasureUnitChange}
+            onClear={onMeasureClear}
+            className="p-3 max-w-xs"
+          />
+        ) : null;
+
+        const selectionInner = uiConfig.showSelectionTool ? (
+          <SelectionPanel
+            mode={selectionMode}
+            onModeChange={onSelectionModeChange}
+            layers={layers}
+            activeLayerId={selectionActiveLayerId}
+            onActiveLayerChange={onSelectionActiveLayerChange}
+            selectedCount={selectionCount}
+            onClear={onSelectionClear}
+            onViewResults={onSelectionViewResults}
+            queryPanel={queryFilter && onRunQuery ? (
+              <>
+                <QueryPanel
+                  cql2Filter={queryFilter}
+                  onRun={onRunQuery}
+                  loading={queryLoading}
+                  hasSelectionGeometry={hasSelectionGeometry}
                 />
-              </div>
-            ) : null,
-
-            showSearchPanel: uiConfig.showSearchPanel ? (
-              <div className="pointer-events-auto">
-                <CollapsibleControl
-                  icon={LuSearch}
-                  label="Search"
-                  collapsed={openControl !== 'search'}
-                  onToggle={(collapsed) => setOpenControl(collapsed ? null : 'search')}
-                >
-                  <SearchPanel
-                    layers={layers}
-                    activeFilters={activeFilters}
-                    onFilterChange={handleFilterChange}
-                    onClearFilters={clearLayerFilters}
-                    autocompleteSuggestions={autocompleteSuggestions}
-                    onFetchSuggestions={fetchSuggestions}
-                    onZoomToFeature={handleZoomToFeature}
-                    className="p-3 max-w-xs"
-                    hideTitle
-                    expandable
-                    expanded={searchExpanded}
-                    onExpandedChange={setSearchExpanded}
-                    availableProperties={layerQueryables}
-                    customRules={customFilterRules}
-                    onCustomRulesChange={handleCustomRulesChange}
-                  />
-                </CollapsibleControl>
-              </div>
-            ) : null,
-
-            showLayerPanel: uiConfig.showLayerPanel ? (
-              <div className="pointer-events-auto">
-                <CollapsibleControl
-                  icon={LuLayers3}
-                  label="Layers"
-                  collapsed={openControl !== 'layers'}
-                  onToggle={(collapsed) => setOpenControl(collapsed ? null : 'layers')}
-                >
-                  <LayerPanel
-                    layers={layers}
-                    activeLayerIds={activeLayerIds}
-                    onToggleVisibility={toggleLayerVisibility}
-                    onReorder={reorderLayers}
-                    hideTitle
-                  />
-                </CollapsibleControl>
-              </div>
-            ) : null,
-
-            showMeasureTool: uiConfig.showMeasureTool ? (
-              <div className="pointer-events-auto">
-                <CollapsibleControl
-                  icon={LuRuler}
-                  label="Measure"
-                  collapsed={openControl !== 'measure'}
-                  onToggle={(collapsed) => {
-                    setOpenControl(collapsed ? null : 'measure');
-                    if (collapsed) {
-                      onMeasureModeChange(null);
-                      onMeasureClear();
-                    }
-                  }}
-                >
-                  <MeasurePanel
-                    mode={measureMode}
-                    onModeChange={onMeasureModeChange}
-                    points={measurePoints}
-                    measurement={measurement}
-                    unit={measureUnit}
-                    onUnitChange={onMeasureUnitChange}
-                    onClear={onMeasureClear}
-                    className="p-3 max-w-xs"
-                  />
-                </CollapsibleControl>
-              </div>
-            ) : null,
-
-            showSelectionTool: uiConfig.showSelectionTool ? (
-              <div className="pointer-events-auto">
-                <CollapsibleControl
-                  icon={LuMousePointer2}
-                  label="Select"
-                  collapsed={openControl !== 'selection'}
-                  onToggle={(collapsed) => {
-                    setOpenControl(collapsed ? null : 'selection');
-                    if (collapsed) {
-                      onSelectionModeChange(null);
-                    }
-                  }}
-                >
-                  <SelectionPanel
-                    mode={selectionMode}
-                    onModeChange={onSelectionModeChange}
-                    layers={layers}
-                    activeLayerId={selectionActiveLayerId}
-                    onActiveLayerChange={onSelectionActiveLayerChange}
-                    selectedCount={selectionCount}
-                    onClear={onSelectionClear}
-                    onViewResults={onSelectionViewResults}
-                    queryPanel={queryFilter && onRunQuery ? (
-                      <>
-                        <QueryPanel
-                          cql2Filter={queryFilter}
-                          onRun={onRunQuery}
-                          loading={queryLoading}
-                          hasSelectionGeometry={hasSelectionGeometry}
-                        />
-                        {queryError && (
-                          <p className="m-0 text-xs text-red-600 mt-1">{queryError}</p>
-                        )}
-                      </>
-                    ) : undefined}
-                    className="p-3 max-w-xs"
-                  />
-                </CollapsibleControl>
-              </div>
-            ) : null,
-
-            showImageryPanel: uiConfig.showImageryPanel && imageryLayers.length > 0 ? (
-              <div className="pointer-events-auto">
-                <CollapsibleControl
-                  icon={TbSatellite}
-                  label="Imagery"
-                  collapsed={openControl !== 'imagery'}
-                  onToggle={(collapsed) => setOpenControl(collapsed ? null : 'imagery')}
-                >
-                  <ImageryPanel
-                    imageryLayers={imageryLayers}
-                    onToggleVisibility={toggleImageryLayerVisibility}
-                    onOpacityChange={setImageryLayerOpacity}
-                    hideTitle
-                    className="p-3 max-w-xs"
-                  />
-                </CollapsibleControl>
-              </div>
-            ) : null,
-
-            showBasemapSwitcher: uiConfig.showBasemapSwitcher ? (
-              <div className="pointer-events-auto">
-                <CollapsibleControl
-                  icon={LuMap}
-                  label="Basemap"
-                  collapsed={openControl !== 'basemap'}
-                  onToggle={(collapsed) => setOpenControl(collapsed ? null : 'basemap')}
-                >
-                  <BasemapSwitcher
-                    basemaps={basemaps}
-                    activeBasemapId={activeBasemapId}
-                    onSelect={setActiveBasemap}
-                  />
-                </CollapsibleControl>
-              </div>
-            ) : null,
-
-            showExportButton: uiConfig.showExportButton || uiConfig.showExportPdf ? (
-              <div className="pointer-events-auto mapui:flex mapui:flex-col mapui:gap-2">
-                {uiConfig.showExportButton && (
-                  <ExportButton
-                    icon={LuDownload}
-                    onExport={() => setExportModalOpen(true)}
-                    loading={exportLoading}
-                  />
+                {queryError && (
+                  <p className="m-0 text-xs text-red-600 mt-1">{queryError}</p>
                 )}
-                {uiConfig.showExportPdf && (
-                  <ExportButton
-                    icon={LuFileText}
-                    label="Export as PDF"
-                    onExport={() => setPdfDialogOpen(true)}
-                    loading={pdfLoading}
-                  />
+              </>
+            ) : undefined}
+            className="p-3 max-w-xs"
+          />
+        ) : null;
+
+        const imageryInner = uiConfig.showImageryPanel && imageryLayers.length > 0 ? (
+          <ImageryPanel
+            imageryLayers={imageryLayers}
+            onToggleVisibility={toggleImageryLayerVisibility}
+            onOpacityChange={setImageryLayerOpacity}
+            hideTitle
+            className="p-3 max-w-xs"
+          />
+        ) : null;
+
+        const basemapInner = uiConfig.showBasemapSwitcher ? (
+          <BasemapSwitcher
+            basemaps={basemaps}
+            activeBasemapId={activeBasemapId}
+            onSelect={setActiveBasemap}
+          />
+        ) : null;
+
+        const exportInner = uiConfig.showExportButton || uiConfig.showExportPdf ? (
+          <div className="mapui:flex mapui:flex-col mapui:gap-2">
+            {uiConfig.showExportButton && (
+              <ExportButton
+                icon={LuDownload}
+                onExport={() => setExportModalOpen(true)}
+                loading={exportLoading}
+              />
+            )}
+            {uiConfig.showExportPdf && (
+              <ExportButton
+                icon={LuFileText}
+                label="Export as PDF"
+                onExport={() => setPdfDialogOpen(true)}
+                loading={pdfLoading}
+              />
+            )}
+          </div>
+        ) : null;
+
+        if (effectiveLayout === 'side-menu') {
+          const items: SideMenuPanelItem[] = [];
+          if (searchInner) items.push({ key: 'search', label: 'Search', icon: LuSearch, content: searchInner });
+          if (layerInner) items.push({ key: 'layers', label: 'Layers', icon: LuLayers3, content: layerInner });
+          if (measureInner) items.push({ key: 'measure', label: 'Measure', icon: LuRuler, content: measureInner });
+          if (selectionInner) items.push({ key: 'selection', label: 'Select', icon: LuMousePointer2, content: selectionInner });
+          if (imageryInner) items.push({ key: 'imagery', label: 'Imagery', icon: TbSatellite, content: imageryInner });
+          if (basemapInner) items.push({ key: 'basemap', label: 'Basemap', icon: LuMap, content: basemapInner });
+          if (exportInner) items.push({ key: 'export', label: 'Export', icon: LuDownload, content: exportInner });
+          return (
+            <>
+              <div className="absolute top-4 right-4 flex flex-col gap-4 items-end pointer-events-auto">
+                <SideMenuToggle onClick={() => setSideMenuOpen(true)} label="Open menu" />
+                {uiConfig.showCompass && (
+                  <div ref={compassContainerRef}>
+                    <CompassControl bearing={bearing} onReset={() => requestBearing(0)} />
+                  </div>
+                )}
+                {info?.enabled && info.position === 'top-right' && (
+                  <InfoControl onClick={() => setInfoModalOpen(true)} title={info.title} />
                 )}
               </div>
-            ) : null,
+              {legendInner && (
+                <div className="absolute top-4 left-4 pointer-events-auto" ref={legendContainerRef}>
+                  {legendInner}
+                </div>
+              )}
+              <SideMenuPanel
+                controls={items}
+                isOpen={sideMenuOpen}
+                onClose={() => setSideMenuOpen(false)}
+              />
+            </>
+          );
+        }
 
-            showCompass: uiConfig.showCompass ? (
-              <div className="pointer-events-auto" ref={compassContainerRef}>
-                <CompassControl bearing={bearing} onReset={() => requestBearing(0)} />
-              </div>
-            ) : null,
+        const controlNodes: Record<OrderableControlKey, React.ReactNode> = {
+          showLegend: legendInner ? (
+            <div className="pointer-events-auto" ref={legendContainerRef}>
+              {legendInner}
+            </div>
+          ) : null,
 
-            showInfoControl: info?.enabled && info.position === 'top-right' ? (
-              <div className="pointer-events-auto">
-                <InfoControl onClick={() => setInfoModalOpen(true)} title={info.title} />
-              </div>
-            ) : null,
-          };
+          showSearchPanel: searchInner ? (
+            <div className="pointer-events-auto">
+              <CollapsibleControl
+                icon={LuSearch}
+                label="Search"
+                collapsed={openControl !== 'search'}
+                onToggle={(collapsed) => setOpenControl(collapsed ? null : 'search')}
+              >
+                {searchInner}
+              </CollapsibleControl>
+            </div>
+          ) : null,
 
-          const cornerClasses: Record<ControlCorner, string> = {
-            'top-right': 'absolute top-4 right-4 flex flex-col gap-4 items-end',
-            'top-left': 'absolute top-4 left-4 flex flex-col gap-4 items-start',
-            'bottom-right': 'absolute bottom-4 right-4 flex flex-col gap-4 items-end',
-            'bottom-left': 'absolute bottom-4 left-4 flex flex-col gap-4 items-start',
-          };
+          showLayerPanel: layerInner ? (
+            <div className="pointer-events-auto">
+              <CollapsibleControl
+                icon={LuLayers3}
+                label="Layers"
+                collapsed={openControl !== 'layers'}
+                onToggle={(collapsed) => setOpenControl(collapsed ? null : 'layers')}
+              >
+                {layerInner}
+              </CollapsibleControl>
+            </div>
+          ) : null,
 
-          const grouped = groupControlsByCorner(uiConfig);
-          return (Object.keys(cornerClasses) as ControlCorner[]).map((corner) => {
-            const keys = grouped[corner];
-            const rendered = keys
-              .map((key) => controlNodes[key])
-              .filter((node): node is React.ReactNode => node != null);
-            if (rendered.length === 0) return null;
-            return (
-              <div key={corner} className={cornerClasses[corner]}>
-                {keys.map((key) => {
-                  const node = controlNodes[key];
-                  return node ? <Fragment key={key}>{node}</Fragment> : null;
-                })}
-              </div>
-            );
-          });
-        })()}
+          showMeasureTool: measureInner ? (
+            <div className="pointer-events-auto">
+              <CollapsibleControl
+                icon={LuRuler}
+                label="Measure"
+                collapsed={openControl !== 'measure'}
+                onToggle={(collapsed) => {
+                  setOpenControl(collapsed ? null : 'measure');
+                  if (collapsed) {
+                    onMeasureModeChange(null);
+                    onMeasureClear();
+                  }
+                }}
+              >
+                {measureInner}
+              </CollapsibleControl>
+            </div>
+          ) : null,
+
+          showSelectionTool: selectionInner ? (
+            <div className="pointer-events-auto">
+              <CollapsibleControl
+                icon={LuMousePointer2}
+                label="Select"
+                collapsed={openControl !== 'selection'}
+                onToggle={(collapsed) => {
+                  setOpenControl(collapsed ? null : 'selection');
+                  if (collapsed) {
+                    onSelectionModeChange(null);
+                  }
+                }}
+              >
+                {selectionInner}
+              </CollapsibleControl>
+            </div>
+          ) : null,
+
+          showImageryPanel: imageryInner ? (
+            <div className="pointer-events-auto">
+              <CollapsibleControl
+                icon={TbSatellite}
+                label="Imagery"
+                collapsed={openControl !== 'imagery'}
+                onToggle={(collapsed) => setOpenControl(collapsed ? null : 'imagery')}
+              >
+                {imageryInner}
+              </CollapsibleControl>
+            </div>
+          ) : null,
+
+          showBasemapSwitcher: basemapInner ? (
+            <div className="pointer-events-auto">
+              <CollapsibleControl
+                icon={LuMap}
+                label="Basemap"
+                collapsed={openControl !== 'basemap'}
+                onToggle={(collapsed) => setOpenControl(collapsed ? null : 'basemap')}
+              >
+                {basemapInner}
+              </CollapsibleControl>
+            </div>
+          ) : null,
+
+          showExportButton: exportInner ? (
+            <div className="pointer-events-auto">{exportInner}</div>
+          ) : null,
+
+          showCompass: uiConfig.showCompass ? (
+            <div className="pointer-events-auto" ref={compassContainerRef}>
+              <CompassControl bearing={bearing} onReset={() => requestBearing(0)} />
+            </div>
+          ) : null,
+
+          showInfoControl: info?.enabled && info.position === 'top-right' ? (
+            <div className="pointer-events-auto">
+              <InfoControl onClick={() => setInfoModalOpen(true)} title={info.title} />
+            </div>
+          ) : null,
+        };
+
+        const cornerClasses: Record<ControlCorner, string> = {
+          'top-right': 'absolute top-4 right-4 flex flex-col gap-4 items-end',
+          'top-left': 'absolute top-4 left-4 flex flex-col gap-4 items-start',
+          'bottom-right': 'absolute bottom-4 right-4 flex flex-col gap-4 items-end',
+          'bottom-left': 'absolute bottom-4 left-4 flex flex-col gap-4 items-start',
+        };
+
+        const grouped = groupControlsByCorner(uiConfig);
+        return (Object.keys(cornerClasses) as ControlCorner[]).map((corner) => {
+          const keys = grouped[corner];
+          const rendered = keys
+            .map((key) => controlNodes[key])
+            .filter((node): node is React.ReactNode => node != null);
+          if (rendered.length === 0) return null;
+          return (
+            <div key={corner} className={cornerClasses[corner]}>
+              {keys.map((key) => {
+                const node = controlNodes[key];
+                return node ? <Fragment key={key}>{node}</Fragment> : null;
+              })}
+            </div>
+          );
+        });
+      })()}
 
       {/* Export modal */}
       <div className="pointer-events-auto">

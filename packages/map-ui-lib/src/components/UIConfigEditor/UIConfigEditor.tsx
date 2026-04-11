@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import type { UIConfig, OrderableControlKey, LayerConfig, ControlCorner } from '../../types';
-import { ORDERABLE_CONTROLS, resolveControlOrder, resolveControlCorner, CONTROL_CORNERS, COORDINATE_FORMATS } from '../../schemas/config';
+import type { UIConfig, OrderableControlKey, LayerConfig, ControlCorner, ControlLayout } from '../../types';
+import { ORDERABLE_CONTROLS, resolveControlOrder, resolveControlCorner, CONTROL_CORNERS, CONTROL_LAYOUTS, COORDINATE_FORMATS } from '../../schemas/config';
 
 export interface UIConfigEditorProps {
   value: UIConfig;
@@ -19,6 +19,12 @@ const CORNER_LABELS: Record<ControlCorner, string> = {
   'top-left': 'Top left',
   'bottom-right': 'Bottom right',
   'bottom-left': 'Bottom left',
+};
+
+const LAYOUT_LABELS: Record<ControlLayout, { label: string; description: string }> = {
+  individual: { label: 'Individual', description: 'Each control in its configured corner.' },
+  'side-menu': { label: 'Side menu', description: 'Controls grouped in a slide-in menu.' },
+  auto: { label: 'Auto', description: 'Side menu on narrow screens, individual otherwise.' },
 };
 
 const COORDINATE_FORMAT_LABELS: Record<(typeof COORDINATE_FORMATS)[number], string> = {
@@ -201,6 +207,41 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers }: UIConfi
 
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-4">
+      {/* Control layout */}
+      <div className="mapui:flex mapui:flex-col mapui:gap-1">
+        <h4 className="mapui:m-0 mapui:text-xs mapui:font-semibold mapui:text-gray-700">
+          Control Layout
+        </h4>
+        <p className="mapui:m-0 mapui:mb-1 mapui:text-xs mapui:text-gray-500">
+          How controls are displayed on the map.
+        </p>
+        <div className="mapui:flex mapui:flex-col mapui:gap-1.5">
+          {CONTROL_LAYOUTS.map((layout) => (
+            <label
+              key={layout}
+              className="mapui:flex mapui:cursor-pointer mapui:items-start mapui:gap-2 mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:px-3 mapui:py-2 hover:mapui:bg-gray-50"
+            >
+              <input
+                type="radio"
+                name="controlLayout"
+                value={layout}
+                checked={value.controlLayout === layout}
+                onChange={() => onChange({ ...value, controlLayout: layout })}
+                className="mapui:mt-0.5"
+              />
+              <span className="mapui:flex mapui:flex-col mapui:gap-0.5">
+                <span className="mapui:text-sm mapui:font-medium mapui:text-gray-800">
+                  {LAYOUT_LABELS[layout].label}
+                </span>
+                <span className="mapui:text-xs mapui:text-gray-500">
+                  {LAYOUT_LABELS[layout].description}
+                </span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+
       {/* Orderable controls */}
       <div className="mapui:flex mapui:flex-col mapui:gap-1">
         <h4 className="mapui:m-0 mapui:text-xs mapui:font-semibold mapui:text-gray-700">
