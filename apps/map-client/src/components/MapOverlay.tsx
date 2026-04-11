@@ -17,6 +17,7 @@ import {
   MeasurePanel,
   SelectionPanel,
   QueryPanel,
+  ScaleBarControl,
   type CoordinateFormatOption,
   type ExportableLayer,
   type ExportRequest,
@@ -123,6 +124,8 @@ export function MapOverlay({
   const setLayerCql2Filter = useMapStore((s) => s.setLayerCql2Filter);
   const setLayerOpacity = useMapStore((s) => s.setLayerOpacity);
   const bearing = useMapStore((s) => s.viewState.bearing);
+  const mapZoom = useMapStore((s) => s.viewState.zoom);
+  const mapCenterLat = useMapStore((s) => s.viewState.latitude);
   const requestBearing = useMapStore((s) => s.requestBearing);
   const clearLayerFilters = useMapStore((s) => s.clearLayerFilters);
   const imageryLayers = useMapStore((s) => s.imageryLayers);
@@ -192,8 +195,9 @@ export function MapOverlay({
 
   return (
     <div className="absolute inset-0 pointer-events-none">
-      {/* Tooltip: follows cursor, pointer-events-none so it doesn't block map */}
-      {uiConfig.showFeatureTooltip && hoveredFeatures.length > 0 && hoveredPoint && (
+      {/* Tooltip: follows cursor, pointer-events-none so it doesn't block map.
+          Suppressed when a feature detail panel is open so the two don't overlap. */}
+      {uiConfig.showFeatureTooltip && hoveredFeatures.length > 0 && hoveredPoint && selectedFeatures.length === 0 && (
         <div
           className="absolute z-20"
           style={{ left: hoveredPoint.x + 12, top: hoveredPoint.y + 12 }}
@@ -226,7 +230,12 @@ export function MapOverlay({
           const controlNodes: Record<OrderableControlKey, React.ReactNode> = {
             showLegend: uiConfig.showLegend ? (
               <div className="pointer-events-auto">
-                <Legend layers={layers} visibleLayerIds={activeLayerIds} onOpacityChange={uiConfig.showLegendOpacity ? setLayerOpacity : undefined} />
+                <Legend
+                  layers={layers}
+                  visibleLayerIds={activeLayerIds}
+                  legendOrder={uiConfig.legendOrder}
+                  onOpacityChange={uiConfig.showLegendOpacity ? setLayerOpacity : undefined}
+                />
               </div>
             ) : null,
 
@@ -435,6 +444,13 @@ export function MapOverlay({
           markdown={info.markdown ?? ''}
           onClose={() => setInfoModalOpen(false)}
         />
+      )}
+
+      {/* Bottom-left: Scale Bar */}
+      {uiConfig.showScaleBar && (
+        <div className="absolute bottom-2 left-2 pointer-events-auto">
+          <ScaleBarControl zoom={mapZoom} latitude={mapCenterLat} />
+        </div>
       )}
 
       {/* Bottom-center: Coordinate Display */}

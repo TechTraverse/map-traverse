@@ -8,6 +8,7 @@ export {
   CoordinateDisplay,
   formatDecimal,
   formatDMS,
+  formatDDM,
 } from './CoordinateDisplay';
 export type {
   CoordinateDisplayProps,
@@ -29,6 +30,13 @@ export { LayerPanel } from './LayerPanel';
 export type { LayerPanelProps } from './LayerPanel';
 export { Legend } from './Legend';
 export type { LegendProps } from './Legend';
+export {
+  ScaleBarControl,
+  computeMetricScale,
+  computeImperialScale,
+  metersPerPixel,
+} from './ScaleBarControl';
+export type { ScaleBarControlProps, ScaleBarUnit } from './ScaleBarControl';
 export { MeasurePanel } from './MeasurePanel';
 export type { MeasurePanelProps } from './MeasurePanel';
 export { SelectionPanel } from './SelectionPanel';

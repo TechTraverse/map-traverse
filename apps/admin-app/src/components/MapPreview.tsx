@@ -1006,8 +1006,8 @@ export function MapPreview({
       {/* Full overlay when uiConfig is provided */}
       {uiConfig && (
         <div className="mapui:absolute mapui:inset-0 mapui:pointer-events-none">
-          {/* Tooltip: follows cursor */}
-          {uiConfig.showFeatureTooltip && hoveredFeatures.length > 0 && hoveredPoint && (
+          {/* Tooltip: follows cursor. Hidden when a detail panel is open. */}
+          {uiConfig.showFeatureTooltip && hoveredFeatures.length > 0 && hoveredPoint && selectedFeatures.length === 0 && (
             <div
               className="mapui:absolute mapui:z-20"
               style={{ left: hoveredPoint.x + 12, top: hoveredPoint.y + 12 }}

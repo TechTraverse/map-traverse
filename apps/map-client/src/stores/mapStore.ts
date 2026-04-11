@@ -99,6 +99,8 @@ export const useMapStore = create<MapState>((set) => ({
     showImageryPanel: false,
     showCompass: true,
     showGlobalSearch: false,
+    showScaleBar: false,
+    coordinateFormat: 'decimal-degrees',
   },
   branding: undefined,
   info: undefined,

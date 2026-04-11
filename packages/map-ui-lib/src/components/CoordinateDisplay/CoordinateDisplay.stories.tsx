@@ -4,6 +4,7 @@ import {
   CoordinateDisplay,
   formatDecimal,
   formatDMS,
+  formatDDM,
   type CoordinateFormatOption,
 } from './CoordinateDisplay';
 
@@ -21,6 +22,7 @@ type Story = StoryObj<typeof meta>;
 
 const defaultFormats: CoordinateFormatOption[] = [
   { id: 'decimal', label: 'Decimal', format: formatDecimal },
+  { id: 'ddm', label: 'DDM', format: formatDDM },
   { id: 'dms', label: 'DMS', format: formatDMS },
 ];
 
@@ -86,28 +88,18 @@ export const DMS: Story = {
 };
 
 /**
- * With projected CRS (Web Mercator EPSG:3857)
+ * DDM (Degrees + decimal minutes) format
  */
-export const WithProjectedCRS: Story = {
+export const DDM: Story = {
   render: () => {
-    // Mock Web Mercator formatter (actual implementation uses proj4)
-    const formatWebMercator = (lat: number, lng: number): string => {
-      // Simplified conversion for demo purposes
-      const x = lng * 111320;
-      const y = Math.log(Math.tan((90 + lat) * (Math.PI / 360))) * 6378137;
-      return `${x.toFixed(2)}, ${y.toFixed(2)}`;
-    };
-
-    const formatsWithProjected: CoordinateFormatOption[] = [
-      ...defaultFormats,
-      { id: 'epsg3857', label: 'EPSG:3857', format: formatWebMercator },
-    ];
-
+    const [activeFormat, setActiveFormat] = useState('ddm');
     return (
-      <InteractiveWrapper
+      <CoordinateDisplay
         latitude={40.7128}
         longitude={-74.006}
-        formats={formatsWithProjected}
+        activeFormat={activeFormat}
+        formats={defaultFormats}
+        onFormatChange={setActiveFormat}
       />
     );
   },

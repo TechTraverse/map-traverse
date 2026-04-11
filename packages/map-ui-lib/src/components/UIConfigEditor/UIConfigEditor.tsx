@@ -1,13 +1,24 @@
 import { useMemo, useState } from 'react';
-import type { UIConfig, OrderableControlKey } from '../../types';
-import { ORDERABLE_CONTROLS, resolveControlOrder } from '../../schemas/config';
+import type { UIConfig, OrderableControlKey, LayerConfig } from '../../types';
+import { ORDERABLE_CONTROLS, resolveControlOrder, COORDINATE_FORMATS } from '../../schemas/config';
 
 export interface UIConfigEditorProps {
   value: UIConfig;
   onChange: (config: UIConfig) => void;
   /** Keys that were auto-enabled by the wizard based on config state. */
   autoEnabled?: Set<keyof UIConfig>;
+  /**
+   * Optional list of layers that have legend configs. When provided, the editor
+   * renders a "Legend Order" reorder UI that writes to `value.legendOrder`.
+   */
+  layers?: LayerConfig[];
 }
+
+const COORDINATE_FORMAT_LABELS: Record<(typeof COORDINATE_FORMATS)[number], string> = {
+  'decimal-degrees': 'Decimal degrees (38.887500, -104.824167)',
+  ddm: "Degree decimal minutes (38° 53.250' N, 104° 49.450' W)",
+  dms: "Degree minutes seconds (38° 53' 15\" N, 104° 49' 27\" W)",
+};
 
 const TOGGLE_LABELS: { key: keyof UIConfig; label: string; description: string }[] = [
   { key: 'showLayerPanel', label: 'Layer Panel', description: 'Toggle layer visibility' },
@@ -24,6 +35,7 @@ const TOGGLE_LABELS: { key: keyof UIConfig; label: string; description: string }
   { key: 'showImageryPanel', label: 'Imagery Panel', description: 'Toggle satellite imagery layers' },
   { key: 'showCompass', label: 'Compass', description: 'Show map compass; click to reset to north' },
   { key: 'showGlobalSearch', label: 'Global Search', description: 'Cross-layer search bar above the map' },
+  { key: 'showScaleBar', label: 'Scale Bar', description: 'Display map scale bar' },
 ];
 
 const ORDERABLE_SET = new Set<string>(ORDERABLE_CONTROLS);
@@ -59,11 +71,52 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
   );
 }
 
-export function UIConfigEditor({ value, onChange, autoEnabled }: UIConfigEditorProps) {
+export function UIConfigEditor({ value, onChange, autoEnabled, layers }: UIConfigEditorProps) {
   const [draggedKey, setDraggedKey] = useState<string | null>(null);
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
 
   const controlOrder = useMemo(() => resolveControlOrder(value), [value]);
+
+  // Effective legend order: merge stored order with any new legend-bearing layers
+  // so the editor row list always reflects the current set.
+  const legendLayerOptions = useMemo(
+    () => (layers ?? []).filter((l) => l.legend !== undefined),
+    [layers],
+  );
+  const effectiveLegendOrder = useMemo(() => {
+    const ids = legendLayerOptions.map((l) => l.id);
+    const stored = value.legendOrder ?? [];
+    const seen = new Set<string>();
+    const merged: string[] = [];
+    for (const id of stored) {
+      if (ids.includes(id) && !seen.has(id)) {
+        merged.push(id);
+        seen.add(id);
+      }
+    }
+    for (const id of ids) {
+      if (!seen.has(id)) merged.push(id);
+    }
+    return merged;
+  }, [legendLayerOptions, value.legendOrder]);
+
+  const updateLegendOrder = (newOrder: string[]) => {
+    onChange({ ...value, legendOrder: newOrder });
+  };
+
+  const handleLegendMoveUp = (index: number) => {
+    if (index === 0) return;
+    const updated = [...effectiveLegendOrder];
+    [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
+    updateLegendOrder(updated);
+  };
+
+  const handleLegendMoveDown = (index: number) => {
+    if (index === effectiveLegendOrder.length - 1) return;
+    const updated = [...effectiveLegendOrder];
+    [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
+    updateLegendOrder(updated);
+  };
 
   const handleToggle = (key: keyof UIConfig, checked: boolean) => {
     onChange({ ...value, [key]: checked });
@@ -139,9 +192,9 @@ export function UIConfigEditor({ value, onChange, autoEnabled }: UIConfigEditorP
         </p>
         <ul className="mapui:m-0 mapui:list-none mapui:flex mapui:flex-col mapui:gap-1.5 mapui:p-0">
           {controlOrder.map((key, index) => {
-            const info = TOGGLE_INFO.get(key);
+            const info = TOGGLE_INFO.get(key as keyof UIConfig);
             if (!info) return null;
-            const checked = value[key as keyof UIConfig];
+            const checked = value[key as keyof UIConfig] as boolean;
             const isDragged = draggedKey === key;
             const isDragOver = dragOverKey === key;
 
@@ -214,7 +267,7 @@ export function UIConfigEditor({ value, onChange, autoEnabled }: UIConfigEditorP
         </p>
         <div className="mapui:grid mapui:grid-cols-1 mapui:gap-2 sm:mapui:grid-cols-2">
           {NON_ORDERABLE_TOGGLES.map(({ key, label, description }) => {
-            const checked = value[key];
+            const checked = value[key] as boolean;
             return (
               <label
                 key={key}
@@ -233,6 +286,80 @@ export function UIConfigEditor({ value, onChange, autoEnabled }: UIConfigEditorP
           })}
         </div>
       </div>
+
+      {/* Coordinate format */}
+      {value.showCoordinateDisplay && (
+        <div className="mapui:flex mapui:flex-col mapui:gap-1">
+          <h4 className="mapui:m-0 mapui:text-xs mapui:font-semibold mapui:text-gray-700">
+            Coordinate Format
+          </h4>
+          <p className="mapui:m-0 mapui:mb-1 mapui:text-xs mapui:text-gray-500">
+            Default display format for the cursor coordinate readout.
+          </p>
+          <select
+            value={value.coordinateFormat}
+            onChange={(e) =>
+              onChange({
+                ...value,
+                coordinateFormat: e.target.value as UIConfig['coordinateFormat'],
+              })
+            }
+            className="mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-2 mapui:py-1.5 mapui:text-sm mapui:text-gray-800 focus:mapui:border-blue-500 focus:mapui:outline-none"
+          >
+            {COORDINATE_FORMATS.map((format) => (
+              <option key={format} value={format}>
+                {COORDINATE_FORMAT_LABELS[format]}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Legend order */}
+      {value.showLegend && legendLayerOptions.length > 0 && (
+        <div className="mapui:flex mapui:flex-col mapui:gap-1">
+          <h4 className="mapui:m-0 mapui:text-xs mapui:font-semibold mapui:text-gray-700">
+            Legend Order
+          </h4>
+          <p className="mapui:m-0 mapui:mb-1 mapui:text-xs mapui:text-gray-500">
+            Set the display order of layers in the legend. Only layers with a legend configured are shown.
+          </p>
+          <ul className="mapui:m-0 mapui:list-none mapui:flex mapui:flex-col mapui:gap-1.5 mapui:p-0">
+            {effectiveLegendOrder.map((layerId, index) => {
+              const layer = legendLayerOptions.find((l) => l.id === layerId);
+              if (!layer) return null;
+              return (
+                <li
+                  key={layerId}
+                  className="mapui:flex mapui:items-center mapui:gap-2 mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:px-2 mapui:py-1.5"
+                >
+                  <div className="mapui:flex mapui:shrink-0 mapui:flex-col mapui:gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => handleLegendMoveUp(index)}
+                      disabled={index === 0}
+                      aria-label="Move legend entry up"
+                      className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:px-1 mapui:text-xs mapui:text-gray-400 hover:mapui:text-gray-600 disabled:mapui:opacity-30"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleLegendMoveDown(index)}
+                      disabled={index === effectiveLegendOrder.length - 1}
+                      aria-label="Move legend entry down"
+                      className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:px-1 mapui:text-xs mapui:text-gray-400 hover:mapui:text-gray-600 disabled:mapui:opacity-30"
+                    >
+                      ▼
+                    </button>
+                  </div>
+                  <span className="mapui:text-sm mapui:text-gray-800">{layer.label}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

@@ -551,6 +551,9 @@ export const ORDERABLE_CONTROLS = [
 
 export type OrderableControlKey = (typeof ORDERABLE_CONTROLS)[number];
 
+export const COORDINATE_FORMATS = ['decimal-degrees', 'ddm', 'dms'] as const;
+export type CoordinateFormat = (typeof COORDINATE_FORMATS)[number];
+
 export const UIConfigSchema = z.object({
   showLayerPanel: z.boolean().default(true),
   showLegend: z.boolean().default(true),
@@ -566,7 +569,15 @@ export const UIConfigSchema = z.object({
   showImageryPanel: z.boolean().default(false),
   showCompass: z.boolean().default(true),
   showGlobalSearch: z.boolean().default(false),
+  showScaleBar: z.boolean().default(false),
   controlOrder: z.array(z.enum(ORDERABLE_CONTROLS)).optional(),
+  /**
+   * Optional display order for legend layers (array of layer IDs).
+   * When absent, the legend renders visible layers in their natural order.
+   * IDs not in the list are appended in natural order; unknown IDs are ignored.
+   */
+  legendOrder: z.array(z.string()).optional(),
+  coordinateFormat: z.enum(COORDINATE_FORMATS).default('decimal-degrees'),
 });
 
 /** Returns the effective control order, falling back to defaults and appending any missing keys. */
@@ -653,6 +664,8 @@ export const MapConfigSchema = z.object({
     showImageryPanel: false,
     showCompass: true,
     showGlobalSearch: false,
+    showScaleBar: false,
+    coordinateFormat: 'decimal-degrees',
   }),
   initialView: ViewConfigSchema,
   branding: BrandingConfigSchema.optional(),

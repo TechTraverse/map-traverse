@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import proj4 from 'proj4';
 import type { MapRef } from 'react-map-gl/maplibre';
 import type { UIConfig } from '@ogc-maps/storybook-components/types';
 import { DEFAULT_HEADER_COLOR } from '@ogc-maps/storybook-components/schemas';
 import {
   formatDecimal,
   formatDMS,
+  formatDDM,
   ResultsDrawer,
   type CoordinateFormatOption,
 } from '@ogc-maps/storybook-components';
@@ -45,7 +45,7 @@ export function Layout({ uiConfig }: LayoutProps) {
     latitude: number;
     longitude: number;
   } | null>(null);
-  const [coordFormat, setCoordFormat] = useState<string>('decimal');
+  const [coordFormat, setCoordFormat] = useState<string>(uiConfig.coordinateFormat ?? 'decimal-degrees');
 
   const [selectedFeatures, setSelectedFeatures] = useState<FeatureInfo[]>([]);
 
@@ -197,18 +197,12 @@ export function Layout({ uiConfig }: LayoutProps) {
     onComplete: handleSpatialSelectionComplete,
   });
 
-  // Define coordinate formats including projected CRS
+  // Coordinate formats. IDs match the UIConfigSchema `coordinateFormat` enum
+  // so config values round-trip through the cycle button without remapping.
   const coordinateFormats: CoordinateFormatOption[] = [
-    { id: 'decimal', label: 'Decimal', format: formatDecimal },
+    { id: 'decimal-degrees', label: 'Decimal', format: formatDecimal },
+    { id: 'ddm', label: 'DDM', format: formatDDM },
     { id: 'dms', label: 'DMS', format: formatDMS },
-    {
-      id: 'epsg3857',
-      label: 'EPSG:3857',
-      format: (lat: number, lng: number) => {
-        const [x, y] = proj4('EPSG:4326', 'EPSG:3857', [lng, lat]);
-        return `${x.toFixed(2)}, ${y.toFixed(2)}`;
-      },
-    },
   ];
 
   return (

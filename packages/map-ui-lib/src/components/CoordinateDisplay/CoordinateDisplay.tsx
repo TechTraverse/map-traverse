@@ -14,14 +14,14 @@ export interface CoordinateDisplayProps {
 }
 
 /**
- * Format coordinates as decimal degrees
+ * Format coordinates as decimal degrees.
  */
 export function formatDecimal(lat: number, lng: number): string {
   return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
 }
 
 /**
- * Format coordinates as degrees, minutes, seconds (DMS)
+ * Format coordinates as degrees, minutes, seconds (DMS).
  */
 export function formatDMS(lat: number, lng: number): string {
   const formatComponent = (value: number, positiveDir: string, negativeDir: string): string => {
@@ -37,6 +37,23 @@ export function formatDMS(lat: number, lng: number): string {
   const latStr = formatComponent(lat, 'N', 'S');
   const lngStr = formatComponent(lng, 'E', 'W');
   return `${latStr} ${lngStr}`;
+}
+
+/**
+ * Format coordinates as degrees with decimal minutes (DDM).
+ */
+export function formatDDM(lat: number, lng: number): string {
+  const formatComponent = (value: number, positiveDir: string, negativeDir: string): string => {
+    const dir = value >= 0 ? positiveDir : negativeDir;
+    const abs = Math.abs(value);
+    const degrees = Math.floor(abs);
+    const minutes = ((abs - degrees) * 60).toFixed(3);
+    return `${degrees}° ${minutes}' ${dir}`;
+  };
+
+  const latStr = formatComponent(lat, 'N', 'S');
+  const lngStr = formatComponent(lng, 'E', 'W');
+  return `${latStr}, ${lngStr}`;
 }
 
 /**
