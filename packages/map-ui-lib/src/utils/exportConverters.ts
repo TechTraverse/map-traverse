@@ -45,13 +45,54 @@ export const kmlConverter: FormatConverter = async (features, collectionId) => {
 };
 
 export const shapefileConverter: FormatConverter = async (features, collectionId) => {
-  // @ts-expect-error shp-write has no type declarations
-  const shpwrite = await import('shp-write');
+  if (features.length === 0) {
+    throw new Error('Cannot export an empty feature collection to shapefile');
+  }
+
+  const shpwrite = await import('@mapbox/shp-write');
+  // @mapbox/shp-write ships named ESM exports and a default CJS object; support both.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mod = shpwrite as any;
+  const zip: ((gj: unknown, options?: unknown) => Promise<unknown>) | undefined =
+    mod.zip ?? mod.default?.zip;
+  if (typeof zip !== 'function') {
+    throw new Error(
+      'Shapefile export is unavailable: @mapbox/shp-write did not load correctly',
+    );
+  }
+
   const fc = toFeatureCollection(features);
-  const zip = shpwrite.default?.zip ?? shpwrite.zip;
-  const zipBlob = await zip(fc);
+
+  // shp-write silently drops features that have no geometry; bail early so the
+  // caller sees a useful error instead of downloading an empty zip.
+  const hasGeometry = fc.features.some((f) => f.geometry != null);
+  if (!hasGeometry) {
+    throw new Error('Cannot export features without geometry to shapefile');
+  }
+
+  // Always pass an options object: v0.3 of shp-write threw whenever options
+  // were omitted because it indexed into `options.types` unconditionally.
+  // v0.4 no longer has that bug, but being explicit also lets us request a
+  // Blob directly via jszip 3's generateAsync instead of a base64 string.
+  const zipResult = await zip(fc, {
+    outputType: 'blob',
+    compression: 'DEFLATE',
+    types: {
+      point: collectionId,
+      polygon: collectionId,
+      line: collectionId,
+      multipolygon: collectionId,
+      multiline: collectionId,
+    },
+  });
+
+  const blob =
+    zipResult instanceof Blob
+      ? zipResult
+      : new Blob([zipResult as BlobPart], { type: 'application/zip' });
+
   return {
-    blob: zipBlob instanceof Blob ? zipBlob : new Blob([zipBlob]),
+    blob,
     filename: `${collectionId}.zip`,
   };
 };

@@ -98,13 +98,14 @@
     "zod": "^4.3.6"
   },
   "optionalDependencies": {
+    "@mapbox/shp-write": "^0.4.3",
     "@ngageoint/geopackage": "^4.2.0",
     "@tmcw/tokml": "^1.0.0-alpha.0",
-    "flatgeobuf": "^3.32.0",
-    "shp-write": "^0.3.2"
+    "flatgeobuf": "^3.32.0"
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^5.1.1",
+    "@storybook/addon-docs": "^10.3.3",
     "@storybook/addon-links": "^10.3.3",
     "@storybook/react": "^10.3.3",
     "@storybook/react-vite": "^10.3.5",
@@ -123,7 +124,6 @@
     "vite": "^6.0.7",
     "vite-plugin-dts": "^4.3.0",
     "vite-plugin-lib-inject-css": "^2.1.1",
-    "vitest": "^2.1.0",
-    "@storybook/addon-docs": "^10.3.3"
+    "vitest": "^2.1.0"
   }
 }
