@@ -172,7 +172,10 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
   const sprites = useMapStore((s) => s.sprites);
   const activeCql2Filters = useMapStore((s) => s.activeCql2Filters);
   const pendingFitBounds = useMapStore((s) => s.pendingFitBounds);
+  const pendingFitBoundsOptions = useMapStore((s) => s.pendingFitBoundsOptions);
   const clearPendingFitBounds = useMapStore((s) => s.clearPendingFitBounds);
+  const pendingFlyTo = useMapStore((s) => s.pendingFlyTo);
+  const clearPendingFlyTo = useMapStore((s) => s.clearPendingFlyTo);
   const pendingBearing = useMapStore((s) => s.pendingBearing);
   const clearPendingBearing = useMapStore((s) => s.clearPendingBearing);
   const setViewState = useMapStore((s) => s.setViewState);
@@ -224,9 +227,18 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
   // Zoom to pending fit bounds
   useEffect(() => {
     if (!pendingFitBounds || !mapRef.current) return;
-    mapRef.current.fitBounds(pendingFitBounds, { padding: 50, maxZoom: 12 });
+    const padding = pendingFitBoundsOptions?.padding ?? 50;
+    const maxZoom = pendingFitBoundsOptions?.maxZoom ?? 12;
+    mapRef.current.fitBounds(pendingFitBounds, { padding, maxZoom });
     clearPendingFitBounds();
-  }, [pendingFitBounds, clearPendingFitBounds]);
+  }, [pendingFitBounds, pendingFitBoundsOptions, clearPendingFitBounds]);
+
+  // Fly to pending point (go-to lat/long, smarter zoom-to for points)
+  useEffect(() => {
+    if (!pendingFlyTo || !mapRef.current) return;
+    mapRef.current.flyTo({ center: pendingFlyTo.center, zoom: pendingFlyTo.zoom });
+    clearPendingFlyTo();
+  }, [pendingFlyTo, clearPendingFlyTo]);
 
   // Animate to pending bearing (e.g., compass reset)
   useEffect(() => {

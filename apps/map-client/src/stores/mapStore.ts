@@ -33,6 +33,9 @@ interface MapState {
   activeCql2Filters: Record<string, CQL2Expression | null>;
   imageryLayers: ImageryLayerConfig[];
   pendingFitBounds: BBox | null;
+  /** Optional bounds-fit options. Paired with `pendingFitBounds` when present. */
+  pendingFitBoundsOptions: { padding?: number; maxZoom?: number } | null;
+  pendingFlyTo: { center: [number, number]; zoom?: number } | null;
   pendingBearing: number | null;
 
   /** Top-level global search config (from MapConfig.globalSearch). */
@@ -57,8 +60,10 @@ interface MapState {
   setLayerFilters: (layerId: string, filters: SearchFilterValues) => void;
   setLayerCql2Filter: (layerId: string, cql2: CQL2Expression | null) => void;
   clearLayerFilters: (layerId: string) => void;
-  fitBounds: (bbox: BBox) => void;
+  fitBounds: (bbox: BBox, options?: { padding?: number; maxZoom?: number }) => void;
   clearPendingFitBounds: () => void;
+  flyTo: (center: [number, number], zoom?: number) => void;
+  clearPendingFlyTo: () => void;
   requestBearing: (bearing: number) => void;
   clearPendingBearing: () => void;
 
@@ -108,6 +113,8 @@ export const useMapStore = create<MapState>((set) => ({
   activeFilters: {},
   activeCql2Filters: {},
   pendingFitBounds: null,
+  pendingFitBoundsOptions: null,
+  pendingFlyTo: null,
   pendingBearing: null,
 
   globalSearchConfig: undefined,
@@ -210,8 +217,13 @@ export const useMapStore = create<MapState>((set) => ({
       return { activeFilters: restFilters, activeCql2Filters: restCql2 };
     }),
 
-  fitBounds: (bbox) => set({ pendingFitBounds: bbox }),
-  clearPendingFitBounds: () => set({ pendingFitBounds: null }),
+  fitBounds: (bbox, options) =>
+    set({ pendingFitBounds: bbox, pendingFitBoundsOptions: options ?? null }),
+  clearPendingFitBounds: () =>
+    set({ pendingFitBounds: null, pendingFitBoundsOptions: null }),
+
+  flyTo: (center, zoom) => set({ pendingFlyTo: { center, zoom } }),
+  clearPendingFlyTo: () => set({ pendingFlyTo: null }),
 
   requestBearing: (bearing) => set({ pendingBearing: bearing }),
   clearPendingBearing: () => set({ pendingBearing: null }),

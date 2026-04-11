@@ -135,3 +135,35 @@ export const CustomStyling: Story = {
     />
   ),
 };
+
+/**
+ * Go-to lat/long: click the readout to expand the input form. Submit routes
+ * through the `onNavigate` callback — in an app, wire this to `map.flyTo`.
+ */
+export const GoToLatLong: Story = {
+  render: () => {
+    const [activeFormat, setActiveFormat] = useState('decimal');
+    const [lastNavigated, setLastNavigated] = useState<{ lat: number; lng: number } | null>(null);
+    return (
+      <div className="mapui:space-y-2">
+        <CoordinateDisplay
+          latitude={40.7128}
+          longitude={-74.006}
+          activeFormat={activeFormat}
+          formats={defaultFormats}
+          onFormatChange={setActiveFormat}
+          onNavigate={(lat, lng) => setLastNavigated({ lat, lng })}
+        />
+        <p className="mapui:text-sm mapui:text-gray-600">
+          Click the coordinate readout to open the input form. Accepts decimal,
+          DDM, or DMS (with optional N/S/E/W).
+        </p>
+        {lastNavigated && (
+          <p className="mapui:text-sm mapui:text-green-700 mapui:font-mono">
+            Navigated to {lastNavigated.lat.toFixed(4)}, {lastNavigated.lng.toFixed(4)}
+          </p>
+        )}
+      </div>
+    );
+  },
+};
