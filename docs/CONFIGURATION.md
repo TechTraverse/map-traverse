@@ -448,6 +448,9 @@ Controls which UI panels are visible. All fields default to shown, except `showS
 | `showFeatureTooltip` | `boolean` | `true` | Show/hide `FeatureTooltip` |
 | `showExportButton` | `boolean` | `true` | Show/hide `ExportButton` |
 | `showLegendOpacity` | `boolean` | `false` | Show per-layer opacity sliders in `Legend` (requires `onOpacityChange` prop) |
+| `showScaleBar` | `boolean` | `false` | Show/hide the `ScaleBarControl` at the bottom-left of the map |
+| `legendOrder` | `string[]` | _(unset)_ | Optional explicit display order for legend layers (array of layer IDs). Unlisted legend-bearing layers follow in natural order |
+| `coordinateFormat` | `"decimal-degrees" \| "ddm" \| "dms"` | `"decimal-degrees"` | Default format for the cursor coordinate readout (decimal degrees, degree decimal minutes, or degrees-minutes-seconds) |
 
 ---
 

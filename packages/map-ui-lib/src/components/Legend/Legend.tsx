@@ -6,6 +6,12 @@ import type { LayerConfig, LegendConfig, LegendEntry } from '../../types';
 export interface LegendProps {
   layers: LayerConfig[];
   visibleLayerIds: string[];
+  /**
+   * Optional explicit legend display order (array of layer IDs). IDs in this
+   * list render first, in order; any visible legend layers not listed follow
+   * in their natural order. Unknown IDs are ignored.
+   */
+  legendOrder?: string[];
   onOpacityChange?: (layerId: string, opacity: number) => void;
   className?: string;
 }
@@ -339,7 +345,7 @@ function OpacitySlider({
   );
 }
 
-export function Legend({ layers, visibleLayerIds, onOpacityChange, className }: LegendProps) {
+export function Legend({ layers, visibleLayerIds, legendOrder, onOpacityChange, className }: LegendProps) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState(false);
   const visibleLayers = layers.filter((l) => visibleLayerIds.includes(l.id));
@@ -354,7 +360,27 @@ export function Legend({ layers, visibleLayerIds, onOpacityChange, className }: 
   }
 
   // Only show layers that have an explicit legend config
-  const legendLayers = visibleLayers.filter((l) => l.legend !== undefined);
+  const unorderedLegendLayers = visibleLayers.filter((l) => l.legend !== undefined);
+
+  // Apply explicit legendOrder (when provided): listed IDs first in order,
+  // then any remaining layers in their natural order. Unknown IDs are ignored.
+  const legendLayers = (() => {
+    if (!legendOrder || legendOrder.length === 0) return unorderedLegendLayers;
+    const byId = new Map(unorderedLegendLayers.map((l) => [l.id, l]));
+    const ordered: typeof unorderedLegendLayers = [];
+    const seen = new Set<string>();
+    for (const id of legendOrder) {
+      const match = byId.get(id);
+      if (match && !seen.has(id)) {
+        ordered.push(match);
+        seen.add(id);
+      }
+    }
+    for (const l of unorderedLegendLayers) {
+      if (!seen.has(l.id)) ordered.push(l);
+    }
+    return ordered;
+  })();
 
   if (legendLayers.length === 0) {
     return null;

@@ -226,6 +226,8 @@ export const mapConfig: MapConfig = {
     showImageryPanel: false,
     showCompass: true,
     showGlobalSearch: false,
+    showScaleBar: false,
+    coordinateFormat: 'decimal-degrees',
   },
   initialView: {
     latitude: 0,

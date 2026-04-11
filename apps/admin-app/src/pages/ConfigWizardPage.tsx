@@ -94,6 +94,8 @@ const DEFAULT_UI_CONFIG: UIConfig = {
   showImageryPanel: false,
   showCompass: false,
   showGlobalSearch: false,
+  showScaleBar: false,
+  coordinateFormat: 'decimal-degrees',
 };
 
 /** Derive which UI controls should be enabled based on current config state. */
@@ -184,7 +186,7 @@ export function ConfigWizardPage() {
   );
 
   const { effectiveUIConfig, autoEnabledKeys } = useMemo(() => {
-    const effective: UIConfig = { ...DEFAULT_UI_CONFIG };
+    const effective = { ...DEFAULT_UI_CONFIG } as Record<string, unknown>;
     const auto = new Set<keyof UIConfig>();
     for (const key of Object.keys(suggestedUI) as (keyof UIConfig)[]) {
       if (key === 'controlOrder') continue;
@@ -194,28 +196,25 @@ export function ConfigWizardPage() {
       }
     }
     for (const key of Object.keys(uiOverrides) as (keyof UIConfig)[]) {
-      if (key === 'controlOrder') {
-        effective.controlOrder = uiOverrides.controlOrder;
-        continue;
+      const override = uiOverrides[key];
+      if (override !== undefined) {
+        effective[key] = override;
       }
-      effective[key] = uiOverrides[key]!;
     }
-    return { effectiveUIConfig: effective, autoEnabledKeys: auto };
+    return { effectiveUIConfig: effective as UIConfig, autoEnabledKeys: auto };
   }, [suggestedUI, uiOverrides]);
 
   const handleUIChange = (newConfig: UIConfig) => {
     setUiOverrides(prev => {
-      const updated: Partial<UIConfig> = { ...prev };
+      const updated = { ...prev } as Record<string, unknown>;
+      const effective = effectiveUIConfig as Record<string, unknown>;
       for (const key of Object.keys(newConfig) as (keyof UIConfig)[]) {
-        if (key === 'controlOrder') {
-          updated.controlOrder = newConfig.controlOrder;
-          continue;
-        }
-        if (newConfig[key] !== effectiveUIConfig[key]) {
-          updated[key] = newConfig[key];
+        const next = (newConfig as Record<string, unknown>)[key];
+        if (next !== effective[key]) {
+          updated[key] = next;
         }
       }
-      return updated;
+      return updated as Partial<UIConfig>;
     });
   };
 
@@ -983,7 +982,7 @@ export function ConfigWizardPage() {
         {currentStep === 'ui' && (
           <div className="mapui:space-y-4">
             <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">UI Options</h2>
-            <UIConfigEditor value={effectiveUIConfig} onChange={handleUIChange} autoEnabled={autoEnabledKeys} />
+            <UIConfigEditor value={effectiveUIConfig} onChange={handleUIChange} autoEnabled={autoEnabledKeys} layers={layers} />
             {effectiveUIConfig.showGlobalSearch && (
               <GlobalSearchConfigEditor
                 value={globalSearch ?? DEFAULT_GLOBAL_SEARCH}

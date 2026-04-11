@@ -296,6 +296,45 @@ describe('ViewConfigSchema', () => {
   });
 });
 
+describe('UIConfigSchema phase-2 additions', () => {
+  it('defaults showScaleBar to false and coordinateFormat to decimal-degrees', () => {
+    const result = MapConfigSchema.parse(baseMapConfig);
+    expect(result.ui.showScaleBar).toBe(false);
+    expect(result.ui.coordinateFormat).toBe('decimal-degrees');
+    expect(result.ui.legendOrder).toBeUndefined();
+  });
+
+  it('accepts legendOrder as an array of layer IDs', () => {
+    const result = MapConfigSchema.parse({
+      ...baseMapConfig,
+      ui: { legendOrder: ['layer-1', 'layer-2'] },
+    });
+    expect(result.ui.legendOrder).toEqual(['layer-1', 'layer-2']);
+  });
+
+  it('accepts ddm and dms as coordinateFormat values', () => {
+    const ddm = MapConfigSchema.parse({
+      ...baseMapConfig,
+      ui: { coordinateFormat: 'ddm' },
+    });
+    expect(ddm.ui.coordinateFormat).toBe('ddm');
+    const dms = MapConfigSchema.parse({
+      ...baseMapConfig,
+      ui: { coordinateFormat: 'dms' },
+    });
+    expect(dms.ui.coordinateFormat).toBe('dms');
+  });
+
+  it('rejects an invalid coordinateFormat value', () => {
+    expect(() =>
+      MapConfigSchema.parse({
+        ...baseMapConfig,
+        ui: { coordinateFormat: 'utm' },
+      }),
+    ).toThrow();
+  });
+});
+
 describe('InfoConfigSchema', () => {
   it('parses a MapConfig without an info field (back-compat)', () => {
     const result = MapConfigSchema.parse(baseMapConfig);
