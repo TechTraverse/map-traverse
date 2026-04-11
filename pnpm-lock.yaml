@@ -307,6 +307,9 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@25.5.0)(jsdom@29.0.1)(lightningcss@1.30.2)
     optionalDependencies:
+      '@mapbox/shp-write':
+        specifier: ^0.4.3
+        version: 0.4.3
       '@ngageoint/geopackage':
         specifier: ^4.2.0
         version: 4.2.6
@@ -316,9 +319,6 @@ importers:
       flatgeobuf:
         specifier: ^3.32.0
         version: 3.38.0
-      shp-write:
-        specifier: ^0.3.2
-        version: 0.3.2
 
 packages:
 
@@ -1134,6 +1134,9 @@ packages:
 
   '@mapbox/point-geometry@0.1.0':
     resolution: {integrity: sha512-6j56HdLTwWGO0fJPlrZtdU/B13q8Uwmo18Ck2GnGgN9PCFyKTZ3UbXeEdRFh18i9XQ92eH2VdtpJHpBD3aripQ==}
+
+  '@mapbox/shp-write@0.4.3':
+    resolution: {integrity: sha512-mkKIHgtnytyP+cXfk+joYeWwk+SODZ7COQusTcO1rZQVUn68MjzW2F74XMsNIusabnwj5aoKNI8B3mYq9KZ9AQ==}
 
   '@mapbox/tiny-sdf@2.0.7':
     resolution: {integrity: sha512-25gQLQMcpivjOSA40g3gO6qgiFPDpWRoMfd+G/GoppPIeP6JDaMMkMrEJnMZhKyyS6iKwVt5YKu02vCUyJM3Ug==}
@@ -2363,6 +2366,9 @@ packages:
   dbf@0.1.4:
     resolution: {integrity: sha512-7tQ8w5NB74PL1f0Z/NQ6Y+URjBFhtEsFxzEQSzot2+VpLwWfrNnxFVhzWm6dJyEtFq0WkYWcGEMDf39fy8JFaw==}
 
+  dbf@0.2.0:
+    resolution: {integrity: sha512-JMeGCJzFcVGsfnkIuqrnuiSkJpTu6c4AKJg3LXDnfW7zU/2PSIue3KG4fz9c+/mmlDzT+rVCwyEHzzhxzrzPiA==}
+
   de-indent@1.0.2:
     resolution: {integrity: sha512-e/1zu3xH5MQryN2zdVaF0OrdNLUbvWxzMbi+iNA6Bky7l1RoP8a2fIbRocyHclXt/arDrrR6lL3TqFD9pMQTsg==}
 
@@ -2650,6 +2656,9 @@ packages:
   figures@3.2.0:
     resolution: {integrity: sha512-yaduQFRKLXYOGgEn6AZau90j3ggSOyiqXU0F9JZfeXYhNa+Jk4X+s45A2zg5jns87GAFa34BBm2kXw4XpNcbdg==}
     engines: {node: '>=8'}
+
+  file-saver@2.0.5:
+    resolution: {integrity: sha512-P9bmyZ3h/PRG+Nzga+rbdI4OEpNDzAVyy74uVO9ATgzLK6VtAsYybF/+TOCvrc0MO793d6+42lLyZTw7/ArVzA==}
 
   file-type@16.5.4:
     resolution: {integrity: sha512-/yFHK0aGjFEgDJjEKP0pWCplsPFPhwyfwevf/pVxiN0tmE4L9LmwWxWukdJSHdoCli4VgQLehjJtwQBnqmsKcw==}
@@ -5432,6 +5441,13 @@ snapshots:
 
   '@mapbox/point-geometry@0.1.0': {}
 
+  '@mapbox/shp-write@0.4.3':
+    dependencies:
+      dbf: 0.2.0
+      file-saver: 2.0.5
+      jszip: 3.10.1
+    optional: true
+
   '@mapbox/tiny-sdf@2.0.7': {}
 
   '@mapbox/unitbezier@0.0.1': {}
@@ -6838,6 +6854,11 @@ snapshots:
     dependencies:
       jdataview: 2.5.0
 
+  dbf@0.2.0:
+    dependencies:
+      jdataview: 2.5.0
+    optional: true
+
   de-indent@1.0.2: {}
 
   debug@2.6.9:
@@ -7177,6 +7198,9 @@ snapshots:
   figures@3.2.0:
     dependencies:
       escape-string-regexp: 1.0.5
+    optional: true
+
+  file-saver@2.0.5:
     optional: true
 
   file-type@16.5.4:

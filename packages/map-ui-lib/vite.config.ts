@@ -46,7 +46,7 @@ export default defineConfig({
         'react-icons',
         /^react-icons\//,
         '@tmcw/tokml',
-        'shp-write',
+        '@mapbox/shp-write',
         'flatgeobuf/lib/mjs/geojson.js',
         '@ngageoint/geopackage',
       ],
