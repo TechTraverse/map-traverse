@@ -1,4 +1,5 @@
-import { Fragment, useCallback, useMemo, useState } from 'react';
+import { Fragment, useCallback, useMemo, useRef, useState } from 'react';
+import type { MapRef } from 'react-map-gl/maplibre';
 import {
   LayerPanel,
   ImageryPanel,
@@ -12,6 +13,8 @@ import {
   FeatureTooltip,
   ExportButton,
   ExportModal,
+  PdfExportDialog,
+  type PdfExportOptions,
   InfoControl,
   InfoModal,
   MeasurePanel,
@@ -22,6 +25,7 @@ import {
   type ExportableLayer,
   type ExportRequest,
 } from '@ogc-maps/storybook-components';
+import { exportMapAsPdf } from '../utils/exportPdf';
 import type { MeasureMode, MeasureUnit, Measurement, SelectedFeature, SelectionMode } from '@ogc-maps/storybook-components';
 import type { FilterRuleGroup, FilterRule } from '@ogc-maps/storybook-components/types';
 import { useExport } from '@ogc-maps/storybook-components/hooks';
@@ -32,7 +36,7 @@ import { resolveControlOrder } from '@ogc-maps/storybook-components';
 import { useMapStore, useActiveLayerIds } from '../stores/mapStore';
 import { useAutocompleteSuggestions } from '../hooks/useAutocompleteSuggestions';
 import { useLayerQueryables } from '../hooks/useLayerQueryables';
-import { LuDownload, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
+import { LuDownload, LuFileText, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
 import { TbSatellite } from 'react-icons/tb';
 
 const INFO_CORNER_CLASSES: Record<InfoPosition, string> = {
@@ -82,6 +86,7 @@ interface MapOverlayProps {
   queryLoading?: boolean;
   queryError?: string | null;
   hasSelectionGeometry?: boolean;
+  mapRef?: React.RefObject<MapRef | null>;
 }
 
 export function MapOverlay({
@@ -114,6 +119,7 @@ export function MapOverlay({
   queryLoading,
   queryError,
   hasSelectionGeometry,
+  mapRef,
 }: MapOverlayProps) {
   const layers = useMapStore((s) => s.layers);
   const basemaps = useMapStore((s) => s.basemaps);
@@ -152,6 +158,43 @@ export function MapOverlay({
 
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [infoModalOpen, setInfoModalOpen] = useState(false);
+
+  const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState<string | null>(null);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const legendContainerRef = useRef<HTMLDivElement>(null);
+  const scaleBarContainerRef = useRef<HTMLDivElement>(null);
+  const compassContainerRef = useRef<HTMLDivElement>(null);
+
+  const handlePdfExport = useCallback(
+    async (options: PdfExportOptions) => {
+      const map = mapRef?.current?.getMap();
+      if (!map) {
+        setPdfError('Map is not ready.');
+        return;
+      }
+      setPdfLoading(true);
+      setPdfError(null);
+      setPdfProgress('Rendering map...');
+      try {
+        await exportMapAsPdf({
+          map,
+          options,
+          legendElement: legendContainerRef.current,
+          scaleBarElement: scaleBarContainerRef.current,
+          compassElement: compassContainerRef.current,
+        });
+        setPdfDialogOpen(false);
+      } catch (err) {
+        setPdfError(err instanceof Error ? err.message : 'PDF export failed.');
+      } finally {
+        setPdfLoading(false);
+        setPdfProgress(null);
+      }
+    },
+    [mapRef],
+  );
 
   const exportableLayers: ExportableLayer[] = useMemo(
     () => layers.filter((l) => l.visible).map((l) => ({ id: l.id, label: l.label, collection: l.collection })),
@@ -295,7 +338,7 @@ export function MapOverlay({
         {(() => {
           const controlNodes: Record<OrderableControlKey, React.ReactNode> = {
             showLegend: uiConfig.showLegend ? (
-              <div className="pointer-events-auto">
+              <div className="pointer-events-auto" ref={legendContainerRef}>
                 <Legend
                   layers={layers}
                   visibleLayerIds={activeLayerIds}
@@ -458,18 +501,28 @@ export function MapOverlay({
               </div>
             ) : null,
 
-            showExportButton: uiConfig.showExportButton ? (
-              <div className="pointer-events-auto">
-                <ExportButton
-                  icon={LuDownload}
-                  onExport={() => setExportModalOpen(true)}
-                  loading={exportLoading}
-                />
+            showExportButton: uiConfig.showExportButton || uiConfig.showExportPdf ? (
+              <div className="pointer-events-auto mapui:flex mapui:flex-col mapui:gap-2">
+                {uiConfig.showExportButton && (
+                  <ExportButton
+                    icon={LuDownload}
+                    onExport={() => setExportModalOpen(true)}
+                    loading={exportLoading}
+                  />
+                )}
+                {uiConfig.showExportPdf && (
+                  <ExportButton
+                    icon={LuFileText}
+                    label="Export as PDF"
+                    onExport={() => setPdfDialogOpen(true)}
+                    loading={pdfLoading}
+                  />
+                )}
               </div>
             ) : null,
 
             showCompass: uiConfig.showCompass ? (
-              <div className="pointer-events-auto">
+              <div className="pointer-events-auto" ref={compassContainerRef}>
                 <CompassControl bearing={bearing} onReset={() => requestBearing(0)} />
               </div>
             ) : null,
@@ -505,6 +558,21 @@ export function MapOverlay({
         />
       </div>
 
+      {/* PDF export dialog */}
+      <div className="pointer-events-auto">
+        <PdfExportDialog
+          open={pdfDialogOpen}
+          loading={pdfLoading}
+          progress={pdfProgress}
+          error={pdfError}
+          onExport={handlePdfExport}
+          onClose={() => {
+            setPdfDialogOpen(false);
+            setPdfError(null);
+          }}
+        />
+      </div>
+
       {info?.enabled && info.position !== 'top-right' && (
         <div className={INFO_CORNER_CLASSES[info.position]}>
           <InfoControl onClick={() => setInfoModalOpen(true)} title={info.title} />
@@ -522,7 +590,7 @@ export function MapOverlay({
 
       {/* Bottom-left: Scale Bar */}
       {uiConfig.showScaleBar && (
-        <div className="absolute bottom-2 left-2 pointer-events-auto">
+        <div className="absolute bottom-2 left-2 pointer-events-auto" ref={scaleBarContainerRef}>
           <ScaleBarControl zoom={mapZoom} latitude={mapCenterLat} />
         </div>
       )}

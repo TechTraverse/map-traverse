@@ -220,6 +220,7 @@ export const mapConfig: MapConfig = {
     showFeatureDetail: true,
     showFeatureTooltip: true,
     showExportButton: true,
+    showExportPdf: true,
     showLegendOpacity: false,
     showMeasureTool: false,
     showSelectionTool: true,

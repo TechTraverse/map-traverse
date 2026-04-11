@@ -29,6 +29,7 @@ const TOGGLE_LABELS: { key: keyof UIConfig; label: string; description: string }
   { key: 'showFeatureDetail', label: 'Feature Detail Panel', description: 'Inspect feature properties' },
   { key: 'showFeatureTooltip', label: 'Feature Tooltip', description: 'Hover tooltip on features' },
   { key: 'showExportButton', label: 'Export Button', description: 'Export data as CSV' },
+  { key: 'showExportPdf', label: 'Export as PDF', description: 'Enable PDF map export with title, legend, scale bar' },
   { key: 'showLegendOpacity', label: 'Legend Opacity', description: 'Expand legend with opacity sliders' },
   { key: 'showMeasureTool', label: 'Measure Tool', description: 'Measure distances and areas on the map' },
   { key: 'showSelectionTool', label: 'Selection Tool', description: 'Select features by click or box draw' },

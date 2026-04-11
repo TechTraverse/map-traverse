@@ -24,6 +24,8 @@ export type {
   ExportableLayer,
   ExportMode,
 } from './ExportModal';
+export { PdfExportDialog } from './PdfExportDialog';
+export type { PdfExportDialogProps, PdfExportOptions } from './PdfExportDialog';
 export { FeatureDetailPanel } from './FeatureDetailPanel';
 export type { FeatureDetailPanelProps } from './FeatureDetailPanel';
 export { FeatureTooltip } from './FeatureTooltip';

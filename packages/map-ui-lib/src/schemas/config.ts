@@ -565,6 +565,8 @@ export const UIConfigSchema = z.object({
   showFeatureDetail: z.boolean().default(true),
   showFeatureTooltip: z.boolean().default(true),
   showExportButton: z.boolean().default(true),
+  /** When true, surfaces a "Export as PDF" option in the export modal. */
+  showExportPdf: z.boolean().default(false),
   showLegendOpacity: z.boolean().default(false),
   showMeasureTool: z.boolean().default(false),
   showSelectionTool: z.boolean().default(false),
@@ -660,6 +662,7 @@ export const MapConfigSchema = z.object({
     showFeatureDetail: true,
     showFeatureTooltip: true,
     showExportButton: true,
+    showExportPdf: false,
     showLegendOpacity: false,
     showMeasureTool: false,
     showSelectionTool: false,

@@ -98,6 +98,7 @@ export const useMapStore = create<MapState>((set) => ({
     showFeatureDetail: true,
     showFeatureTooltip: true,
     showExportButton: true,
+    showExportPdf: false,
     showLegendOpacity: false,
     showMeasureTool: false,
     showSelectionTool: false,
