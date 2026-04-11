@@ -25,7 +25,7 @@ import {
 import type { MeasureMode, MeasureUnit, Measurement, SelectedFeature, SelectionMode } from '@ogc-maps/storybook-components';
 import type { FilterRuleGroup } from '@ogc-maps/storybook-components/types';
 import { useExport } from '@ogc-maps/storybook-components/hooks';
-import { DEFAULT_EXPORT_FORMATS, fromStructuredFilters, fetchFeatures, eq, bboxFromGeometry, exportConverters, zoomToFeature } from '@ogc-maps/storybook-components/utils';
+import { DEFAULT_EXPORT_FORMATS, fromStructuredFilters, fetchFeatures, eq, exportConverters, zoomToFeature } from '@ogc-maps/storybook-components/utils';
 import type { GeoJsonFeature } from '@ogc-maps/storybook-components/utils';
 import type { UIConfig, SearchFilterValue, SearchFilterValues, OrderableControlKey, InfoPosition } from '@ogc-maps/storybook-components/types';
 import { resolveControlOrder } from '@ogc-maps/storybook-components';
