@@ -5,6 +5,7 @@
 - **Dev**: `pnpm storybook` (Lib), `pnpm dev:app` (App), `pnpm dev:lib` (Lib watch), `pnpm --filter admin-app dev` (Admin UI)
 - **Build**: `pnpm build` (All), `pnpm build:lib`, `pnpm build:app`
 - **Test**: `pnpm test`
+- **Verify**: `pnpm verify` (runs build + test — **must pass before declaring any task done**)
 - **Docker**: `docker compose up -d` (Start all services), `docker restart storybook-components-tipg` (Refresh tipg)
 
 ## Architecture Guidelines
