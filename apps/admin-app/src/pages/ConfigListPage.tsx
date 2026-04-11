@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ActionMenu } from '../components/ActionMenu';
+import { ImportConfigModal } from '../components/ImportConfigModal';
 
 interface ConfigSummary {
   id: string;
@@ -18,6 +19,7 @@ export function ConfigListPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [publishingId, setPublishingId] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const navigate = useNavigate();
 
   const fetchConfigs = async () => {
@@ -152,13 +154,33 @@ export function ConfigListPage() {
     <div className="mapui:p-8">
       <div className="mapui:flex mapui:items-center mapui:justify-between mapui:mb-6">
         <h1 className="mapui:text-2xl mapui:font-bold mapui:text-gray-900">Maps</h1>
-        <Link
-          to="/configs/new"
-          className="mapui:bg-blue-600 mapui:text-white mapui:px-4 mapui:py-2 mapui:rounded mapui:hover:bg-blue-700"
-        >
-          Create New Map
-        </Link>
+        <div className="mapui:flex mapui:gap-2">
+          <button
+            type="button"
+            onClick={() => setImportOpen(true)}
+            className="mapui:border mapui:border-gray-300 mapui:bg-white mapui:text-gray-700 mapui:px-4 mapui:py-2 mapui:rounded mapui:hover:bg-gray-50"
+          >
+            Import Map
+          </button>
+          <Link
+            to="/configs/new"
+            className="mapui:bg-blue-600 mapui:text-white mapui:px-4 mapui:py-2 mapui:rounded mapui:hover:bg-blue-700"
+          >
+            Create New Map
+          </Link>
+        </div>
       </div>
+
+      <ImportConfigModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={(id) => {
+          setImportOpen(false);
+          navigate(`/configs/${id}/edit`);
+        }}
+        existingNames={configs.map((c) => c.name)}
+      />
+
 
       {error && (
         <div className="mapui:mb-4 mapui:rounded mapui:bg-red-50 mapui:border mapui:border-red-200 mapui:px-4 mapui:py-3 mapui:flex mapui:items-center mapui:justify-between">

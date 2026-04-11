@@ -42,6 +42,7 @@ import type {
 } from '@ogc-maps/storybook-components';
 import { ImageUploadField } from '../components/ImageUploadField';
 import { MapPreview } from '../components/MapPreview';
+import { JsonConfigEditor } from '../components/JsonConfigEditor';
 import { useQueryablesByLayer } from '../hooks/useQueryablesByLayer';
 
 const DEFAULT_GLOBAL_SEARCH: GlobalSearchConfig = {
@@ -291,6 +292,21 @@ export function ConfigWizardPage() {
       .catch((err) => setError(String(err)))
       .finally(() => setLoading(false));
   }, [id]);
+
+  /** Replace all wizard state from a validated MapConfig (used by the JSON editor). */
+  const handleReplaceConfig = (next: MapConfig) => {
+    setSources(next.sources ?? []);
+    setLayers(next.layers ?? []);
+    setImageryLayers(next.imageryLayers ?? []);
+    setBasemaps(next.basemaps ?? []);
+    setSprites(next.sprites ?? []);
+    setUiOverrides(next.ui ?? {});
+    setGlobalSearch(next.globalSearch);
+    setInfo(next.info);
+    setInitialView(next.initialView ?? DEFAULT_VIEW);
+    setBranding(next.branding ?? {});
+    setValidationErrors([]);
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -1021,6 +1037,13 @@ export function ConfigWizardPage() {
               )}
             </div>
             <ConfigPreview config={assembledConfig} />
+            <CollapsibleSection title="Edit JSON" badge="advanced">
+              <p className="mapui:text-xs mapui:text-gray-500 mapui:mb-3">
+                Edit the raw config JSON, or paste a full MapConfig document to replace the current state.
+                Changes are validated against the schema and only applied when you click &quot;Apply Changes&quot;.
+              </p>
+              <JsonConfigEditor value={assembledConfig} onApply={handleReplaceConfig} />
+            </CollapsibleSection>
             {validationErrors.length > 0 && (
               <div className="mapui:rounded mapui:bg-red-50 mapui:border mapui:border-red-200 mapui:p-4">
                 <p className="mapui:text-sm mapui:font-medium mapui:text-red-800 mapui:mb-2">Config validation failed:</p>
