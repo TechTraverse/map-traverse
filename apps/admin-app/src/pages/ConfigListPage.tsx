@@ -34,7 +34,7 @@ export function ConfigListPage() {
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this configuration?')) return;
+    if (!confirm('Delete this map?')) return;
     setActionError(null);
     const res = await fetch(`/api/configs/${id}`, { method: 'DELETE', credentials: 'include' });
     if (!res.ok) {
@@ -151,12 +151,12 @@ export function ConfigListPage() {
   return (
     <div className="mapui:p-8">
       <div className="mapui:flex mapui:items-center mapui:justify-between mapui:mb-6">
-        <h1 className="mapui:text-2xl mapui:font-bold mapui:text-gray-900">Map Configurations</h1>
+        <h1 className="mapui:text-2xl mapui:font-bold mapui:text-gray-900">Maps</h1>
         <Link
           to="/configs/new"
           className="mapui:bg-blue-600 mapui:text-white mapui:px-4 mapui:py-2 mapui:rounded mapui:hover:bg-blue-700"
         >
-          Create New Config
+          Create New Map
         </Link>
       </div>
 
@@ -176,7 +176,7 @@ export function ConfigListPage() {
 
       {configs.length === 0 ? (
         <div className="mapui:text-center mapui:text-gray-500 mapui:py-12">
-          No configurations yet.{' '}
+          No maps yet.{' '}
           <Link to="/configs/new" className="mapui:text-blue-600 mapui:hover:underline">
             Create one
           </Link>
