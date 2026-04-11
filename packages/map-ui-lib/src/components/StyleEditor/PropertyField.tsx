@@ -4,6 +4,7 @@ import { ColorPicker } from '../admin/ColorPicker';
 import { FormField } from '../admin/FormField';
 import { IconImagePicker } from './IconImagePicker';
 import { DataDrivenColorEditor } from './DataDrivenColorEditor';
+import type { ColorThemeId } from '../../utils/colorThemes';
 
 const inputClass =
   'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
@@ -15,6 +16,8 @@ interface PropertyFieldProps {
   availableIcons?: string[];
   availableProperties?: AvailableProperty[];
   onFetchDistinctValues?: FetchDistinctValuesFn;
+  colorTheme?: ColorThemeId;
+  onColorThemeChange?: (theme: ColorThemeId) => void;
 }
 
 function TranslateWidget({
@@ -83,6 +86,8 @@ function WidgetContent({
   availableIcons,
   availableProperties,
   onFetchDistinctValues,
+  colorTheme,
+  onColorThemeChange,
 }: {
   def: PropertyDefinition;
   value: unknown;
@@ -90,6 +95,8 @@ function WidgetContent({
   availableIcons?: string[];
   availableProperties?: AvailableProperty[];
   onFetchDistinctValues?: FetchDistinctValuesFn;
+  colorTheme?: ColorThemeId;
+  onColorThemeChange?: (theme: ColorThemeId) => void;
 }) {
   switch (def.widget) {
     case 'color': {
@@ -127,6 +134,8 @@ function WidgetContent({
               onChange={(expr) => onChange(expr)}
               availableProperties={availableProperties}
               onFetchDistinctValues={onFetchDistinctValues}
+              theme={colorTheme}
+              onThemeChange={onColorThemeChange}
             />
           ) : (
             <ColorPicker
@@ -245,7 +254,7 @@ function WidgetContent({
   }
 }
 
-export function PropertyField({ def, value, onChange, availableIcons, availableProperties, onFetchDistinctValues }: PropertyFieldProps) {
+export function PropertyField({ def, value, onChange, availableIcons, availableProperties, onFetchDistinctValues, colorTheme, onColorThemeChange }: PropertyFieldProps) {
   const isOptional = def.enableDefault !== undefined;
   const isEnabled = value !== undefined;
 
@@ -285,6 +294,8 @@ export function PropertyField({ def, value, onChange, availableIcons, availableP
               availableIcons={availableIcons}
               availableProperties={availableProperties}
               onFetchDistinctValues={onFetchDistinctValues}
+              colorTheme={colorTheme}
+              onColorThemeChange={onColorThemeChange}
             />
           )}
         </div>
@@ -301,6 +312,8 @@ export function PropertyField({ def, value, onChange, availableIcons, availableP
         availableIcons={availableIcons}
         availableProperties={availableProperties}
         onFetchDistinctValues={onFetchDistinctValues}
+        colorTheme={colorTheme}
+        onColorThemeChange={onColorThemeChange}
       />
     </FormField>
   );

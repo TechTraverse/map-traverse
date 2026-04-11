@@ -4,6 +4,7 @@ import { FormField } from '../admin/FormField';
 import { PropertyGroup } from './PropertyGroup';
 import { StylePreview } from './StylePreview';
 import { getPropertyRegistry, groupProperties } from './propertyRegistry';
+import type { ColorThemeId } from '../../utils/colorThemes';
 
 export interface StyleEditorProps {
   value: StyleConfig;
@@ -13,6 +14,9 @@ export interface StyleEditorProps {
   availableIcons?: string[];
   availableProperties?: AvailableProperty[];
   onFetchDistinctValues?: FetchDistinctValuesFn;
+  /** Optional color theme that scopes autogenerate color selection. */
+  colorTheme?: ColorThemeId;
+  onColorThemeChange?: (theme: ColorThemeId) => void;
 }
 
 export const defaultFill: FillStyle = {
@@ -66,7 +70,7 @@ const STYLE_TYPE_LABELS: Record<StyleConfig['type'], string> = {
 
 const SYMBOL_MODES: SymbolMode[] = ['text', 'icon', 'both'];
 
-export function StyleEditor({ value, onChange, suggestedType, suggestedTypes, availableIcons, availableProperties, onFetchDistinctValues }: StyleEditorProps) {
+export function StyleEditor({ value, onChange, suggestedType, suggestedTypes, availableIcons, availableProperties, onFetchDistinctValues, colorTheme, onColorThemeChange }: StyleEditorProps) {
   // Normalise: prefer suggestedTypes array; fall back to legacy suggestedType scalar
   const resolvedSuggestedTypes: StyleConfig['type'][] =
     suggestedTypes ?? (suggestedType ? [suggestedType] : []);
@@ -253,6 +257,8 @@ export function StyleEditor({ value, onChange, suggestedType, suggestedTypes, av
               availableIcons={availableIcons}
               availableProperties={availableProperties}
               onFetchDistinctValues={onFetchDistinctValues}
+              colorTheme={colorTheme}
+              onColorThemeChange={onColorThemeChange}
             />
           ))}
         </div>
@@ -274,6 +280,8 @@ export function StyleEditor({ value, onChange, suggestedType, suggestedTypes, av
               availableIcons={availableIcons}
               availableProperties={availableProperties}
               onFetchDistinctValues={onFetchDistinctValues}
+              colorTheme={colorTheme}
+              onColorThemeChange={onColorThemeChange}
             />
           ))}
         </div>
