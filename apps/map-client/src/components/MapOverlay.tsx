@@ -31,8 +31,8 @@ import type { FilterRuleGroup, FilterRule } from '@ogc-maps/storybook-components
 import { useExport } from '@ogc-maps/storybook-components/hooks';
 import { DEFAULT_EXPORT_FORMATS, fromStructuredFilters, fromFilterRuleGroup, and, fetchFeatures, eq, exportConverters, zoomToFeature } from '@ogc-maps/storybook-components/utils';
 import type { GeoJsonFeature } from '@ogc-maps/storybook-components/utils';
-import type { UIConfig, SearchFilterValue, SearchFilterValues, OrderableControlKey, InfoPosition } from '@ogc-maps/storybook-components/types';
-import { resolveControlOrder } from '@ogc-maps/storybook-components';
+import type { UIConfig, SearchFilterValue, SearchFilterValues, OrderableControlKey, InfoPosition, ControlCorner } from '@ogc-maps/storybook-components/types';
+import { groupControlsByCorner } from '@ogc-maps/storybook-components';
 import { useMapStore, useActiveLayerIds } from '../stores/mapStore';
 import { useAutocompleteSuggestions } from '../hooks/useAutocompleteSuggestions';
 import { useLayerQueryables } from '../hooks/useLayerQueryables';
@@ -333,10 +333,9 @@ export function MapOverlay({
         </div>
       )}
 
-      {/* Top-right: Legend and controls stacked vertically, order driven by config */}
-      <div className="absolute top-4 right-4 flex flex-col gap-4 items-end">
-        {(() => {
-          const controlNodes: Record<OrderableControlKey, React.ReactNode> = {
+      {/* Map controls stacked in their configured corner, order driven by config */}
+      {(() => {
+        const controlNodes: Record<OrderableControlKey, React.ReactNode> = {
             showLegend: uiConfig.showLegend ? (
               <div className="pointer-events-auto" ref={legendContainerRef}>
                 <Legend
@@ -534,12 +533,30 @@ export function MapOverlay({
             ) : null,
           };
 
-          return resolveControlOrder(uiConfig).map((key) => {
-            const node = controlNodes[key];
-            return node ? <Fragment key={key}>{node}</Fragment> : null;
+          const cornerClasses: Record<ControlCorner, string> = {
+            'top-right': 'absolute top-4 right-4 flex flex-col gap-4 items-end',
+            'top-left': 'absolute top-4 left-4 flex flex-col gap-4 items-start',
+            'bottom-right': 'absolute bottom-4 right-4 flex flex-col gap-4 items-end',
+            'bottom-left': 'absolute bottom-4 left-4 flex flex-col gap-4 items-start',
+          };
+
+          const grouped = groupControlsByCorner(uiConfig);
+          return (Object.keys(cornerClasses) as ControlCorner[]).map((corner) => {
+            const keys = grouped[corner];
+            const rendered = keys
+              .map((key) => controlNodes[key])
+              .filter((node): node is React.ReactNode => node != null);
+            if (rendered.length === 0) return null;
+            return (
+              <div key={corner} className={cornerClasses[corner]}>
+                {keys.map((key) => {
+                  const node = controlNodes[key];
+                  return node ? <Fragment key={key}>{node}</Fragment> : null;
+                })}
+              </div>
+            );
           });
         })()}
-      </div>
 
       {/* Export modal */}
       <div className="pointer-events-auto">

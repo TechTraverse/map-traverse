@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import type { UIConfig, OrderableControlKey, LayerConfig } from '../../types';
-import { ORDERABLE_CONTROLS, resolveControlOrder, COORDINATE_FORMATS } from '../../schemas/config';
+import type { UIConfig, OrderableControlKey, LayerConfig, ControlCorner } from '../../types';
+import { ORDERABLE_CONTROLS, resolveControlOrder, resolveControlCorner, CONTROL_CORNERS, COORDINATE_FORMATS } from '../../schemas/config';
 
 export interface UIConfigEditorProps {
   value: UIConfig;
@@ -13,6 +13,13 @@ export interface UIConfigEditorProps {
    */
   layers?: LayerConfig[];
 }
+
+const CORNER_LABELS: Record<ControlCorner, string> = {
+  'top-right': 'Top right',
+  'top-left': 'Top left',
+  'bottom-right': 'Bottom right',
+  'bottom-left': 'Bottom left',
+};
 
 const COORDINATE_FORMAT_LABELS: Record<(typeof COORDINATE_FORMATS)[number], string> = {
   'decimal-degrees': 'Decimal degrees (38.887500, -104.824167)',
@@ -125,6 +132,17 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers }: UIConfi
 
   const updateOrder = (newOrder: OrderableControlKey[]) => {
     onChange({ ...value, controlOrder: newOrder });
+  };
+
+  const handleCornerChange = (key: OrderableControlKey, corner: ControlCorner) => {
+    const next = { ...(value.controlPositions ?? {}) } as Record<OrderableControlKey, ControlCorner>;
+    if (corner === 'top-right') {
+      delete next[key];
+    } else {
+      next[key] = corner;
+    }
+    const hasAny = Object.keys(next).length > 0;
+    onChange({ ...value, controlPositions: hasAny ? next : undefined });
   };
 
   const handleMoveUp = (index: number) => {
@@ -247,6 +265,18 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers }: UIConfi
                     <span className="mapui:text-[10px] mapui:font-medium mapui:text-blue-500">Auto-enabled</span>
                   )}
                 </div>
+                <select
+                  value={resolveControlCorner(value, key)}
+                  onChange={(e) => handleCornerChange(key, e.target.value as ControlCorner)}
+                  aria-label={`${info.label} position`}
+                  className="mapui:shrink-0 mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-1.5 mapui:py-1 mapui:text-xs mapui:text-gray-700 focus:mapui:border-blue-500 focus:mapui:outline-none"
+                >
+                  {CONTROL_CORNERS.map((c) => (
+                    <option key={c} value={c}>
+                      {CORNER_LABELS[c]}
+                    </option>
+                  ))}
+                </select>
                 <Toggle
                   checked={checked}
                   onChange={(v) => handleToggle(key as keyof UIConfig, v)}

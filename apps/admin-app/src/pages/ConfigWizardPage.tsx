@@ -98,6 +98,7 @@ const DEFAULT_UI_CONFIG: UIConfig = {
   showGlobalSearch: false,
   showScaleBar: false,
   coordinateFormat: 'decimal-degrees',
+  controlLayout: 'individual',
 };
 
 /** Derive which UI controls should be enabled based on current config state. */

@@ -553,6 +553,14 @@ export const ORDERABLE_CONTROLS = [
 
 export type OrderableControlKey = (typeof ORDERABLE_CONTROLS)[number];
 
+/** Corners of the map where a control group can be anchored. */
+export const CONTROL_CORNERS = ['top-right', 'top-left', 'bottom-right', 'bottom-left'] as const;
+export type ControlCorner = (typeof CONTROL_CORNERS)[number];
+
+/** Layout mode for map controls: individual buttons, a single side menu, or responsive auto. */
+export const CONTROL_LAYOUTS = ['individual', 'side-menu', 'auto'] as const;
+export type ControlLayout = (typeof CONTROL_LAYOUTS)[number];
+
 export const COORDINATE_FORMATS = ['decimal-degrees', 'ddm', 'dms'] as const;
 export type CoordinateFormat = (typeof COORDINATE_FORMATS)[number];
 
@@ -576,6 +584,17 @@ export const UIConfigSchema = z.object({
   showScaleBar: z.boolean().default(false),
   controlOrder: z.array(z.enum(ORDERABLE_CONTROLS)).optional(),
   /**
+   * Optional per-control corner override. When absent or a control is not
+   * listed, the control falls back to 'top-right' (existing behavior).
+   */
+  controlPositions: z.record(z.enum(ORDERABLE_CONTROLS), z.enum(CONTROL_CORNERS)).optional(),
+  /**
+   * How controls are presented: 'individual' renders each as its own button,
+   * 'side-menu' collapses them into a SideMenuPanel, 'auto' picks based on
+   * viewport width.
+   */
+  controlLayout: z.enum(CONTROL_LAYOUTS).default('individual'),
+  /**
    * Optional display order for legend layers (array of layer IDs).
    * When absent, the legend renders visible layers in their natural order.
    * IDs not in the list are appended in natural order; unknown IDs are ignored.
@@ -592,6 +611,36 @@ export function resolveControlOrder(config: z.infer<typeof UIConfigSchema>): rea
   const seen = new Set(config.controlOrder);
   const extra = ORDERABLE_CONTROLS.filter((k) => !seen.has(k));
   return [...config.controlOrder, ...extra];
+}
+
+/**
+ * Returns the corner where a given control should render. Defaults to
+ * 'top-right' when no override is configured for the control.
+ */
+export function resolveControlCorner(
+  config: z.infer<typeof UIConfigSchema>,
+  key: OrderableControlKey,
+): ControlCorner {
+  return config.controlPositions?.[key] ?? 'top-right';
+}
+
+/**
+ * Groups controls by the corner they should render in, preserving the
+ * configured `controlOrder` within each group.
+ */
+export function groupControlsByCorner(
+  config: z.infer<typeof UIConfigSchema>,
+): Record<ControlCorner, OrderableControlKey[]> {
+  const groups: Record<ControlCorner, OrderableControlKey[]> = {
+    'top-right': [],
+    'top-left': [],
+    'bottom-right': [],
+    'bottom-left': [],
+  };
+  for (const key of resolveControlOrder(config)) {
+    groups[resolveControlCorner(config, key)].push(key);
+  }
+  return groups;
 }
 
 // --- Branding Config ---
@@ -672,6 +721,7 @@ export const MapConfigSchema = z.object({
     showCompass: true,
     showGlobalSearch: false,
     showScaleBar: false,
+    controlLayout: 'individual',
     coordinateFormat: 'decimal-degrees',
   }),
   initialView: ViewConfigSchema,

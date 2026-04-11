@@ -37,7 +37,11 @@ import {
   SpriteSourceSchema,
   UIConfigSchema,
   ORDERABLE_CONTROLS,
+  CONTROL_CORNERS,
+  CONTROL_LAYOUTS,
   resolveControlOrder,
+  resolveControlCorner,
+  groupControlsByCorner,
   BrandingConfigSchema,
   InfoConfigSchema,
   INFO_POSITIONS,
@@ -152,7 +156,7 @@ export type LayerConfig = z.infer<typeof LayerConfigSchema>;
 export type BasemapConfig = z.infer<typeof BasemapConfigSchema>;
 export type SpriteSource = z.infer<typeof SpriteSourceSchema>;
 export type UIConfig = z.infer<typeof UIConfigSchema>;
-export type { OrderableControlKey } from '../schemas/config';
+export type { OrderableControlKey, ControlCorner, ControlLayout } from '../schemas/config';
 export type BrandingConfig = z.infer<typeof BrandingConfigSchema>;
 export type InfoConfig = z.infer<typeof InfoConfigSchema>;
 export type { InfoPosition } from '../schemas/config';
@@ -214,7 +218,11 @@ export {
   SpriteSourceSchema,
   UIConfigSchema,
   ORDERABLE_CONTROLS,
+  CONTROL_CORNERS,
+  CONTROL_LAYOUTS,
   resolveControlOrder,
+  resolveControlCorner,
+  groupControlsByCorner,
   BrandingConfigSchema,
   InfoConfigSchema,
   INFO_POSITIONS,
