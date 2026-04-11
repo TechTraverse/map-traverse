@@ -6,12 +6,15 @@ export const pool = new Pool({
   database: process.env.DB_NAME ?? 'gis',
   user: process.env.DB_USER ?? 'postgres',
   password: process.env.DB_PASSWORD ?? 'postgres',
+  options: '-c search_path=map_admin,public',
 });
 
 export async function initDb(): Promise<void> {
+  await pool.query(`CREATE SCHEMA IF NOT EXISTS map_admin`);
+
   // Core map configs table
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS map_configs (
+    CREATE TABLE IF NOT EXISTS map_admin.map_configs (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       name TEXT NOT NULL,
       description TEXT,
@@ -24,21 +27,21 @@ export async function initDb(): Promise<void> {
   `);
 
   // Drop legacy environment-scoped indexes
-  await pool.query(`DROP INDEX IF EXISTS map_configs_is_published_idx`);
-  await pool.query(`DROP INDEX IF EXISTS map_configs_published_per_env_idx`);
-  await pool.query(`DROP INDEX IF EXISTS map_configs_published_name_env_idx`);
-  await pool.query(`DROP INDEX IF EXISTS map_configs_default_per_env_idx`);
+  await pool.query(`DROP INDEX IF EXISTS map_admin.map_configs_is_published_idx`);
+  await pool.query(`DROP INDEX IF EXISTS map_admin.map_configs_published_per_env_idx`);
+  await pool.query(`DROP INDEX IF EXISTS map_admin.map_configs_published_name_env_idx`);
+  await pool.query(`DROP INDEX IF EXISTS map_admin.map_configs_default_per_env_idx`);
 
   // Unique published names (global, no environment scoping)
   await pool.query(`
     CREATE UNIQUE INDEX IF NOT EXISTS map_configs_published_name_idx
-      ON map_configs (name) WHERE is_published = true
+      ON map_admin.map_configs (name) WHERE is_published = true
   `);
 
   // Enforce slug format for config names
   await pool.query(`
     DO $$ BEGIN
-      ALTER TABLE map_configs ADD CONSTRAINT map_configs_name_slug_check
+      ALTER TABLE map_admin.map_configs ADD CONSTRAINT map_configs_name_slug_check
         CHECK (name ~ '^[a-z0-9]+(-[a-z0-9]+)*$');
     EXCEPTION WHEN duplicate_object THEN NULL;
     END $$
@@ -46,9 +49,9 @@ export async function initDb(): Promise<void> {
 
   // Version history table
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS config_versions (
+    CREATE TABLE IF NOT EXISTS map_admin.config_versions (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      config_id UUID NOT NULL REFERENCES map_configs(id) ON DELETE CASCADE,
+      config_id UUID NOT NULL REFERENCES map_admin.map_configs(id) ON DELETE CASCADE,
       version_number INTEGER NOT NULL,
       name TEXT NOT NULL,
       description TEXT,
@@ -60,29 +63,29 @@ export async function initDb(): Promise<void> {
 
   await pool.query(`
     CREATE INDEX IF NOT EXISTS config_versions_config_id_idx
-      ON config_versions (config_id, version_number DESC)
+      ON map_admin.config_versions (config_id, version_number DESC)
   `);
 
   // Prevent duplicate version numbers for the same config
   await pool.query(`
-    ALTER TABLE config_versions DROP CONSTRAINT IF EXISTS config_versions_config_id_version_number_key
+    ALTER TABLE map_admin.config_versions DROP CONSTRAINT IF EXISTS config_versions_config_id_version_number_key
   `);
   await pool.query(`
-    ALTER TABLE config_versions ADD CONSTRAINT config_versions_config_id_version_number_key UNIQUE (config_id, version_number)
+    ALTER TABLE map_admin.config_versions ADD CONSTRAINT config_versions_config_id_version_number_key UNIQUE (config_id, version_number)
   `);
 
   // Add is_default column (at most one default globally)
   await pool.query(`
-    ALTER TABLE map_configs ADD COLUMN IF NOT EXISTS is_default BOOLEAN NOT NULL DEFAULT false
+    ALTER TABLE map_admin.map_configs ADD COLUMN IF NOT EXISTS is_default BOOLEAN NOT NULL DEFAULT false
   `);
   await pool.query(`
     CREATE UNIQUE INDEX IF NOT EXISTS map_configs_default_idx
-      ON map_configs ((true)) WHERE is_default = true
+      ON map_admin.map_configs ((true)) WHERE is_default = true
   `);
 
   // Reusable OGC API sources catalog
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS ogc_sources (
+    CREATE TABLE IF NOT EXISTS map_admin.ogc_sources (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       source_id TEXT NOT NULL UNIQUE,
       url TEXT NOT NULL,
@@ -96,7 +99,7 @@ export async function initDb(): Promise<void> {
   // Enforce slug format for source_id
   await pool.query(`
     DO $$ BEGIN
-      ALTER TABLE ogc_sources ADD CONSTRAINT ogc_sources_source_id_slug_check
+      ALTER TABLE map_admin.ogc_sources ADD CONSTRAINT ogc_sources_source_id_slug_check
         CHECK (source_id ~ '^[a-z0-9]+(-[a-z0-9]+)*$');
     EXCEPTION WHEN duplicate_object THEN NULL;
     END $$
@@ -104,13 +107,13 @@ export async function initDb(): Promise<void> {
 
   // Source type discriminator (features, imagery, or basemap)
   await pool.query(`
-    ALTER TABLE ogc_sources ADD COLUMN IF NOT EXISTS source_type TEXT NOT NULL DEFAULT 'features'
+    ALTER TABLE map_admin.ogc_sources ADD COLUMN IF NOT EXISTS source_type TEXT NOT NULL DEFAULT 'features'
   `);
 
   // Constrain source_type to valid values
   await pool.query(`
     DO $$ BEGIN
-      ALTER TABLE ogc_sources ADD CONSTRAINT ogc_sources_source_type_check
+      ALTER TABLE map_admin.ogc_sources ADD CONSTRAINT ogc_sources_source_type_check
         CHECK (source_type IN ('features', 'imagery', 'basemap'));
     EXCEPTION WHEN duplicate_object THEN NULL;
     END $$
@@ -118,25 +121,25 @@ export async function initDb(): Promise<void> {
 
   // Authentication config (JSONB: { type, name, value })
   await pool.query(`
-    ALTER TABLE ogc_sources ADD COLUMN IF NOT EXISTS auth JSONB
+    ALTER TABLE map_admin.ogc_sources ADD COLUMN IF NOT EXISTS auth JSONB
   `);
 
   // Cached metadata from OGC API inspection
   await pool.query(`
-    ALTER TABLE ogc_sources ADD COLUMN IF NOT EXISTS metadata JSONB
+    ALTER TABLE map_admin.ogc_sources ADD COLUMN IF NOT EXISTS metadata JSONB
   `);
   await pool.query(`
-    ALTER TABLE ogc_sources ADD COLUMN IF NOT EXISTS metadata_updated_at TIMESTAMPTZ
+    ALTER TABLE map_admin.ogc_sources ADD COLUMN IF NOT EXISTS metadata_updated_at TIMESTAMPTZ
   `);
 
   // Proxy flag: route requests through the server to protect API keys and bypass CORS
   await pool.query(`
-    ALTER TABLE ogc_sources ADD COLUMN IF NOT EXISTS proxy BOOLEAN NOT NULL DEFAULT false
+    ALTER TABLE map_admin.ogc_sources ADD COLUMN IF NOT EXISTS proxy BOOLEAN NOT NULL DEFAULT false
   `);
 
   // Site-wide branding / customization (single-row table)
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS site_settings (
+    CREATE TABLE IF NOT EXISTS map_admin.site_settings (
       id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
       header_title TEXT NOT NULL DEFAULT 'Map Config Admin',
       header_color TEXT NOT NULL DEFAULT '#1e293b',
@@ -147,15 +150,15 @@ export async function initDb(): Promise<void> {
     )
   `);
   await pool.query(`
-    INSERT INTO site_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING
+    INSERT INTO map_admin.site_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING
   `);
   await pool.query(`
-    ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS logo_height INTEGER NOT NULL DEFAULT 32
+    ALTER TABLE map_admin.site_settings ADD COLUMN IF NOT EXISTS logo_height INTEGER NOT NULL DEFAULT 32
   `);
 
   // Seed default basemap sources
   await pool.query(`
-    INSERT INTO ogc_sources (source_id, url, label, source_type)
+    INSERT INTO map_admin.ogc_sources (source_id, url, label, source_type)
     VALUES
       ('carto-positron', 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json', 'Positron (Light)', 'basemap'),
       ('carto-dark-matter', 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json', 'Dark Matter (Dark)', 'basemap'),
