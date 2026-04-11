@@ -595,6 +595,12 @@ export const UIConfigSchema = z.object({
    */
   controlLayout: z.enum(CONTROL_LAYOUTS).default('individual'),
   /**
+   * Optional per-control icon override. Keys are control keys (e.g. `showSearchPanel`),
+   * values are icon names from `CONTROL_ICON_MAP`. Unknown names fall back to the
+   * control's default icon.
+   */
+  controlIcons: z.record(z.enum(ORDERABLE_CONTROLS), z.string()).optional(),
+  /**
    * Optional display order for legend layers (array of layer IDs).
    * When absent, the legend renders visible layers in their natural order.
    * IDs not in the list are appended in natural order; unknown IDs are ignored.

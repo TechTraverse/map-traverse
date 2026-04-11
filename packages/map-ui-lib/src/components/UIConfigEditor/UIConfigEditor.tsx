@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { UIConfig, OrderableControlKey, LayerConfig, ControlCorner, ControlLayout } from '../../types';
 import { ORDERABLE_CONTROLS, resolveControlOrder, resolveControlCorner, CONTROL_CORNERS, CONTROL_LAYOUTS, COORDINATE_FORMATS } from '../../schemas/config';
+import { CONTROL_ICON_MAP, CONTROL_ICON_NAMES } from '../shared/controlIcons';
 
 export interface UIConfigEditorProps {
   value: UIConfig;
@@ -150,6 +151,19 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers }: UIConfi
     const hasAny = Object.keys(next).length > 0;
     onChange({ ...value, controlPositions: hasAny ? next : undefined });
   };
+
+  const handleIconChange = (key: OrderableControlKey, iconName: string) => {
+    const next = { ...(value.controlIcons ?? {}) } as Record<OrderableControlKey, string>;
+    if (!iconName) {
+      delete next[key];
+    } else {
+      next[key] = iconName;
+    }
+    const hasAny = Object.keys(next).length > 0;
+    onChange({ ...value, controlIcons: hasAny ? next : undefined });
+  };
+
+  const [iconPickerFor, setIconPickerFor] = useState<OrderableControlKey | null>(null);
 
   const handleMoveUp = (index: number) => {
     if (index === 0) return;
@@ -318,6 +332,71 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers }: UIConfi
                     </option>
                   ))}
                 </select>
+                <div className="mapui:relative">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setIconPickerFor(iconPickerFor === key ? null : (key as OrderableControlKey))
+                    }
+                    aria-label={`${info.label} icon`}
+                    title="Change icon"
+                    className="mapui:flex mapui:h-7 mapui:w-7 mapui:shrink-0 mapui:cursor-pointer mapui:items-center mapui:justify-center mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white hover:mapui:bg-gray-50"
+                  >
+                    {(() => {
+                      const iconName = value.controlIcons?.[key as OrderableControlKey];
+                      const Icon = iconName ? CONTROL_ICON_MAP[iconName] : null;
+                      return Icon ? (
+                        <Icon size={14} className="mapui:text-gray-700" />
+                      ) : (
+                        <span className="mapui:text-[10px] mapui:text-gray-500">icon</span>
+                      );
+                    })()}
+                  </button>
+                  {iconPickerFor === key && (
+                    <div className="mapui:absolute mapui:right-0 mapui:top-8 mapui:z-10 mapui:w-48 mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:p-2 mapui:shadow-lg">
+                      <div className="mapui:mb-1 mapui:flex mapui:items-center mapui:justify-between">
+                        <span className="mapui:text-[10px] mapui:font-semibold mapui:text-gray-600">
+                          Pick an icon
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleIconChange(key as OrderableControlKey, '');
+                            setIconPickerFor(null);
+                          }}
+                          className="mapui:cursor-pointer mapui:border-none mapui:bg-transparent mapui:text-[10px] mapui:text-blue-600 hover:mapui:underline"
+                        >
+                          reset
+                        </button>
+                      </div>
+                      <div className="mapui:grid mapui:grid-cols-6 mapui:gap-1">
+                        {CONTROL_ICON_NAMES.map((name) => {
+                          const Icon = CONTROL_ICON_MAP[name];
+                          const selected =
+                            value.controlIcons?.[key as OrderableControlKey] === name;
+                          return (
+                            <button
+                              key={name}
+                              type="button"
+                              onClick={() => {
+                                handleIconChange(key as OrderableControlKey, name);
+                                setIconPickerFor(null);
+                              }}
+                              title={name}
+                              className={`mapui:flex mapui:h-6 mapui:w-6 mapui:cursor-pointer mapui:items-center mapui:justify-center mapui:rounded mapui:border ${
+                                selected
+                                  ? 'mapui:border-blue-500 mapui:bg-blue-50'
+                                  : 'mapui:border-gray-200 mapui:bg-white hover:mapui:bg-gray-50'
+                              }`}
+                            >
+                              <Icon size={14} className="mapui:text-gray-700" />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <Toggle
                   checked={checked}
                   onChange={(v) => handleToggle(key as keyof UIConfig, v)}

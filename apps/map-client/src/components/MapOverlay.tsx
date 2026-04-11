@@ -24,6 +24,7 @@ import {
   SideMenuPanel,
   SideMenuToggle,
   type SideMenuPanelItem,
+  getControlIcon,
   type CoordinateFormatOption,
   type ExportableLayer,
   type ExportRequest,
@@ -476,15 +477,18 @@ export function MapOverlay({
           </div>
         ) : null;
 
+        const iconFor = (k: OrderableControlKey, fallback: typeof LuSearch) =>
+          getControlIcon(uiConfig.controlIcons?.[k], fallback);
+
         if (effectiveLayout === 'side-menu') {
           const items: SideMenuPanelItem[] = [];
-          if (searchInner) items.push({ key: 'search', label: 'Search', icon: LuSearch, content: searchInner });
-          if (layerInner) items.push({ key: 'layers', label: 'Layers', icon: LuLayers3, content: layerInner });
-          if (measureInner) items.push({ key: 'measure', label: 'Measure', icon: LuRuler, content: measureInner });
-          if (selectionInner) items.push({ key: 'selection', label: 'Select', icon: LuMousePointer2, content: selectionInner });
-          if (imageryInner) items.push({ key: 'imagery', label: 'Imagery', icon: TbSatellite, content: imageryInner });
-          if (basemapInner) items.push({ key: 'basemap', label: 'Basemap', icon: LuMap, content: basemapInner });
-          if (exportInner) items.push({ key: 'export', label: 'Export', icon: LuDownload, content: exportInner });
+          if (searchInner) items.push({ key: 'search', label: 'Search', icon: iconFor('showSearchPanel', LuSearch), content: searchInner });
+          if (layerInner) items.push({ key: 'layers', label: 'Layers', icon: iconFor('showLayerPanel', LuLayers3), content: layerInner });
+          if (measureInner) items.push({ key: 'measure', label: 'Measure', icon: iconFor('showMeasureTool', LuRuler), content: measureInner });
+          if (selectionInner) items.push({ key: 'selection', label: 'Select', icon: iconFor('showSelectionTool', LuMousePointer2), content: selectionInner });
+          if (imageryInner) items.push({ key: 'imagery', label: 'Imagery', icon: iconFor('showImageryPanel', TbSatellite), content: imageryInner });
+          if (basemapInner) items.push({ key: 'basemap', label: 'Basemap', icon: iconFor('showBasemapSwitcher', LuMap), content: basemapInner });
+          if (exportInner) items.push({ key: 'export', label: 'Export', icon: iconFor('showExportButton', LuDownload), content: exportInner });
           return (
             <>
               <div className="absolute top-4 right-4 flex flex-col gap-4 items-end pointer-events-auto">
@@ -522,7 +526,7 @@ export function MapOverlay({
           showSearchPanel: searchInner ? (
             <div className="pointer-events-auto">
               <CollapsibleControl
-                icon={LuSearch}
+                icon={iconFor('showSearchPanel', LuSearch)}
                 label="Search"
                 collapsed={openControl !== 'search'}
                 onToggle={(collapsed) => setOpenControl(collapsed ? null : 'search')}
@@ -535,7 +539,7 @@ export function MapOverlay({
           showLayerPanel: layerInner ? (
             <div className="pointer-events-auto">
               <CollapsibleControl
-                icon={LuLayers3}
+                icon={iconFor('showLayerPanel', LuLayers3)}
                 label="Layers"
                 collapsed={openControl !== 'layers'}
                 onToggle={(collapsed) => setOpenControl(collapsed ? null : 'layers')}
@@ -548,7 +552,7 @@ export function MapOverlay({
           showMeasureTool: measureInner ? (
             <div className="pointer-events-auto">
               <CollapsibleControl
-                icon={LuRuler}
+                icon={iconFor('showMeasureTool', LuRuler)}
                 label="Measure"
                 collapsed={openControl !== 'measure'}
                 onToggle={(collapsed) => {
@@ -567,7 +571,7 @@ export function MapOverlay({
           showSelectionTool: selectionInner ? (
             <div className="pointer-events-auto">
               <CollapsibleControl
-                icon={LuMousePointer2}
+                icon={iconFor('showSelectionTool', LuMousePointer2)}
                 label="Select"
                 collapsed={openControl !== 'selection'}
                 onToggle={(collapsed) => {
@@ -585,7 +589,7 @@ export function MapOverlay({
           showImageryPanel: imageryInner ? (
             <div className="pointer-events-auto">
               <CollapsibleControl
-                icon={TbSatellite}
+                icon={iconFor('showImageryPanel', TbSatellite)}
                 label="Imagery"
                 collapsed={openControl !== 'imagery'}
                 onToggle={(collapsed) => setOpenControl(collapsed ? null : 'imagery')}
@@ -598,7 +602,7 @@ export function MapOverlay({
           showBasemapSwitcher: basemapInner ? (
             <div className="pointer-events-auto">
               <CollapsibleControl
-                icon={LuMap}
+                icon={iconFor('showBasemapSwitcher', LuMap)}
                 label="Basemap"
                 collapsed={openControl !== 'basemap'}
                 onToggle={(collapsed) => setOpenControl(collapsed ? null : 'basemap')}
