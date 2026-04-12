@@ -452,7 +452,16 @@ immediate "move to the bottom" fix is in.
 
 ---
 
-## 5. Exported PDF is left-shifted; title pinned to left margin
+## 5. Exported PDF is left-shifted; title pinned to left margin ✅
+
+**Status (2026-04-11):** Fixed the three exporter bugs in `apps/map-client/src/utils/exportPdf.ts`:
+1. The legend is now captured *before* the layout math runs, and `legendColumnWidth` is derived from the real `HTMLCanvasElement` (null / zero-size → treated as "no legend"). A `console.warn` replaces the silent `try { } catch {}`. No more reserved-but-empty 172pt column.
+2. When no legend is captured, the map is centered on the full page (`drawX = (pageWidth - drawW) / 2`). When a legend *is* present, the map stays centered in the reduced box and the legend takes the right column.
+3. The title is drawn with `{ align: 'center' }` at `drawX + drawW / 2`, so it sits directly above the map image instead of pinned to the left margin.
+
+Dialog default tightening (wiring `hasLegend` through `PdfExportDialog`) and adding an exportPdf test harness were listed in the plan but deferred — they're workflow/testing scaffolding, not part of the left-shift fix. 381/381 tests pass.
+
+---
 
 **Reported:** 2026-04-11
 **Area:** `apps/map-client` — Export as PDF (`exportPdf.ts`)

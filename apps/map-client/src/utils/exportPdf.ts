@@ -41,17 +41,28 @@ export async function exportMapAsPdf({
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
   const margin = 32;
-
-  // Title
-  pdf.setFontSize(18);
-  pdf.setTextColor(20);
-  pdf.text(options.title, margin, margin + 6);
-
   const headerHeight = 32;
-  const legendWidth = options.includeLegend && legendElement ? 160 : 0;
+
+  // Capture the legend first so the layout math can react to the real result.
+  // A reserved-but-empty legend column is the source of the left-shift bug.
+  let legendCanvas: HTMLCanvasElement | null = null;
+  if (options.includeLegend && legendElement) {
+    try {
+      legendCanvas = await captureElement(legendElement);
+      if (legendCanvas.width === 0 || legendCanvas.height === 0) {
+        legendCanvas = null;
+      }
+    } catch (err) {
+      console.warn('[exportPdf] legend capture failed, rendering map-only PDF', err);
+      legendCanvas = null;
+    }
+  }
+
+  const legendColumnWidth = legendCanvas ? 160 : 0;
+  const legendGutter = legendCanvas ? 12 : 0;
   const mapBoxX = margin;
   const mapBoxY = margin + headerHeight;
-  const mapBoxW = pageWidth - margin * 2 - (legendWidth > 0 ? legendWidth + 12 : 0);
+  const mapBoxW = pageWidth - margin * 2 - legendColumnWidth - legendGutter;
   const mapBoxH = pageHeight - mapBoxY - margin;
 
   // Fit map image within the box preserving aspect ratio
@@ -62,24 +73,29 @@ export async function exportMapAsPdf({
     drawH = mapBoxH;
     drawW = drawH * mapAspect;
   }
-  const drawX = mapBoxX + (mapBoxW - drawW) / 2;
+  // When there's no legend, center the map on the full page so it doesn't
+  // sit off to the left. With a legend, keep the map centered in its reduced
+  // box and let the legend occupy the reserved column on the right.
+  const drawX = legendCanvas
+    ? mapBoxX + (mapBoxW - drawW) / 2
+    : (pageWidth - drawW) / 2;
   const drawY = mapBoxY + (mapBoxH - drawH) / 2;
   pdf.addImage(mapDataUrl, 'PNG', drawX, drawY, drawW, drawH);
 
-  // Legend on the right (if included)
-  if (options.includeLegend && legendElement) {
-    try {
-      const legendCanvas = await captureElement(legendElement);
-      const legendDataUrl = legendCanvas.toDataURL('image/png');
-      const legendBoxX = pageWidth - margin - legendWidth;
-      const legendBoxY = mapBoxY;
-      const legendAspect = legendCanvas.width / legendCanvas.height;
-      const lW = legendWidth;
-      const lH = lW / legendAspect;
-      pdf.addImage(legendDataUrl, 'PNG', legendBoxX, legendBoxY, lW, Math.min(lH, mapBoxH));
-    } catch {
-      // Ignore legend capture failures — continue with the map-only PDF.
-    }
+  // Title — centered above the actual map image so it stays visually attached.
+  pdf.setFontSize(18);
+  pdf.setTextColor(20);
+  pdf.text(options.title, drawX + drawW / 2, margin + 6, { align: 'center' });
+
+  // Legend on the right (if captured)
+  if (legendCanvas) {
+    const legendDataUrl = legendCanvas.toDataURL('image/png');
+    const legendBoxX = pageWidth - margin - legendColumnWidth;
+    const legendBoxY = mapBoxY;
+    const legendAspect = legendCanvas.width / legendCanvas.height;
+    const lW = legendColumnWidth;
+    const lH = lW / legendAspect;
+    pdf.addImage(legendDataUrl, 'PNG', legendBoxX, legendBoxY, lW, Math.min(lH, mapBoxH));
   }
 
   // Scale bar (bottom-left overlay on map image)
