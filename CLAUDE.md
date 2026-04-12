@@ -41,7 +41,7 @@ Each teammate gets its own worktree. The lead merges all branches into `ralph/ma
 - Base branch is always `ralph/main`. Create worktree branches from it.
 - Never push to or commit directly on `ralph/main`. All work goes through a worktree branch, then merges.
 - **Commit messages**: Keep them short (one line, ~50 chars). No `Co-Authored-By` trailer — it's implied in this repo.
-- **Merge conflicts**: If merging into `ralph/main` produces a conflict, STOP immediately. Do not attempt to resolve it. Report the conflict details to the human and wait for instructions. If running in a loop, exit the loop.
+- **Merge conflicts**: If merging into `ralph/main` produces a conflict, attempt to resolve it. Read both sides, understand the intent, and produce a correct merged result. Only STOP and report to the human if you're unsure which change to keep — i.e., the conflict is ambiguous or the two sides contradict each other. If running in a loop, exit the loop only if you cannot resolve it.
 - If `pnpm verify` fails after merge, fix on `ralph/main` and commit the fix there.
 
 For dev setup and Docker troubleshooting, see `.agent/workflows/development.md`.

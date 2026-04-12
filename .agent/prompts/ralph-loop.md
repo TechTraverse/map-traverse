@@ -38,9 +38,7 @@ Teammate 3 (chunk-1c): Create branch `ralph/phase-1-chunk-c` from ralph/main. Yo
 After all 3 teammates finish, you (the lead) perform the merge:
 1. `git checkout ralph/main`
 2. Merge each branch: `git merge ralph/phase-1-chunk-a --no-ff`, then `ralph/phase-1-chunk-b --no-ff`, then `ralph/phase-1-chunk-c --no-ff`
-3. If a merge conflict occurs:
-   - For TRIVIAL conflicts (adjacent additions to the same file): resolve by keeping both additions. Read both versions, understand intent, produce merged result.
-   - For NON-TRIVIAL conflicts: STOP and report the conflict details to the user. Do not guess.
+3. If a merge conflict occurs, attempt to resolve it: read both sides, understand the intent, and produce a correct merged result. Only STOP and report to the user if you're unsure which change to keep (e.g., the two sides contradict each other or the intent is ambiguous).
 4. Run `pnpm verify`. If it fails and the fix is obvious (missing import, type error from merge): fix, commit, re-run. If not obvious: STOP.
 5. Docker smoke test (Phase 1 only — because it changed DB schema): `docker compose down -v && docker compose up -d`. Wait for healthy. Verify admin app: `curl -s http://localhost:3001/`. If Docker fails: STOP.
 6. Clean up the team.
@@ -61,7 +59,7 @@ Teammate C (admin-json): Create branch `ralph/phase-3-agent-c` from ralph/main. 
 After all 3 teammates finish, you (the lead) perform the merge:
 1. `git checkout ralph/main`
 2. Merge each branch in order: agent-a, then agent-b, then agent-c
-3. Resolve trivial conflicts. STOP on non-trivial ones.
+3. Resolve merge conflicts. STOP only if unsure which change to keep.
 4. Run `pnpm verify`. Fix obvious issues or STOP.
 5. No Docker smoke test needed for Phase 3.
 6. Clean up the team.
@@ -114,7 +112,7 @@ After each phase:
 ## Stop Conditions
 
 HALT the entire loop and report to the user if:
-- A merge conflict cannot be trivially resolved
+- A merge conflict is ambiguous (unsure which change to keep)
 - `pnpm verify` fails after a phase and can't be fixed
 - A teammate reports ambiguous requirements or a broken prerequisite
 - A teammate fails to complete its task
