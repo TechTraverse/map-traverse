@@ -65,6 +65,7 @@ import type { SearchFilterValue, SearchFilterValues, Cql2FilterConfig, InfoPosit
 import { useMeasure, useSelection } from '@ogc-maps/storybook-components/hooks';
 
 import { LuDownload, LuFileText, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
+import { resolveEffectiveLayout } from './mapPreviewLayout';
 import { TbSatellite } from 'react-icons/tb';
 import { useBoxDraw } from '../hooks/useBoxDraw';
 import { usePolygonDraw } from '../hooks/usePolygonDraw';
@@ -262,12 +263,7 @@ export function MapPreview({
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
-  const effectiveLayout: 'individual' | 'side-menu' =
-    uiConfig?.controlLayout === 'auto'
-      ? isNarrowViewport
-        ? 'side-menu'
-        : 'individual'
-      : uiConfig?.controlLayout ?? 'individual';
+  const effectiveLayout = resolveEffectiveLayout(uiConfig?.controlLayout, isNarrowViewport);
   const [cursor, setCursor] = useState<string>('auto');
   const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<Record<string, string[]>>({});
   const prefetchedRef = useRef<Set<string>>(new Set());

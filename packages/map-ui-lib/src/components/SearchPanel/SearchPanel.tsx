@@ -77,7 +77,7 @@ export function SearchPanel({
 
   const showExpandButton = expandable && !expanded;
   const showCollapseButton = expandable && expanded;
-  const showAllFiltersBuilder = expanded && propertyFilters !== undefined && onPropertyFiltersChange !== undefined;
+  const showPropertyFilters = expanded && propertyFilters !== undefined && onPropertyFiltersChange !== undefined;
 
   const titleNode = !hideTitle || showCollapseButton ? (
     <div className="mapui:flex mapui:items-center mapui:justify-between mapui:mb-2">
@@ -281,7 +281,7 @@ export function SearchPanel({
         );
       })}
 
-      {showAllFiltersBuilder && (
+      {showPropertyFilters && (
         <div className="mapui:mt-2 mapui:border-t mapui:border-gray-200 mapui:pt-3">
           <PropertyFilterPanel
             layers={layers}

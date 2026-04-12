@@ -587,7 +587,7 @@ export const UIConfigSchema = z.object({
    * Optional per-control corner override. When absent or a control is not
    * listed, the control falls back to 'top-right' (existing behavior).
    */
-  controlPositions: z.record(z.enum(ORDERABLE_CONTROLS), z.enum(CONTROL_CORNERS)).optional(),
+  controlPositions: z.partialRecord(z.enum(ORDERABLE_CONTROLS), z.enum(CONTROL_CORNERS)).optional(),
   /**
    * How controls are presented: 'individual' renders each as its own button,
    * 'side-menu' collapses them into a SideMenuPanel, 'auto' picks based on
@@ -599,7 +599,7 @@ export const UIConfigSchema = z.object({
    * values are icon names from `CONTROL_ICON_MAP`. Unknown names fall back to the
    * control's default icon.
    */
-  controlIcons: z.record(z.enum(ORDERABLE_CONTROLS), z.string()).optional(),
+  controlIcons: z.partialRecord(z.enum(ORDERABLE_CONTROLS), z.string()).optional(),
   /**
    * Optional display order for legend layers (array of layer IDs).
    * When absent, the legend renders visible layers in their natural order.

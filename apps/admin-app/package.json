@@ -9,7 +9,8 @@
     "dev:server": "node --loader ts-node/esm server/index.ts",
     "build": "tsc && vite build",
     "build:server": "tsc -p tsconfig.server.json",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run"
   },
   "dependencies": {
     "@ngageoint/geopackage": "^4.2.0",
@@ -50,6 +51,7 @@
     "tailwindcss": "^4.0.0-beta.10",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3",
-    "vite": "^6.0.7"
+    "vite": "^6.0.7",
+    "vitest": "^3.2.1"
   }
 }

@@ -467,7 +467,7 @@ export function MapOverlay({
         ) : null;
 
         const exportInner = uiConfig.showExportButton || uiConfig.showExportPdf ? (
-          <div className="mapui:flex mapui:flex-col mapui:gap-2">
+          <div className="mapui:flex mapui:flex-col mapui:gap-4">
             {uiConfig.showExportButton && (
               <ExportButton
                 icon={LuDownload}

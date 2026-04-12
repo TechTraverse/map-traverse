@@ -23,8 +23,7 @@ function createEmptyFilter(layerId: string): PropertyFilter {
 /**
  * Flat layer → property → value filter panel. Implicit equality, no
  * operator picker, no parameterizable values. Replaces the CQL2-flavored
- * {@link AllFiltersBuilder} for end-user search flows — the CQL2 builder
- * stays around for power-user / admin surfaces.
+ * the CQL2-flavored AllFiltersBuilder (removed) for end-user search flows.
  *
  * Fully controlled. Compile to CQL2 at the call site via
  * `propertyFiltersToCql2` from `utils/propertyFilters`.

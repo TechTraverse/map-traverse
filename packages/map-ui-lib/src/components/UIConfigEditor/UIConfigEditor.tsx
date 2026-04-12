@@ -13,6 +13,10 @@ export interface UIConfigEditorProps {
    * renders a "Legend Order" reorder UI that writes to `value.legendOrder`.
    */
   layers?: LayerConfig[];
+  /** External toggle state for the info control (driven by `info.enabled`). */
+  infoEnabled?: boolean;
+  /** Callback when the info control toggle changes in the control stack. */
+  onInfoEnabledChange?: (enabled: boolean) => void;
 }
 
 const CORNER_LABELS: Record<ControlCorner, string> = {
@@ -34,7 +38,7 @@ const COORDINATE_FORMAT_LABELS: Record<(typeof COORDINATE_FORMATS)[number], stri
   dms: "Degree minutes seconds (38° 53' 15\" N, 104° 49' 27\" W)",
 };
 
-const TOGGLE_LABELS: { key: keyof UIConfig; label: string; description: string }[] = [
+const TOGGLE_LABELS: { key: string; label: string; description: string }[] = [
   { key: 'showLayerPanel', label: 'Layer Panel', description: 'Toggle layer visibility' },
   { key: 'showLegend', label: 'Legend', description: 'Map legend' },
   { key: 'showBasemapSwitcher', label: 'Basemap Switcher', description: 'Switch basemap styles' },
@@ -49,6 +53,7 @@ const TOGGLE_LABELS: { key: keyof UIConfig; label: string; description: string }
   { key: 'showSelectionTool', label: 'Selection Tool', description: 'Select features by click or box draw' },
   { key: 'showImageryPanel', label: 'Imagery Panel', description: 'Toggle satellite imagery layers' },
   { key: 'showCompass', label: 'Compass', description: 'Show map compass; click to reset to north' },
+  { key: 'showInfoControl', label: 'Info Control', description: 'Informational modal with map details' },
   { key: 'showGlobalSearch', label: 'Global Search', description: 'Cross-layer search bar above the map' },
   { key: 'showScaleBar', label: 'Scale Bar', description: 'Display map scale bar' },
 ];
@@ -86,7 +91,7 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
   );
 }
 
-export function UIConfigEditor({ value, onChange, autoEnabled, layers }: UIConfigEditorProps) {
+export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabled, onInfoEnabledChange }: UIConfigEditorProps) {
   const [draggedKey, setDraggedKey] = useState<string | null>(null);
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
 
@@ -268,7 +273,8 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers }: UIConfi
           {controlOrder.map((key, index) => {
             const info = TOGGLE_INFO.get(key as keyof UIConfig);
             if (!info) return null;
-            const checked = value[key as keyof UIConfig] as boolean;
+            const isInfoControl = key === 'showInfoControl';
+            const checked = isInfoControl ? (infoEnabled ?? false) : !!(value[key as keyof UIConfig]);
             const isDragged = draggedKey === key;
             const isDragOver = dragOverKey === key;
 
@@ -399,7 +405,7 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers }: UIConfi
                 </div>
                 <Toggle
                   checked={checked}
-                  onChange={(v) => handleToggle(key as keyof UIConfig, v)}
+                  onChange={(v) => isInfoControl ? onInfoEnabledChange?.(v) : handleToggle(key as keyof UIConfig, v)}
                   label={info.label}
                 />
               </li>
@@ -418,7 +424,8 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers }: UIConfi
         </p>
         <div className="mapui:grid mapui:grid-cols-1 mapui:gap-2 sm:mapui:grid-cols-2">
           {NON_ORDERABLE_TOGGLES.map(({ key, label, description }) => {
-            const checked = value[key] as boolean;
+            const uiKey = key as keyof UIConfig;
+            const checked = !!value[uiKey];
             return (
               <label
                 key={key}
@@ -427,11 +434,11 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers }: UIConfi
                 <div className="mapui:flex mapui:flex-col mapui:gap-0.5">
                   <span className="mapui:text-sm mapui:font-medium mapui:text-gray-800">{label}</span>
                   <span className="mapui:text-xs mapui:text-gray-500">{description}</span>
-                  {autoEnabled?.has(key) && (
+                  {autoEnabled?.has(uiKey) && (
                     <span className="mapui:text-[10px] mapui:font-medium mapui:text-blue-500">Auto-enabled</span>
                   )}
                 </div>
-                <Toggle checked={checked} onChange={(v) => handleToggle(key, v)} label={label} />
+                <Toggle checked={checked} onChange={(v) => handleToggle(uiKey, v)} label={label} />
               </label>
             );
           })}

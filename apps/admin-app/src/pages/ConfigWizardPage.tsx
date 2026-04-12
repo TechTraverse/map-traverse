@@ -619,7 +619,7 @@ export function ConfigWizardPage() {
                       value={current.title ?? ''}
                       onChange={e => {
                         const title = e.target.value;
-                        setInfo({ ...current, title: title === '' ? undefined : title });
+                        setInfo({ ...current, title: title === '' ? undefined : title, enabled: title !== '' ? true : current.enabled });
                       }}
                       placeholder="About this map"
                       className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
@@ -643,7 +643,7 @@ export function ConfigWizardPage() {
                   <FormField label="Markdown content">
                     <textarea
                       value={current.markdown}
-                      onChange={e => setInfo({ ...current, markdown: e.target.value })}
+                      onChange={e => setInfo({ ...current, markdown: e.target.value, enabled: e.target.value !== '' ? true : current.enabled })}
                       placeholder={'# About this map\n\nDescribe your map, data sources, or usage notes here.'}
                       rows={16}
                       className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:font-mono mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
@@ -1001,7 +1001,17 @@ export function ConfigWizardPage() {
         {currentStep === 'ui' && (
           <div className="mapui:space-y-4">
             <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">UI Options</h2>
-            <UIConfigEditor value={effectiveUIConfig} onChange={handleUIChange} autoEnabled={autoEnabledKeys} layers={layers} />
+            <UIConfigEditor
+              value={effectiveUIConfig}
+              onChange={handleUIChange}
+              autoEnabled={autoEnabledKeys}
+              layers={layers}
+              infoEnabled={info?.enabled ?? false}
+              onInfoEnabledChange={(enabled) => {
+                const current = info ?? DEFAULT_INFO;
+                setInfo({ ...current, enabled });
+              }}
+            />
             {effectiveUIConfig.showGlobalSearch && (
               <GlobalSearchConfigEditor
                 value={globalSearch ?? DEFAULT_GLOBAL_SEARCH}
