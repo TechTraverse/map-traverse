@@ -26,6 +26,21 @@ function formatConfig(config: MapConfig): string {
   return JSON.stringify(config, null, 2);
 }
 
+function humanizePath(segments: PropertyKey[]): string {
+  if (segments.length === 0) return 'root config';
+  return segments
+    .map((seg, i) => {
+      if (typeof seg === 'number') {
+        const parent = segments[i - 1];
+        return parent ? `${String(parent)} item ${seg + 1}` : `item ${seg + 1}`;
+      }
+      if (typeof segments[i + 1] === 'number') return null;
+      return typeof seg === 'symbol' ? seg.toString() : seg;
+    })
+    .filter(Boolean)
+    .join(' > ');
+}
+
 function validateText(text: string): ValidationState {
   let parsed: unknown;
   try {
@@ -38,7 +53,7 @@ function validateText(text: string): ValidationState {
     return {
       kind: 'schema-error',
       issues: result.error.issues.map((issue) => ({
-        path: issue.path.join('.') || '(root)',
+        path: humanizePath(issue.path),
         message: issue.message,
       })),
     };

@@ -17,6 +17,21 @@ type ImportStatus =
   | { kind: 'schema-error'; issues: { path: string; message: string }[] }
   | { kind: 'valid' };
 
+function humanizePath(segments: PropertyKey[]): string {
+  if (segments.length === 0) return 'root config';
+  return segments
+    .map((seg, i) => {
+      if (typeof seg === 'number') {
+        const parent = segments[i - 1];
+        return parent ? `${String(parent)} item ${seg + 1}` : `item ${seg + 1}`;
+      }
+      if (typeof segments[i + 1] === 'number') return null;
+      return typeof seg === 'symbol' ? seg.toString() : seg;
+    })
+    .filter(Boolean)
+    .join(' > ');
+}
+
 function validateJson(text: string): ImportStatus {
   if (!text.trim()) return { kind: 'idle' };
   let parsed: unknown;
@@ -30,7 +45,7 @@ function validateJson(text: string): ImportStatus {
     return {
       kind: 'schema-error',
       issues: result.error.issues.map((i) => ({
-        path: i.path.join('.') || '(root)',
+        path: humanizePath(i.path),
         message: i.message,
       })),
     };

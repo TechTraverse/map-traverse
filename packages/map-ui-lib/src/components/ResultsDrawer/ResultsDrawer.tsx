@@ -10,14 +10,7 @@ import {
   LuArrowLeft,
   LuArrowRight,
 } from 'react-icons/lu';
-
-/** Format a property value for table display. */
-function formatCellValue(value: unknown): string {
-  if (value == null) return '--';
-  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
-  if (typeof value === 'object') return JSON.stringify(value);
-  return String(value);
-}
+import { formatCellValue, compareValues, applyColumnOrder } from './tableUtils';
 
 export type SortDirection = 'asc' | 'desc';
 
@@ -72,17 +65,6 @@ export interface ResultsDrawerProps {
 const MIN_HEIGHT = 200;
 const MAX_HEIGHT_RATIO = 0.6;
 const DEFAULT_HEIGHT = 300;
-
-function compareValues(a: unknown, b: unknown): number {
-  if (a == null && b == null) return 0;
-  if (a == null) return -1;
-  if (b == null) return 1;
-  if (typeof a === 'number' && typeof b === 'number') return a - b;
-  const na = Number(a);
-  const nb = Number(b);
-  if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
-  return String(a).localeCompare(String(b));
-}
 
 export function ResultsDrawer({
   open,
@@ -190,16 +172,10 @@ export function ResultsDrawer({
     }
   }, [activeContextKey, columnOrderControlled, hiddenControlled, sortControlled]);
 
-  // Apply column order (controlled or internal) on top of baseColumns.
-  // Unknown reordered columns are ignored; new baseColumns missing from the
-  // order are appended to the end so the user can see them.
-  const orderedColumns = useMemo(() => {
-    if (!effectiveColumnOrder || effectiveColumnOrder.length === 0) return baseColumns;
-    const known = new Set(baseColumns);
-    const kept = effectiveColumnOrder.filter((c) => known.has(c));
-    const leftover = baseColumns.filter((c) => !kept.includes(c));
-    return [...kept, ...leftover];
-  }, [baseColumns, effectiveColumnOrder]);
+  const orderedColumns = useMemo(
+    () => applyColumnOrder(baseColumns, effectiveColumnOrder),
+    [baseColumns, effectiveColumnOrder],
+  );
 
   const visibleColumns = useMemo(
     () => orderedColumns.filter((c) => !hiddenColumns.includes(c)),

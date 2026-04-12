@@ -51,7 +51,9 @@ export function PdfExportDialog({
 
   const handleExport = () => {
     if (!canExport) return;
-    const safeFilename = filename.toLowerCase().endsWith('.pdf') ? filename : `${filename}.pdf`;
+    // Strip characters that are unsafe in filenames across platforms.
+    const sanitized = filename.replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').trim() || 'map';
+    const safeFilename = sanitized.toLowerCase().endsWith('.pdf') ? sanitized : `${sanitized}.pdf`;
     onExport({ title: title.trim(), filename: safeFilename, includeLegend, includeScaleBar, includeNorthArrow });
   };
 

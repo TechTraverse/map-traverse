@@ -1,4 +1,29 @@
+import { useState } from 'react';
 import type { ImageryLayerConfig } from '../../types';
+
+function ImageryThumbnail({ url, label }: { url?: string; label: string }) {
+  const [failed, setFailed] = useState(false);
+
+  if (!url || failed) {
+    return (
+      <span
+        aria-hidden="true"
+        className="mapui:flex mapui:h-8 mapui:w-8 mapui:flex-shrink-0 mapui:items-center mapui:justify-center mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-gray-50 mapui:text-[10px] mapui:text-gray-400"
+      >
+        IMG
+      </span>
+    );
+  }
+
+  return (
+    <img
+      src={url}
+      alt={`${label} thumbnail`}
+      className="mapui:h-8 mapui:w-8 mapui:flex-shrink-0 mapui:rounded mapui:border mapui:border-gray-200 mapui:object-cover"
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 export interface ImageryPanelProps {
   imageryLayers: ImageryLayerConfig[];
@@ -35,21 +60,7 @@ export function ImageryPanel({
                 onChange={() => onToggleVisibility(layer.id)}
                 className="mapui:h-4 mapui:w-4 mapui:cursor-pointer mapui:accent-gray-700"
               />
-              {layer.thumbnailUrl ? (
-                <img
-                  src={layer.thumbnailUrl}
-                  alt=""
-                  className="mapui:h-8 mapui:w-8 mapui:flex-shrink-0 mapui:rounded mapui:border mapui:border-gray-200 mapui:object-cover"
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                />
-              ) : (
-                <span
-                  aria-hidden="true"
-                  className="mapui:flex mapui:h-8 mapui:w-8 mapui:flex-shrink-0 mapui:items-center mapui:justify-center mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-gray-50 mapui:text-[10px] mapui:text-gray-400"
-                >
-                  IMG
-                </span>
-              )}
+              <ImageryThumbnail url={layer.thumbnailUrl} label={layer.label} />
               <span className="mapui:flex-1 mapui:text-sm mapui:text-gray-800 mapui:truncate">
                 {layer.label}
               </span>
