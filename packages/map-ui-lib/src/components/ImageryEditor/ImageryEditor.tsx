@@ -88,6 +88,10 @@ export function ImageryEditor({
       } finally {
         if (generation === fetchGeneration.current) setTileJsonLoading(false);
       }
+    } else if (urlType === 'style') {
+      setTileJsonError('Style URLs belong in the Basemaps tab — use "Style URL" mode there.');
+      update({ tileUrlTemplate: undefined });
+      return;
     } else {
       // XYZ or unknown — use as-is
       const patch: Partial<ImageryLayerConfig> = { tileUrlTemplate: url || undefined };

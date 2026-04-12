@@ -44,7 +44,7 @@ Phases 1–5 landed on `ralph/main` (reviewed in `NOTES.md`). UI-bug fixes (`FOL
 
 ---
 
-### [ ] Task 2 — Fix style-URL spurious network request
+### [x] Task 2 — Fix style-URL spurious network request
 
 **Source:** FOLLOWUP_NOTES.md §1 regression.
 

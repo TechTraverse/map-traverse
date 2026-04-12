@@ -255,6 +255,16 @@ export function SourcesPage() {
     const testUrl = /^https?:\/\//i.test(normalizedUrl) ? normalizedUrl : `http://${normalizedUrl}`;
     const sourceType = detectTileSourceType(testUrl);
 
+    // Style URLs don't belong in the Sources tab — reject immediately.
+    if (sourceType === 'style') {
+      setTestStatus(prev => ({ ...prev, [key]: 'error' }));
+      setTestError(prev => ({
+        ...prev,
+        [key]: 'Style URLs belong in the Basemaps tab — use "Style URL" mode there.',
+      }));
+      return;
+    }
+
     // Try client-side first (browser fetches directly)
     try {
       let testEndpoint: string;
@@ -286,8 +296,9 @@ export function SourcesPage() {
         setTestStatus(prev => ({ ...prev, [key]: 'success' }));
         return;
       }
-    } catch {
+    } catch (err) {
       // Client-side failed (CORS/network) — fall through to server-side
+      console.error('Client-side test connection failed:', err);
     }
 
     // Server-side fallback
