@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import type { StyleConfig } from '../../types';
+import type { ColorThemeId } from '../../utils/colorThemes';
 import { StyleEditor } from './StyleEditor';
 
 const meta: Meta<typeof StyleEditor> = {
@@ -158,6 +159,50 @@ export const DataDrivenGradient: Story = {
           ]}
         />
         <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+          {JSON.stringify(style, null, 2)}
+        </pre>
+      </div>
+    );
+  },
+};
+
+export const WithColorTheme: Story = {
+  render: () => {
+    const [style, setStyle] = useState<StyleConfig>({
+      type: 'fill',
+      paint: {
+        'fill-color': [
+          'match',
+          ['get', 'continent'],
+          'Africa', '#e8a838',
+          'Asia', '#d15b5b',
+          'Europe', '#5b8dd1',
+          '#aaaaaa',
+        ],
+        'fill-opacity': 0.7,
+      },
+    });
+    const [theme, setTheme] = useState<ColorThemeId>('default');
+    return (
+      <div className="mapui:max-w-sm mapui:p-4">
+        <StyleEditor
+          value={style}
+          onChange={setStyle}
+          colorTheme={theme}
+          onColorThemeChange={setTheme}
+          availableProperties={[
+            { name: 'continent', type: 'string' },
+            { name: 'name', type: 'string' },
+          ]}
+          onFetchDistinctValues={async (property) => {
+            if (property === 'continent') {
+              return ['Africa', 'Asia', 'Europe', 'North America', 'Oceania', 'South America'];
+            }
+            return [];
+          }}
+        />
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+          theme: {theme}{'\n'}
           {JSON.stringify(style, null, 2)}
         </pre>
       </div>

@@ -188,7 +188,7 @@ Files: `apps/admin-app/server/index.ts`, `apps/admin-app/server/inspect.ts`. Che
 
 ---
 
-### [ ] Task 7 — Add StyleEditor theme-dropdown story
+### [x] Task 7 — Add StyleEditor theme-dropdown story
 
 **Source:** NOTES.md Phase 4A gap.
 
