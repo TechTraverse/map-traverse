@@ -78,23 +78,13 @@ export function SearchPanel({
   const showCollapseButton = expandable && expanded;
   const showAllFiltersBuilder = expanded && customRules !== undefined && onCustomRulesChange !== undefined;
 
-  const header = !hideTitle || expandable ? (
+  const titleNode = !hideTitle || showCollapseButton ? (
     <div className="mapui:flex mapui:items-center mapui:justify-between mapui:mb-2">
       {!hideTitle ? (
         <h3 className="mapui:m-0 mapui:text-sm mapui:font-semibold mapui:text-gray-700">
           Search &amp; Filter
         </h3>
       ) : <span />}
-      {showExpandButton && (
-        <button
-          type="button"
-          onClick={() => onExpandedChange?.(true)}
-          title="Expand to full search builder"
-          className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-1.5 mapui:py-0.5 mapui:text-xs mapui:text-gray-600 hover:mapui:border-blue-400 hover:mapui:text-blue-600"
-        >
-          Expand
-        </button>
-      )}
       {showCollapseButton && (
         <button
           type="button"
@@ -111,13 +101,26 @@ export function SearchPanel({
     </div>
   ) : null;
 
+  const expandFooter = showExpandButton ? (
+    <button
+      type="button"
+      onClick={() => onExpandedChange?.(true)}
+      title="Expand to full search builder"
+      aria-label="Expand to full search builder"
+      className="mapui:mt-1 mapui:w-full mapui:cursor-pointer mapui:border-0 mapui:border-t mapui:border-solid mapui:border-gray-200 mapui:bg-transparent mapui:pt-2 mapui:text-center mapui:text-xs mapui:text-gray-600 hover:mapui:text-blue-600"
+    >
+      Expand
+    </button>
+  ) : null;
+
   if (searchableLayers.length === 0) {
     const body = (
       <div className={`mapui:flex mapui:flex-col mapui:gap-1 ${className}`.trim()}>
-        {header}
+        {titleNode}
         <p className="mapui:m-0 mapui:text-xs mapui:text-gray-500">
           No searchable layers configured.
         </p>
+        {expandFooter}
       </div>
     );
     return expanded ? <ModalShell onClose={() => onExpandedChange?.(false)}>{body}</ModalShell> : body;
@@ -125,7 +128,7 @@ export function SearchPanel({
 
   const panelBody = (
     <div className={`mapui:flex mapui:flex-col mapui:gap-3 ${expanded ? '' : className}`.trim()}>
-      {header}
+      {titleNode}
 
       {searchableLayers.map((layer) => {
         const layerFilters = activeFilters[layer.id] ?? {};
@@ -287,6 +290,8 @@ export function SearchPanel({
           />
         </div>
       )}
+
+      {expandFooter}
     </div>
   );
 

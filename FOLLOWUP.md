@@ -363,7 +363,11 @@ classic "two overlay implementations drifting" problem — and part of why
 
 ---
 
-## 4. `SearchPanel` Expand button is at the top; user wants it at the bottom
+## 4. `SearchPanel` Expand button is at the top; user wants it at the bottom ✅
+
+**Status (2026-04-11):** Fixed. `SearchPanel.tsx` splits `header` into `titleNode` (top, now only rendered when `!hideTitle` or the collapse X is needed for the modal) and `expandFooter` (a full-width, muted button rendered at the bottom of `panelBody` and of the empty-state branch). The expand affordance now sits below the last layer's inputs. No React component test harness exists in `packages/map-ui-lib` — skipped the unit test rather than introducing `@testing-library/react` for a one-shot DOM-order check. 381/381 tests pass.
+
+---
 
 **Reported:** 2026-04-11
 **Area:** `packages/map-ui-lib` — `SearchPanel` when `expandable` is true
