@@ -84,7 +84,7 @@ export function CollapsibleControl({
               onClick={handleToggle}
               title={`Collapse ${label}`}
               aria-label={`Collapse ${label}`}
-              className="mapui:flex mapui:items-center mapui:justify-center mapui:w-6 mapui:h-6 mapui:rounded hover:mapui:bg-gray-100 mapui:transition-colors"
+              className="mapui:flex mapui:items-center mapui:justify-center mapui:min-w-[44px] mapui:min-h-[44px] mapui:w-8 mapui:h-8 mapui:rounded hover:mapui:bg-gray-100 mapui:transition-colors"
             >
               <LuX size={16} className="mapui:text-gray-600" />
             </button>

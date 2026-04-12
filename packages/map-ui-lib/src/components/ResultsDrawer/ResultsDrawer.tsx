@@ -284,7 +284,7 @@ export function ResultsDrawer({
     >
       {/* Drag handle */}
       <div
-        className="mapui:flex mapui:items-center mapui:justify-center mapui:h-3 mapui:cursor-ns-resize mapui:bg-gray-100 mapui:border-b mapui:border-gray-200 hover:mapui:bg-gray-200"
+        className="mapui:flex mapui:items-center mapui:justify-center mapui:h-5 mapui:cursor-ns-resize mapui:bg-gray-100 mapui:border-b mapui:border-gray-200 hover:mapui:bg-gray-200"
         onMouseDown={handleMouseDown}
       >
         <LuGripHorizontal size={14} className="mapui:text-gray-400" />
@@ -341,7 +341,7 @@ export function ResultsDrawer({
                 title="Show/hide columns"
                 aria-haspopup="true"
                 aria-expanded={columnMenuOpen}
-                className="mapui:flex mapui:items-center mapui:justify-center mapui:w-7 mapui:h-7 mapui:rounded hover:mapui:bg-gray-100 mapui:text-gray-500"
+                className="mapui:flex mapui:items-center mapui:justify-center mapui:min-w-[44px] mapui:min-h-[44px] mapui:w-8 mapui:h-8 mapui:rounded hover:mapui:bg-gray-100 mapui:text-gray-500"
               >
                 <LuColumns3 size={16} />
               </button>
@@ -379,7 +379,7 @@ export function ResultsDrawer({
               type="button"
               onClick={onExport}
               title="Export"
-              className="mapui:flex mapui:items-center mapui:justify-center mapui:w-7 mapui:h-7 mapui:rounded hover:mapui:bg-gray-100 mapui:text-gray-500"
+              className="mapui:flex mapui:items-center mapui:justify-center mapui:min-w-[44px] mapui:min-h-[44px] mapui:w-8 mapui:h-8 mapui:rounded hover:mapui:bg-gray-100 mapui:text-gray-500"
             >
               <LuDownload size={16} />
             </button>
@@ -389,7 +389,7 @@ export function ResultsDrawer({
               type="button"
               onClick={onClear}
               title="Clear"
-              className="mapui:flex mapui:items-center mapui:justify-center mapui:w-7 mapui:h-7 mapui:rounded hover:mapui:bg-gray-100 mapui:text-gray-500"
+              className="mapui:flex mapui:items-center mapui:justify-center mapui:min-w-[44px] mapui:min-h-[44px] mapui:w-8 mapui:h-8 mapui:rounded hover:mapui:bg-gray-100 mapui:text-gray-500"
             >
               <LuTrash2 size={16} />
             </button>
@@ -398,7 +398,7 @@ export function ResultsDrawer({
             type="button"
             onClick={onClose}
             title="Close"
-            className="mapui:flex mapui:items-center mapui:justify-center mapui:w-7 mapui:h-7 mapui:rounded hover:mapui:bg-gray-100 mapui:text-gray-500"
+            className="mapui:flex mapui:items-center mapui:justify-center mapui:min-w-[44px] mapui:min-h-[44px] mapui:w-8 mapui:h-8 mapui:rounded hover:mapui:bg-gray-100 mapui:text-gray-500"
           >
             <LuX size={16} />
           </button>
@@ -448,7 +448,7 @@ export function ResultsDrawer({
                           disabled={!canMoveLeft}
                           title="Move column left"
                           className={[
-                            'mapui:flex mapui:items-center mapui:justify-center mapui:w-4 mapui:h-4 mapui:rounded',
+                            'mapui:flex mapui:items-center mapui:justify-center mapui:min-w-[28px] mapui:min-h-[28px] mapui:w-5 mapui:h-5 mapui:rounded',
                             canMoveLeft
                               ? 'mapui:text-gray-400 hover:mapui:text-gray-700 hover:mapui:bg-gray-200 mapui:cursor-pointer'
                               : 'mapui:text-gray-200 mapui:cursor-not-allowed',
@@ -471,7 +471,7 @@ export function ResultsDrawer({
                           disabled={!canMoveRight}
                           title="Move column right"
                           className={[
-                            'mapui:flex mapui:items-center mapui:justify-center mapui:w-4 mapui:h-4 mapui:rounded',
+                            'mapui:flex mapui:items-center mapui:justify-center mapui:min-w-[28px] mapui:min-h-[28px] mapui:w-5 mapui:h-5 mapui:rounded',
                             canMoveRight
                               ? 'mapui:text-gray-400 hover:mapui:text-gray-700 hover:mapui:bg-gray-200 mapui:cursor-pointer'
                               : 'mapui:text-gray-200 mapui:cursor-not-allowed',

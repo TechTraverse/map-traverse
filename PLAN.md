@@ -209,7 +209,7 @@ Match the existing story patterns in the file.
 
 ---
 
-### [ ] Task 8 — Complete mobile friendliness audit
+### [x] Task 8 — Complete mobile friendliness audit
 
 **Source:** NOTES.md Phase 5E remainder.
 

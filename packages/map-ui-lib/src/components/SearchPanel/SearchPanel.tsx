@@ -91,7 +91,7 @@ export function SearchPanel({
           type="button"
           onClick={() => onExpandedChange?.(false)}
           title="Close"
-          className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:p-1 mapui:text-gray-500 hover:mapui:text-gray-800"
+          className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:p-2 mapui:min-w-[44px] mapui:min-h-[44px] mapui:flex mapui:items-center mapui:justify-center mapui:text-gray-500 hover:mapui:text-gray-800"
           aria-label="Close expanded search"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="mapui:h-4 mapui:w-4">
