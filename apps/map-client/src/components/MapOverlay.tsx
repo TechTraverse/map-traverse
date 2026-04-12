@@ -373,6 +373,11 @@ export function MapOverlay({
           />
         ) : null;
 
+        // Suppress the expand-to-modal button in side-menu layout: the
+        // ModalShell and SideMenuPanel both render at z-50, creating an
+        // overlapping-modal trap where the user can't reach the side-menu
+        // close controls while the expanded modal is open.
+        const searchExpandable = effectiveLayout !== 'side-menu';
         const searchInner = uiConfig.showSearchPanel ? (
           <SearchPanel
             layers={layers}
@@ -384,12 +389,12 @@ export function MapOverlay({
             onZoomToFeature={handleZoomToFeature}
             className="p-3 max-w-xs"
             hideTitle
-            expandable
-            expanded={searchExpanded}
-            onExpandedChange={setSearchExpanded}
+            expandable={searchExpandable}
+            expanded={searchExpandable ? searchExpanded : undefined}
+            onExpandedChange={searchExpandable ? setSearchExpanded : undefined}
             availableProperties={layerQueryables}
-            propertyFilters={propertyFilters}
-            onPropertyFiltersChange={handlePropertyFiltersChange}
+            propertyFilters={searchExpandable ? propertyFilters : undefined}
+            onPropertyFiltersChange={searchExpandable ? handlePropertyFiltersChange : undefined}
           />
         ) : null;
 

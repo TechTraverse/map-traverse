@@ -145,7 +145,7 @@ if (urlType === 'style') return; // style URLs handled by Basemaps tab
 
 ---
 
-### [ ] Task 5 — Diagnose "can't exit side menu" in map-client
+### [x] Task 5 — Diagnose "can't exit side menu" in map-client
 
 **Source:** FOLLOWUP.md §3 Part 6, deferred.
 
