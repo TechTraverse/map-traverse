@@ -142,7 +142,7 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers }: UIConfi
   };
 
   const handleCornerChange = (key: OrderableControlKey, corner: ControlCorner) => {
-    const next = { ...(value.controlPositions ?? {}) } as Record<OrderableControlKey, ControlCorner>;
+    const next = { ...(value.controlPositions ?? {}) } as Partial<Record<OrderableControlKey, ControlCorner>>;
     if (corner === 'top-right') {
       delete next[key];
     } else {
@@ -153,7 +153,7 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers }: UIConfi
   };
 
   const handleIconChange = (key: OrderableControlKey, iconName: string) => {
-    const next = { ...(value.controlIcons ?? {}) } as Record<OrderableControlKey, string>;
+    const next = { ...(value.controlIcons ?? {}) } as Partial<Record<OrderableControlKey, string>>;
     if (!iconName) {
       delete next[key];
     } else {

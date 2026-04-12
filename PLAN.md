@@ -113,7 +113,7 @@ If no test infrastructure exists in `apps/admin-app`, skip the test file and not
 
 ---
 
-### [ ] Task 4 — Nits: type casts, style fallthrough, multi-key test
+### [x] Task 4 — Nits: type casts, style fallthrough, multi-key test
 
 **Source:** FOLLOWUP_NOTES.md §2 nit, §1 nit.
 

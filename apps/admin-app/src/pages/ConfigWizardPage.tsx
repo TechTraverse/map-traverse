@@ -803,6 +803,7 @@ export function ConfigWizardPage() {
 
                           // Auto-add imagery layer for TileJSON/XYZ sources
                           const urlType = detectTileSourceType(saved.url);
+                          if (urlType === 'style') return; // style URLs handled by Basemaps tab
                           const tj = urlType === 'tilejson' ? saved.metadata?.tileJson : null;
                           const tileUrl = urlType === 'xyz' ? saved.url : tj?.tiles?.[0];
                           if (tileUrl) {

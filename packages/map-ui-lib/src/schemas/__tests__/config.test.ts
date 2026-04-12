@@ -335,6 +335,80 @@ describe('UIConfigSchema phase-2 additions', () => {
   });
 });
 
+describe('UIConfigSchema controlIcons / controlPositions partial records', () => {
+  it('accepts a controlIcons override for a single control', () => {
+    const result = MapConfigSchema.parse({
+      ...baseMapConfig,
+      ui: { controlIcons: { showSearchPanel: 'filter' } },
+    });
+    expect(result.ui.controlIcons).toEqual({ showSearchPanel: 'filter' });
+  });
+
+  it('accepts multiple controlIcons keys', () => {
+    const result = MapConfigSchema.parse({
+      ...baseMapConfig,
+      ui: { controlIcons: { showSearchPanel: 'filter', showLegend: 'list' } },
+    });
+    expect(result.ui.controlIcons).toEqual({ showSearchPanel: 'filter', showLegend: 'list' });
+  });
+
+  it('accepts an empty controlIcons object', () => {
+    const result = MapConfigSchema.parse({
+      ...baseMapConfig,
+      ui: { controlIcons: {} },
+    });
+    expect(result.ui.controlIcons).toEqual({});
+  });
+
+  it('leaves controlIcons undefined when omitted', () => {
+    const result = MapConfigSchema.parse(baseMapConfig);
+    expect(result.ui.controlIcons).toBeUndefined();
+  });
+
+  it('rejects a non-string controlIcons value', () => {
+    expect(() =>
+      MapConfigSchema.parse({
+        ...baseMapConfig,
+        ui: { controlIcons: { showSearchPanel: 123 } },
+      }),
+    ).toThrow();
+  });
+
+  it('rejects a controlIcons key that is not an orderable control', () => {
+    expect(() =>
+      MapConfigSchema.parse({
+        ...baseMapConfig,
+        ui: { controlIcons: { notAControl: 'filter' } },
+      }),
+    ).toThrow();
+  });
+
+  it('accepts a controlPositions override for a single control', () => {
+    const result = MapConfigSchema.parse({
+      ...baseMapConfig,
+      ui: { controlPositions: { showSearchPanel: 'bottom-left' } },
+    });
+    expect(result.ui.controlPositions).toEqual({ showSearchPanel: 'bottom-left' });
+  });
+
+  it('accepts an empty controlPositions object', () => {
+    const result = MapConfigSchema.parse({
+      ...baseMapConfig,
+      ui: { controlPositions: {} },
+    });
+    expect(result.ui.controlPositions).toEqual({});
+  });
+
+  it('rejects an invalid controlPositions corner value', () => {
+    expect(() =>
+      MapConfigSchema.parse({
+        ...baseMapConfig,
+        ui: { controlPositions: { showSearchPanel: 'not-a-corner' } },
+      }),
+    ).toThrow();
+  });
+});
+
 describe('InfoConfigSchema', () => {
   it('parses a MapConfig without an info field (back-compat)', () => {
     const result = MapConfigSchema.parse(baseMapConfig);
