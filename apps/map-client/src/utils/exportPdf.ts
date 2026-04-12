@@ -1,13 +1,15 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import type { PdfExportOptions } from '@ogc-maps/storybook-components';
+import {
+  computeMetricScale,
+  type PdfExportOptions,
+} from '@ogc-maps/storybook-components';
 import type { Map as MapLibreMap } from 'maplibre-gl';
 
 interface ExportPdfInput {
   map: MapLibreMap;
   options: PdfExportOptions;
   legendElement?: HTMLElement | null;
-  scaleBarElement?: HTMLElement | null;
   compassElement?: HTMLElement | null;
 }
 
@@ -24,7 +26,6 @@ export async function exportMapAsPdf({
   map,
   options,
   legendElement,
-  scaleBarElement,
   compassElement,
 }: ExportPdfInput): Promise<void> {
   // Ensure the map has finished rendering before grabbing the canvas.
@@ -98,18 +99,37 @@ export async function exportMapAsPdf({
     pdf.addImage(legendDataUrl, 'PNG', legendBoxX, legendBoxY, lW, Math.min(lH, mapBoxH));
   }
 
-  // Scale bar (bottom-left overlay on map image)
-  if (options.includeScaleBar && scaleBarElement) {
-    try {
-      const scaleCanvas = await captureElement(scaleBarElement);
-      const scaleDataUrl = scaleCanvas.toDataURL('image/png');
-      const scaleW = 140;
-      const scaleAspect = scaleCanvas.width / scaleCanvas.height;
-      const scaleH = scaleW / scaleAspect;
-      pdf.addImage(scaleDataUrl, 'PNG', drawX + 8, drawY + drawH - scaleH - 8, scaleW, scaleH);
-    } catch {
-      // Ignore
-    }
+  // Scale bar (bottom-left overlay on map image) — drawn natively in the PDF
+  // from the map's current zoom + center latitude. The virtual zoom adjusts
+  // the "meters per pixel" math so widthPx is reported in PDF points.
+  if (options.includeScaleBar) {
+    const zoom = map.getZoom();
+    const latitude = map.getCenter().lat;
+    const maxBarPt = 120;
+    // Adjusting zoom by log2(canvas.width / drawW) converts the helper's
+    // "screen pixel" unit into "PDF point" for this export.
+    const virtualZoom = zoom + Math.log2(mapCanvas.width / drawW);
+    const { label, widthPx: barPt } = computeMetricScale(virtualZoom, latitude, maxBarPt);
+    const padding = 6;
+    const barHeight = 4;
+    const labelFontSize = 9;
+    const boxW = Math.max(barPt, 40) + padding * 2;
+    const boxH = labelFontSize + barHeight + padding * 2;
+    const boxX = drawX + 8;
+    const boxY = drawY + drawH - boxH - 8;
+    pdf.setFillColor(255, 255, 255);
+    pdf.setDrawColor(50, 50, 50);
+    pdf.setLineWidth(0.5);
+    pdf.rect(boxX, boxY, boxW, boxH, 'FD');
+    pdf.setFontSize(labelFontSize);
+    pdf.setTextColor(30);
+    pdf.text(label, boxX + padding, boxY + padding + labelFontSize - 2);
+    pdf.setDrawColor(20);
+    pdf.setLineWidth(1);
+    const barY = boxY + padding + labelFontSize;
+    pdf.line(boxX + padding, barY, boxX + padding + barPt, barY);
+    pdf.line(boxX + padding, barY, boxX + padding, barY - barHeight);
+    pdf.line(boxX + padding + barPt, barY, boxX + padding + barPt, barY - barHeight);
   }
 
   // North arrow / compass (top-right overlay on map image)

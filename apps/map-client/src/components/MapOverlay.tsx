@@ -168,7 +168,6 @@ export function MapOverlay({
   const [pdfProgress, setPdfProgress] = useState<string | null>(null);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const legendContainerRef = useRef<HTMLDivElement>(null);
-  const scaleBarContainerRef = useRef<HTMLDivElement>(null);
   const compassContainerRef = useRef<HTMLDivElement>(null);
 
   const handlePdfExport = useCallback(
@@ -186,7 +185,6 @@ export function MapOverlay({
           map,
           options,
           legendElement: legendContainerRef.current,
-          scaleBarElement: scaleBarContainerRef.current,
           compassElement: compassContainerRef.current,
         });
         setPdfDialogOpen(false);
@@ -701,9 +699,9 @@ export function MapOverlay({
         />
       )}
 
-      {/* Bottom-left: Scale Bar */}
+      {/* Bottom-left: Scale Bar (raised above MapLibre attribution line) */}
       {uiConfig.showScaleBar && (
-        <div className="absolute bottom-2 left-2 pointer-events-auto" ref={scaleBarContainerRef}>
+        <div className="absolute bottom-6 left-2 pointer-events-auto">
           <ScaleBarControl zoom={mapZoom} latitude={mapCenterLat} />
         </div>
       )}

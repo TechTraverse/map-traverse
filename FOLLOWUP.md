@@ -581,7 +581,16 @@ Three overlapping bugs in `apps/map-client/src/utils/exportPdf.ts`:
 
 ---
 
-## 6. Scale bar missing from PDF; overlaps attribution on live map
+## 6. Scale bar missing from PDF; overlaps attribution on live map ✅
+
+**Status (2026-04-11):** Fixed both sub-issues.
+- **Live map overlap:** `MapOverlay.tsx:706` raised the scale bar from `bottom-2 left-2` (8px) to `bottom-6 left-2` (24px), so it sits above the MapLibre attribution line. Left attribution position unchanged (bottom-right already has `InfoPanel`/controls in some layouts, so moving attribution there risked a different collision).
+- **PDF scale bar:** The old `html2canvas`-based capture branch in `exportPdf.ts` is gone. The exporter now draws a native bar via `jsPDF.rect/line/text`, using `computeMetricScale(virtualZoom, lat, maxBarPt)` from `@ogc-maps/storybook-components`. The virtual zoom = `zoom + log2(mapCanvas.width / drawW)` so the helper's "meters-per-pixel" math reports `widthPx` in PDF points for the exported image. Result: `includeScaleBar` always works, independent of `uiConfig.showScaleBar` or a DOM ref.
+- **Dead wiring removed:** `scaleBarContainerRef` and the `scaleBarElement` parameter are deleted from `MapOverlay.tsx` and `exportPdf.ts`'s `ExportPdfInput` interface.
+
+Lib helper extraction (`computeScaleBar`) was not needed — `computeMetricScale` / `computeImperialScale` / `metersPerPixel` are already exported from the package root. 381/381 tests pass. PDF exporter tests deferred (no existing harness for that file; same reasoning as issue #5).
+
+---
 
 **Reported:** 2026-04-11
 **Area:** `apps/map-client` — live scale bar overlay and PDF export
