@@ -260,9 +260,10 @@ ones the user wrote.
 
 ---
 
-## 3. Admin app map preview ignores `controlLayout: 'side-menu' | 'auto'`
+## 3. Admin app map preview ignores `controlLayout: 'side-menu' | 'auto'` ✅
 
 **Reported:** 2026-04-11
+**Status:** Fixed 2026-04-11 — `apps/admin-app/src/components/MapPreview.tsx` now derives `effectiveLayout` from `uiConfig.controlLayout` (with `auto` → `side-menu` below 768px) and renders a `SideMenuPanel` + `SideMenuToggle` branch that mirrors `apps/map-client/src/components/MapOverlay.tsx`. In side-menu mode, Legend goes top-left while Search/Layers/Measure/Select/Imagery/Basemap/Export collapse into the hamburger panel; Compass + InfoControl stay in the top-right stack. `pnpm verify` passes (381/381). The "can't exit side menu in map-client" sub-report (Part 6 of the fix plan) remains open and will be retested separately. Long-term extraction of overlay chrome into `map-ui-lib` is still recommended but out of scope here.
 **Area:** `apps/admin-app` — Config Wizard → UI step → map preview (and the
 standalone Config Preview page)
 

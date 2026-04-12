@@ -39,9 +39,13 @@ import {
   ResultsDrawer,
   InfoControl,
   InfoModal,
+  SideMenuPanel,
+  SideMenuToggle,
+  getControlIcon,
   formatDecimal,
   formatDMS,
   resolveControlOrder,
+  type SideMenuPanelItem,
 } from '@ogc-maps/storybook-components';
 import type { CoordinateFormatOption, ExportRequest, ResultsDrawerTab } from '@ogc-maps/storybook-components';
 import type {
@@ -246,6 +250,24 @@ export function MapPreview({
   }[]>([]);
   const [hoveredPoint, setHoveredPoint] = useState<{ x: number; y: number } | null>(null);
   const [openControl, setOpenControl] = useState<string | null>(null);
+  const [sideMenuOpen, setSideMenuOpen] = useState(false);
+  const [isNarrowViewport, setIsNarrowViewport] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 767px)').matches;
+  });
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(max-width: 767px)');
+    const handler = (e: MediaQueryListEvent) => setIsNarrowViewport(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  const effectiveLayout: 'individual' | 'side-menu' =
+    uiConfig?.controlLayout === 'auto'
+      ? isNarrowViewport
+        ? 'side-menu'
+        : 'individual'
+      : uiConfig?.controlLayout ?? 'individual';
   const [cursor, setCursor] = useState<string>('auto');
   const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<Record<string, string[]>>({});
   const prefetchedRef = useRef<Set<string>>(new Set());
@@ -1034,7 +1056,183 @@ export function MapPreview({
             </div>
           )}
 
+          {/* Side-menu layout: legend top-left, hamburger + compass + info top-right, panel slides in */}
+          {effectiveLayout === 'side-menu' && (() => {
+            const iconFor = (k: OrderableControlKey, fallback: typeof LuSearch) =>
+              getControlIcon(uiConfig.controlIcons?.[k], fallback);
+            const items: SideMenuPanelItem[] = [];
+            if (uiConfig.showSearchPanel) {
+              items.push({
+                key: 'search',
+                label: 'Search',
+                icon: iconFor('showSearchPanel', LuSearch),
+                content: (
+                  <SearchPanel
+                    layers={layersWithDefaults}
+                    activeFilters={activeFilters}
+                    onFilterChange={handleFilterChange}
+                    onClearFilters={handleClearLayerFilters}
+                    onZoomToFeature={handleZoomToFeature}
+                    autocompleteSuggestions={autocompleteSuggestions}
+                    onFetchSuggestions={fetchSuggestions}
+                    className="p-3 max-w-xs"
+                    hideTitle
+                  />
+                ),
+              });
+            }
+            if (uiConfig.showLayerPanel) {
+              items.push({
+                key: 'layers',
+                label: 'Layers',
+                icon: iconFor('showLayerPanel', LuLayers3),
+                content: (
+                  <LayerPanel
+                    layers={layersWithDefaults}
+                    activeLayerIds={visibleLayerIds}
+                    onToggleVisibility={(layerId) => {
+                      onLayersChange?.(layers.map(l => l.id === layerId ? { ...l, visible: !l.visible } : l));
+                    }}
+                    onReorder={(layerIds) => {
+                      const layerById: Record<string, LayerConfig> = Object.fromEntries(layers.map(l => [l.id, l]));
+                      const reordered = layerIds.map(id => layerById[id]).filter((l): l is LayerConfig => !!l);
+                      onLayersChange?.(reordered);
+                    }}
+                    hideTitle
+                  />
+                ),
+              });
+            }
+            if (uiConfig.showMeasureTool) {
+              items.push({
+                key: 'measure',
+                label: 'Measure',
+                icon: iconFor('showMeasureTool', LuRuler),
+                content: (
+                  <MeasurePanel
+                    mode={measure.mode}
+                    onModeChange={measure.setMode}
+                    points={measure.points}
+                    measurement={measure.measurement}
+                    unit={measure.unit}
+                    onUnitChange={measure.setUnit}
+                    onClear={measure.clear}
+                    className="mapui:p-3 mapui:max-w-xs"
+                  />
+                ),
+              });
+            }
+            if (uiConfig.showSelectionTool) {
+              items.push({
+                key: 'selection',
+                label: 'Select',
+                icon: iconFor('showSelectionTool', LuMousePointer2),
+                content: (
+                  <SelectionPanel
+                    mode={selection.mode}
+                    onModeChange={selection.setMode}
+                    layers={layersWithDefaults}
+                    activeLayerId={selection.activeLayerId}
+                    onActiveLayerChange={selection.setActiveLayerId}
+                    selectedCount={selection.features.length}
+                    onClear={selection.clearFeatures}
+                    onViewResults={() => setResultsOpen(true)}
+                    queryPanel={activeLayer?.cql2Filter ? (
+                      <>
+                        <QueryPanel
+                          cql2Filter={activeLayer.cql2Filter as Cql2FilterConfig}
+                          onRun={handleRunQuery}
+                          loading={queryLoading}
+                          hasSelectionGeometry={selection.features.length > 0}
+                        />
+                        {queryError && (
+                          <p className="mapui:m-0 mapui:text-xs mapui:text-red-600 mapui:mt-1">{queryError}</p>
+                        )}
+                      </>
+                    ) : undefined}
+                    className="mapui:p-3 mapui:max-w-xs"
+                  />
+                ),
+              });
+            }
+            if (uiConfig.showImageryPanel && imageryLayers.length > 0) {
+              items.push({
+                key: 'imagery',
+                label: 'Imagery',
+                icon: iconFor('showImageryPanel', TbSatellite),
+                content: (
+                  <ImageryPanel
+                    imageryLayers={imageryLayers}
+                    onToggleVisibility={handleToggleImageryVisibility}
+                    onOpacityChange={handleImageryOpacity}
+                    hideTitle
+                    className="mapui:p-3 mapui:max-w-xs"
+                  />
+                ),
+              });
+            }
+            if (uiConfig.showBasemapSwitcher) {
+              items.push({
+                key: 'basemap',
+                label: 'Basemap',
+                icon: iconFor('showBasemapSwitcher', LuMap),
+                content: (
+                  <BasemapSwitcher
+                    basemaps={basemaps}
+                    activeBasemapId={activeBasemapId ?? ''}
+                    onSelect={setActiveBasemapId}
+                  />
+                ),
+              });
+            }
+            if (uiConfig.showExportButton) {
+              items.push({
+                key: 'export',
+                label: 'Export',
+                icon: iconFor('showExportButton', LuDownload),
+                content: (
+                  <ExportButton
+                    icon={LuDownload}
+                    onExport={() => setExportModalOpen(true)}
+                    loading={exportLoading}
+                  />
+                ),
+              });
+            }
+            return (
+              <>
+                <div className="mapui:absolute mapui:top-4 mapui:right-4 mapui:flex mapui:flex-col mapui:gap-4 mapui:items-end mapui:pointer-events-auto">
+                  <SideMenuToggle onClick={() => setSideMenuOpen(true)} label="Open menu" />
+                  {uiConfig.showCompass && (
+                    <CompassControl
+                      bearing={internalViewState.bearing}
+                      onReset={() => mapRef.current?.easeTo({ bearing: 0, duration: 300 })}
+                    />
+                  )}
+                  {info?.enabled && info.position === 'top-right' && (
+                    <InfoControl onClick={() => setInfoModalOpen(true)} />
+                  )}
+                </div>
+                {uiConfig.showLegend && (
+                  <div className="mapui:absolute mapui:top-4 mapui:left-4 mapui:pointer-events-auto">
+                    <Legend
+                      layers={layersWithDefaults}
+                      visibleLayerIds={visibleLayerIds}
+                      onOpacityChange={uiConfig.showLegendOpacity ? handleLayerOpacity : undefined}
+                    />
+                  </div>
+                )}
+                <SideMenuPanel
+                  controls={items}
+                  isOpen={sideMenuOpen}
+                  onClose={() => setSideMenuOpen(false)}
+                />
+              </>
+            );
+          })()}
+
           {/* Top-right: Legend and controls stacked vertically, order driven by config */}
+          {effectiveLayout === 'individual' && (
           <div className="mapui:absolute mapui:top-4 mapui:right-4 mapui:flex mapui:flex-col mapui:gap-4 mapui:items-end">
             {(() => {
               const controlNodes: Record<OrderableControlKey, React.ReactNode> = {
@@ -1228,6 +1426,7 @@ export function MapPreview({
               });
             })()}
           </div>
+          )}
 
           {/* Export modal */}
           <div className="mapui:pointer-events-auto">
