@@ -81,7 +81,7 @@ Also check lines ~148 and ~156 (`onBlur`/`onPaste` auto-resolvers) — confirm t
 
 ---
 
-### [ ] Task 3 — Fix MapPreview `showExportPdf` + add controlLayout test
+### [x] Task 3 — Fix MapPreview `showExportPdf` + add controlLayout test
 
 **Source:** FOLLOWUP_NOTES.md §3 regression + §3 missing test coverage.
 

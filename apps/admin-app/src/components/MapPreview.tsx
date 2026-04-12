@@ -64,7 +64,7 @@ import type {
 import type { SearchFilterValue, SearchFilterValues, Cql2FilterConfig, InfoPosition } from '@ogc-maps/storybook-components/types';
 import { useMeasure, useSelection } from '@ogc-maps/storybook-components/hooks';
 
-import { LuDownload, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
+import { LuDownload, LuFileText, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
 import { TbSatellite } from 'react-icons/tb';
 import { useBoxDraw } from '../hooks/useBoxDraw';
 import { usePolygonDraw } from '../hooks/usePolygonDraw';
@@ -1185,17 +1185,29 @@ export function MapPreview({
                 ),
               });
             }
-            if (uiConfig.showExportButton) {
+            if (uiConfig.showExportButton || uiConfig.showExportPdf) {
               items.push({
                 key: 'export',
                 label: 'Export',
                 icon: iconFor('showExportButton', LuDownload),
                 content: (
-                  <ExportButton
-                    icon={LuDownload}
-                    onExport={() => setExportModalOpen(true)}
-                    loading={exportLoading}
-                  />
+                  <div className="mapui:flex mapui:flex-col mapui:gap-2">
+                    {uiConfig.showExportButton && (
+                      <ExportButton
+                        icon={LuDownload}
+                        onExport={() => setExportModalOpen(true)}
+                        loading={exportLoading}
+                      />
+                    )}
+                    {uiConfig.showExportPdf && (
+                      <ExportButton
+                        icon={LuFileText}
+                        label="Export as PDF"
+                        onExport={() => {}}
+                        loading={false}
+                      />
+                    )}
+                  </div>
                 ),
               });
             }
@@ -1394,13 +1406,25 @@ export function MapPreview({
                   </div>
                 ) : null,
 
-                showExportButton: uiConfig.showExportButton ? (
+                showExportButton: (uiConfig.showExportButton || uiConfig.showExportPdf) ? (
                   <div className="mapui:pointer-events-auto">
-                    <ExportButton
-                      icon={LuDownload}
-                      onExport={() => setExportModalOpen(true)}
-                      loading={exportLoading}
-                    />
+                    <div className="mapui:flex mapui:flex-col mapui:gap-2">
+                      {uiConfig.showExportButton && (
+                        <ExportButton
+                          icon={LuDownload}
+                          onExport={() => setExportModalOpen(true)}
+                          loading={exportLoading}
+                        />
+                      )}
+                      {uiConfig.showExportPdf && (
+                        <ExportButton
+                          icon={LuFileText}
+                          label="Export as PDF"
+                          onExport={() => {}}
+                          loading={false}
+                        />
+                      )}
+                    </div>
                   </div>
                 ) : null,
 
