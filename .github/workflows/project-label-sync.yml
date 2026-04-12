@@ -1,0 +1,69 @@
+name: Sync Project Status to Labels
+
+# Watches for project board column changes and applies the matching
+# status:* label to the issue/PR. This bridges GitHub Projects with
+# the Claude agent workflow (claude.yml), which triggers on labels.
+#
+# Requires: the project's Status field values must match the keys in
+# statusToLabel below (Clarify, Ready, In Progress, In Review).
+
+on:
+  projects_v2_item:
+    types: [edited]
+
+jobs:
+  sync-labels:
+    runs-on: ubuntu-latest
+    if: github.event.changes.field_value.field_name == 'Status'
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const statusToLabel = {
+              'Clarify': 'status:clarify',
+              'Ready': 'status:ready',
+              'In Progress': 'status:in-progress',
+              'In Review': 'status:in-review',
+            };
+
+            const allStatusLabels = Object.values(statusToLabel);
+            const newStatus = context.payload.changes.field_value.value?.name;
+            const newLabel = statusToLabel[newStatus];
+
+            // Get the issue/PR number from the project item
+            const item = context.payload.projects_v2_item;
+            const contentId = item.content_node_id;
+
+            // Fetch the issue/PR details via GraphQL
+            const query = `query($id: ID!) {
+              node(id: $id) {
+                ... on Issue { number, repository { owner { login }, name } }
+                ... on PullRequest { number, repository { owner { login }, name } }
+              }
+            }`;
+            const result = await github.graphql(query, { id: contentId });
+            const node = result.node;
+            if (!node?.number) return;
+
+            const owner = node.repository.owner.login;
+            const repo = node.repository.name;
+            const issue_number = node.number;
+
+            // Remove all existing status labels
+            const { data: currentLabels } = await github.rest.issues.listLabelsOnIssue({
+              owner, repo, issue_number
+            });
+            for (const label of currentLabels) {
+              if (allStatusLabels.includes(label.name)) {
+                await github.rest.issues.removeLabel({
+                  owner, repo, issue_number, name: label.name
+                }).catch(() => {});
+              }
+            }
+
+            // Apply the new label (if the column maps to one)
+            if (newLabel) {
+              await github.rest.issues.addLabels({
+                owner, repo, issue_number, labels: [newLabel]
+              });
+            }
