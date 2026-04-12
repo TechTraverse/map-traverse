@@ -279,11 +279,11 @@ All core implementation phases are complete:
 
 ## Contributing
 
-This is a demonstration/learning project.
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
-MIT
+AGPL-3.0 — see [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 

@@ -22,8 +22,29 @@
 - `apps/admin-app`: Admin UI for managing map configs (Express + React, PostgreSQL, auth).
 - `docker-compose.yml`: Six services — PostGIS, tipg (OGC API), seed (data loader), admin-app, map-client, gateway (nginx reverse proxy).
 
-## Workflows
-- See `.agent/workflows/development.md` for detailed setup and troubleshooting.
+## Workflow — Worktree Isolation (Mandatory)
+
+Every task — solo or team — MUST run in a git worktree. Never commit directly to `ralph/main`.
+
+### Solo tasks
+1. **Start**: Enter a worktree with a descriptive branch name (e.g., `ralph/fix-tooltip`).
+2. **Work**: Make changes, commit to the worktree branch. Run `pnpm verify` before declaring done.
+3. **Merge**: When the feature is complete and verify passes:
+   - `git checkout ralph/main`
+   - `git merge <worktree-branch> --no-ff`
+4. **Cleanup**: Exit and remove the worktree.
+
+### Team tasks
+Each teammate gets its own worktree. The lead merges all branches into `ralph/main` after teammates finish (per `.agent/prompts/ralph-loop.md`).
+
+### Rules
+- Base branch is always `ralph/main`. Create worktree branches from it.
+- Never push to or commit directly on `ralph/main`. All work goes through a worktree branch, then merges.
+- **Commit messages**: Keep them short (one line, ~50 chars). No `Co-Authored-By` trailer — it's implied in this repo.
+- **Merge conflicts**: If merging into `ralph/main` produces a conflict, STOP immediately. Do not attempt to resolve it. Report the conflict details to the human and wait for instructions. If running in a loop, exit the loop.
+- If `pnpm verify` fails after merge, fix on `ralph/main` and commit the fix there.
+
+For dev setup and Docker troubleshooting, see `.agent/workflows/development.md`.
 
 ## Claude Skills
 This repo ships task-specific skills under `.claude/skills/`. Read the relevant `SKILL.md` *before* starting any non-trivial change — they encode the project's architectural rules and the *why* behind them, so you don't have to rediscover them mid-task.
