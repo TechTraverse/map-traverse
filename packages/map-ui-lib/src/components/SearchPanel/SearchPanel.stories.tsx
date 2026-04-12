@@ -2,7 +2,8 @@ import { useState, useCallback, useRef } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { SearchPanel } from './SearchPanel';
 import type { SearchPanelProps } from './SearchPanel';
-import type { LayerConfig, SearchFilterValues, SearchFilterValue, FilterRule, AvailableProperty } from '../../types';
+import type { LayerConfig, SearchFilterValues, SearchFilterValue, AvailableProperty } from '../../types';
+import type { PropertyFilter } from '../../utils/propertyFilters';
 
 const countriesLayer: LayerConfig = {
   id: 'countries',
@@ -267,7 +268,7 @@ function InteractiveSearchPanel(props: SearchPanelProps) {
   );
 
   const [expanded, setExpanded] = useState(props.expanded ?? false);
-  const [customRules, setCustomRules] = useState<Record<string, FilterRule[]>>(props.customRules ?? {});
+  const [propertyFilters, setPropertyFilters] = useState<PropertyFilter[]>(props.propertyFilters ?? []);
 
   return (
     <SearchPanel
@@ -277,9 +278,8 @@ function InteractiveSearchPanel(props: SearchPanelProps) {
       onClearFilters={handleClearFilters}
       expanded={props.expandable ? expanded : undefined}
       onExpandedChange={props.expandable ? setExpanded : undefined}
-      customRules={props.expandable ? customRules : undefined}
-      onCustomRulesChange={props.expandable ? (layerId, rules) =>
-        setCustomRules((prev) => ({ ...prev, [layerId]: rules })) : undefined}
+      propertyFilters={props.expandable ? propertyFilters : undefined}
+      onPropertyFiltersChange={props.expandable ? setPropertyFilters : undefined}
     />
   );
 }
@@ -610,9 +610,10 @@ const mockQueryables: Record<string, AvailableProperty[]> = {
 };
 
 /**
- * Expandable search panel with the "All Filters" builder. Click Expand to open
- * the full modal. The builder lets users pick a property, operator, and value
- * for any queryable field, combining with search filters via AND.
+ * Expandable search panel with the simple property filter panel. Click
+ * Expand to open the full modal. The panel lets users pick a layer
+ * property and type a value — implicit equality, combined with search
+ * filters via AND.
  */
 export const Expandable: Story = {
   args: {
@@ -620,11 +621,11 @@ export const Expandable: Story = {
     activeFilters: {},
     expandable: true,
     availableProperties: mockQueryables,
-    customRules: {},
+    propertyFilters: [],
   },
 };
 
-/** Expanded by default, showing the All Filters builder and modal layout. */
+/** Expanded by default, showing the property filter panel and modal layout. */
 export const ExpandedWithAllFilters: Story = {
   args: {
     layers: [countriesLayer, citiesLayer],
@@ -632,6 +633,6 @@ export const ExpandedWithAllFilters: Story = {
     expandable: true,
     expanded: true,
     availableProperties: mockQueryables,
-    customRules: {},
+    propertyFilters: [],
   },
 };

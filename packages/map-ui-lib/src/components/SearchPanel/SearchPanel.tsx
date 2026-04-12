@@ -1,9 +1,10 @@
 import { useEffect, useMemo } from 'react';
-import type { LayerConfig, SearchFilterValues, SearchFilterValue, SearchField, NumberSearchField, DatetimeSearchField, TextSearchField, SelectSearchField, FilterRule, AvailableProperty } from '../../types';
+import type { LayerConfig, SearchFilterValues, SearchFilterValue, SearchField, NumberSearchField, DatetimeSearchField, TextSearchField, SelectSearchField, AvailableProperty } from '../../types';
+import type { PropertyFilter } from '../../utils/propertyFilters';
 import { AutocompleteInput } from './AutocompleteInput';
 import { DateRangeInput } from './DateRangeInput';
 import { NumberInput } from './NumberInput';
-import { AllFiltersBuilder } from './AllFiltersBuilder';
+import { PropertyFilterPanel } from '../PropertyFilterPanel';
 
 export interface SearchPanelProps {
   layers: LayerConfig[];
@@ -23,10 +24,10 @@ export interface SearchPanelProps {
   onExpandedChange?: (expanded: boolean) => void;
   /** Per-layer queryable properties, keyed by layer id. Enables typed property pickers in the All Filters builder. */
   availableProperties?: Record<string, AvailableProperty[]>;
-  /** Ad-hoc filter rules per layer for the All Filters builder. Controlled. */
-  customRules?: Record<string, FilterRule[]>;
-  /** Callback when the user edits ad-hoc custom rules. */
-  onCustomRulesChange?: (layerId: string, rules: FilterRule[]) => void;
+  /** Flat ad-hoc property filter list rendered in the expanded "All Filters" view. Controlled. */
+  propertyFilters?: PropertyFilter[];
+  /** Callback when the user edits the flat property filter list. */
+  onPropertyFiltersChange?: (filters: PropertyFilter[]) => void;
 }
 
 function isFilterActive(value: SearchFilterValue): boolean {
@@ -55,8 +56,8 @@ export function SearchPanel({
   expanded = false,
   onExpandedChange,
   availableProperties,
-  customRules,
-  onCustomRulesChange,
+  propertyFilters,
+  onPropertyFiltersChange,
 }: SearchPanelProps) {
   const searchableLayers = useMemo(
     () => layers.filter((layer) => layer.search?.fields.length),
@@ -76,7 +77,7 @@ export function SearchPanel({
 
   const showExpandButton = expandable && !expanded;
   const showCollapseButton = expandable && expanded;
-  const showAllFiltersBuilder = expanded && customRules !== undefined && onCustomRulesChange !== undefined;
+  const showAllFiltersBuilder = expanded && propertyFilters !== undefined && onPropertyFiltersChange !== undefined;
 
   const titleNode = !hideTitle || showCollapseButton ? (
     <div className="mapui:flex mapui:items-center mapui:justify-between mapui:mb-2">
@@ -282,11 +283,11 @@ export function SearchPanel({
 
       {showAllFiltersBuilder && (
         <div className="mapui:mt-2 mapui:border-t mapui:border-gray-200 mapui:pt-3">
-          <AllFiltersBuilder
+          <PropertyFilterPanel
             layers={layers}
             availableProperties={availableProperties}
-            customRules={customRules!}
-            onCustomRulesChange={onCustomRulesChange!}
+            filters={propertyFilters!}
+            onFiltersChange={onPropertyFiltersChange!}
           />
         </div>
       )}

@@ -729,7 +729,20 @@ text.
 
 ---
 
-## 7. Expanded "All Filters" builder is too complex — replace with a simple layer/property/value panel
+## 7. Expanded "All Filters" builder is too complex — replace with a simple layer/property/value panel ✅
+
+**Status (2026-04-11):** Replaced the CQL2-flavored row editor with a flat layer → property → value panel.
+
+- **New component** `packages/map-ui-lib/src/components/PropertyFilterPanel/PropertyFilterPanel.tsx`: controlled, takes `filters: PropertyFilter[]` + `onFiltersChange`, groups rows visually by layer, implicit equality, soft cap at 20 filters per layer. Exported from `components/index.ts`.
+- **New flat rule type** `PropertyFilter = { id, layerId, property, value }` in `packages/map-ui-lib/src/utils/propertyFilters.ts`, plus `propertyFiltersToCql2(filters, layerId)` which compiles to an `and(...eq(...))` via the existing `cql2.ts` primitives. Exported from `utils/index.ts` (and therefore `@ogc-maps/storybook-components/utils`).
+- **SearchPanel rewired**: `customRules`/`onCustomRulesChange` props replaced with `propertyFilters`/`onPropertyFiltersChange`. The expanded modal now renders `<PropertyFilterPanel />` instead of `<AllFiltersBuilder />`.
+- **MapOverlay rewired**: local state swapped to `propertyFilters: PropertyFilter[]`. `computeMergedCql2` now calls `propertyFiltersToCql2(filters, layerId)` and `handlePropertyFiltersChange` recomputes merged CQL2 for every layer that's touched (including layers whose last rule was just removed), so clearing a filter actually drops the layer's CQL2 filter.
+- **Left behind**: `AllFiltersBuilder` and the full `Cql2FilterEditor` suite remain intact for any admin/debug caller that wants the power-user surface — per the plan, no churn there.
+- **Tests**: added `utils/__tests__/propertyFilters.test.ts` with 6 cases covering null-on-empty, null-on-draft rows, single-row eq, multi-row AND, and cross-layer isolation. Updated `SearchPanel.stories.tsx` to use the new prop shape. Storybook/UX storyfile for `PropertyFilterPanel` deferred — stories exist for `SearchPanel`'s expanded state already and exercise the new panel end-to-end.
+
+387/387 tests pass.
+
+---
 
 **Reported:** 2026-04-11
 **Area:** `packages/map-ui-lib` — `SearchPanel` expanded modal ("All Filters"

@@ -31,9 +31,10 @@ import {
 } from '@ogc-maps/storybook-components';
 import { exportMapAsPdf } from '../utils/exportPdf';
 import type { MeasureMode, MeasureUnit, Measurement, SelectedFeature, SelectionMode } from '@ogc-maps/storybook-components';
-import type { FilterRuleGroup, FilterRule } from '@ogc-maps/storybook-components/types';
+import type { FilterRuleGroup } from '@ogc-maps/storybook-components/types';
+import type { PropertyFilter } from '@ogc-maps/storybook-components/utils';
 import { useExport } from '@ogc-maps/storybook-components/hooks';
-import { DEFAULT_EXPORT_FORMATS, fromStructuredFilters, fromFilterRuleGroup, and, fetchFeatures, eq, exportConverters, zoomToFeature } from '@ogc-maps/storybook-components/utils';
+import { DEFAULT_EXPORT_FORMATS, fromStructuredFilters, propertyFiltersToCql2, and, fetchFeatures, eq, exportConverters, zoomToFeature } from '@ogc-maps/storybook-components/utils';
 import type { GeoJsonFeature } from '@ogc-maps/storybook-components/utils';
 import type { UIConfig, SearchFilterValue, SearchFilterValues, OrderableControlKey, InfoPosition, ControlCorner } from '@ogc-maps/storybook-components/types';
 import { groupControlsByCorner } from '@ogc-maps/storybook-components';
@@ -287,17 +288,15 @@ export function MapOverlay({
 
   // Expanded search modal state
   const [searchExpanded, setSearchExpanded] = useState(false);
-  const [customFilterRules, setCustomFilterRules] = useState<Record<string, FilterRule[]>>({});
+  const [propertyFilters, setPropertyFilters] = useState<PropertyFilter[]>([]);
   const layerQueryables = useLayerQueryables(layers);
 
   const computeMergedCql2 = useCallback(
-    (layerId: string, structured: SearchFilterValues, customs: FilterRule[]) => {
+    (layerId: string, structured: SearchFilterValues, flatFilters: PropertyFilter[]) => {
       const layer = useMapStore.getState().layers.find((l) => l.id === layerId);
       const fields = layer?.search?.fields ?? [];
       const structuredCql2 = fromStructuredFilters(structured, fields);
-      const customCql2 = customs.length > 0
-        ? fromFilterRuleGroup({ id: `${layerId}-custom`, combinator: 'and', rules: customs })
-        : null;
+      const customCql2 = propertyFiltersToCql2(flatFilters, layerId);
       return and(structuredCql2, customCql2);
     },
     [],
@@ -309,19 +308,26 @@ export function MapOverlay({
       const updated: SearchFilterValues = { ...current, [property]: value };
       setLayerFilters(layerId, updated);
 
-      const customs = customFilterRules[layerId] ?? [];
-      setLayerCql2Filter(layerId, computeMergedCql2(layerId, updated, customs));
+      setLayerCql2Filter(layerId, computeMergedCql2(layerId, updated, propertyFilters));
     },
-    [setLayerFilters, setLayerCql2Filter, customFilterRules, computeMergedCql2],
+    [setLayerFilters, setLayerCql2Filter, propertyFilters, computeMergedCql2],
   );
 
-  const handleCustomRulesChange = useCallback(
-    (layerId: string, rules: FilterRule[]) => {
-      setCustomFilterRules((prev) => ({ ...prev, [layerId]: rules }));
-      const structured = useMapStore.getState().activeFilters[layerId] ?? {};
-      setLayerCql2Filter(layerId, computeMergedCql2(layerId, structured, rules));
+  const handlePropertyFiltersChange = useCallback(
+    (filters: PropertyFilter[]) => {
+      setPropertyFilters(filters);
+      // Recompute merged CQL2 for every layer that has (or had) a property
+      // filter, so clearing a rule actually drops the layer's filter too.
+      const touched = new Set<string>();
+      for (const f of filters) touched.add(f.layerId);
+      for (const f of propertyFilters) touched.add(f.layerId);
+      const storeFilters = useMapStore.getState().activeFilters;
+      for (const layerId of touched) {
+        const structured = storeFilters[layerId] ?? {};
+        setLayerCql2Filter(layerId, computeMergedCql2(layerId, structured, filters));
+      }
     },
-    [setLayerCql2Filter, computeMergedCql2],
+    [setLayerCql2Filter, propertyFilters, computeMergedCql2],
   );
 
   return (
@@ -382,8 +388,8 @@ export function MapOverlay({
             expanded={searchExpanded}
             onExpandedChange={setSearchExpanded}
             availableProperties={layerQueryables}
-            customRules={customFilterRules}
-            onCustomRulesChange={handleCustomRulesChange}
+            propertyFilters={propertyFilters}
+            onPropertyFiltersChange={handlePropertyFiltersChange}
           />
         ) : null;
 

@@ -57,6 +57,8 @@ export { SelectionPanel } from './SelectionPanel';
 export type { SelectionPanelProps } from './SelectionPanel';
 export { SearchPanel } from './SearchPanel';
 export type { SearchPanelProps } from './SearchPanel';
+export { PropertyFilterPanel } from './PropertyFilterPanel';
+export type { PropertyFilterPanelProps } from './PropertyFilterPanel';
 export { GlobalSearchBar } from './GlobalSearchBar';
 export type {
   GlobalSearchBarProps,
