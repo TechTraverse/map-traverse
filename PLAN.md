@@ -165,7 +165,7 @@ if (urlType === 'style') return; // style URLs handled by Basemaps tab
 
 ---
 
-### [ ] Task 6 — Schema-qualify bare table queries
+### [x] Task 6 — Schema-qualify bare table queries
 
 **Source:** NOTES.md Phase 1A follow-up.
 

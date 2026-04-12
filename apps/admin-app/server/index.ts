@@ -208,7 +208,7 @@ function validateConfigName(name: string | undefined, required?: boolean): strin
 app.get('/api/configs', async (_req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, name, description, is_published, is_default, created_at, updated_at FROM map_configs ORDER BY updated_at DESC',
+      'SELECT id, name, description, is_published, is_default, created_at, updated_at FROM map_admin.map_configs ORDER BY updated_at DESC',
     );
     res.json(result.rows);
   } catch (err) {
@@ -220,7 +220,7 @@ app.get('/api/configs', async (_req, res) => {
 app.get('/api/configs/published', async (_req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, name, description, is_default FROM map_configs WHERE is_published = true ORDER BY name',
+      'SELECT id, name, description, is_default FROM map_admin.map_configs WHERE is_published = true ORDER BY name',
     );
     res.json(result.rows);
   } catch (err) {
@@ -233,7 +233,7 @@ app.get('/api/configs/:id', async (req, res) => {
   try {
     if (UUID_REGEX.test(req.params.id)) {
       // UUID lookup — return full config row
-      const result = await pool.query('SELECT * FROM map_configs WHERE id = $1', [req.params.id]);
+      const result = await pool.query('SELECT * FROM map_admin.map_configs WHERE id = $1', [req.params.id]);
       if (result.rows.length === 0) {
         res.status(404).json({ error: 'Config not found' });
         return;
@@ -245,11 +245,11 @@ app.get('/api/configs/:id', async (req, res) => {
       if (req.params.id === 'default') {
         // Resolve "default" to the config marked as default
         result = await pool.query(
-          'SELECT config FROM map_configs WHERE is_default = true AND is_published = true',
+          'SELECT config FROM map_admin.map_configs WHERE is_default = true AND is_published = true',
         );
       } else {
         result = await pool.query(
-          'SELECT config FROM map_configs WHERE name = $1 AND is_published = true',
+          'SELECT config FROM map_admin.map_configs WHERE name = $1 AND is_published = true',
           [req.params.id],
         );
       }
@@ -264,7 +264,7 @@ app.get('/api/configs/:id', async (req, res) => {
       if (sources && sources.length > 0) {
         const sourceIds = sources.map(s => s.id);
         const proxied = await pool.query(
-          'SELECT source_id, url, auth FROM ogc_sources WHERE source_id = ANY($1) AND proxy = true',
+          'SELECT source_id, url, auth FROM map_admin.ogc_sources WHERE source_id = ANY($1) AND proxy = true',
           [sourceIds],
         );
         if (proxied.rows.length > 0) {
@@ -341,7 +341,7 @@ app.post('/api/configs', requireAuth, async (req, res) => {
 
   try {
     const result = await pool.query(
-      'INSERT INTO map_configs (name, description, config) VALUES ($1, $2, $3) RETURNING *',
+      'INSERT INTO map_admin.map_configs (name, description, config) VALUES ($1, $2, $3) RETURNING *',
       [name, description ?? null, JSON.stringify(config ?? {})],
     );
     res.status(201).json(result.rows[0]);
@@ -373,7 +373,7 @@ app.put('/api/configs/:id', requireAuth, async (req, res) => {
   }
 
   try {
-    const existing = await pool.query('SELECT * FROM map_configs WHERE id = $1', [req.params.id]);
+    const existing = await pool.query('SELECT * FROM map_admin.map_configs WHERE id = $1', [req.params.id]);
     if (existing.rows.length === 0) {
       res.status(404).json({ error: 'Config not found' });
       return;
@@ -391,12 +391,12 @@ app.put('/api/configs/:id', requireAuth, async (req, res) => {
       await client.query('BEGIN');
       // Snapshot current state into version history
       const versionResult = await client.query(
-        'SELECT COALESCE(MAX(version_number), 0) + 1 AS next_version FROM config_versions WHERE config_id = $1',
+        'SELECT COALESCE(MAX(version_number), 0) + 1 AS next_version FROM map_admin.config_versions WHERE config_id = $1',
         [req.params.id],
       );
       const nextVersion = (versionResult.rows[0] as { next_version: number }).next_version;
       await client.query(
-        `INSERT INTO config_versions (config_id, version_number, name, description, config, created_by)
+        `INSERT INTO map_admin.config_versions (config_id, version_number, name, description, config, created_by)
          VALUES ($1, $2, $3, $4, $5, $6)`,
         [
           req.params.id,
@@ -408,7 +408,7 @@ app.put('/api/configs/:id', requireAuth, async (req, res) => {
         ],
       );
       result = await client.query(
-        'UPDATE map_configs SET name = $1, description = $2, config = $3, updated_at = now() WHERE id = $4 RETURNING *',
+        'UPDATE map_admin.map_configs SET name = $1, description = $2, config = $3, updated_at = now() WHERE id = $4 RETURNING *',
         [
           name ?? row.name,
           description ?? row.description,
@@ -432,7 +432,7 @@ app.put('/api/configs/:id', requireAuth, async (req, res) => {
 // DELETE /api/configs/:id (protected)
 app.delete('/api/configs/:id', requireAuth, async (req, res) => {
   try {
-    const result = await pool.query('DELETE FROM map_configs WHERE id = $1 RETURNING id', [
+    const result = await pool.query('DELETE FROM map_admin.map_configs WHERE id = $1 RETURNING id', [
       req.params.id,
     ]);
     if (result.rows.length === 0) {
@@ -449,7 +449,7 @@ app.delete('/api/configs/:id', requireAuth, async (req, res) => {
 app.post('/api/configs/:id/publish', requireAuth, async (req, res) => {
   try {
     const configResult = await pool.query(
-      'SELECT name FROM map_configs WHERE id = $1',
+      'SELECT name FROM map_admin.map_configs WHERE id = $1',
       [req.params.id],
     );
     if (configResult.rows.length === 0) {
@@ -460,7 +460,7 @@ app.post('/api/configs/:id/publish', requireAuth, async (req, res) => {
 
     // Check for name conflict among published configs
     const conflict = await pool.query(
-      'SELECT id FROM map_configs WHERE name = $1 AND is_published = true AND id != $2',
+      'SELECT id FROM map_admin.map_configs WHERE name = $1 AND is_published = true AND id != $2',
       [name, req.params.id],
     );
     if (conflict.rows.length > 0) {
@@ -469,7 +469,7 @@ app.post('/api/configs/:id/publish', requireAuth, async (req, res) => {
     }
 
     const result = await pool.query(
-      'UPDATE map_configs SET is_published = true, updated_at = now() WHERE id = $1 RETURNING *',
+      'UPDATE map_admin.map_configs SET is_published = true, updated_at = now() WHERE id = $1 RETURNING *',
       [req.params.id],
     );
     res.json(result.rows[0]);
@@ -482,7 +482,7 @@ app.post('/api/configs/:id/publish', requireAuth, async (req, res) => {
 app.post('/api/configs/:id/unpublish', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
-      'UPDATE map_configs SET is_published = false, is_default = false, updated_at = now() WHERE id = $1 RETURNING *',
+      'UPDATE map_admin.map_configs SET is_published = false, is_default = false, updated_at = now() WHERE id = $1 RETURNING *',
       [req.params.id],
     );
     if (result.rows.length === 0) {
@@ -499,7 +499,7 @@ app.post('/api/configs/:id/unpublish', requireAuth, async (req, res) => {
 app.post('/api/configs/:id/set-default', requireAuth, async (req, res) => {
   try {
     const configResult = await pool.query(
-      'SELECT id, is_published FROM map_configs WHERE id = $1',
+      'SELECT id, is_published FROM map_admin.map_configs WHERE id = $1',
       [req.params.id],
     );
     if (configResult.rows.length === 0) {
@@ -517,11 +517,11 @@ app.post('/api/configs/:id/set-default', requireAuth, async (req, res) => {
       await client.query('BEGIN');
       // Unset any existing default
       await client.query(
-        'UPDATE map_configs SET is_default = false, updated_at = now() WHERE is_default = true',
+        'UPDATE map_admin.map_configs SET is_default = false, updated_at = now() WHERE is_default = true',
       );
       // Set the new default
       const result = await client.query(
-        'UPDATE map_configs SET is_default = true, updated_at = now() WHERE id = $1 RETURNING *',
+        'UPDATE map_admin.map_configs SET is_default = true, updated_at = now() WHERE id = $1 RETURNING *',
         [req.params.id],
       );
       await client.query('COMMIT');
@@ -541,7 +541,7 @@ app.post('/api/configs/:id/set-default', requireAuth, async (req, res) => {
 app.post('/api/configs/:id/unset-default', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
-      'UPDATE map_configs SET is_default = false, updated_at = now() WHERE id = $1 RETURNING *',
+      'UPDATE map_admin.map_configs SET is_default = false, updated_at = now() WHERE id = $1 RETURNING *',
       [req.params.id],
     );
     if (result.rows.length === 0) {
@@ -559,7 +559,7 @@ app.get('/api/configs/:id/versions', async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT id, version_number, name, created_by, created_at
-       FROM config_versions WHERE config_id = $1
+       FROM map_admin.config_versions WHERE config_id = $1
        ORDER BY version_number DESC`,
       [req.params.id],
     );
@@ -573,7 +573,7 @@ app.get('/api/configs/:id/versions', async (req, res) => {
 app.get('/api/configs/:id/versions/:versionId', async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT * FROM config_versions WHERE id = $1 AND config_id = $2',
+      'SELECT * FROM map_admin.config_versions WHERE id = $1 AND config_id = $2',
       [req.params.versionId, req.params.id],
     );
     if (result.rows.length === 0) {
@@ -589,7 +589,7 @@ app.get('/api/configs/:id/versions/:versionId', async (req, res) => {
 // POST /api/configs/:id/restore/:versionId — restore a version (protected)
 app.post('/api/configs/:id/restore/:versionId', requireAuth, async (req, res) => {
   try {
-    const configResult = await pool.query('SELECT * FROM map_configs WHERE id = $1', [
+    const configResult = await pool.query('SELECT * FROM map_admin.map_configs WHERE id = $1', [
       req.params.id,
     ]);
     if (configResult.rows.length === 0) {
@@ -598,7 +598,7 @@ app.post('/api/configs/:id/restore/:versionId', requireAuth, async (req, res) =>
     }
 
     const versionResult = await pool.query(
-      'SELECT * FROM config_versions WHERE id = $1 AND config_id = $2',
+      'SELECT * FROM map_admin.config_versions WHERE id = $1 AND config_id = $2',
       [req.params.versionId, req.params.id],
     );
     if (versionResult.rows.length === 0) {
@@ -623,12 +623,12 @@ app.post('/api/configs/:id/restore/:versionId', requireAuth, async (req, res) =>
       await client.query('BEGIN');
       // Snapshot current state before overwriting
       const versionCountResult = await client.query(
-        'SELECT COALESCE(MAX(version_number), 0) + 1 AS next_version FROM config_versions WHERE config_id = $1',
+        'SELECT COALESCE(MAX(version_number), 0) + 1 AS next_version FROM map_admin.config_versions WHERE config_id = $1',
         [req.params.id],
       );
       const nextVersion = (versionCountResult.rows[0] as { next_version: number }).next_version;
       await client.query(
-        `INSERT INTO config_versions (config_id, version_number, name, description, config, created_by)
+        `INSERT INTO map_admin.config_versions (config_id, version_number, name, description, config, created_by)
          VALUES ($1, $2, $3, $4, $5, $6)`,
         [
           req.params.id,
@@ -641,7 +641,7 @@ app.post('/api/configs/:id/restore/:versionId', requireAuth, async (req, res) =>
       );
       // Restore version data
       result = await client.query(
-        'UPDATE map_configs SET name = $1, description = $2, config = $3, updated_at = now() WHERE id = $4 RETURNING *',
+        'UPDATE map_admin.map_configs SET name = $1, description = $2, config = $3, updated_at = now() WHERE id = $4 RETURNING *',
         [version.name, version.description, JSON.stringify(version.config), req.params.id],
       );
       await client.query('COMMIT');
@@ -665,7 +665,7 @@ const SOURCE_ID_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 app.get('/api/sources', async (_req, res) => {
   try {
     const result = await pool.query(
-      'SELECT * FROM ogc_sources ORDER BY updated_at DESC',
+      'SELECT * FROM map_admin.ogc_sources ORDER BY updated_at DESC',
     );
     res.json(result.rows);
   } catch (err) {
@@ -676,7 +676,7 @@ app.get('/api/sources', async (_req, res) => {
 // GET /api/sources/:id — get single source by UUID
 app.get('/api/sources/:id', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM ogc_sources WHERE id = $1', [req.params.id]);
+    const result = await pool.query('SELECT * FROM map_admin.ogc_sources WHERE id = $1', [req.params.id]);
     if (result.rows.length === 0) {
       res.status(404).json({ error: 'Source not found' });
       return;
@@ -690,14 +690,14 @@ app.get('/api/sources/:id', async (req, res) => {
 // GET /api/sources/:id/usage — list configs using this source
 app.get('/api/sources/:id/usage', async (req, res) => {
   try {
-    const sourceResult = await pool.query('SELECT source_id FROM ogc_sources WHERE id = $1', [req.params.id]);
+    const sourceResult = await pool.query('SELECT source_id FROM map_admin.ogc_sources WHERE id = $1', [req.params.id]);
     if (sourceResult.rows.length === 0) {
       res.status(404).json({ error: 'Source not found' });
       return;
     }
     const sourceId = (sourceResult.rows[0] as { source_id: string }).source_id;
     const result = await pool.query(
-      `SELECT id, name FROM map_configs
+      `SELECT id, name FROM map_admin.map_configs
        WHERE EXISTS (
          SELECT 1 FROM jsonb_array_elements(config->'sources') AS s
          WHERE s->>'id' = $1
@@ -797,7 +797,7 @@ app.post('/api/sources', requireAuth, async (req, res) => {
     // a basemap row with a placeholder URL and update it with the synthesized URL.
     if (isImageryBasemap) {
       const imageryResult = await pool.query(
-        "SELECT id, source_type FROM ogc_sources WHERE id = $1",
+        "SELECT id, source_type FROM map_admin.ogc_sources WHERE id = $1",
         [imagery_source_id],
       );
       if (imageryResult.rows.length === 0) {
@@ -814,14 +814,14 @@ app.post('/api/sources', requireAuth, async (req, res) => {
       if (thumbnail) basemapMeta.thumbnail = thumbnail;
 
       const inserted = await pool.query(
-        `INSERT INTO ogc_sources (source_id, url, label, source_type, metadata, metadata_updated_at)
+        `INSERT INTO map_admin.ogc_sources (source_id, url, label, source_type, metadata, metadata_updated_at)
          VALUES ($1, $2, $3, 'basemap', $4, now()) RETURNING id`,
         [source_id, '', label ?? null, JSON.stringify(basemapMeta)],
       );
       const newId = (inserted.rows[0] as { id: string }).id;
       const synthesizedUrl = `/api/basemaps/${newId}/style.json`;
       const updated = await pool.query(
-        'UPDATE ogc_sources SET url = $1, updated_at = now() WHERE id = $2 RETURNING *',
+        'UPDATE map_admin.ogc_sources SET url = $1, updated_at = now() WHERE id = $2 RETURNING *',
         [synthesizedUrl, newId],
       );
       res.status(201).json(updated.rows[0]);
@@ -834,7 +834,7 @@ app.post('/api/sources', requireAuth, async (req, res) => {
       : (effectiveType === 'basemap' ? null : undefined);
 
     const result = await pool.query(
-      `INSERT INTO ogc_sources (source_id, url, label, tile_matrix_set_id, source_type, auth, proxy${basemapMetadata !== undefined ? ', metadata, metadata_updated_at' : ''})
+      `INSERT INTO map_admin.ogc_sources (source_id, url, label, tile_matrix_set_id, source_type, auth, proxy${basemapMetadata !== undefined ? ', metadata, metadata_updated_at' : ''})
        VALUES ($1, $2, $3, $4, $5, $6, $7${basemapMetadata !== undefined ? ', $8, now()' : ''}) RETURNING *`,
       [
         source_id, url, label ?? null, tile_matrix_set_id ?? 'WebMercatorQuad', effectiveType,
@@ -851,7 +851,7 @@ app.post('/api/sources', requireAuth, async (req, res) => {
     } else if (metadata) {
       // Client provided metadata (client-side inspection) — save directly
       const updated = await pool.query(
-        'UPDATE ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
+        'UPDATE map_admin.ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
         [JSON.stringify(metadata), row.id],
       );
       res.status(201).json(updated.rows[0]);
@@ -862,7 +862,7 @@ app.post('/api/sources', requireAuth, async (req, res) => {
       try {
         const inspected = await inspectSource(url!);
         const updated = await pool.query(
-          'UPDATE ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
+          'UPDATE map_admin.ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
           [JSON.stringify(inspected), row.id],
         );
         res.status(201).json(updated.rows[0]);
@@ -895,7 +895,7 @@ app.put('/api/sources/:id', requireAuth, async (req, res) => {
   }
 
   try {
-    const existing = await pool.query('SELECT * FROM ogc_sources WHERE id = $1', [req.params.id]);
+    const existing = await pool.query('SELECT * FROM map_admin.ogc_sources WHERE id = $1', [req.params.id]);
     if (existing.rows.length === 0) {
       res.status(404).json({ error: 'Source not found' });
       return;
@@ -919,7 +919,7 @@ app.put('/api/sources/:id', requireAuth, async (req, res) => {
     if (effectiveType === 'basemap' && imagery_source_id !== undefined) {
       if (imagery_source_id !== null) {
         const imageryResult = await pool.query(
-          "SELECT id, source_type FROM ogc_sources WHERE id = $1",
+          "SELECT id, source_type FROM map_admin.ogc_sources WHERE id = $1",
           [imagery_source_id],
         );
         if (imageryResult.rows.length === 0) {
@@ -938,7 +938,7 @@ app.put('/api/sources/:id', requireAuth, async (req, res) => {
         }
         const synthesizedUrl = `/api/basemaps/${req.params.id}/style.json`;
         const updated = await pool.query(
-          `UPDATE ogc_sources
+          `UPDATE map_admin.ogc_sources
              SET source_id = $1, label = $2, url = $3, source_type = 'basemap',
                  metadata = $4, metadata_updated_at = now(), updated_at = now()
              WHERE id = $5 RETURNING *`,
@@ -960,7 +960,7 @@ app.put('/api/sources/:id', requireAuth, async (req, res) => {
     const newUrl = url ?? row.url;
 
     const result = await pool.query(
-      `UPDATE ogc_sources SET source_id = $1, url = $2, label = $3, tile_matrix_set_id = $4, source_type = $5, auth = $6, proxy = $7, updated_at = now()
+      `UPDATE map_admin.ogc_sources SET source_id = $1, url = $2, label = $3, tile_matrix_set_id = $4, source_type = $5, auth = $6, proxy = $7, updated_at = now()
        WHERE id = $8 RETURNING *`,
       [
         source_id ?? row.source_id,
@@ -979,7 +979,7 @@ app.put('/api/sources/:id', requireAuth, async (req, res) => {
       if (thumbnail !== undefined) {
         const meta = thumbnail ? { thumbnail } : null;
         const updated = await pool.query(
-          'UPDATE ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
+          'UPDATE map_admin.ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
           [meta ? JSON.stringify(meta) : null, req.params.id],
         );
         res.json(updated.rows[0]);
@@ -994,7 +994,7 @@ app.put('/api/sources/:id', requireAuth, async (req, res) => {
       if (metadata) {
         // Client provided metadata — save directly
         const updated = await pool.query(
-          'UPDATE ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
+          'UPDATE map_admin.ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
           [JSON.stringify(metadata), req.params.id],
         );
         res.json(updated.rows[0]);
@@ -1004,7 +1004,7 @@ app.put('/api/sources/:id', requireAuth, async (req, res) => {
       try {
         const inspected = await inspectSource(newUrl);
         const updated = await pool.query(
-          'UPDATE ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
+          'UPDATE map_admin.ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
           [JSON.stringify(inspected), req.params.id],
         );
         res.json(updated.rows[0]);
@@ -1032,7 +1032,7 @@ app.put('/api/sources/:id/metadata', requireAuth, async (req, res) => {
   }
   try {
     const result = await pool.query(
-      'UPDATE ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
+      'UPDATE map_admin.ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
       [JSON.stringify(metadata), req.params.id],
     );
     if (result.rows.length === 0) {
@@ -1048,7 +1048,7 @@ app.put('/api/sources/:id/metadata', requireAuth, async (req, res) => {
 // DELETE /api/sources/:id — delete a source (protected)
 app.delete('/api/sources/:id', requireAuth, async (req, res) => {
   try {
-    const sourceResult = await pool.query('SELECT source_id FROM ogc_sources WHERE id = $1', [req.params.id]);
+    const sourceResult = await pool.query('SELECT source_id FROM map_admin.ogc_sources WHERE id = $1', [req.params.id]);
     if (sourceResult.rows.length === 0) {
       res.status(404).json({ error: 'Source not found' });
       return;
@@ -1058,7 +1058,7 @@ app.delete('/api/sources/:id', requireAuth, async (req, res) => {
     // Check usage unless force=true
     if (req.query.force !== 'true') {
       const usage = await pool.query(
-        `SELECT id, name FROM map_configs
+        `SELECT id, name FROM map_admin.map_configs
          WHERE EXISTS (
            SELECT 1 FROM jsonb_array_elements(config->'sources') AS s
            WHERE s->>'id' = $1
@@ -1075,7 +1075,7 @@ app.delete('/api/sources/:id', requireAuth, async (req, res) => {
       }
     }
 
-    await pool.query('DELETE FROM ogc_sources WHERE id = $1', [req.params.id]);
+    await pool.query('DELETE FROM map_admin.ogc_sources WHERE id = $1', [req.params.id]);
     res.json({ deleted: req.params.id });
   } catch (err) {
     handleServerError(res, err);
@@ -1085,7 +1085,7 @@ app.delete('/api/sources/:id', requireAuth, async (req, res) => {
 // POST /api/sources/:id/inspect — refresh metadata for a source (protected)
 app.post('/api/sources/:id/inspect', requireAuth, async (req, res) => {
   try {
-    const sourceResult = await pool.query('SELECT url FROM ogc_sources WHERE id = $1', [req.params.id]);
+    const sourceResult = await pool.query('SELECT url FROM map_admin.ogc_sources WHERE id = $1', [req.params.id]);
     if (sourceResult.rows.length === 0) {
       res.status(404).json({ error: 'Source not found' });
       return;
@@ -1094,7 +1094,7 @@ app.post('/api/sources/:id/inspect', requireAuth, async (req, res) => {
 
     const metadata = await inspectSource(url);
     const result = await pool.query(
-      'UPDATE ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
+      'UPDATE map_admin.ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
       [JSON.stringify(metadata), req.params.id],
     );
     res.json(result.rows[0]);
@@ -1107,7 +1107,7 @@ app.post('/api/sources/:id/inspect', requireAuth, async (req, res) => {
 app.post('/api/sources/import', requireAuth, async (_req, res) => {
   try {
     const configsResult = await pool.query(
-      "SELECT config->'sources' AS sources, config->'imageryLayers' AS imagery_layers, config->'basemaps' AS basemaps FROM map_configs WHERE config IS NOT NULL",
+      "SELECT config->'sources' AS sources, config->'imageryLayers' AS imagery_layers, config->'basemaps' AS basemaps FROM map_admin.map_configs WHERE config IS NOT NULL",
     );
 
     // Single-pass collection of sources, imagery refs, and basemaps
@@ -1168,11 +1168,11 @@ app.post('/api/sources/import', requireAuth, async (_req, res) => {
         s.type ?? 'features', s.auth ? JSON.stringify(s.auth) : null,
       ]);
       const result = await pool.query(
-        `INSERT INTO ogc_sources (source_id, url, label, tile_matrix_set_id, source_type, auth)
+        `INSERT INTO map_admin.ogc_sources (source_id, url, label, tile_matrix_set_id, source_type, auth)
          VALUES ${placeholders}
          ON CONFLICT (source_id) DO UPDATE SET
            source_type = EXCLUDED.source_type,
-           auth = COALESCE(EXCLUDED.auth, ogc_sources.auth)
+           auth = COALESCE(EXCLUDED.auth, map_admin.ogc_sources.auth)
          RETURNING source_type`,
         params,
       );
@@ -1194,11 +1194,11 @@ app.post('/api/sources/import', requireAuth, async (_req, res) => {
         b.thumbnail ? JSON.stringify({ thumbnail: b.thumbnail }) : null,
       ]);
       const result = await pool.query(
-        `INSERT INTO ogc_sources (source_id, url, label, source_type, metadata)
+        `INSERT INTO map_admin.ogc_sources (source_id, url, label, source_type, metadata)
          VALUES ${placeholders}
          ON CONFLICT (source_id) DO UPDATE SET
            source_type = EXCLUDED.source_type,
-           metadata = COALESCE(EXCLUDED.metadata, ogc_sources.metadata)`,
+           metadata = COALESCE(EXCLUDED.metadata, map_admin.ogc_sources.metadata)`,
         params,
       );
       importedBasemaps = result.rowCount ?? 0;
@@ -1287,8 +1287,8 @@ async function resolveBasemapImageryLink(basemapId: string): Promise<BasemapImag
             i.url AS imagery_url,
             i.auth AS imagery_auth,
             i.metadata AS imagery_metadata
-     FROM ogc_sources b
-     LEFT JOIN ogc_sources i
+     FROM map_admin.ogc_sources b
+     LEFT JOIN map_admin.ogc_sources i
        ON i.id = (b.metadata->>'imagerySourceId')::uuid
      WHERE b.id = $1 AND b.source_type = 'basemap'`,
     [basemapId],
@@ -1435,7 +1435,7 @@ const HEX_COLOR_REGEX = /^#[0-9a-fA-F]{6}$/;
 // GET /api/settings — public (needed before login for favicon/title)
 app.get('/api/settings', async (_req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM site_settings WHERE id = 1');
+    const result = await pool.query('SELECT * FROM map_admin.site_settings WHERE id = 1');
     if (result.rows.length === 0) {
       res.json({
         header_title: 'Map Config Admin',
@@ -1510,7 +1510,7 @@ app.put('/api/settings', requireAuth, async (req, res) => {
 
     fields.push('updated_at = now()');
     const result = await pool.query(
-      `UPDATE site_settings SET ${fields.join(', ')} WHERE id = 1 RETURNING *`,
+      `UPDATE map_admin.site_settings SET ${fields.join(', ')} WHERE id = 1 RETURNING *`,
       values,
     );
     res.json(result.rows[0]);
@@ -1556,7 +1556,7 @@ async function resolveProxySource(sourceId: string): Promise<ProxySourceData | n
   }
 
   const result = await pool.query(
-    'SELECT url, auth, proxy FROM ogc_sources WHERE source_id = $1',
+    'SELECT url, auth, proxy FROM map_admin.ogc_sources WHERE source_id = $1',
     [sourceId],
   );
   if (result.rows.length === 0) return null;
