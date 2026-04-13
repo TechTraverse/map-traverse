@@ -108,6 +108,7 @@ export const useMapStore = create<MapState>((set) => ({
     showScaleBar: false,
     coordinateFormat: 'decimal-degrees',
     controlLayout: 'individual',
+    sideMenuToggleCorner: 'top-right',
   },
   branding: undefined,
   info: undefined,

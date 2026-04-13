@@ -230,6 +230,7 @@ export const mapConfig: MapConfig = {
     showScaleBar: false,
     coordinateFormat: 'decimal-degrees',
     controlLayout: 'individual',
+    sideMenuToggleCorner: 'top-right',
   },
   initialView: {
     latitude: 0,

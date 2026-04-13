@@ -47,7 +47,8 @@ import {
   getControlIcon,
   formatDecimal,
   formatDMS,
-  resolveControlOrder,
+  groupControlsByCorner,
+  resolveControlCorner,
   type SideMenuPanelItem,
 } from '@ogc-maps/storybook-components';
 import type { CoordinateFormatOption, ExportRequest, ResultsDrawerTab } from '@ogc-maps/storybook-components';
@@ -62,6 +63,7 @@ import type {
   UIConfig,
   ExportableLayer,
   OrderableControlKey,
+  ControlCorner,
   InfoConfig,
 } from '@ogc-maps/storybook-components';
 import type { SearchFilterValue, SearchFilterValues, Cql2FilterConfig, InfoPosition } from '@ogc-maps/storybook-components/types';
@@ -87,6 +89,20 @@ const INFO_CORNER_CLASSES: Record<InfoPosition, string> = {
   'top-left': 'mapui:absolute mapui:top-4 mapui:left-4 mapui:pointer-events-auto mapui:z-10',
   'bottom-right': 'mapui:absolute mapui:bottom-4 mapui:right-4 mapui:pointer-events-auto mapui:z-10',
   'bottom-left': 'mapui:absolute mapui:bottom-4 mapui:left-4 mapui:pointer-events-auto mapui:z-10',
+};
+
+const CORNER_CLASSES: Record<ControlCorner, string> = {
+  'top-right': 'mapui:absolute mapui:top-4 mapui:right-4 mapui:flex mapui:flex-col mapui:gap-4 mapui:items-end',
+  'top-left': 'mapui:absolute mapui:top-4 mapui:left-4 mapui:flex mapui:flex-col mapui:gap-4 mapui:items-start',
+  'bottom-right': 'mapui:absolute mapui:bottom-4 mapui:right-4 mapui:flex mapui:flex-col mapui:gap-4 mapui:items-end',
+  'bottom-left': 'mapui:absolute mapui:bottom-4 mapui:left-4 mapui:flex mapui:flex-col mapui:gap-4 mapui:items-start',
+};
+
+const CORNER_POSITION_CLASSES: Record<ControlCorner, string> = {
+  'top-right': 'mapui:absolute mapui:top-4 mapui:right-4',
+  'top-left': 'mapui:absolute mapui:top-4 mapui:left-4',
+  'bottom-right': 'mapui:absolute mapui:bottom-4 mapui:right-4',
+  'bottom-left': 'mapui:absolute mapui:bottom-4 mapui:left-4',
 };
 
 function PreviewVectorTileLayer({
@@ -1225,7 +1241,7 @@ export function MapPreview({
             }
             return (
               <>
-                <div className="mapui:absolute mapui:top-4 mapui:right-4 mapui:flex mapui:flex-col mapui:gap-4 mapui:items-end mapui:pointer-events-auto">
+                <div className={`${CORNER_CLASSES[uiConfig.sideMenuToggleCorner ?? 'top-right']} mapui:pointer-events-auto`}>
                   <SideMenuToggle onClick={() => setSideMenuOpen(true)} label="Open menu" />
                   {uiConfig.showCompass && (
                     <CompassControl
@@ -1238,7 +1254,7 @@ export function MapPreview({
                   )}
                 </div>
                 {uiConfig.showLegend && (
-                  <div className="mapui:absolute mapui:top-4 mapui:left-4 mapui:pointer-events-auto">
+                  <div className={`${CORNER_POSITION_CLASSES[resolveControlCorner(uiConfig, 'showLegend')]} mapui:pointer-events-auto`}>
                     <Legend
                       layers={layersWithDefaults}
                       visibleLayerIds={visibleLayerIds}
@@ -1255,10 +1271,8 @@ export function MapPreview({
             );
           })()}
 
-          {/* Top-right: Legend and controls stacked vertically, order driven by config */}
-          {effectiveLayout === 'individual' && (
-          <div className="mapui:absolute mapui:top-4 mapui:right-4 mapui:flex mapui:flex-col mapui:gap-4 mapui:items-end">
-            {(() => {
+          {/* Controls positioned by corner, order driven by config */}
+          {effectiveLayout === 'individual' && (() => {
               const controlNodes: Record<OrderableControlKey, React.ReactNode> = {
                 showLegend: uiConfig.showLegend ? (
                   <div className="mapui:pointer-events-auto">
@@ -1450,13 +1464,23 @@ export function MapPreview({
                 ) : null,
               };
 
-              return resolveControlOrder(uiConfig).map((key) => {
-                const node = controlNodes[key];
-                return node ? <Fragment key={key}>{node}</Fragment> : null;
+              const grouped = groupControlsByCorner(uiConfig);
+              return (Object.keys(CORNER_CLASSES) as ControlCorner[]).map((corner) => {
+                const keys = grouped[corner];
+                const rendered = keys
+                  .map((key) => controlNodes[key])
+                  .filter((node): node is React.ReactNode => node != null);
+                if (rendered.length === 0) return null;
+                return (
+                  <div key={corner} className={CORNER_CLASSES[corner]}>
+                    {keys.map((key) => {
+                      const node = controlNodes[key];
+                      return node ? <Fragment key={key}>{node}</Fragment> : null;
+                    })}
+                  </div>
+                );
               });
-            })()}
-          </div>
-          )}
+          })()}
 
           {/* Export modal */}
           <div className="mapui:pointer-events-auto">
