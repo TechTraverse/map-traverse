@@ -50,6 +50,20 @@ const INFO_CORNER_CLASSES: Record<InfoPosition, string> = {
   'bottom-left': 'absolute bottom-4 left-4 pointer-events-auto',
 };
 
+const CORNER_CLASSES: Record<ControlCorner, string> = {
+  'top-right': 'absolute top-4 right-4 flex flex-col gap-4 items-end',
+  'top-left': 'absolute top-4 left-4 flex flex-col gap-4 items-start',
+  'bottom-right': 'absolute bottom-4 right-4 flex flex-col gap-4 items-end',
+  'bottom-left': 'absolute bottom-4 left-4 flex flex-col gap-4 items-start',
+};
+
+const CORNER_POSITION_CLASSES: Record<ControlCorner, string> = {
+  'top-right': 'absolute top-4 right-4',
+  'top-left': 'absolute top-4 left-4',
+  'bottom-right': 'absolute bottom-4 right-4',
+  'bottom-left': 'absolute bottom-4 left-4',
+};
+
 interface MapOverlayProps {
   uiConfig: UIConfig;
   mouseCoords: { latitude: number; longitude: number } | null;
@@ -475,13 +489,6 @@ export function MapOverlay({
         const iconFor = (k: OrderableControlKey, fallback: typeof LuSearch) =>
           getControlIcon(uiConfig.controlIcons?.[k], fallback);
 
-        const cornerClasses: Record<ControlCorner, string> = {
-          'top-right': 'absolute top-4 right-4 flex flex-col gap-4 items-end',
-          'top-left': 'absolute top-4 left-4 flex flex-col gap-4 items-start',
-          'bottom-right': 'absolute bottom-4 right-4 flex flex-col gap-4 items-end',
-          'bottom-left': 'absolute bottom-4 left-4 flex flex-col gap-4 items-start',
-        };
-
         if (effectiveLayout === 'side-menu') {
           const items: SideMenuPanelItem[] = [];
           if (searchInner) items.push({ key: 'search', label: 'Search', icon: iconFor('showSearchPanel', LuSearch), content: searchInner });
@@ -505,7 +512,7 @@ export function MapOverlay({
                 )}
               </div>
               {legendInner && (
-                <div className={`${cornerClasses[resolveControlCorner(uiConfig, 'showLegend')]} pointer-events-auto`} ref={legendContainerRef}>
+                <div className={`${CORNER_POSITION_CLASSES[resolveControlCorner(uiConfig, 'showLegend')]} pointer-events-auto`} ref={legendContainerRef}>
                   {legendInner}
                 </div>
               )}
@@ -632,14 +639,14 @@ export function MapOverlay({
         };
 
         const grouped = groupControlsByCorner(uiConfig);
-        return (Object.keys(cornerClasses) as ControlCorner[]).map((corner) => {
+        return (Object.keys(CORNER_CLASSES) as ControlCorner[]).map((corner) => {
           const keys = grouped[corner];
           const rendered = keys
             .map((key) => controlNodes[key])
             .filter((node): node is React.ReactNode => node != null);
           if (rendered.length === 0) return null;
           return (
-            <div key={corner} className={cornerClasses[corner]}>
+            <div key={corner} className={CORNER_CLASSES[corner]}>
               {keys.map((key) => {
                 const node = controlNodes[key];
                 return node ? <Fragment key={key}>{node}</Fragment> : null;
