@@ -130,7 +130,11 @@ export function GlobalSearchConfigEditor({
 
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-4">
-      <div className="mapui:flex mapui:flex-col mapui:gap-3">
+      <p className="mapui:text-sm mapui:text-gray-500">
+        Configure the global search bar that searches across layer properties. Add layers and pick which properties to index.
+      </p>
+      <fieldset className="mapui:flex mapui:flex-col mapui:gap-3 mapui:rounded mapui:border mapui:border-gray-200 mapui:p-3">
+        <legend className="mapui:px-1 mapui:text-sm mapui:font-semibold mapui:text-gray-700">Settings</legend>
         <FormField label="Placeholder">
           <input
             type="text"
@@ -177,7 +181,7 @@ export function GlobalSearchConfigEditor({
             />
           </FormField>
         </div>
-      </div>
+      </fieldset>
 
       <div className="mapui:flex mapui:flex-col mapui:gap-3">
         <div className="mapui:flex mapui:items-center mapui:justify-between">
