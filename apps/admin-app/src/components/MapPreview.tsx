@@ -18,8 +18,11 @@ import {
   buildGeometryFilter,
   buildCql2Query,
   combineGeometries,
+  propertyFiltersToCql2,
+  and,
 } from '@ogc-maps/storybook-components/utils';
 import type { CQL2Expression } from '@ogc-maps/storybook-components/utils';
+import type { PropertyFilter } from '@ogc-maps/storybook-components/utils';
 import {
   Legend,
   LayerPanel,
@@ -69,6 +72,7 @@ import { resolveEffectiveLayout } from './mapPreviewLayout';
 import { TbSatellite } from 'react-icons/tb';
 import { useBoxDraw } from '../hooks/useBoxDraw';
 import { usePolygonDraw } from '../hooks/usePolygonDraw';
+import { useQueryablesByLayer } from '../hooks/useQueryablesByLayer';
 import { exportConverters } from '@ogc-maps/storybook-components/utils';
 
 const coordinateFormats: CoordinateFormatOption[] = [
@@ -235,6 +239,8 @@ export function MapPreview({
   );
   const [activeFilters, setActiveFilters] = useState<Record<string, SearchFilterValues>>({});
   const [activeCql2Filters, setActiveCql2Filters] = useState<Record<string, CQL2Expression | undefined>>({});
+  const [propertyFilters, setPropertyFilters] = useState<PropertyFilter[]>([]);
+  const [searchExpanded, setSearchExpanded] = useState(false);
   const [mouseCoords, setMouseCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [coordFormat, setCoordFormat] = useState<string>('decimal');
   const [selectedFeatures, setSelectedFeatures] = useState<{
@@ -265,6 +271,7 @@ export function MapPreview({
   }, []);
   const effectiveLayout = resolveEffectiveLayout(uiConfig?.controlLayout, isNarrowViewport);
   const [cursor, setCursor] = useState<string>('auto');
+  const { queryablesByLayer } = useQueryablesByLayer(layers, sources);
   const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<Record<string, string[]>>({});
   const prefetchedRef = useRef<Set<string>>(new Set());
   const debounceTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
@@ -591,16 +598,36 @@ export function MapPreview({
         const updated: SearchFilterValues = { ...current, [property]: value };
         const layer = layers.find(l => l.id === layerId);
         const fields = layer?.search?.fields ?? [];
-        const newCql2 = fromStructuredFilters(updated, fields);
-        setActiveCql2Filters(cql2Prev => ({ ...cql2Prev, [layerId]: newCql2 ?? undefined }));
+        const structuredCql2 = fromStructuredFilters(updated, fields);
+        const customCql2 = propertyFiltersToCql2(propertyFilters, layerId);
+        setActiveCql2Filters(cql2Prev => ({ ...cql2Prev, [layerId]: and(structuredCql2, customCql2) ?? undefined }));
         return { ...prev, [layerId]: updated };
       });
     },
-    [layers],
+    [layers, propertyFilters],
+  );
+
+  const handlePropertyFiltersChange = useCallback(
+    (filters: PropertyFilter[]) => {
+      setPropertyFilters(filters);
+      const touched = new Set<string>();
+      for (const f of filters) touched.add(f.layerId);
+      for (const f of propertyFilters) touched.add(f.layerId);
+      for (const layerId of touched) {
+        const structured = activeFilters[layerId] ?? {};
+        const layer = layers.find(l => l.id === layerId);
+        const fields = layer?.search?.fields ?? [];
+        const structuredCql2 = fromStructuredFilters(structured, fields);
+        const customCql2 = propertyFiltersToCql2(filters, layerId);
+        setActiveCql2Filters(prev => ({ ...prev, [layerId]: and(structuredCql2, customCql2) ?? undefined }));
+      }
+    },
+    [propertyFilters, activeFilters, layers],
   );
 
   const handleClearLayerFilters = useCallback((layerId: string) => {
     setActiveFilters(prev => { const next = { ...prev }; delete next[layerId]; return next; });
+    setPropertyFilters(prev => prev.filter(f => f.layerId !== layerId));
     setActiveCql2Filters(prev => { const next = { ...prev }; delete next[layerId]; return next; });
   }, []);
 
@@ -1071,6 +1098,7 @@ export function MapPreview({
                     onZoomToFeature={handleZoomToFeature}
                     autocompleteSuggestions={autocompleteSuggestions}
                     onFetchSuggestions={fetchSuggestions}
+                    availableProperties={queryablesByLayer}
                     className="p-3 max-w-xs"
                     hideTitle
                   />
@@ -1254,6 +1282,12 @@ export function MapPreview({
                         onZoomToFeature={handleZoomToFeature}
                         autocompleteSuggestions={autocompleteSuggestions}
                         onFetchSuggestions={fetchSuggestions}
+                        expandable
+                        expanded={searchExpanded}
+                        onExpandedChange={setSearchExpanded}
+                        availableProperties={queryablesByLayer}
+                        propertyFilters={propertyFilters}
+                        onPropertyFiltersChange={handlePropertyFiltersChange}
                         className="p-3 max-w-xs"
                         hideTitle
                       />
