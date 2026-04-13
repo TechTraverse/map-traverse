@@ -8,8 +8,10 @@ export interface SideMenuPanelItem {
   label: string;
   /** Icon component shown next to the label. */
   icon: React.ComponentType<{ size?: number; className?: string }>;
-  /** Expanded content — any React node. */
-  content: React.ReactNode;
+  /** Expanded content — any React node. Ignored when `onAction` is set. */
+  content?: React.ReactNode;
+  /** When set, the row becomes a direct-action button (no accordion, no chevron). */
+  onAction?: () => void;
 }
 
 export interface SideMenuPanelProps {
@@ -86,6 +88,24 @@ export function SideMenuPanel({
           <ul className="mapui:m-0 mapui:list-none mapui:p-0">
             {controls.map((item) => {
               const Icon = item.icon;
+
+              // Action item: plain button, no accordion
+              if (item.onAction) {
+                return (
+                  <li key={item.key} className="mapui:border-b mapui:border-gray-100">
+                    <button
+                      type="button"
+                      onClick={item.onAction}
+                      className="mapui:flex mapui:w-full mapui:cursor-pointer mapui:items-center mapui:gap-3 mapui:bg-white mapui:px-4 mapui:py-3 mapui:text-left mapui:text-sm mapui:font-medium mapui:text-gray-800 hover:mapui:bg-gray-50"
+                    >
+                      <Icon size={18} className="mapui:text-gray-600" />
+                      {item.label}
+                    </button>
+                  </li>
+                );
+              }
+
+              // Accordion item (existing behavior)
               const expanded = openSections.includes(item.key);
               return (
                 <li key={item.key} className="mapui:border-b mapui:border-gray-100">

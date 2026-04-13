@@ -490,7 +490,7 @@ export function MapOverlay({
           if (selectionInner) items.push({ key: 'selection', label: 'Select', icon: iconFor('showSelectionTool', LuMousePointer2), content: selectionInner });
           if (imageryInner) items.push({ key: 'imagery', label: 'Imagery', icon: iconFor('showImageryPanel', TbSatellite), content: imageryInner });
           if (basemapInner) items.push({ key: 'basemap', label: 'Basemap', icon: iconFor('showBasemapSwitcher', LuMap), content: basemapInner });
-          if (exportInner) items.push({ key: 'export', label: 'Export', icon: iconFor('showExportButton', LuDownload), content: exportInner });
+          if (uiConfig.showExportButton || uiConfig.showExportPdf) items.push({ key: 'export', label: 'Export', icon: iconFor('showExportButton', LuDownload), onAction: () => setExportModalOpen(true) });
           return (
             <>
               <div className="absolute top-4 right-4 flex flex-col gap-4 items-end pointer-events-auto">
