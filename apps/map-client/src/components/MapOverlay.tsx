@@ -36,7 +36,7 @@ import { useExport } from '@ogc-maps/storybook-components/hooks';
 import { DEFAULT_EXPORT_FORMATS, fromStructuredFilters, propertyFiltersToCql2, and, fetchFeatures, eq, exportConverters, zoomToFeature } from '@ogc-maps/storybook-components/utils';
 import type { GeoJsonFeature } from '@ogc-maps/storybook-components/utils';
 import type { UIConfig, SearchFilterValue, SearchFilterValues, OrderableControlKey, InfoPosition, ControlCorner } from '@ogc-maps/storybook-components/types';
-import { groupControlsByCorner } from '@ogc-maps/storybook-components';
+import { groupControlsByCorner, resolveControlCorner } from '@ogc-maps/storybook-components';
 import { useMapStore, useActiveLayerIds } from '../stores/mapStore';
 import { useAutocompleteSuggestions } from '../hooks/useAutocompleteSuggestions';
 import { useLayerQueryables } from '../hooks/useLayerQueryables';
@@ -475,6 +475,13 @@ export function MapOverlay({
         const iconFor = (k: OrderableControlKey, fallback: typeof LuSearch) =>
           getControlIcon(uiConfig.controlIcons?.[k], fallback);
 
+        const cornerClasses: Record<ControlCorner, string> = {
+          'top-right': 'absolute top-4 right-4 flex flex-col gap-4 items-end',
+          'top-left': 'absolute top-4 left-4 flex flex-col gap-4 items-start',
+          'bottom-right': 'absolute bottom-4 right-4 flex flex-col gap-4 items-end',
+          'bottom-left': 'absolute bottom-4 left-4 flex flex-col gap-4 items-start',
+        };
+
         if (effectiveLayout === 'side-menu') {
           const items: SideMenuPanelItem[] = [];
           if (searchInner) items.push({ key: 'search', label: 'Search', icon: iconFor('showSearchPanel', LuSearch), content: searchInner });
@@ -498,7 +505,7 @@ export function MapOverlay({
                 )}
               </div>
               {legendInner && (
-                <div className="absolute top-4 left-4 pointer-events-auto" ref={legendContainerRef}>
+                <div className={`${cornerClasses[resolveControlCorner(uiConfig, 'showLegend')]} pointer-events-auto`} ref={legendContainerRef}>
                   {legendInner}
                 </div>
               )}
@@ -622,13 +629,6 @@ export function MapOverlay({
               <InfoControl onClick={() => setInfoModalOpen(true)} title={info.title} />
             </div>
           ) : null,
-        };
-
-        const cornerClasses: Record<ControlCorner, string> = {
-          'top-right': 'absolute top-4 right-4 flex flex-col gap-4 items-end',
-          'top-left': 'absolute top-4 left-4 flex flex-col gap-4 items-start',
-          'bottom-right': 'absolute bottom-4 right-4 flex flex-col gap-4 items-end',
-          'bottom-left': 'absolute bottom-4 left-4 flex flex-col gap-4 items-start',
         };
 
         const grouped = groupControlsByCorner(uiConfig);
