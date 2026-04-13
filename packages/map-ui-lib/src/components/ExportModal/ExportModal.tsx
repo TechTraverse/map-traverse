@@ -22,6 +22,16 @@ export interface ExportRequest {
   mode: ExportMode;
 }
 
+export interface PdfExportOptions {
+  title: string;
+  filename: string;
+  includeLegend: boolean;
+  includeScaleBar: boolean;
+  includeNorthArrow: boolean;
+}
+
+const PDF_FORMAT_ID = '__pdf__';
+
 export interface ExportModalProps {
   open: boolean;
   layers: ExportableLayer[];
@@ -36,6 +46,12 @@ export interface ExportModalProps {
   error?: string | null;
   onExport: (request: ExportRequest) => void;
   onClose: () => void;
+  /** When true, a "PDF — Map snapshot" option appears in the format list. */
+  pdfAvailable?: boolean;
+  onPdfExport?: (options: PdfExportOptions) => void;
+  pdfLoading?: boolean;
+  pdfProgress?: string | null;
+  pdfError?: string | null;
 }
 
 export function ExportModal({
@@ -50,13 +66,30 @@ export function ExportModal({
   error,
   onExport,
   onClose,
+  pdfAvailable = false,
+  onPdfExport,
+  pdfLoading = false,
+  pdfProgress,
+  pdfError,
 }: ExportModalProps) {
   const [selectedLayerId, setSelectedLayerId] = useState<string>('');
   const [selectedFormatId, setSelectedFormatId] = useState<string>('');
   const [applyFilters, setApplyFilters] = useState(true);
   const [exportMode, setExportMode] = useState<ExportMode>('all');
 
+  // PDF-specific state
+  const [pdfTitle, setPdfTitle] = useState('Map Export');
+  const [pdfFilename, setPdfFilename] = useState('map.pdf');
+  const [includeLegend, setIncludeLegend] = useState(true);
+  const [includeScaleBar, setIncludeScaleBar] = useState(true);
+  const [includeNorthArrow, setIncludeNorthArrow] = useState(true);
+
+  const isPdf = selectedFormatId === PDF_FORMAT_ID;
   const hasSelection = selectionCount > 0;
+
+  const isLoading = isPdf ? pdfLoading : loading;
+  const activeProgress = isPdf ? pdfProgress : progress;
+  const activeError = isPdf ? pdfError : error;
 
   // Reset state when modal opens
   useEffect(() => {
@@ -72,6 +105,11 @@ export function ExportModal({
       setSelectedLayerId(initialLayerId);
       setSelectedFormatId(availableFormats.length > 0 ? availableFormats[0].id : '');
       setApplyFilters(true);
+      setPdfTitle('Map Export');
+      setPdfFilename('map.pdf');
+      setIncludeLegend(true);
+      setIncludeScaleBar(true);
+      setIncludeNorthArrow(true);
     }
   }, [open, layers, availableFormats, hasSelection, selectionLayerId]);
 
@@ -82,11 +120,26 @@ export function ExportModal({
   const selectedLayer = layers.find((l) => l.id === effectiveLayerId);
   const selectedFormat = availableFormats.find((f) => f.id === selectedFormatId);
   const showFilterToggle =
-    exportMode === 'all' && selectedLayer != null && hasActiveFilter(selectedLayer.id);
-  const canExport = selectedLayer != null && selectedFormat != null && !loading;
+    !isPdf && exportMode === 'all' && selectedLayer != null && hasActiveFilter(selectedLayer.id);
+  const canExportData = selectedLayer != null && selectedFormat != null && !isLoading;
+  const canExportPdf = isPdf && pdfTitle.trim().length > 0 && pdfFilename.trim().length > 0 && !isLoading;
+  const canExport = isPdf ? canExportPdf : canExportData;
   const layerLocked = exportMode === 'selected' && selectionLayerId != null;
 
   const handleExport = () => {
+    if (isPdf) {
+      if (!onPdfExport || !canExportPdf) return;
+      const sanitized = pdfFilename.replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').trim() || 'map';
+      const safeFilename = sanitized.toLowerCase().endsWith('.pdf') ? sanitized : `${sanitized}.pdf`;
+      onPdfExport({
+        title: pdfTitle.trim(),
+        filename: safeFilename,
+        includeLegend,
+        includeScaleBar,
+        includeNorthArrow,
+      });
+      return;
+    }
     if (!selectedLayer || !selectedFormat) return;
     onExport({
       layer: selectedLayer,
@@ -111,8 +164,8 @@ export function ExportModal({
           Export Data
         </h2>
 
-        {/* Export mode toggle — only shown when there is an active selection */}
-        {hasSelection && (
+        {/* Export mode toggle — only shown when there is an active selection and not PDF */}
+        {hasSelection && !isPdf && (
           <fieldset className="mapui:mb-4">
             <legend className="mapui:mb-1 mapui:text-sm mapui:font-medium mapui:text-gray-700">
               Source
@@ -153,36 +206,38 @@ export function ExportModal({
           </fieldset>
         )}
 
-        {/* Layer select */}
-        <div className="mapui:mb-4">
-          <label
-            htmlFor="export-layer-select"
-            className="mapui:mb-1 mapui:block mapui:text-sm mapui:font-medium mapui:text-gray-700"
-          >
-            Layer
-          </label>
-          {layerLocked || layers.length === 1 ? (
-            <div className="mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-gray-50 mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-gray-700">
-              {selectedLayer?.label ?? layers[0]?.label ?? '—'}
-            </div>
-          ) : (
-            <select
-              id="export-layer-select"
-              value={selectedLayerId}
-              onChange={(e) => setSelectedLayerId(e.target.value)}
-              className="mapui:w-full mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-gray-700"
+        {/* Layer select — hidden when PDF is selected */}
+        {!isPdf && (
+          <div className="mapui:mb-4">
+            <label
+              htmlFor="export-layer-select"
+              className="mapui:mb-1 mapui:block mapui:text-sm mapui:font-medium mapui:text-gray-700"
             >
-              <option value="" disabled>
-                Select a layer...
-              </option>
-              {layers.map((layer) => (
-                <option key={layer.id} value={layer.id}>
-                  {layer.label}
+              Layer
+            </label>
+            {layerLocked || layers.length === 1 ? (
+              <div className="mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-gray-50 mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-gray-700">
+                {selectedLayer?.label ?? layers[0]?.label ?? '—'}
+              </div>
+            ) : (
+              <select
+                id="export-layer-select"
+                value={selectedLayerId}
+                onChange={(e) => setSelectedLayerId(e.target.value)}
+                className="mapui:w-full mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-gray-700"
+              >
+                <option value="" disabled>
+                  Select a layer...
                 </option>
-              ))}
-            </select>
-          )}
-        </div>
+                {layers.map((layer) => (
+                  <option key={layer.id} value={layer.id}>
+                    {layer.label}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        )}
 
         {/* Format select (radio group) */}
         <fieldset className="mapui:mb-4">
@@ -211,8 +266,95 @@ export function ExportModal({
                 </span>
               </label>
             ))}
+            {pdfAvailable && (
+              <>
+                <div className="mapui:my-1 mapui:border-t mapui:border-gray-200" />
+                <label className="mapui:flex mapui:cursor-pointer mapui:items-center mapui:gap-2 mapui:rounded mapui:px-2 mapui:py-1.5 hover:mapui:bg-gray-50">
+                  <input
+                    type="radio"
+                    name="export-format"
+                    value={PDF_FORMAT_ID}
+                    checked={isPdf}
+                    onChange={() => setSelectedFormatId(PDF_FORMAT_ID)}
+                    className="mapui:accent-blue-600"
+                  />
+                  <span className="mapui:text-sm mapui:text-gray-700">
+                    PDF
+                    <span className="mapui:ml-1 mapui:text-gray-400">— Map snapshot</span>
+                  </span>
+                </label>
+              </>
+            )}
           </div>
         </fieldset>
+
+        {/* PDF-specific fields */}
+        {isPdf && (
+          <>
+            <div className="mapui:mb-4">
+              <label htmlFor="pdf-title" className="mapui:mb-1 mapui:block mapui:text-sm mapui:font-medium mapui:text-gray-700">
+                Title
+              </label>
+              <input
+                id="pdf-title"
+                type="text"
+                value={pdfTitle}
+                onChange={(e) => setPdfTitle(e.target.value)}
+                className="mapui:w-full mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-gray-700 focus:mapui:border-blue-500 focus:mapui:outline-none focus:mapui:ring-1 focus:mapui:ring-blue-500"
+                placeholder="Map Export"
+              />
+            </div>
+
+            <div className="mapui:mb-4">
+              <label htmlFor="pdf-filename" className="mapui:mb-1 mapui:block mapui:text-sm mapui:font-medium mapui:text-gray-700">
+                Filename
+              </label>
+              <input
+                id="pdf-filename"
+                type="text"
+                value={pdfFilename}
+                onChange={(e) => setPdfFilename(e.target.value)}
+                className="mapui:w-full mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-gray-700 focus:mapui:border-blue-500 focus:mapui:outline-none focus:mapui:ring-1 focus:mapui:ring-blue-500"
+                placeholder="map.pdf"
+              />
+            </div>
+
+            <fieldset className="mapui:mb-4">
+              <legend className="mapui:mb-1 mapui:text-sm mapui:font-medium mapui:text-gray-700">
+                Include
+              </legend>
+              <div className="mapui:space-y-1">
+                <label className="mapui:flex mapui:cursor-pointer mapui:items-center mapui:gap-2 mapui:text-sm mapui:text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={includeLegend}
+                    onChange={(e) => setIncludeLegend(e.target.checked)}
+                    className="mapui:accent-blue-600"
+                  />
+                  Legend
+                </label>
+                <label className="mapui:flex mapui:cursor-pointer mapui:items-center mapui:gap-2 mapui:text-sm mapui:text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={includeScaleBar}
+                    onChange={(e) => setIncludeScaleBar(e.target.checked)}
+                    className="mapui:accent-blue-600"
+                  />
+                  Scale bar
+                </label>
+                <label className="mapui:flex mapui:cursor-pointer mapui:items-center mapui:gap-2 mapui:text-sm mapui:text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={includeNorthArrow}
+                    onChange={(e) => setIncludeNorthArrow(e.target.checked)}
+                    className="mapui:accent-blue-600"
+                  />
+                  North arrow
+                </label>
+              </div>
+            </fieldset>
+          </>
+        )}
 
         {/* Apply filters checkbox */}
         {showFilterToggle && (
@@ -228,13 +370,13 @@ export function ExportModal({
         )}
 
         {/* Progress */}
-        {loading && progress && (
-          <p className="mapui:m-0 mapui:mb-3 mapui:text-sm mapui:text-blue-600">{progress}</p>
+        {isLoading && activeProgress && (
+          <p className="mapui:m-0 mapui:mb-3 mapui:text-sm mapui:text-blue-600">{activeProgress}</p>
         )}
 
         {/* Error */}
-        {error && (
-          <p className="mapui:m-0 mapui:mb-3 mapui:text-sm mapui:text-red-600">{error}</p>
+        {activeError && (
+          <p className="mapui:m-0 mapui:mb-3 mapui:text-sm mapui:text-red-600">{activeError}</p>
         )}
 
         {/* Footer */}
@@ -242,7 +384,7 @@ export function ExportModal({
           <button
             type="button"
             onClick={onClose}
-            disabled={loading}
+            disabled={isLoading}
             className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:font-medium mapui:text-gray-700 hover:mapui:bg-gray-50"
           >
             Cancel
@@ -258,7 +400,7 @@ export function ExportModal({
                 : 'mapui:cursor-not-allowed mapui:bg-blue-400',
             ].join(' ')}
           >
-            {loading ? 'Exporting...' : 'Export'}
+            {isLoading ? 'Exporting...' : isPdf ? 'Export PDF' : 'Export'}
           </button>
         </div>
       </div>

@@ -64,7 +64,7 @@ import type {
 import type { SearchFilterValue, SearchFilterValues, Cql2FilterConfig, InfoPosition } from '@ogc-maps/storybook-components/types';
 import { useMeasure, useSelection } from '@ogc-maps/storybook-components/hooks';
 
-import { LuDownload, LuFileText, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
+import { LuDownload, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
 import { resolveEffectiveLayout } from './mapPreviewLayout';
 import { TbSatellite } from 'react-icons/tb';
 import { useBoxDraw } from '../hooks/useBoxDraw';
@@ -1187,23 +1187,11 @@ export function MapPreview({
                 label: 'Export',
                 icon: iconFor('showExportButton', LuDownload),
                 content: (
-                  <div className="mapui:flex mapui:flex-col mapui:gap-2">
-                    {uiConfig.showExportButton && (
-                      <ExportButton
-                        icon={LuDownload}
-                        onExport={() => setExportModalOpen(true)}
-                        loading={exportLoading}
-                      />
-                    )}
-                    {uiConfig.showExportPdf && (
-                      <ExportButton
-                        icon={LuFileText}
-                        label="Export as PDF"
-                        onExport={() => {}}
-                        loading={false}
-                      />
-                    )}
-                  </div>
+                  <ExportButton
+                    icon={LuDownload}
+                    onExport={() => setExportModalOpen(true)}
+                    loading={exportLoading}
+                  />
                 ),
               });
             }
@@ -1404,23 +1392,11 @@ export function MapPreview({
 
                 showExportButton: (uiConfig.showExportButton || uiConfig.showExportPdf) ? (
                   <div className="mapui:pointer-events-auto">
-                    <div className="mapui:flex mapui:flex-col mapui:gap-2">
-                      {uiConfig.showExportButton && (
-                        <ExportButton
-                          icon={LuDownload}
-                          onExport={() => setExportModalOpen(true)}
-                          loading={exportLoading}
-                        />
-                      )}
-                      {uiConfig.showExportPdf && (
-                        <ExportButton
-                          icon={LuFileText}
-                          label="Export as PDF"
-                          onExport={() => {}}
-                          loading={false}
-                        />
-                      )}
-                    </div>
+                    <ExportButton
+                      icon={LuDownload}
+                      onExport={() => setExportModalOpen(true)}
+                      loading={exportLoading}
+                    />
                   </div>
                 ) : null,
 

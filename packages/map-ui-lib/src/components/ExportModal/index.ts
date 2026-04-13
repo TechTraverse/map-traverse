@@ -5,4 +5,5 @@ export type {
   ExportRequest,
   ExportableLayer,
   ExportMode,
+  PdfExportOptions,
 } from './ExportModal';
