@@ -99,6 +99,7 @@ const DEFAULT_UI_CONFIG: UIConfig = {
   showScaleBar: false,
   coordinateFormat: 'decimal-degrees',
   controlLayout: 'individual',
+  sideMenuToggleCorner: 'top-right',
 };
 
 /** Derive which UI controls should be enabled based on current config state. */

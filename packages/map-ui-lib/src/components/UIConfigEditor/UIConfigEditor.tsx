@@ -259,6 +259,23 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
             </label>
           ))}
         </div>
+        {(value.controlLayout === 'side-menu' || value.controlLayout === 'auto') && (
+          <div className="mapui:mt-2 mapui:flex mapui:items-center mapui:gap-2">
+            <span className="mapui:text-xs mapui:text-gray-600">Menu button position:</span>
+            <select
+              value={value.sideMenuToggleCorner ?? 'top-right'}
+              onChange={(e) => onChange({ ...value, sideMenuToggleCorner: e.target.value as ControlCorner })}
+              aria-label="Menu button position"
+              className="mapui:shrink-0 mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-1.5 mapui:py-1 mapui:text-xs mapui:text-gray-700 focus:mapui:border-blue-500 focus:mapui:outline-none"
+            >
+              {CONTROL_CORNERS.map((c) => (
+                <option key={c} value={c}>
+                  {CORNER_LABELS[c]}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Orderable controls */}

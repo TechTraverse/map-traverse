@@ -493,7 +493,7 @@ export function MapOverlay({
           if (uiConfig.showExportButton || uiConfig.showExportPdf) items.push({ key: 'export', label: 'Export', icon: iconFor('showExportButton', LuDownload), onAction: () => setExportModalOpen(true) });
           return (
             <>
-              <div className="absolute top-4 right-4 flex flex-col gap-4 items-end pointer-events-auto">
+              <div className={`${cornerClasses[uiConfig.sideMenuToggleCorner ?? 'top-right']} pointer-events-auto`}>
                 <SideMenuToggle onClick={() => setSideMenuOpen(true)} label="Open menu" />
                 {uiConfig.showCompass && (
                   <div ref={compassContainerRef}>

@@ -595,6 +595,11 @@ export const UIConfigSchema = z.object({
    */
   controlLayout: z.enum(CONTROL_LAYOUTS).default('individual'),
   /**
+   * Corner where the side-menu toggle (hamburger) button appears when using
+   * 'side-menu' or 'auto' layout. Defaults to 'top-right'.
+   */
+  sideMenuToggleCorner: z.enum(CONTROL_CORNERS).default('top-right'),
+  /**
    * Optional per-control icon override. Keys are control keys (e.g. `showSearchPanel`),
    * values are icon names from `CONTROL_ICON_MAP`. Unknown names fall back to the
    * control's default icon.
@@ -728,6 +733,7 @@ export const MapConfigSchema = z.object({
     showGlobalSearch: false,
     showScaleBar: false,
     controlLayout: 'individual',
+    sideMenuToggleCorner: 'top-right',
     coordinateFormat: 'decimal-degrees',
   }),
   initialView: ViewConfigSchema,
