@@ -17,7 +17,7 @@ export interface SideMenuPanelProps {
   controls: SideMenuPanelItem[];
   /** Whether the panel is currently open. */
   isOpen: boolean;
-  /** Called when the user dismisses the panel (close button, backdrop, Escape). */
+  /** Called when the user dismisses the panel (close button or Escape key). */
   onClose: () => void;
   /** Title rendered at the top of the panel. Defaults to "Menu". */
   title?: string;
@@ -41,9 +41,10 @@ export function SideMenuPanel({
   title = 'Menu',
   defaultOpenKey,
 }: SideMenuPanelProps) {
-  const [openSection, setOpenSection] = useState<string | null>(
-    defaultOpenKey ?? controls[0]?.key ?? null,
-  );
+  const [openSections, setOpenSections] = useState<string[]>(() => {
+    const initial = defaultOpenKey ?? controls[0]?.key;
+    return initial ? [initial] : [];
+  });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -58,75 +59,69 @@ export function SideMenuPanel({
 
   return (
     <div
-      className="mapui:fixed mapui:inset-0 mapui:z-50 mapui:flex mapui:justify-end mapui:pointer-events-auto"
+      className="mapui:fixed mapui:top-0 mapui:right-0 mapui:z-50 mapui:h-full mapui:w-full mapui:max-w-xs mapui:pointer-events-auto mapui:flex mapui:flex-col mapui:bg-white mapui:shadow-2xl"
       role="dialog"
-      aria-modal="true"
       aria-label={title}
     >
-      {/* Backdrop */}
-      <button
-        type="button"
-        aria-label="Close menu"
-        onClick={onClose}
-        className="mapui:absolute mapui:inset-0 mapui:bg-black/40 mapui:cursor-pointer"
-      />
+      <div className="mapui:flex mapui:items-center mapui:justify-between mapui:border-b mapui:border-gray-200 mapui:px-4 mapui:py-3">
+        <h2 className="mapui:m-0 mapui:text-base mapui:font-semibold mapui:text-gray-900">
+          {title}
+        </h2>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close menu"
+          className="mapui:flex mapui:h-8 mapui:w-8 mapui:cursor-pointer mapui:items-center mapui:justify-center mapui:rounded hover:mapui:bg-gray-100"
+        >
+          <LuX size={18} className="mapui:text-gray-700" />
+        </button>
+      </div>
 
-      {/* Panel */}
-      <div className="mapui:relative mapui:flex mapui:h-full mapui:w-full mapui:max-w-sm mapui:flex-col mapui:bg-white mapui:shadow-2xl">
-        <div className="mapui:flex mapui:items-center mapui:justify-between mapui:border-b mapui:border-gray-200 mapui:px-4 mapui:py-3">
-          <h2 className="mapui:m-0 mapui:text-base mapui:font-semibold mapui:text-gray-900">
-            {title}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close menu"
-            className="mapui:flex mapui:h-8 mapui:w-8 mapui:cursor-pointer mapui:items-center mapui:justify-center mapui:rounded hover:mapui:bg-gray-100"
-          >
-            <LuX size={18} className="mapui:text-gray-700" />
-          </button>
-        </div>
-
-        <div className="mapui:flex-1 mapui:overflow-y-auto">
-          {controls.length === 0 ? (
-            <p className="mapui:m-0 mapui:p-4 mapui:text-sm mapui:text-gray-500">
-              No controls available.
-            </p>
-          ) : (
-            <ul className="mapui:m-0 mapui:list-none mapui:p-0">
-              {controls.map((item) => {
-                const Icon = item.icon;
-                const expanded = openSection === item.key;
-                return (
-                  <li key={item.key} className="mapui:border-b mapui:border-gray-100">
-                    <button
-                      type="button"
-                      onClick={() => setOpenSection(expanded ? null : item.key)}
-                      aria-expanded={expanded}
-                      className="mapui:flex mapui:w-full mapui:cursor-pointer mapui:items-center mapui:justify-between mapui:gap-3 mapui:bg-white mapui:px-4 mapui:py-3 mapui:text-left mapui:text-sm mapui:font-medium mapui:text-gray-800 hover:mapui:bg-gray-50"
-                    >
-                      <span className="mapui:flex mapui:items-center mapui:gap-3">
-                        <Icon size={18} className="mapui:text-gray-600" />
-                        {item.label}
-                      </span>
-                      <LuChevronDown
-                        size={16}
-                        className={`mapui:text-gray-500 mapui:transition-transform ${
-                          expanded ? 'mapui:rotate-180' : ''
-                        }`}
-                      />
-                    </button>
-                    {expanded && (
-                      <div className="mapui:bg-gray-50 mapui:px-4 mapui:py-3">
-                        {item.content}
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
+      <div className="mapui:flex-1 mapui:overflow-y-auto">
+        {controls.length === 0 ? (
+          <p className="mapui:m-0 mapui:p-4 mapui:text-sm mapui:text-gray-500">
+            No controls available.
+          </p>
+        ) : (
+          <ul className="mapui:m-0 mapui:list-none mapui:p-0">
+            {controls.map((item) => {
+              const Icon = item.icon;
+              const expanded = openSections.includes(item.key);
+              return (
+                <li key={item.key} className="mapui:border-b mapui:border-gray-100">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOpenSections((prev) =>
+                        prev.includes(item.key)
+                          ? prev.filter((k) => k !== item.key)
+                          : [...prev, item.key],
+                      )
+                    }
+                    aria-expanded={expanded}
+                    className="mapui:flex mapui:w-full mapui:cursor-pointer mapui:items-center mapui:justify-between mapui:gap-3 mapui:bg-white mapui:px-4 mapui:py-3 mapui:text-left mapui:text-sm mapui:font-medium mapui:text-gray-800 hover:mapui:bg-gray-50"
+                  >
+                    <span className="mapui:flex mapui:items-center mapui:gap-3">
+                      <Icon size={18} className="mapui:text-gray-600" />
+                      {item.label}
+                    </span>
+                    <LuChevronDown
+                      size={16}
+                      className={`mapui:text-gray-500 mapui:transition-transform ${
+                        expanded ? 'mapui:rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+                  {expanded && (
+                    <div className="mapui:bg-gray-50 mapui:px-4 mapui:py-3">
+                      {item.content}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
     </div>
   );
