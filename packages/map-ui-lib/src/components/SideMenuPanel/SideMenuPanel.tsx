@@ -58,7 +58,7 @@ export function SideMenuPanel({
 
   return (
     <div
-      className="mapui:fixed mapui:inset-0 mapui:z-50 mapui:flex mapui:justify-end"
+      className="mapui:fixed mapui:inset-0 mapui:z-50 mapui:flex mapui:justify-end mapui:pointer-events-auto"
       role="dialog"
       aria-modal="true"
       aria-label={title}
