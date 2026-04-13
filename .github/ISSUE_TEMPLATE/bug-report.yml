@@ -1,0 +1,77 @@
+name: Bug Report
+description: Something isn't working as expected. Help us fix it by describing what happened.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. The more detail you provide,
+        the faster we can track it down.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the bug in plain language. What did you see? What did you expect to see instead?
+      placeholder: |
+        Example: "I clicked the layer toggle on the map, but the satellite
+        imagery didn't appear. The map stayed on the default basemap."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Walk us through how to trigger the bug. Numbered steps are ideal.
+      placeholder: |
+        1. Open the map at [URL or Storybook story name]
+        2. Click '...'
+        3. Observe '...'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: How bad is it?
+      options:
+        - Minor — cosmetic or annoyance, easy to work around
+        - Moderate — broken feature, but there's a workaround
+        - Major — core functionality is broken, no workaround
+        - Critical — data loss, security issue, or complete outage
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: |
+        Where are you seeing this? Fill in what you know — skip what you don't.
+      placeholder: |
+        - Browser: Chrome 124 / Firefox 126 / Safari 17
+        - OS: macOS / Windows / Linux
+        - Package version: (if known, e.g. @ogc-maps/map-ui-lib@0.3.1)
+        - Storybook story: (if applicable)
+        - API endpoint: (if applicable)
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots-logs
+    attributes:
+      label: Screenshots or error logs
+      description: Paste screenshots, browser console errors, or network errors. Drag and drop images here.
+      placeholder: Paste or drag images here, or copy/paste error messages from the browser console.
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Anything else?
+      description: Other context that might help — related issues, when it started, whether it's intermittent, etc.
+    validations:
+      required: false

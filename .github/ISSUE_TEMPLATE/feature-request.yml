@@ -1,0 +1,83 @@
+name: Feature Request
+description: Suggest a new feature or improvement. All ideas welcome — you don't need to be technical.
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We'd love to hear your idea. Focus on the **problem** you're trying
+        to solve — we'll figure out the best way to build it.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: |
+        Describe the pain point or gap. What are you trying to do that you can't
+        do today, or what's harder than it should be?
+      placeholder: |
+        Example: "When I'm configuring map layers, I have to manually look up
+        the OGC collection IDs from the API. It would be faster if the UI
+        showed a searchable list."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: What would a good solution look like?
+      description: |
+        Describe your ideal outcome. This can be as simple as "I want a button
+        that does X" or as detailed as a technical design — whatever feels natural.
+      placeholder: |
+        Example: "A dropdown in the layer config panel that fetches available
+        collections from the OGC API and lets me search/filter by name."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: user-type
+    attributes:
+      label: I would describe myself as
+      description: This helps us write the right level of documentation and design the right UX.
+      options:
+        - End user — I use the map application
+        - Developer — I build with these components
+        - DevOps / Infra — I deploy and maintain the stack
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives or workarounds you've tried
+      description: Have you found a way around this? Knowing what you've tried helps us understand the gap.
+      placeholder: |
+        Example: "Right now I open a separate browser tab and hit the
+        /collections endpoint directly, then copy-paste the ID."
+    validations:
+      required: false
+
+  - type: textarea
+    id: technical-pointers
+    attributes:
+      label: Technical pointers (optional)
+      description: |
+        If you're a developer and have ideas about implementation — relevant
+        files, components, APIs, or patterns — share them here. Totally optional.
+      placeholder: |
+        - Related component: packages/map-ui-lib/src/components/LayerConfig
+        - API to use: /collections with ?f=json
+        - Similar pattern: the useOgcCollections hook
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Anything else?
+      description: Mockups, screenshots of similar tools, links to relevant specs, etc.
+    validations:
+      required: false

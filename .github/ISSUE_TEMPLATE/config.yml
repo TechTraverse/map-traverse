@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Discussions
+    url: https://github.com/ogc-maps/storybook-components/discussions
+    about: Ask questions or start a conversation (no GitHub account required to browse).

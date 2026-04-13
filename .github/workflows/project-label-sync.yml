@@ -36,8 +36,8 @@ jobs:
             const statusToLabel = {
               'Clarify': 'status:clarify',
               'Ready': 'status:ready',
-              'In Progress': 'status:in-progress',
-              'In Review': 'status:in-review',
+              'In progress': 'status:in-progress',
+              'In review': 'status:in-review',
             };
             const allStatusLabels = Object.values(statusToLabel);
 
