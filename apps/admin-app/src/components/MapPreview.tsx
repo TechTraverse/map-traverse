@@ -1285,6 +1285,7 @@ export function MapPreview({
                     <CollapsibleControl
                       icon={LuSearch}
                       label="Search"
+                      corner={resolveControlCorner(uiConfig, 'showSearchPanel')}
                       collapsed={openControl !== 'search'}
                       onToggle={(collapsed) => setOpenControl(collapsed ? null : 'search')}
                     >
@@ -1314,6 +1315,7 @@ export function MapPreview({
                     <CollapsibleControl
                       icon={LuLayers3}
                       label="Layers"
+                      corner={resolveControlCorner(uiConfig, 'showLayerPanel')}
                       collapsed={openControl !== 'layers'}
                       onToggle={(collapsed) => setOpenControl(collapsed ? null : 'layers')}
                     >
@@ -1339,6 +1341,7 @@ export function MapPreview({
                     <CollapsibleControl
                       icon={LuRuler}
                       label="Measure"
+                      corner={resolveControlCorner(uiConfig, 'showMeasureTool')}
                       collapsed={openControl !== 'measure'}
                       onToggle={(collapsed) => {
                         setOpenControl(collapsed ? null : 'measure');
@@ -1366,6 +1369,7 @@ export function MapPreview({
                     <CollapsibleControl
                       icon={LuMousePointer2}
                       label="Select"
+                      corner={resolveControlCorner(uiConfig, 'showSelectionTool')}
                       collapsed={openControl !== 'selection'}
                       onToggle={(collapsed) => {
                         setOpenControl(collapsed ? null : 'selection');
@@ -1407,6 +1411,7 @@ export function MapPreview({
                     <CollapsibleControl
                       icon={TbSatellite}
                       label="Imagery"
+                      corner={resolveControlCorner(uiConfig, 'showImageryPanel')}
                       collapsed={openControl !== 'imagery'}
                       onToggle={(collapsed) => setOpenControl(collapsed ? null : 'imagery')}
                     >
@@ -1426,6 +1431,7 @@ export function MapPreview({
                     <CollapsibleControl
                       icon={LuMap}
                       label="Basemap"
+                      corner={resolveControlCorner(uiConfig, 'showBasemapSwitcher')}
                       collapsed={openControl !== 'basemap'}
                       onToggle={(collapsed) => setOpenControl(collapsed ? null : 'basemap')}
                     >

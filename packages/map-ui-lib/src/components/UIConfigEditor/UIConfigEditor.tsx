@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { UIConfig, OrderableControlKey, LayerConfig, ControlCorner, ControlLayout } from '../../types';
 import { ORDERABLE_CONTROLS, resolveControlOrder, resolveControlCorner, CONTROL_CORNERS, CONTROL_LAYOUTS, COORDINATE_FORMATS } from '../../schemas/config';
 import { CONTROL_ICON_MAP, CONTROL_ICON_NAMES } from '../shared/controlIcons';
+import { CollapsibleSection } from '../admin/CollapsibleSection';
 
 export interface UIConfigEditorProps {
   value: UIConfig;
@@ -227,11 +228,8 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-4">
       {/* Control layout */}
-      <div className="mapui:flex mapui:flex-col mapui:gap-1">
-        <h4 className="mapui:m-0 mapui:text-xs mapui:font-semibold mapui:text-gray-700">
-          Control Layout
-        </h4>
-        <p className="mapui:m-0 mapui:mb-1 mapui:text-xs mapui:text-gray-500">
+      <CollapsibleSection title="Control Layout" defaultOpen>
+        <p className="mapui:m-0 mapui:mb-2 mapui:text-xs mapui:text-gray-500">
           How controls are displayed on the map.
         </p>
         <div className="mapui:flex mapui:flex-col mapui:gap-1.5">
@@ -276,14 +274,11 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
             </select>
           </div>
         )}
-      </div>
+      </CollapsibleSection>
 
       {/* Orderable controls */}
-      <div className="mapui:flex mapui:flex-col mapui:gap-1">
-        <h4 className="mapui:m-0 mapui:text-xs mapui:font-semibold mapui:text-gray-700">
-          Control Stack Order
-        </h4>
-        <p className="mapui:m-0 mapui:mb-1 mapui:text-xs mapui:text-gray-500">
+      <CollapsibleSection title="Control Stack Order">
+        <p className="mapui:m-0 mapui:mb-2 mapui:text-xs mapui:text-gray-500">
           Drag or use arrows to set the display order of map controls.
         </p>
         <ul className="mapui:m-0 mapui:list-none mapui:flex mapui:flex-col mapui:gap-1.5 mapui:p-0">
@@ -429,14 +424,11 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
             );
           })}
         </ul>
-      </div>
+      </CollapsibleSection>
 
       {/* Non-orderable controls */}
-      <div className="mapui:flex mapui:flex-col mapui:gap-1">
-        <h4 className="mapui:m-0 mapui:text-xs mapui:font-semibold mapui:text-gray-700">
-          Other Controls
-        </h4>
-        <p className="mapui:m-0 mapui:mb-1 mapui:text-xs mapui:text-gray-500">
+      <CollapsibleSection title="Other Controls">
+        <p className="mapui:m-0 mapui:mb-2 mapui:text-xs mapui:text-gray-500">
           These controls have fixed positions on the map.
         </p>
         <div className="mapui:grid mapui:grid-cols-1 mapui:gap-2 sm:mapui:grid-cols-2">
@@ -460,15 +452,12 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
             );
           })}
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* Coordinate format */}
       {value.showCoordinateDisplay && (
-        <div className="mapui:flex mapui:flex-col mapui:gap-1">
-          <h4 className="mapui:m-0 mapui:text-xs mapui:font-semibold mapui:text-gray-700">
-            Coordinate Format
-          </h4>
-          <p className="mapui:m-0 mapui:mb-1 mapui:text-xs mapui:text-gray-500">
+        <CollapsibleSection title="Coordinate Format">
+          <p className="mapui:m-0 mapui:mb-2 mapui:text-xs mapui:text-gray-500">
             Default display format for the cursor coordinate readout.
           </p>
           <select
@@ -487,16 +476,13 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
               </option>
             ))}
           </select>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Legend order */}
       {value.showLegend && legendLayerOptions.length > 0 && (
-        <div className="mapui:flex mapui:flex-col mapui:gap-1">
-          <h4 className="mapui:m-0 mapui:text-xs mapui:font-semibold mapui:text-gray-700">
-            Legend Order
-          </h4>
-          <p className="mapui:m-0 mapui:mb-1 mapui:text-xs mapui:text-gray-500">
+        <CollapsibleSection title="Legend Order">
+          <p className="mapui:m-0 mapui:mb-2 mapui:text-xs mapui:text-gray-500">
             Set the display order of layers in the legend. Only layers with a legend configured are shown.
           </p>
           <ul className="mapui:m-0 mapui:list-none mapui:flex mapui:flex-col mapui:gap-1.5 mapui:p-0">
@@ -533,7 +519,7 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
               );
             })}
           </ul>
-        </div>
+        </CollapsibleSection>
       )}
     </div>
   );

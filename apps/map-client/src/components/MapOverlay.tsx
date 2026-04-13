@@ -537,6 +537,7 @@ export function MapOverlay({
               <CollapsibleControl
                 icon={iconFor('showSearchPanel', LuSearch)}
                 label="Search"
+                corner={resolveControlCorner(uiConfig, 'showSearchPanel')}
                 collapsed={openControl !== 'search'}
                 onToggle={(collapsed) => setOpenControl(collapsed ? null : 'search')}
               >
@@ -550,6 +551,7 @@ export function MapOverlay({
               <CollapsibleControl
                 icon={iconFor('showLayerPanel', LuLayers3)}
                 label="Layers"
+                corner={resolveControlCorner(uiConfig, 'showLayerPanel')}
                 collapsed={openControl !== 'layers'}
                 onToggle={(collapsed) => setOpenControl(collapsed ? null : 'layers')}
               >
@@ -563,6 +565,7 @@ export function MapOverlay({
               <CollapsibleControl
                 icon={iconFor('showMeasureTool', LuRuler)}
                 label="Measure"
+                corner={resolveControlCorner(uiConfig, 'showMeasureTool')}
                 collapsed={openControl !== 'measure'}
                 onToggle={(collapsed) => {
                   setOpenControl(collapsed ? null : 'measure');
@@ -582,6 +585,7 @@ export function MapOverlay({
               <CollapsibleControl
                 icon={iconFor('showSelectionTool', LuMousePointer2)}
                 label="Select"
+                corner={resolveControlCorner(uiConfig, 'showSelectionTool')}
                 collapsed={openControl !== 'selection'}
                 onToggle={(collapsed) => {
                   setOpenControl(collapsed ? null : 'selection');
@@ -600,6 +604,7 @@ export function MapOverlay({
               <CollapsibleControl
                 icon={iconFor('showImageryPanel', TbSatellite)}
                 label="Imagery"
+                corner={resolveControlCorner(uiConfig, 'showImageryPanel')}
                 collapsed={openControl !== 'imagery'}
                 onToggle={(collapsed) => setOpenControl(collapsed ? null : 'imagery')}
               >
@@ -613,6 +618,7 @@ export function MapOverlay({
               <CollapsibleControl
                 icon={iconFor('showBasemapSwitcher', LuMap)}
                 label="Basemap"
+                corner={resolveControlCorner(uiConfig, 'showBasemapSwitcher')}
                 collapsed={openControl !== 'basemap'}
                 onToggle={(collapsed) => setOpenControl(collapsed ? null : 'basemap')}
               >

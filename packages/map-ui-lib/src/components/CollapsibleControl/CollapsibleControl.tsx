@@ -1,11 +1,21 @@
 import { useState } from 'react';
 import { LuX } from 'react-icons/lu';
+import type { ControlCorner } from '../../types';
+
+const PANEL_POSITION_CLASSES: Record<ControlCorner, string> = {
+  'top-right': 'mapui:top-0 mapui:right-full mapui:mr-2',
+  'top-left': 'mapui:top-0 mapui:left-full mapui:ml-2',
+  'bottom-right': 'mapui:bottom-0 mapui:right-full mapui:mr-2',
+  'bottom-left': 'mapui:bottom-0 mapui:left-full mapui:ml-2',
+};
 
 export interface CollapsibleControlProps {
   /** Icon component to display when collapsed (e.g., LuLayers3 from react-icons/lu) */
   icon: React.ComponentType<{ size?: number; className?: string }>;
   /** Accessible label for the control (shown as tooltip/aria-label) */
   label: string;
+  /** Which corner of the map this control sits in — determines expansion direction */
+  corner?: ControlCorner;
   /** Initial collapsed state (uncontrolled mode) */
   defaultCollapsed?: boolean;
   /** Controlled collapsed state */
@@ -31,6 +41,7 @@ export interface CollapsibleControlProps {
 export function CollapsibleControl({
   icon: Icon,
   label,
+  corner = 'top-right',
   defaultCollapsed = true,
   collapsed: controlledCollapsed,
   onToggle,
@@ -68,9 +79,9 @@ export function CollapsibleControl({
         <Icon size={20} className="mapui:text-gray-700" />
       </button>
 
-      {/* Expanded panel - absolutely positioned to the left of the icon button */}
+      {/* Expanded panel - positioned based on corner prop */}
       {!isCollapsed && (
-        <div className="mapui:absolute mapui:top-0 mapui:right-full mapui:mr-2 mapui:z-10 mapui:bg-white mapui:rounded-lg mapui:shadow-lg">
+        <div className={`mapui:absolute ${PANEL_POSITION_CLASSES[corner]} mapui:z-10 mapui:bg-white mapui:rounded-lg mapui:shadow-lg`}>
           {/* Header with icon and close button */}
           <div className="mapui:flex mapui:items-center mapui:justify-between mapui:p-2 mapui:border-b mapui:border-gray-200">
             <div className="mapui:flex mapui:items-center mapui:gap-2">

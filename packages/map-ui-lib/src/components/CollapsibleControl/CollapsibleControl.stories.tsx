@@ -46,6 +46,10 @@ const meta: Meta<CollapsibleControlProps> = {
   },
   argTypes: {
     onToggle: { action: 'toggle' },
+    corner: {
+      control: 'select',
+      options: ['top-right', 'top-left', 'bottom-right', 'bottom-left'],
+    },
   },
 };
 
@@ -157,6 +161,41 @@ export const WithBasemapSwitcher: Story = {
           onSelect={setActiveBasemap}
         />
       </CollapsibleControl>
+    );
+  },
+};
+
+/** All four corner positions — demonstrates expansion direction. */
+export const CornerPositions: Story = {
+  render: () => {
+    const panel = (
+      <div className="mapui:p-4 mapui:w-48">
+        <p className="mapui:text-sm mapui:text-gray-700">Panel content</p>
+      </div>
+    );
+    return (
+      <div className="mapui:relative mapui:w-[600px] mapui:h-[400px] mapui:border mapui:border-gray-300 mapui:rounded-lg mapui:bg-gray-50">
+        <div className="mapui:absolute mapui:top-4 mapui:right-4">
+          <CollapsibleControl icon={LuLayers3} label="Top Right" corner="top-right" defaultCollapsed={false}>
+            {panel}
+          </CollapsibleControl>
+        </div>
+        <div className="mapui:absolute mapui:top-4 mapui:left-4">
+          <CollapsibleControl icon={LuSearch} label="Top Left" corner="top-left" defaultCollapsed={false}>
+            {panel}
+          </CollapsibleControl>
+        </div>
+        <div className="mapui:absolute mapui:bottom-4 mapui:right-4">
+          <CollapsibleControl icon={LuMap} label="Bottom Right" corner="bottom-right" defaultCollapsed={false}>
+            {panel}
+          </CollapsibleControl>
+        </div>
+        <div className="mapui:absolute mapui:bottom-4 mapui:left-4">
+          <CollapsibleControl icon={LuLayers3} label="Bottom Left" corner="bottom-left" defaultCollapsed={false}>
+            {panel}
+          </CollapsibleControl>
+        </div>
+      </div>
     );
   },
 };

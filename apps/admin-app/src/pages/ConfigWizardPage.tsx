@@ -1002,17 +1002,6 @@ export function ConfigWizardPage() {
         {currentStep === 'ui' && (
           <div className="mapui:space-y-4">
             <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">UI Options</h2>
-            <UIConfigEditor
-              value={effectiveUIConfig}
-              onChange={handleUIChange}
-              autoEnabled={autoEnabledKeys}
-              layers={layers}
-              infoEnabled={info?.enabled ?? false}
-              onInfoEnabledChange={(enabled) => {
-                const current = info ?? DEFAULT_INFO;
-                setInfo({ ...current, enabled });
-              }}
-            />
             {effectiveUIConfig.showGlobalSearch && (
               <CollapsibleSection
                 title="Global Search"
@@ -1028,6 +1017,17 @@ export function ConfigWizardPage() {
                 />
               </CollapsibleSection>
             )}
+            <UIConfigEditor
+              value={effectiveUIConfig}
+              onChange={handleUIChange}
+              autoEnabled={autoEnabledKeys}
+              layers={layers}
+              infoEnabled={info?.enabled ?? false}
+              onInfoEnabledChange={(enabled) => {
+                const current = info ?? DEFAULT_INFO;
+                setInfo({ ...current, enabled });
+              }}
+            />
           </div>
         )}
 
