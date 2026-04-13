@@ -1013,13 +1013,19 @@ export function ConfigWizardPage() {
               }}
             />
             {effectiveUIConfig.showGlobalSearch && (
-              <GlobalSearchConfigEditor
-                value={globalSearch ?? DEFAULT_GLOBAL_SEARCH}
-                onChange={(gs) => setGlobalSearch(gs)}
-                layers={layers}
-                propertiesByLayer={queryablesByLayer}
-                isLoadingProperties={queryablesLoading}
-              />
+              <CollapsibleSection
+                title="Global Search"
+                defaultOpen={false}
+                badge={globalSearch?.layers?.length ?? 0}
+              >
+                <GlobalSearchConfigEditor
+                  value={globalSearch ?? DEFAULT_GLOBAL_SEARCH}
+                  onChange={(gs) => setGlobalSearch(gs)}
+                  layers={layers}
+                  propertiesByLayer={queryablesByLayer}
+                  isLoadingProperties={queryablesLoading}
+                />
+              </CollapsibleSection>
             )}
           </div>
         )}

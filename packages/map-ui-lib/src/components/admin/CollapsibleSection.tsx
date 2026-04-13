@@ -23,7 +23,7 @@ export function CollapsibleSection({
       >
         <span className="mapui:flex mapui:items-center mapui:gap-2">
           {title}
-          {badge !== undefined && Number(badge) > 0 && (
+          {badge !== undefined && badge !== 0 && (
             <span className="mapui:rounded-full mapui:bg-blue-100 mapui:px-1.5 mapui:py-0.5 mapui:text-xs mapui:font-semibold mapui:text-blue-700">
               {badge}
             </span>
