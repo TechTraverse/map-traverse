@@ -13,7 +13,6 @@ import {
   FeatureTooltip,
   ExportButton,
   ExportModal,
-  PdfExportDialog,
   type PdfExportOptions,
   InfoControl,
   InfoModal,
@@ -41,7 +40,7 @@ import { groupControlsByCorner } from '@ogc-maps/storybook-components';
 import { useMapStore, useActiveLayerIds } from '../stores/mapStore';
 import { useAutocompleteSuggestions } from '../hooks/useAutocompleteSuggestions';
 import { useLayerQueryables } from '../hooks/useLayerQueryables';
-import { LuDownload, LuFileText, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
+import { LuDownload, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
 import { TbSatellite } from 'react-icons/tb';
 
 const INFO_CORNER_CLASSES: Record<InfoPosition, string> = {
@@ -164,7 +163,6 @@ export function MapOverlay({
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [infoModalOpen, setInfoModalOpen] = useState(false);
 
-  const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfProgress, setPdfProgress] = useState<string | null>(null);
   const [pdfError, setPdfError] = useState<string | null>(null);
@@ -188,7 +186,7 @@ export function MapOverlay({
           legendElement: legendContainerRef.current,
           compassElement: compassContainerRef.current,
         });
-        setPdfDialogOpen(false);
+        setExportModalOpen(false);
       } catch (err) {
         setPdfError(err instanceof Error ? err.message : 'PDF export failed.');
       } finally {
@@ -467,23 +465,11 @@ export function MapOverlay({
         ) : null;
 
         const exportInner = uiConfig.showExportButton || uiConfig.showExportPdf ? (
-          <div className="mapui:flex mapui:flex-col mapui:gap-4">
-            {uiConfig.showExportButton && (
-              <ExportButton
-                icon={LuDownload}
-                onExport={() => setExportModalOpen(true)}
-                loading={exportLoading}
-              />
-            )}
-            {uiConfig.showExportPdf && (
-              <ExportButton
-                icon={LuFileText}
-                label="Export as PDF"
-                onExport={() => setPdfDialogOpen(true)}
-                loading={pdfLoading}
-              />
-            )}
-          </div>
+          <ExportButton
+            icon={LuDownload}
+            onExport={() => setExportModalOpen(true)}
+            loading={exportLoading || pdfLoading}
+          />
         ) : null;
 
         const iconFor = (k: OrderableControlKey, fallback: typeof LuSearch) =>
@@ -676,22 +662,15 @@ export function MapOverlay({
         progress={exportProgress}
         error={exportError?.message}
         onExport={handleExportRequest}
-        onClose={() => setExportModalOpen(false)}
-        />
-      </div>
-
-      {/* PDF export dialog */}
-      <div className="pointer-events-auto">
-        <PdfExportDialog
-          open={pdfDialogOpen}
-          loading={pdfLoading}
-          progress={pdfProgress}
-          error={pdfError}
-          onExport={handlePdfExport}
-          onClose={() => {
-            setPdfDialogOpen(false);
-            setPdfError(null);
-          }}
+        onClose={() => {
+          setExportModalOpen(false);
+          setPdfError(null);
+        }}
+        pdfAvailable={uiConfig.showExportPdf}
+        onPdfExport={handlePdfExport}
+        pdfLoading={pdfLoading}
+        pdfProgress={pdfProgress}
+        pdfError={pdfError}
         />
       </div>
 
