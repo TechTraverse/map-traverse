@@ -80,31 +80,33 @@ export function CollapsibleControl({
       </button>
 
       {/* Expanded panel - positioned based on corner prop */}
-      {!isCollapsed && (
-        <div className={`mapui:absolute ${PANEL_POSITION_CLASSES[corner]} mapui:z-10 mapui:bg-white mapui:rounded-lg mapui:shadow-lg`}>
-          {/* Header with icon and close button */}
-          <div className="mapui:flex mapui:items-center mapui:justify-between mapui:p-2 mapui:border-b mapui:border-slate-200">
-            <div className="mapui:flex mapui:items-center mapui:gap-2">
-              <Icon size={18} className="mapui:text-slate-700" />
-              <span className="mapui:text-sm mapui:font-medium mapui:text-slate-700">
-                {label}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={handleToggle}
-              title={`Collapse ${label}`}
-              aria-label={`Collapse ${label}`}
-              className="mapui:flex mapui:items-center mapui:justify-center mapui:min-w-[44px] mapui:min-h-[44px] mapui:w-8 mapui:h-8 mapui:rounded hover:mapui:bg-slate-100 mapui:transition-colors"
-            >
-              <LuX size={16} className="mapui:text-slate-600" />
-            </button>
+      <div className={`mapui:absolute ${PANEL_POSITION_CLASSES[corner]} mapui:z-10 mapui:bg-white/90 mapui:backdrop-blur-sm mapui:rounded-lg mapui:shadow-lg mapui:transition-all mapui:duration-150 mapui:origin-top-right ${
+        isCollapsed
+          ? 'mapui:opacity-0 mapui:scale-95 mapui:pointer-events-none'
+          : 'mapui:opacity-100 mapui:scale-100 mapui:pointer-events-auto'
+      }`}>
+        {/* Header with icon and close button */}
+        <div className="mapui:flex mapui:items-center mapui:justify-between mapui:p-2 mapui:border-b mapui:border-slate-200">
+          <div className="mapui:flex mapui:items-center mapui:gap-2">
+            <Icon size={18} className="mapui:text-slate-700" />
+            <span className="mapui:text-sm mapui:font-medium mapui:text-slate-700">
+              {label}
+            </span>
           </div>
-
-          {/* Content */}
-          <div className="mapui:p-2">{children}</div>
+          <button
+            type="button"
+            onClick={handleToggle}
+            title={`Collapse ${label}`}
+            aria-label={`Collapse ${label}`}
+            className="mapui:flex mapui:items-center mapui:justify-center mapui:min-w-[44px] mapui:min-h-[44px] mapui:w-8 mapui:h-8 mapui:rounded hover:mapui:bg-slate-100 mapui:transition-colors"
+          >
+            <LuX size={16} className="mapui:text-slate-600" />
+          </button>
         </div>
-      )}
+
+        {/* Content */}
+        <div className="mapui:p-2">{children}</div>
+      </div>
     </div>
   );
 }
