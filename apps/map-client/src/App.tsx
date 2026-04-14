@@ -114,7 +114,7 @@ function App() {
       <div className="flex h-screen w-screen items-center justify-center bg-red-50">
         <div className="max-w-2xl rounded-lg bg-white p-8 shadow-lg">
           <h1 className="text-2xl font-bold text-red-600">Configuration Error</h1>
-          <p className="mt-4 text-gray-700">{validationError}</p>
+          <p className="mt-4 text-slate-700">{validationError}</p>
         </div>
       </div>
     );
@@ -122,9 +122,9 @@ function App() {
 
   if (!isReady) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-gray-100">
+      <div className="flex h-screen w-screen items-center justify-center bg-slate-100">
         <div className="text-center">
-          <div className="text-lg text-gray-600">Loading map configuration...</div>
+          <div className="text-lg text-slate-600">Loading map configuration...</div>
         </div>
       </div>
     );

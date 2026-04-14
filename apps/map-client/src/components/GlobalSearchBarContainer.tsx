@@ -19,7 +19,7 @@ export function GlobalSearchBarContainer() {
   }
 
   return (
-    <div className="w-full border-b border-gray-200 bg-white px-4 py-2">
+    <div className="w-full border-b border-slate-200 bg-white px-4 py-2">
       <GlobalSearchBar
         config={globalSearchConfig}
         layers={layers}
