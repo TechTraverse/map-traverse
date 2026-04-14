@@ -161,6 +161,7 @@ export function ConfigWizardPage() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -262,6 +263,9 @@ export function ConfigWizardPage() {
     return safeValidateMapConfig(assembledConfig).success;
   }, [name, assembledConfig]);
 
+  // Clear "Saved" indicator when config changes
+  useEffect(() => { setJustSaved(false); }, [assembledConfig, name, description]);
+
   // Sync browseSourceId when sources change (only consider feature sources)
   useEffect(() => {
     if (featureSources.length > 0 && !featureSources.find(s => s.id === browseSourceId)) {
@@ -313,6 +317,7 @@ export function ConfigWizardPage() {
 
   const handleSave = async () => {
     setSaving(true);
+    setJustSaved(false);
     setError(null);
     setValidationErrors([]);
 
@@ -334,7 +339,16 @@ export function ConfigWizardPage() {
         body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error(await res.text());
-      navigate('/configs');
+
+      if (currentStep === 'review') {
+        navigate('/configs');
+      } else {
+        if (!isEditing) {
+          const created = await res.json();
+          navigate(`/configs/${created.id}/edit`, { replace: true });
+        }
+        setJustSaved(true);
+      }
     } catch (err) {
       setError(String(err));
     } finally {
@@ -1130,10 +1144,14 @@ export function ConfigWizardPage() {
           {isConfigValid && (
             <button
               onClick={handleSave}
-              disabled={saving}
-              className="mapui:bg-green-600 mapui:text-white mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:hover:bg-green-700 mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
+              disabled={saving || justSaved}
+              className={`mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:disabled:cursor-not-allowed ${
+                justSaved
+                  ? 'mapui:bg-gray-400 mapui:text-white'
+                  : 'mapui:bg-green-600 mapui:text-white mapui:hover:bg-green-700 mapui:disabled:opacity-50'
+              }`}
             >
-              {saving ? 'Saving...' : 'Save'}
+              {saving ? 'Saving...' : justSaved ? 'Saved' : 'Save'}
             </button>
           )}
         </div>
