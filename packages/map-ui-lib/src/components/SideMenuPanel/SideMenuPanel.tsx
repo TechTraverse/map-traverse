@@ -57,11 +57,13 @@ export function SideMenuPanel({
     return () => window.removeEventListener('keydown', handleKey);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
-
   return (
     <div
-      className="mapui:fixed mapui:top-0 mapui:right-0 mapui:z-50 mapui:h-full mapui:w-full mapui:max-w-xs mapui:pointer-events-auto mapui:flex mapui:flex-col mapui:bg-white mapui:shadow-2xl"
+      className={`mapui:fixed mapui:top-0 mapui:right-0 mapui:z-50 mapui:h-full mapui:w-full mapui:max-w-xs mapui:flex mapui:flex-col mapui:bg-white mapui:shadow-2xl mapui:transition-transform mapui:duration-200 mapui:ease-out ${
+        isOpen
+          ? 'mapui:translate-x-0 mapui:pointer-events-auto'
+          : 'mapui:translate-x-full mapui:pointer-events-none'
+      }`}
       role="dialog"
       aria-label={title}
     >

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BsArrowsAngleExpand, BsArrowsAngleContract } from 'react-icons/bs';
+import { LuMaximize2, LuMinimize2 } from 'react-icons/lu';
 import { MdOutlineKeyboardArrowRight, MdOutlineKeyboardArrowDown } from 'react-icons/md';
 import type { LayerConfig, LegendConfig, LegendEntry } from '../../types';
 
@@ -412,7 +412,7 @@ export function Legend({ layers, visibleLayerIds, legendOrder, onOpacityChange, 
             onClick={() => setExpanded((v) => !v)}
             aria-label={expanded ? 'Collapse legend' : 'Expand legend'}
           >
-            {expanded ? <BsArrowsAngleContract /> : <BsArrowsAngleExpand />}
+            {expanded ? <LuMinimize2 /> : <LuMaximize2 />}
           </button>
         )}
       </div>

@@ -125,7 +125,7 @@ export function JsonConfigEditor({ value, onApply, applyLabel = 'Apply Changes' 
     <div className="mapui:flex mapui:flex-col mapui:gap-3">
       <div className="mapui:flex mapui:items-center mapui:justify-between mapui:gap-2">
         <div className="mapui:flex mapui:items-center mapui:gap-2">
-          <span className="mapui:text-sm mapui:font-medium mapui:text-gray-700">JSON Editor</span>
+          <span className="mapui:text-sm mapui:font-medium mapui:text-slate-700">JSON Editor</span>
           {dirty && (
             <span className="mapui:rounded mapui:bg-amber-100 mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:font-medium mapui:text-amber-800">
               unsaved changes
@@ -136,14 +136,14 @@ export function JsonConfigEditor({ value, onApply, applyLabel = 'Apply Changes' 
           <button
             type="button"
             onClick={handleFormat}
-            className="mapui:px-2.5 mapui:py-1 mapui:text-xs mapui:border mapui:border-gray-300 mapui:rounded mapui:text-gray-700 mapui:hover:bg-gray-50"
+            className="mapui:px-2.5 mapui:py-1 mapui:text-xs mapui:border mapui:border-slate-300 mapui:rounded mapui:text-slate-700 mapui:hover:bg-slate-50"
           >
             Format
           </button>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="mapui:px-2.5 mapui:py-1 mapui:text-xs mapui:border mapui:border-gray-300 mapui:rounded mapui:text-gray-700 mapui:hover:bg-gray-50"
+            className="mapui:px-2.5 mapui:py-1 mapui:text-xs mapui:border mapui:border-slate-300 mapui:rounded mapui:text-slate-700 mapui:hover:bg-slate-50"
           >
             Load File…
           </button>
@@ -162,7 +162,7 @@ export function JsonConfigEditor({ value, onApply, applyLabel = 'Apply Changes' 
             type="button"
             onClick={handleReset}
             disabled={!dirty}
-            className="mapui:px-2.5 mapui:py-1 mapui:text-xs mapui:border mapui:border-gray-300 mapui:rounded mapui:text-gray-700 mapui:hover:bg-gray-50 mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
+            className="mapui:px-2.5 mapui:py-1 mapui:text-xs mapui:border mapui:border-slate-300 mapui:rounded mapui:text-slate-700 mapui:hover:bg-slate-50 mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed"
           >
             Reset
           </button>
@@ -174,7 +174,7 @@ export function JsonConfigEditor({ value, onApply, applyLabel = 'Apply Changes' 
         onChange={(e) => handleChange(e.target.value)}
         spellCheck={false}
         rows={20}
-        className="mapui:w-full mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-gray-900 mapui:text-gray-100 mapui:px-3 mapui:py-2 mapui:text-xs mapui:font-mono mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
+        className="mapui:w-full mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-slate-900 mapui:text-slate-100 mapui:px-3 mapui:py-2 mapui:text-xs mapui:font-mono mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
         placeholder="Paste a MapConfig JSON document here…"
       />
 

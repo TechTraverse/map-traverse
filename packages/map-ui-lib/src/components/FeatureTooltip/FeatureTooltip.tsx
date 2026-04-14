@@ -39,7 +39,7 @@ export function FeatureTooltip({
   if (entries.length === 0) {
     return (
       <div
-        className={`mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:px-3 mapui:py-2 mapui:shadow-md ${className}`.trim()}
+        className={`mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white/90 mapui:backdrop-blur-sm mapui:px-3 mapui:py-2 mapui:shadow-md ${className}`.trim()}
       >
         <p className="mapui:m-0 mapui:text-xs mapui:text-slate-400">No data</p>
       </div>
@@ -48,7 +48,7 @@ export function FeatureTooltip({
 
   return (
     <div
-      className={`mapui:min-w-[140px] mapui:max-w-[240px] mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:shadow-md ${className}`.trim()}
+      className={`mapui:min-w-[140px] mapui:max-w-[240px] mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white/90 mapui:backdrop-blur-sm mapui:shadow-md ${className}`.trim()}
     >
       {entries.map((entry, i) => {
         const keys = entry.fields ?? Object.keys(entry.properties);

@@ -27,8 +27,8 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="mapui:flex mapui:flex-col mapui:items-center mapui:justify-center mapui:min-h-screen mapui:p-8 mapui:text-center">
-          <h1 className="mapui:text-2xl mapui:font-bold mapui:text-gray-900 mapui:mb-4">Something went wrong</h1>
-          <p className="mapui:text-gray-600 mapui:mb-6 mapui:max-w-md">
+          <h1 className="mapui:text-2xl mapui:font-bold mapui:text-slate-900 mapui:mb-4">Something went wrong</h1>
+          <p className="mapui:text-slate-600 mapui:mb-6 mapui:max-w-md">
             {this.state.error?.message ?? 'An unexpected error occurred.'}
           </p>
           <div className="mapui:flex mapui:gap-4">
@@ -40,7 +40,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </button>
             <a
               href="/configs"
-              className="mapui:px-4 mapui:py-2 mapui:border mapui:border-gray-300 mapui:rounded mapui:hover:bg-gray-50 mapui:text-gray-700"
+              className="mapui:px-4 mapui:py-2 mapui:border mapui:border-slate-300 mapui:rounded mapui:hover:bg-slate-50 mapui:text-slate-700"
             >
               Back to Configs
             </a>

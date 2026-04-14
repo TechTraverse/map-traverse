@@ -19,7 +19,10 @@ function Header() {
   const showLogout = authenticated && !unconfigured;
 
   return (
-    <header className="mapui:relative mapui:z-10 mapui:overflow-visible mapui:text-white mapui:px-6 mapui:shadow-lg" style={{ backgroundColor: settings.header_color, height: 56 }}>
+    <header className="mapui:relative mapui:z-10 mapui:overflow-visible mapui:text-white mapui:px-6 mapui:shadow-lg" style={{
+      background: `linear-gradient(to right, ${settings.header_color}, color-mix(in srgb, ${settings.header_color} 85%, black))`,
+      height: 56,
+    }}>
       <div className="mapui:flex mapui:h-full mapui:items-center mapui:justify-between">
         <Link to="/configs" className="mapui:flex mapui:items-center mapui:self-stretch mapui:gap-3 mapui:text-lg mapui:font-semibold mapui:hover:text-slate-300">
           {settings.logo_data_url && (
@@ -65,7 +68,7 @@ function Header() {
 
 export default function App() {
   return (
-    <div className="mapui:min-h-screen mapui:bg-gray-50 mapui:flex mapui:flex-col">
+    <div className="mapui:min-h-screen mapui:bg-slate-50 mapui:flex mapui:flex-col">
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route

@@ -69,9 +69,8 @@ import type {
 import type { SearchFilterValue, SearchFilterValues, Cql2FilterConfig, InfoPosition } from '@ogc-maps/storybook-components/types';
 import { useMeasure, useSelection } from '@ogc-maps/storybook-components/hooks';
 
-import { LuDownload, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
+import { LuDownload, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSatellite, LuSearch } from 'react-icons/lu';
 import { resolveEffectiveLayout } from './mapPreviewLayout';
-import { TbSatellite } from 'react-icons/tb';
 import { useBoxDraw } from '../hooks/useBoxDraw';
 import { usePolygonDraw } from '../hooks/usePolygonDraw';
 import { useQueryablesByLayer } from '../hooks/useQueryablesByLayer';
@@ -1199,7 +1198,7 @@ export function MapPreview({
               items.push({
                 key: 'imagery',
                 label: 'Imagery',
-                icon: iconFor('showImageryPanel', TbSatellite),
+                icon: iconFor('showImageryPanel', LuSatellite),
                 content: (
                   <ImageryPanel
                     imageryLayers={imageryLayers}
@@ -1409,7 +1408,7 @@ export function MapPreview({
                 showImageryPanel: uiConfig.showImageryPanel && imageryLayers.length > 0 ? (
                   <div className="mapui:pointer-events-auto">
                     <CollapsibleControl
-                      icon={TbSatellite}
+                      icon={LuSatellite}
                       label="Imagery"
                       corner={resolveControlCorner(uiConfig, 'showImageryPanel')}
                       collapsed={openControl !== 'imagery'}
@@ -1557,7 +1556,7 @@ export function MapPreview({
 
       {showEmptyState && (
         <div className="mapui:absolute mapui:inset-0 mapui:flex mapui:items-center mapui:justify-center mapui:pointer-events-none">
-          <div className="mapui:bg-white/80 mapui:backdrop-blur-sm mapui:rounded-lg mapui:px-4 mapui:py-3 mapui:text-sm mapui:text-gray-600 mapui:shadow mapui:text-center mapui:max-w-[200px]">
+          <div className="mapui:bg-white/80 mapui:backdrop-blur-sm mapui:rounded-lg mapui:px-4 mapui:py-3 mapui:text-sm mapui:text-slate-600 mapui:shadow mapui:text-center mapui:max-w-[200px]">
             Configure sources and layers to see a preview
           </div>
         </div>

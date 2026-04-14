@@ -51,19 +51,19 @@ export function ImageUploadField({
             src={value}
             alt="Preview"
             style={{ height: previewHeight }}
-            className="mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:object-contain mapui:p-1"
+            className="mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:object-contain mapui:p-1"
           />
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-3 mapui:py-1.5 mapui:text-xs mapui:text-gray-700 mapui:hover:bg-gray-50"
+            className="mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-3 mapui:py-1.5 mapui:text-xs mapui:text-slate-700 mapui:hover:bg-slate-50"
           >
             Replace
           </button>
           <button
             type="button"
             onClick={() => onChange(null)}
-            className="mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-3 mapui:py-1.5 mapui:text-xs mapui:text-red-600 mapui:hover:bg-red-50"
+            className="mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-3 mapui:py-1.5 mapui:text-xs mapui:text-red-600 mapui:hover:bg-red-50"
           >
             Remove
           </button>
@@ -72,7 +72,7 @@ export function ImageUploadField({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="mapui:rounded mapui:border mapui:border-dashed mapui:border-gray-400 mapui:bg-white mapui:px-4 mapui:py-2 mapui:text-xs mapui:text-gray-500 mapui:hover:border-gray-500 mapui:hover:text-gray-700"
+          className="mapui:rounded mapui:border mapui:border-dashed mapui:border-slate-400 mapui:bg-white mapui:px-4 mapui:py-2 mapui:text-xs mapui:text-slate-500 mapui:hover:border-slate-500 mapui:hover:text-slate-700"
         >
           Upload image
         </button>

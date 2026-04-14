@@ -26,7 +26,7 @@ export function FeatureDetailPanel({
   const content = (
     <div
       className={[
-        'mapui:flex mapui:flex-col mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:shadow-md',
+        'mapui:flex mapui:flex-col mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white/90 mapui:backdrop-blur-sm mapui:shadow-md',
         variant === 'modal'
           ? 'mapui:max-h-[80vh] mapui:w-full mapui:max-w-lg'
           : 'mapui:max-h-[calc(100vh-4rem)] mapui:w-72',

@@ -36,15 +36,15 @@ export function LoginPage() {
   };
 
   return (
-    <div className="mapui:flex mapui:items-center mapui:justify-center mapui:min-h-screen mapui:bg-gray-50">
+    <div className="mapui:flex mapui:items-center mapui:justify-center mapui:min-h-screen mapui:bg-slate-50">
       <div className="mapui:w-full mapui:max-w-sm">
         <div className="mapui:bg-white mapui:rounded-lg mapui:shadow-lg mapui:p-8">
-          <h1 className="mapui:text-2xl mapui:font-bold mapui:text-gray-900 mapui:mb-6 mapui:text-center">
+          <h1 className="mapui:text-2xl mapui:font-bold mapui:text-slate-900 mapui:mb-6 mapui:text-center">
             Admin Login
           </h1>
           <form onSubmit={handleSubmit} className="mapui:space-y-4">
             <div>
-              <label className="mapui:block mapui:text-sm mapui:font-medium mapui:text-gray-700 mapui:mb-1">
+              <label className="mapui:block mapui:text-sm mapui:font-medium mapui:text-slate-700 mapui:mb-1">
                 Username
               </label>
               <input
@@ -53,11 +53,11 @@ export function LoginPage() {
                 onChange={e => setUsername(e.target.value)}
                 required
                 autoFocus
-                className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
+                className="mapui:w-full mapui:border mapui:border-slate-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
               />
             </div>
             <div>
-              <label className="mapui:block mapui:text-sm mapui:font-medium mapui:text-gray-700 mapui:mb-1">
+              <label className="mapui:block mapui:text-sm mapui:font-medium mapui:text-slate-700 mapui:mb-1">
                 Password
               </label>
               <input
@@ -65,7 +65,7 @@ export function LoginPage() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
-                className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
+                className="mapui:w-full mapui:border mapui:border-slate-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
               />
             </div>
             {error && (

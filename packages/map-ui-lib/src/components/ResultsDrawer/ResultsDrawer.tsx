@@ -251,11 +251,13 @@ export function ResultsDrawer({
     }
   };
 
-  if (!open) return null;
-
   return (
     <div
-      className="mapui:absolute mapui:bottom-0 mapui:left-0 mapui:right-0 mapui:z-20 mapui:bg-white mapui:shadow-[0_-4px_12px_rgba(0,0,0,0.15)] mapui:flex mapui:flex-col"
+      className={`mapui:absolute mapui:bottom-0 mapui:left-0 mapui:right-0 mapui:z-20 mapui:bg-white/95 mapui:backdrop-blur-sm mapui:shadow-[0_-4px_12px_rgba(0,0,0,0.15)] mapui:flex mapui:flex-col mapui:transition-all mapui:duration-200 mapui:ease-out ${
+        open
+          ? 'mapui:translate-y-0 mapui:opacity-100'
+          : 'mapui:translate-y-full mapui:opacity-0 mapui:pointer-events-none'
+      }`}
       style={{ height }}
     >
       {/* Drag handle */}
