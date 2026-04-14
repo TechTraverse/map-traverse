@@ -63,6 +63,19 @@ const CORNER_POSITION_CLASSES: Record<ControlCorner, string> = {
   'bottom-left': 'absolute bottom-4 left-4',
 };
 
+const CONTROL_GROUPS: Record<string, number> = {
+  showLayerPanel: 0,
+  showLegend: 0,
+  showBasemapSwitcher: 0,
+  showImageryPanel: 0,
+  showSearchPanel: 1,
+  showSelectionTool: 1,
+  showMeasureTool: 2,
+  showExportButton: 2,
+  showCompass: 3,
+  showInfoControl: 3,
+};
+
 interface MapOverlayProps {
   uiConfig: UIConfig;
   mouseCoords: { latitude: number; longitude: number } | null;
@@ -652,9 +665,17 @@ export function MapOverlay({
           if (rendered.length === 0) return null;
           return (
             <div key={corner} className={CORNER_CLASSES[corner]}>
-              {keys.map((key) => {
+              {keys.flatMap((key, i) => {
                 const node = controlNodes[key];
-                return node ? <Fragment key={key}>{node}</Fragment> : null;
+                if (!node) return [];
+                const prevGroup = i > 0 ? CONTROL_GROUPS[keys[i - 1]] : CONTROL_GROUPS[key];
+                const currentGroup = CONTROL_GROUPS[key];
+                const elements: React.ReactNode[] = [];
+                if (i > 0 && currentGroup !== prevGroup) {
+                  elements.push(<div key={`spacer-${key}`} className="mapui:h-1" />);
+                }
+                elements.push(<Fragment key={key}>{node}</Fragment>);
+                return elements;
               })}
             </div>
           );

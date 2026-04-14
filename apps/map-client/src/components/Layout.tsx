@@ -209,7 +209,10 @@ export function Layout({ uiConfig }: LayoutProps) {
     <>
       <header
         className="relative z-10 overflow-visible text-white px-6 shadow-lg"
-        style={{ backgroundColor: branding?.headerColor ?? DEFAULT_HEADER_COLOR, height: 56 }}
+        style={{
+          background: `linear-gradient(to right, ${branding?.headerColor ?? DEFAULT_HEADER_COLOR}, color-mix(in srgb, ${branding?.headerColor ?? DEFAULT_HEADER_COLOR} 85%, black))`,
+          height: 56,
+        }}
       >
         <div className="flex h-full items-center gap-3">
           {branding?.logoDataUrl && (
