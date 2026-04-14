@@ -49,23 +49,23 @@ function QueryablesTable({ queryables }: { queryables: QueryableMeta[] }) {
   return (
     <table className="mapui:w-full mapui:text-xs">
       <thead>
-        <tr className="mapui:text-left mapui:text-gray-500">
+        <tr className="mapui:text-left mapui:text-slate-500">
           <th className="mapui:py-1 mapui:pr-3 mapui:font-medium">Property</th>
           <th className="mapui:py-1 mapui:pr-3 mapui:font-medium">Type</th>
           {hasTitle && <th className="mapui:py-1 mapui:pr-3 mapui:font-medium">Title</th>}
           {hasValues && <th className="mapui:py-1 mapui:font-medium">Values</th>}
         </tr>
       </thead>
-      <tbody className="mapui:divide-y mapui:divide-gray-100">
+      <tbody className="mapui:divide-y mapui:divide-slate-100">
         {queryables.map(q => (
           <tr key={q.name}>
-            <td className="mapui:py-1 mapui:pr-3 mapui:font-mono mapui:text-gray-800">{q.name}</td>
-            <td className="mapui:py-1 mapui:pr-3 mapui:text-gray-600">
+            <td className="mapui:py-1 mapui:pr-3 mapui:font-mono mapui:text-slate-800">{q.name}</td>
+            <td className="mapui:py-1 mapui:pr-3 mapui:text-slate-600">
               {q.type}{q.format ? ` (${q.format})` : ''}
             </td>
-            {hasTitle && <td className="mapui:py-1 mapui:pr-3 mapui:text-gray-600">{q.title ?? '—'}</td>}
+            {hasTitle && <td className="mapui:py-1 mapui:pr-3 mapui:text-slate-600">{q.title ?? '—'}</td>}
             {hasValues && (
-              <td className="mapui:py-1 mapui:text-gray-600">
+              <td className="mapui:py-1 mapui:text-slate-600">
                 {q.enum ? q.enum.join(', ') : q.minimum !== undefined || q.maximum !== undefined
                   ? `${q.minimum ?? '—'} to ${q.maximum ?? '—'}`
                   : '—'}
@@ -93,9 +93,9 @@ export function SourceMetadataPanel({ metadata, metadataUpdatedAt, sourceUrl, on
 
   if (!metadata) {
     return (
-      <div className="mapui:px-6 mapui:py-4 mapui:bg-gray-50">
+      <div className="mapui:px-6 mapui:py-4 mapui:bg-slate-50">
         <div className="mapui:flex mapui:items-center mapui:justify-between">
-          <span className="mapui:text-sm mapui:text-gray-500">No metadata available</span>
+          <span className="mapui:text-sm mapui:text-slate-500">No metadata available</span>
           <button
             onClick={onRefresh}
             disabled={refreshing}
@@ -109,10 +109,10 @@ export function SourceMetadataPanel({ metadata, metadataUpdatedAt, sourceUrl, on
   }
 
   return (
-    <div className="mapui:px-6 mapui:py-4 mapui:bg-gray-50 mapui:space-y-4">
+    <div className="mapui:px-6 mapui:py-4 mapui:bg-slate-50 mapui:space-y-4">
       {/* Header */}
       <div className="mapui:flex mapui:items-center mapui:justify-between">
-        <span className="mapui:text-xs mapui:text-gray-500">
+        <span className="mapui:text-xs mapui:text-slate-500">
           Last inspected: {metadataUpdatedAt ? formatTimeAgo(metadataUpdatedAt) : 'unknown'}
         </span>
         <button
@@ -172,10 +172,10 @@ export function SourceMetadataPanel({ metadata, metadataUpdatedAt, sourceUrl, on
               <div className="mapui:space-y-3">
                 {Object.entries(groups).map(([category, uris]) => (
                   <div key={category}>
-                    <p className="mapui:text-xs mapui:font-medium mapui:text-gray-600 mapui:mb-1">{category}</p>
+                    <p className="mapui:text-xs mapui:font-medium mapui:text-slate-600 mapui:mb-1">{category}</p>
                     <ul className="mapui:space-y-0.5">
                       {uris.map(uri => (
-                        <li key={uri} className="mapui:text-xs mapui:text-gray-500 mapui:font-mono mapui:break-all">
+                        <li key={uri} className="mapui:text-xs mapui:text-slate-500 mapui:font-mono mapui:break-all">
                           {uri}
                         </li>
                       ))}
@@ -200,29 +200,29 @@ export function SourceMetadataPanel({ metadata, metadataUpdatedAt, sourceUrl, on
             <div className="mapui:grid mapui:grid-cols-[auto_1fr] mapui:gap-x-3 mapui:gap-y-1">
               {metadata.tileJson.minzoom != null && (
                 <>
-                  <span className="mapui:text-gray-500 mapui:font-medium">Zoom Range</span>
-                  <span className="mapui:text-gray-800">{metadata.tileJson.minzoom} – {metadata.tileJson.maxzoom ?? '?'}</span>
+                  <span className="mapui:text-slate-500 mapui:font-medium">Zoom Range</span>
+                  <span className="mapui:text-slate-800">{metadata.tileJson.minzoom} – {metadata.tileJson.maxzoom ?? '?'}</span>
                 </>
               )}
               {metadata.tileJson.bounds && (
                 <>
-                  <span className="mapui:text-gray-500 mapui:font-medium">Bounds</span>
-                  <span className="mapui:text-gray-800">{formatBbox(metadata.tileJson.bounds)}</span>
+                  <span className="mapui:text-slate-500 mapui:font-medium">Bounds</span>
+                  <span className="mapui:text-slate-800">{formatBbox(metadata.tileJson.bounds)}</span>
                 </>
               )}
               {metadata.tileJson.tilejson && (
                 <>
-                  <span className="mapui:text-gray-500 mapui:font-medium">TileJSON Version</span>
-                  <span className="mapui:text-gray-800">{metadata.tileJson.tilejson}</span>
+                  <span className="mapui:text-slate-500 mapui:font-medium">TileJSON Version</span>
+                  <span className="mapui:text-slate-800">{metadata.tileJson.tilejson}</span>
                 </>
               )}
             </div>
             {metadata.tileJson.tiles.length > 0 && (
               <div>
-                <span className="mapui:text-gray-500 mapui:font-medium">Tile URLs</span>
+                <span className="mapui:text-slate-500 mapui:font-medium">Tile URLs</span>
                 <ul className="mapui:mt-1 mapui:space-y-0.5">
                   {metadata.tileJson.tiles.map((url, i) => (
-                    <li key={i} className="mapui:text-gray-600 mapui:font-mono mapui:break-all">{url}</li>
+                    <li key={i} className="mapui:text-slate-600 mapui:font-mono mapui:break-all">{url}</li>
                   ))}
                 </ul>
               </div>
@@ -235,14 +235,14 @@ export function SourceMetadataPanel({ metadata, metadataUpdatedAt, sourceUrl, on
       {!metadata.tileJson && sourceType === 'xyz' && (
         <CollapsibleSection title="XYZ Tile Server" defaultOpen={true}>
           <div className="mapui:space-y-2 mapui:text-xs">
-            <p className="mapui:text-gray-600">
+            <p className="mapui:text-slate-600">
               This source provides raster tiles directly via a URL template. It does not expose OGC API collections.
             </p>
             <div className="mapui:grid mapui:grid-cols-[auto_1fr] mapui:gap-x-3 mapui:gap-y-1">
-              <span className="mapui:text-gray-500 mapui:font-medium">Type</span>
-              <span className="mapui:text-gray-800">XYZ Tile URL</span>
-              <span className="mapui:text-gray-500 mapui:font-medium">URL Template</span>
-              <span className="mapui:text-gray-800 mapui:font-mono mapui:break-all">{sourceUrl}</span>
+              <span className="mapui:text-slate-500 mapui:font-medium">Type</span>
+              <span className="mapui:text-slate-800">XYZ Tile URL</span>
+              <span className="mapui:text-slate-500 mapui:font-medium">URL Template</span>
+              <span className="mapui:text-slate-800 mapui:font-mono mapui:break-all">{sourceUrl}</span>
             </div>
           </div>
         </CollapsibleSection>
@@ -256,12 +256,12 @@ export function SourceMetadataPanel({ metadata, metadataUpdatedAt, sourceUrl, on
         badge={metadata.collections.length}
       >
         {metadata.collections.length === 0 ? (
-          <p className="mapui:text-xs mapui:text-gray-500">No collections found.</p>
+          <p className="mapui:text-xs mapui:text-slate-500">No collections found.</p>
         ) : (
           <div className="mapui:overflow-x-auto">
             <table className="mapui:w-full mapui:text-sm">
               <thead>
-                <tr className="mapui:text-left mapui:text-gray-500 mapui:text-xs">
+                <tr className="mapui:text-left mapui:text-slate-500 mapui:text-xs">
                   <th className="mapui:py-2 mapui:pr-3 mapui:font-medium"></th>
                   <th className="mapui:py-2 mapui:pr-3 mapui:font-medium">Collection</th>
                   <th className="mapui:py-2 mapui:pr-3 mapui:font-medium">Items</th>
@@ -269,11 +269,11 @@ export function SourceMetadataPanel({ metadata, metadataUpdatedAt, sourceUrl, on
                   <th className="mapui:py-2 mapui:font-medium">Properties</th>
                 </tr>
               </thead>
-              <tbody className="mapui:divide-y mapui:divide-gray-100">
+              <tbody className="mapui:divide-y mapui:divide-slate-100">
                 {metadata.collections.map(col => (
                   <Fragment key={col.id}>
                     <tr
-                      className="mapui:hover:bg-gray-100 mapui:cursor-pointer"
+                      className="mapui:hover:bg-slate-100 mapui:cursor-pointer"
                       onClick={() => toggleCollection(col.id)}
                     >
                       <td className="mapui:py-2 mapui:pr-1 mapui:w-6">
@@ -287,33 +287,33 @@ export function SourceMetadataPanel({ metadata, metadataUpdatedAt, sourceUrl, on
                           strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className={`mapui:text-gray-400 mapui:transition-transform ${expandedCollections.has(col.id) ? 'mapui:rotate-90' : ''}`}
+                          className={`mapui:text-slate-400 mapui:transition-transform ${expandedCollections.has(col.id) ? 'mapui:rotate-90' : ''}`}
                         >
                           <polyline points="9 18 15 12 9 6" />
                         </svg>
                       </td>
                       <td className="mapui:py-2 mapui:pr-3">
                         <div>
-                          <span className="mapui:font-medium mapui:text-gray-800 mapui:text-xs">{col.title ?? col.id}</span>
+                          <span className="mapui:font-medium mapui:text-slate-800 mapui:text-xs">{col.title ?? col.id}</span>
                           {col.title && col.title !== col.id && (
-                            <span className="mapui:text-gray-400 mapui:text-xs mapui:ml-1 mapui:font-mono">({col.id})</span>
+                            <span className="mapui:text-slate-400 mapui:text-xs mapui:ml-1 mapui:font-mono">({col.id})</span>
                           )}
                         </div>
                         {col.description && (
-                          <p className="mapui:text-xs mapui:text-gray-500 mapui:mt-0.5 mapui:line-clamp-1">{col.description}</p>
+                          <p className="mapui:text-xs mapui:text-slate-500 mapui:mt-0.5 mapui:line-clamp-1">{col.description}</p>
                         )}
                       </td>
-                      <td className="mapui:py-2 mapui:pr-3 mapui:text-xs mapui:text-gray-600 mapui:whitespace-nowrap">
+                      <td className="mapui:py-2 mapui:pr-3 mapui:text-xs mapui:text-slate-600 mapui:whitespace-nowrap">
                         {col.itemCount !== null ? col.itemCount.toLocaleString() : (
                           col.itemCountError ? (
                             <span className="mapui:text-yellow-600" title={col.itemCountError}>N/A</span>
                           ) : '—'
                         )}
                       </td>
-                      <td className="mapui:py-2 mapui:pr-3 mapui:text-xs mapui:text-gray-600">
+                      <td className="mapui:py-2 mapui:pr-3 mapui:text-xs mapui:text-slate-600">
                         {col.extent?.spatial?.bbox?.[0] ? formatBbox(col.extent.spatial.bbox[0]) : '—'}
                       </td>
-                      <td className="mapui:py-2 mapui:text-xs mapui:text-gray-600">
+                      <td className="mapui:py-2 mapui:text-xs mapui:text-slate-600">
                         {col.queryables ? col.queryables.length : (
                           col.queryablesError ? (
                             <span className="mapui:text-yellow-600" title={col.queryablesError}>N/A</span>
@@ -332,7 +332,7 @@ export function SourceMetadataPanel({ metadata, metadataUpdatedAt, sourceUrl, on
                               Could not fetch queryables: {col.queryablesError}
                             </p>
                           ) : (
-                            <p className="mapui:text-xs mapui:text-gray-500">No queryable properties available.</p>
+                            <p className="mapui:text-xs mapui:text-slate-500">No queryable properties available.</p>
                           )}
                         </td>
                       </tr>

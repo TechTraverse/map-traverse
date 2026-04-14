@@ -65,7 +65,7 @@ function Header() {
 
 export default function App() {
   return (
-    <div className="mapui:min-h-screen mapui:bg-gray-50 mapui:flex mapui:flex-col">
+    <div className="mapui:min-h-screen mapui:bg-slate-50 mapui:flex mapui:flex-col">
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route

@@ -30,18 +30,18 @@ export function ConfigPreviewPage() {
 
   if (loading) {
     return (
-      <div className="mapui:flex mapui:items-center mapui:justify-center mapui:h-[calc(100vh-4rem)] mapui:text-gray-500">
+      <div className="mapui:flex mapui:items-center mapui:justify-center mapui:h-[calc(100vh-4rem)] mapui:text-slate-500">
         Loading...
       </div>
     );
   }
 
   if (error) return <div className="mapui:p-8 mapui:text-red-600">{error}</div>;
-  if (!config) return <div className="mapui:p-8 mapui:text-gray-500">Map not found.</div>;
+  if (!config) return <div className="mapui:p-8 mapui:text-slate-500">Map not found.</div>;
 
   return (
     <div className="mapui:flex mapui:flex-col mapui:h-[calc(100vh-4rem)]">
-      <div className="mapui:px-4 mapui:py-2 mapui:border-b mapui:border-gray-200 mapui:flex mapui:items-center mapui:gap-3 mapui:bg-white mapui:shrink-0">
+      <div className="mapui:px-4 mapui:py-2 mapui:border-b mapui:border-slate-200 mapui:flex mapui:items-center mapui:gap-3 mapui:bg-white mapui:shrink-0">
         <Link to="/configs" className="mapui:text-blue-600 mapui:hover:underline mapui:text-sm">
           ← Back to Maps
         </Link>

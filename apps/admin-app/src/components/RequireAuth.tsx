@@ -12,7 +12,7 @@ export function RequireAuth({ children }: RequireAuthProps) {
   if (loading) {
     return (
       <div className="mapui:flex mapui:items-center mapui:justify-center mapui:min-h-screen">
-        <div className="mapui:text-gray-500">Checking authentication...</div>
+        <div className="mapui:text-slate-500">Checking authentication...</div>
       </div>
     );
   }

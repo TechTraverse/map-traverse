@@ -1557,7 +1557,7 @@ export function MapPreview({
 
       {showEmptyState && (
         <div className="mapui:absolute mapui:inset-0 mapui:flex mapui:items-center mapui:justify-center mapui:pointer-events-none">
-          <div className="mapui:bg-white/80 mapui:backdrop-blur-sm mapui:rounded-lg mapui:px-4 mapui:py-3 mapui:text-sm mapui:text-gray-600 mapui:shadow mapui:text-center mapui:max-w-[200px]">
+          <div className="mapui:bg-white/80 mapui:backdrop-blur-sm mapui:rounded-lg mapui:px-4 mapui:py-3 mapui:text-sm mapui:text-slate-600 mapui:shadow mapui:text-center mapui:max-w-[200px]">
             Configure sources and layers to see a preview
           </div>
         </div>

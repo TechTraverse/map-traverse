@@ -5,7 +5,7 @@ import type { SiteSettings } from '../hooks/useSettings';
 import { ImageUploadField } from '../components/ImageUploadField';
 
 const inputClass =
-  'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
+  'mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
 export function CustomizePage() {
   const { settings, updateSettings } = useSettings();
@@ -58,7 +58,7 @@ export function CustomizePage() {
 
   return (
     <div className="mapui:mx-auto mapui:max-w-2xl mapui:px-6 mapui:py-8">
-      <h1 className="mapui:mb-6 mapui:text-2xl mapui:font-bold mapui:text-gray-900">
+      <h1 className="mapui:mb-6 mapui:text-2xl mapui:font-bold mapui:text-slate-900">
         Customize
       </h1>
 
@@ -76,7 +76,7 @@ export function CustomizePage() {
         </div>
       )}
 
-      <div className="mapui:rounded-lg mapui:border mapui:border-gray-200 mapui:bg-white mapui:p-6 mapui:shadow-sm">
+      <div className="mapui:rounded-lg mapui:border mapui:border-slate-200 mapui:bg-white mapui:p-6 mapui:shadow-sm">
         <div className="mapui:flex mapui:flex-col mapui:gap-6">
           <FormField label="Header Title" description="Text displayed in the header navigation bar">
             <input
@@ -146,7 +146,7 @@ export function CustomizePage() {
           {hasChanges && (
             <button
               onClick={handleReset}
-              className="mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-4 mapui:py-2 mapui:text-sm mapui:text-gray-700 mapui:hover:bg-gray-50"
+              className="mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-4 mapui:py-2 mapui:text-sm mapui:text-slate-700 mapui:hover:bg-slate-50"
             >
               Reset
             </button>
