@@ -1,6 +1,10 @@
 @import "tailwindcss" prefix(mapui);
 @source "./src/**/*.tsx";
 
+@theme {
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
 @layer components {
   .range-sm {
     -webkit-appearance: none;

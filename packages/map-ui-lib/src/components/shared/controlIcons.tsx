@@ -18,10 +18,10 @@ import {
   LuSearch,
   LuSettings,
   LuSlidersHorizontal,
+  LuSatellite,
   LuStar,
   LuTarget,
 } from 'react-icons/lu';
-import { TbSatellite } from 'react-icons/tb';
 
 /**
  * Map of icon name → component used by `UIConfigEditor` (icon picker) and
@@ -48,7 +48,7 @@ export const CONTROL_ICON_MAP: Record<string, IconType> = {
   sliders: LuSlidersHorizontal,
   star: LuStar,
   target: LuTarget,
-  satellite: TbSatellite,
+  satellite: LuSatellite,
 };
 
 export const CONTROL_ICON_NAMES: string[] = Object.keys(CONTROL_ICON_MAP);

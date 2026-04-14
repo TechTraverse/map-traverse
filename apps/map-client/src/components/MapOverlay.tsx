@@ -40,8 +40,7 @@ import { groupControlsByCorner, resolveControlCorner } from '@ogc-maps/storybook
 import { useMapStore, useActiveLayerIds } from '../stores/mapStore';
 import { useAutocompleteSuggestions } from '../hooks/useAutocompleteSuggestions';
 import { useLayerQueryables } from '../hooks/useLayerQueryables';
-import { LuDownload, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
-import { TbSatellite } from 'react-icons/tb';
+import { LuDownload, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSatellite, LuSearch } from 'react-icons/lu';
 
 const INFO_CORNER_CLASSES: Record<InfoPosition, string> = {
   'top-right': 'absolute top-4 right-4 pointer-events-auto',
@@ -495,7 +494,7 @@ export function MapOverlay({
           if (layerInner) items.push({ key: 'layers', label: 'Layers', icon: iconFor('showLayerPanel', LuLayers3), content: layerInner });
           if (measureInner) items.push({ key: 'measure', label: 'Measure', icon: iconFor('showMeasureTool', LuRuler), content: measureInner });
           if (selectionInner) items.push({ key: 'selection', label: 'Select', icon: iconFor('showSelectionTool', LuMousePointer2), content: selectionInner });
-          if (imageryInner) items.push({ key: 'imagery', label: 'Imagery', icon: iconFor('showImageryPanel', TbSatellite), content: imageryInner });
+          if (imageryInner) items.push({ key: 'imagery', label: 'Imagery', icon: iconFor('showImageryPanel', LuSatellite), content: imageryInner });
           if (basemapInner) items.push({ key: 'basemap', label: 'Basemap', icon: iconFor('showBasemapSwitcher', LuMap), content: basemapInner });
           if (uiConfig.showExportButton || uiConfig.showExportPdf) items.push({ key: 'export', label: 'Export', icon: iconFor('showExportButton', LuDownload), onAction: () => setExportModalOpen(true) });
           return (
@@ -602,7 +601,7 @@ export function MapOverlay({
           showImageryPanel: imageryInner ? (
             <div className="pointer-events-auto">
               <CollapsibleControl
-                icon={iconFor('showImageryPanel', TbSatellite)}
+                icon={iconFor('showImageryPanel', LuSatellite)}
                 label="Imagery"
                 corner={resolveControlCorner(uiConfig, 'showImageryPanel')}
                 collapsed={openControl !== 'imagery'}

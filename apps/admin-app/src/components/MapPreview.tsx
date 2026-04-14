@@ -69,9 +69,8 @@ import type {
 import type { SearchFilterValue, SearchFilterValues, Cql2FilterConfig, InfoPosition } from '@ogc-maps/storybook-components/types';
 import { useMeasure, useSelection } from '@ogc-maps/storybook-components/hooks';
 
-import { LuDownload, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSearch } from 'react-icons/lu';
+import { LuDownload, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSatellite, LuSearch } from 'react-icons/lu';
 import { resolveEffectiveLayout } from './mapPreviewLayout';
-import { TbSatellite } from 'react-icons/tb';
 import { useBoxDraw } from '../hooks/useBoxDraw';
 import { usePolygonDraw } from '../hooks/usePolygonDraw';
 import { useQueryablesByLayer } from '../hooks/useQueryablesByLayer';
@@ -1199,7 +1198,7 @@ export function MapPreview({
               items.push({
                 key: 'imagery',
                 label: 'Imagery',
-                icon: iconFor('showImageryPanel', TbSatellite),
+                icon: iconFor('showImageryPanel', LuSatellite),
                 content: (
                   <ImageryPanel
                     imageryLayers={imageryLayers}
@@ -1409,7 +1408,7 @@ export function MapPreview({
                 showImageryPanel: uiConfig.showImageryPanel && imageryLayers.length > 0 ? (
                   <div className="mapui:pointer-events-auto">
                     <CollapsibleControl
-                      icon={TbSatellite}
+                      icon={LuSatellite}
                       label="Imagery"
                       corner={resolveControlCorner(uiConfig, 'showImageryPanel')}
                       collapsed={openControl !== 'imagery'}
