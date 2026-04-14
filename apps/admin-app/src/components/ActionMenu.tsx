@@ -24,13 +24,13 @@ export function ActionMenu({ configId, onDuplicate, onDelete }: ActionMenuProps)
   }, [open]);
 
   const linkClass =
-    'mapui:flex mapui:items-center mapui:gap-2 mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-gray-700 mapui:hover:bg-gray-100 mapui:w-full mapui:text-left';
+    'mapui:flex mapui:items-center mapui:gap-2 mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-slate-700 mapui:hover:bg-slate-100 mapui:w-full mapui:text-left';
 
   return (
     <div ref={menuRef} className="mapui:relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className="mapui:p-1 mapui:rounded mapui:hover:bg-gray-200 mapui:text-gray-500"
+        className="mapui:p-1 mapui:rounded mapui:hover:bg-slate-200 mapui:text-slate-500"
         aria-label="Actions"
       >
         <LuEllipsisVertical className="mapui:w-5 mapui:h-5" />
@@ -67,7 +67,7 @@ export function ActionMenu({ configId, onDuplicate, onDelete }: ActionMenuProps)
           >
             <LuCopy className="mapui:w-4 mapui:h-4" /> Duplicate
           </button>
-          <div className="mapui:border-t mapui:border-gray-100 mapui:my-1" />
+          <div className="mapui:border-t mapui:border-slate-100 mapui:my-1" />
           <button
             onClick={() => {
               setOpen(false);

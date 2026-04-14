@@ -136,12 +136,12 @@ export function ImportConfigModal({ open, onClose, onImported, existingNames }: 
         className="mapui:bg-white mapui:rounded-lg mapui:shadow-xl mapui:w-full mapui:max-w-3xl mapui:max-h-[90vh] mapui:overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mapui:flex mapui:items-center mapui:justify-between mapui:border-b mapui:border-gray-200 mapui:px-6 mapui:py-4">
-          <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-900">Import Map Configuration</h2>
+        <div className="mapui:flex mapui:items-center mapui:justify-between mapui:border-b mapui:border-slate-200 mapui:px-6 mapui:py-4">
+          <h2 className="mapui:text-lg mapui:font-semibold mapui:text-slate-900">Import Map Configuration</h2>
           <button
             type="button"
             onClick={onClose}
-            className="mapui:text-gray-400 mapui:hover:text-gray-600 mapui:text-xl mapui:leading-none"
+            className="mapui:text-slate-400 mapui:hover:text-slate-600 mapui:text-xl mapui:leading-none"
             aria-label="Close"
           >
             ×
@@ -149,13 +149,13 @@ export function ImportConfigModal({ open, onClose, onImported, existingNames }: 
         </div>
 
         <div className="mapui:px-6 mapui:py-4 mapui:space-y-4">
-          <p className="mapui:text-sm mapui:text-gray-600">
+          <p className="mapui:text-sm mapui:text-slate-600">
             Paste a complete MapConfig JSON document below, or upload a <code>.json</code> file.
             The config will be validated against the schema before import.
           </p>
 
           <div>
-            <label className="mapui:block mapui:text-sm mapui:font-medium mapui:text-gray-700 mapui:mb-1">
+            <label className="mapui:block mapui:text-sm mapui:font-medium mapui:text-slate-700 mapui:mb-1">
               Map Name <span className="mapui:text-red-500">*</span>
             </label>
             <input
@@ -164,7 +164,7 @@ export function ImportConfigModal({ open, onClose, onImported, existingNames }: 
               onChange={(e) => setName(e.target.value.replace(/[^a-zA-Z0-9-]/g, '-').replace(/-+/g, '-'))}
               onBlur={() => setName(name.replace(/^-|-$/g, '').toLowerCase())}
               placeholder="my-imported-map"
-              className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:font-mono mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
+              className="mapui:w-full mapui:border mapui:border-slate-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:font-mono mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
             />
             {nameInUse && (
               <p className="mapui:text-xs mapui:text-red-600 mapui:mt-1">
@@ -172,14 +172,14 @@ export function ImportConfigModal({ open, onClose, onImported, existingNames }: 
               </p>
             )}
             {!nameInUse && (
-              <p className="mapui:text-xs mapui:text-gray-400 mapui:mt-1">
+              <p className="mapui:text-xs mapui:text-slate-400 mapui:mt-1">
                 Lowercase letters, numbers, and hyphens.
               </p>
             )}
           </div>
 
           <div>
-            <label className="mapui:block mapui:text-sm mapui:font-medium mapui:text-gray-700 mapui:mb-1">
+            <label className="mapui:block mapui:text-sm mapui:font-medium mapui:text-slate-700 mapui:mb-1">
               Description
             </label>
             <textarea
@@ -187,20 +187,20 @@ export function ImportConfigModal({ open, onClose, onImported, existingNames }: 
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Optional description…"
               rows={2}
-              className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
+              className="mapui:w-full mapui:border mapui:border-slate-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
             />
           </div>
 
           <div>
             <div className="mapui:flex mapui:items-center mapui:justify-between mapui:mb-1">
-              <label className="mapui:block mapui:text-sm mapui:font-medium mapui:text-gray-700">
+              <label className="mapui:block mapui:text-sm mapui:font-medium mapui:text-slate-700">
                 MapConfig JSON <span className="mapui:text-red-500">*</span>
               </label>
               <div className="mapui:flex mapui:gap-2">
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="mapui:px-2.5 mapui:py-1 mapui:text-xs mapui:border mapui:border-gray-300 mapui:rounded mapui:text-gray-700 mapui:hover:bg-gray-50"
+                  className="mapui:px-2.5 mapui:py-1 mapui:text-xs mapui:border mapui:border-slate-300 mapui:rounded mapui:text-slate-700 mapui:hover:bg-slate-50"
                 >
                   Upload File…
                 </button>
@@ -219,7 +219,7 @@ export function ImportConfigModal({ open, onClose, onImported, existingNames }: 
                   type="button"
                   onClick={() => setJsonText('')}
                   disabled={!jsonText}
-                  className="mapui:px-2.5 mapui:py-1 mapui:text-xs mapui:border mapui:border-gray-300 mapui:rounded mapui:text-gray-700 mapui:hover:bg-gray-50 mapui:disabled:opacity-50"
+                  className="mapui:px-2.5 mapui:py-1 mapui:text-xs mapui:border mapui:border-slate-300 mapui:rounded mapui:text-slate-700 mapui:hover:bg-slate-50 mapui:disabled:opacity-50"
                 >
                   Clear
                 </button>
@@ -231,7 +231,7 @@ export function ImportConfigModal({ open, onClose, onImported, existingNames }: 
               spellCheck={false}
               rows={14}
               placeholder='{ "sources": [], "layers": [], "basemaps": [], "ui": { ... }, "initialView": { ... } }'
-              className="mapui:w-full mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-gray-900 mapui:text-gray-100 mapui:px-3 mapui:py-2 mapui:text-xs mapui:font-mono mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
+              className="mapui:w-full mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-slate-900 mapui:text-slate-100 mapui:px-3 mapui:py-2 mapui:text-xs mapui:font-mono mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
             />
           </div>
 
@@ -270,11 +270,11 @@ export function ImportConfigModal({ open, onClose, onImported, existingNames }: 
           )}
         </div>
 
-        <div className="mapui:flex mapui:items-center mapui:justify-end mapui:gap-2 mapui:border-t mapui:border-gray-200 mapui:px-6 mapui:py-4">
+        <div className="mapui:flex mapui:items-center mapui:justify-end mapui:gap-2 mapui:border-t mapui:border-slate-200 mapui:px-6 mapui:py-4">
           <button
             type="button"
             onClick={onClose}
-            className="mapui:px-4 mapui:py-2 mapui:border mapui:border-gray-300 mapui:rounded mapui:text-sm mapui:text-gray-700 mapui:hover:bg-gray-50"
+            className="mapui:px-4 mapui:py-2 mapui:border mapui:border-slate-300 mapui:rounded mapui:text-sm mapui:text-slate-700 mapui:hover:bg-slate-50"
           >
             Cancel
           </button>

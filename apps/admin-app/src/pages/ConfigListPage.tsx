@@ -148,17 +148,17 @@ export function ConfigListPage() {
     }
   };
 
-  if (loading) return <div className="mapui:p-8 mapui:text-center mapui:text-gray-500">Loading...</div>;
+  if (loading) return <div className="mapui:p-8 mapui:text-center mapui:text-slate-500">Loading...</div>;
 
   return (
     <div className="mapui:p-8">
       <div className="mapui:flex mapui:items-center mapui:justify-between mapui:mb-6">
-        <h1 className="mapui:text-2xl mapui:font-bold mapui:text-gray-900">Maps</h1>
+        <h1 className="mapui:text-2xl mapui:font-bold mapui:text-slate-900">Maps</h1>
         <div className="mapui:flex mapui:gap-2">
           <button
             type="button"
             onClick={() => setImportOpen(true)}
-            className="mapui:border mapui:border-gray-300 mapui:bg-white mapui:text-gray-700 mapui:px-4 mapui:py-2 mapui:rounded mapui:hover:bg-gray-50"
+            className="mapui:border mapui:border-slate-300 mapui:bg-white mapui:text-slate-700 mapui:px-4 mapui:py-2 mapui:rounded mapui:hover:bg-slate-50"
           >
             Import Map
           </button>
@@ -197,7 +197,7 @@ export function ConfigListPage() {
       )}
 
       {configs.length === 0 ? (
-        <div className="mapui:text-center mapui:text-gray-500 mapui:py-12">
+        <div className="mapui:text-center mapui:text-slate-500 mapui:py-12">
           No maps yet.{' '}
           <Link to="/configs/new" className="mapui:text-blue-600 mapui:hover:underline">
             Create one
@@ -207,28 +207,28 @@ export function ConfigListPage() {
       ) : (
         <div className="mapui:bg-white mapui:rounded-lg mapui:shadow mapui:overflow-visible">
           <table className="mapui:w-full">
-            <thead className="mapui:bg-gray-50 mapui:text-left">
+            <thead className="mapui:bg-slate-50 mapui:text-left">
               <tr>
-                <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Name</th>
-                <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Description</th>
-                <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600 mapui:text-center">Published</th>
-                <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600 mapui:text-center">Default</th>
-                <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Updated</th>
-                <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600"></th>
+                <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-slate-600">Name</th>
+                <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-slate-600">Description</th>
+                <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-slate-600 mapui:text-center">Published</th>
+                <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-slate-600 mapui:text-center">Default</th>
+                <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-slate-600">Updated</th>
+                <th className="mapui:px-6 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-slate-600"></th>
               </tr>
             </thead>
-            <tbody className="mapui:divide-y mapui:divide-gray-200">
+            <tbody className="mapui:divide-y mapui:divide-slate-200">
               {configs.map(config => (
-                <tr key={config.id} className="mapui:hover:bg-gray-50">
-                  <td className="mapui:px-6 mapui:py-4 mapui:font-medium mapui:text-gray-900">{config.name}</td>
-                  <td className="mapui:px-6 mapui:py-4 mapui:text-gray-500 mapui:text-sm">{config.description ?? '—'}</td>
+                <tr key={config.id} className="mapui:hover:bg-slate-50">
+                  <td className="mapui:px-6 mapui:py-4 mapui:font-medium mapui:text-slate-900">{config.name}</td>
+                  <td className="mapui:px-6 mapui:py-4 mapui:text-slate-500 mapui:text-sm">{config.description ?? '—'}</td>
                   <td className="mapui:px-6 mapui:py-4 mapui:text-center">
                     <button
                       role="switch"
                       aria-checked={config.is_published}
                       disabled={publishingId === config.id}
                       onClick={() => config.is_published ? handleUnpublish(config.id) : handlePublish(config.id)}
-                      className={`mapui:relative mapui:inline-flex mapui:h-5 mapui:w-9 mapui:shrink-0 mapui:rounded-full mapui:transition-colors mapui:duration-200 mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed ${config.is_published ? 'mapui:bg-green-500' : 'mapui:bg-gray-300'}`}
+                      className={`mapui:relative mapui:inline-flex mapui:h-5 mapui:w-9 mapui:shrink-0 mapui:rounded-full mapui:transition-colors mapui:duration-200 mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed ${config.is_published ? 'mapui:bg-green-500' : 'mapui:bg-slate-300'}`}
                     >
                       <span className={`mapui:pointer-events-none mapui:inline-block mapui:h-4 mapui:w-4 mapui:rounded-full mapui:bg-white mapui:shadow mapui:transition-transform mapui:duration-200 mapui:translate-y-0.5 ${config.is_published ? 'mapui:translate-x-4.5' : 'mapui:translate-x-0.5'}`} />
                     </button>
@@ -239,12 +239,12 @@ export function ConfigListPage() {
                       aria-checked={config.is_default}
                       disabled={!config.is_published || publishingId === config.id}
                       onClick={() => config.is_default ? handleUnsetDefault(config.id) : handleSetDefault(config.id)}
-                      className={`mapui:relative mapui:inline-flex mapui:h-5 mapui:w-9 mapui:shrink-0 mapui:rounded-full mapui:transition-colors mapui:duration-200 mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed ${config.is_default ? 'mapui:bg-blue-500' : 'mapui:bg-gray-300'}`}
+                      className={`mapui:relative mapui:inline-flex mapui:h-5 mapui:w-9 mapui:shrink-0 mapui:rounded-full mapui:transition-colors mapui:duration-200 mapui:disabled:opacity-50 mapui:disabled:cursor-not-allowed ${config.is_default ? 'mapui:bg-blue-500' : 'mapui:bg-slate-300'}`}
                     >
                       <span className={`mapui:pointer-events-none mapui:inline-block mapui:h-4 mapui:w-4 mapui:rounded-full mapui:bg-white mapui:shadow mapui:transition-transform mapui:duration-200 mapui:translate-y-0.5 ${config.is_default ? 'mapui:translate-x-4.5' : 'mapui:translate-x-0.5'}`} />
                     </button>
                   </td>
-                  <td className="mapui:px-6 mapui:py-4 mapui:text-gray-500 mapui:text-sm">
+                  <td className="mapui:px-6 mapui:py-4 mapui:text-slate-500 mapui:text-sm">
                     {new Date(config.updated_at).toLocaleDateString()}
                   </td>
                   <td className="mapui:px-6 mapui:py-4">

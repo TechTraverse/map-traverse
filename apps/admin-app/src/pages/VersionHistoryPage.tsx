@@ -61,7 +61,7 @@ export function VersionHistoryPage() {
     }
   };
 
-  if (loading) return <div className="mapui:p-8 mapui:text-center mapui:text-gray-500">Loading...</div>;
+  if (loading) return <div className="mapui:p-8 mapui:text-center mapui:text-slate-500">Loading...</div>;
   if (error) return <div className="mapui:p-8 mapui:text-red-600">{error}</div>;
 
   return (
@@ -70,13 +70,13 @@ export function VersionHistoryPage() {
         <Link to="/configs" className="mapui:text-blue-600 mapui:hover:underline mapui:text-sm">
           ← Back to Configs
         </Link>
-        <h1 className="mapui:text-2xl mapui:font-bold mapui:text-gray-900">
+        <h1 className="mapui:text-2xl mapui:font-bold mapui:text-slate-900">
           Version History: {current?.name}
         </h1>
       </div>
 
       {versions.length === 0 ? (
-        <div className="mapui:text-gray-500 mapui:py-8 mapui:text-center">
+        <div className="mapui:text-slate-500 mapui:py-8 mapui:text-center">
           No version history yet. Versions are created each time the config is updated.
         </div>
       ) : (
@@ -84,18 +84,18 @@ export function VersionHistoryPage() {
           {/* Version list */}
           <div className="mapui:w-72 mapui:flex-shrink-0">
             <div className="mapui:bg-white mapui:rounded-lg mapui:shadow mapui:overflow-hidden">
-              <div className="mapui:px-4 mapui:py-3 mapui:bg-gray-50 mapui:border-b mapui:text-sm mapui:font-medium mapui:text-gray-600">
+              <div className="mapui:px-4 mapui:py-3 mapui:bg-slate-50 mapui:border-b mapui:text-sm mapui:font-medium mapui:text-slate-600">
                 Saved Versions
               </div>
-              <ul className="mapui:divide-y mapui:divide-gray-100">
+              <ul className="mapui:divide-y mapui:divide-slate-100">
                 {versions.map(v => (
                   <li
                     key={v.id}
-                    className={`mapui:px-4 mapui:py-3 mapui:cursor-pointer mapui:hover:bg-gray-50 ${selected?.id === v.id ? 'mapui:bg-blue-50' : ''}`}
+                    className={`mapui:px-4 mapui:py-3 mapui:cursor-pointer mapui:hover:bg-slate-50 ${selected?.id === v.id ? 'mapui:bg-blue-50' : ''}`}
                     onClick={() => handleSelectVersion(v.id)}
                   >
                     <div className="mapui:flex mapui:items-center mapui:justify-between">
-                      <span className="mapui:text-sm mapui:font-medium mapui:text-gray-800">
+                      <span className="mapui:text-sm mapui:font-medium mapui:text-slate-800">
                         v{v.version_number}
                       </span>
                       <button
@@ -106,11 +106,11 @@ export function VersionHistoryPage() {
                         Restore
                       </button>
                     </div>
-                    <div className="mapui:text-xs mapui:text-gray-500 mapui:mt-1">
+                    <div className="mapui:text-xs mapui:text-slate-500 mapui:mt-1">
                       {new Date(v.created_at).toLocaleString()}
                     </div>
                     {v.created_by && (
-                      <div className="mapui:text-xs mapui:text-gray-400">by {v.created_by}</div>
+                      <div className="mapui:text-xs mapui:text-slate-400">by {v.created_by}</div>
                     )}
                   </li>
                 ))}
@@ -123,7 +123,7 @@ export function VersionHistoryPage() {
             {selected ? (
               <div className="mapui:grid mapui:grid-cols-2 mapui:gap-4">
                 <div>
-                  <div className="mapui:text-sm mapui:font-medium mapui:text-gray-600 mapui:mb-2">
+                  <div className="mapui:text-sm mapui:font-medium mapui:text-slate-600 mapui:mb-2">
                     Version {selected.version_number} (selected)
                   </div>
                   <div className="mapui:bg-white mapui:rounded-lg mapui:shadow mapui:p-4">
@@ -131,7 +131,7 @@ export function VersionHistoryPage() {
                   </div>
                 </div>
                 <div>
-                  <div className="mapui:text-sm mapui:font-medium mapui:text-gray-600 mapui:mb-2">
+                  <div className="mapui:text-sm mapui:font-medium mapui:text-slate-600 mapui:mb-2">
                     Current
                   </div>
                   <div className="mapui:bg-white mapui:rounded-lg mapui:shadow mapui:p-4">
@@ -140,7 +140,7 @@ export function VersionHistoryPage() {
                 </div>
               </div>
             ) : (
-              <div className="mapui:bg-white mapui:rounded-lg mapui:shadow mapui:p-8 mapui:text-center mapui:text-gray-400">
+              <div className="mapui:bg-white mapui:rounded-lg mapui:shadow mapui:p-8 mapui:text-center mapui:text-slate-400">
                 Select a version from the list to compare it with the current config.
               </div>
             )}

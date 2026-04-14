@@ -474,8 +474,8 @@ export function ConfigWizardPage() {
 
   if (loading) {
     return (
-      <div className="mapui:flex mapui:items-center mapui:justify-center mapui:p-16 mapui:text-gray-500">
-        <span className="mapui:inline-block mapui:h-6 mapui:w-6 mapui:animate-spin mapui:rounded-full mapui:border-2 mapui:border-gray-300 mapui:border-t-blue-600 mapui:mr-3" />
+      <div className="mapui:flex mapui:items-center mapui:justify-center mapui:p-16 mapui:text-slate-500">
+        <span className="mapui:inline-block mapui:h-6 mapui:w-6 mapui:animate-spin mapui:rounded-full mapui:border-2 mapui:border-slate-300 mapui:border-t-blue-600 mapui:mr-3" />
         Loading map…
       </div>
     );
@@ -486,7 +486,7 @@ export function ConfigWizardPage() {
       {/* Left: wizard form (scrollable) */}
       <div className="mapui:flex-1 mapui:min-w-0 mapui:overflow-y-auto mapui:p-8">
         <div className="mapui:max-w-3xl mapui:mx-auto">
-      <h1 className="mapui:text-2xl mapui:font-bold mapui:text-gray-900 mapui:mb-6">
+      <h1 className="mapui:text-2xl mapui:font-bold mapui:text-slate-900 mapui:mb-6">
         {isEditing ? 'Edit Map' : 'Create Map'}
       </h1>
 
@@ -501,7 +501,7 @@ export function ConfigWizardPage() {
                 ? 'mapui:bg-blue-600 mapui:text-white'
                 : i < currentStepIndex
                 ? 'mapui:bg-blue-100 mapui:text-blue-700'
-                : 'mapui:bg-gray-100 mapui:text-gray-500'
+                : 'mapui:bg-slate-100 mapui:text-slate-500'
             }`}
           >
             {i + 1}. {step.label}
@@ -513,9 +513,9 @@ export function ConfigWizardPage() {
       <div className="mapui:bg-white mapui:rounded-lg mapui:shadow mapui:p-6 mapui:mb-6">
         {currentStep === 'metadata' && (
           <div className="mapui:space-y-4">
-            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">Map Metadata</h2>
+            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-slate-800">Map Metadata</h2>
             <div>
-              <label className="mapui:block mapui:text-sm mapui:font-medium mapui:text-gray-700 mapui:mb-1">
+              <label className="mapui:block mapui:text-sm mapui:font-medium mapui:text-slate-700 mapui:mb-1">
                 Name <span className="mapui:text-red-500">*</span>
               </label>
               <input
@@ -524,14 +524,14 @@ export function ConfigWizardPage() {
                 onChange={e => setName(e.target.value.replace(/[^a-zA-Z0-9-]/g, '-').replace(/-+/g, '-'))}
                 onBlur={() => setName(name.replace(/^-|-$/g, '').toLowerCase())}
                 placeholder="my-map-config"
-                className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:font-mono mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
+                className="mapui:w-full mapui:border mapui:border-slate-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:font-mono mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
               />
-              <p className="mapui:text-xs mapui:text-gray-400 mapui:mt-1">
+              <p className="mapui:text-xs mapui:text-slate-400 mapui:mt-1">
                 Lowercase letters, numbers, and hyphens (e.g. &quot;my-map-config&quot;)
               </p>
             </div>
             <div>
-              <label className="mapui:block mapui:text-sm mapui:font-medium mapui:text-gray-700 mapui:mb-1">
+              <label className="mapui:block mapui:text-sm mapui:font-medium mapui:text-slate-700 mapui:mb-1">
                 Description
               </label>
               <textarea
@@ -539,7 +539,7 @@ export function ConfigWizardPage() {
                 onChange={e => setDescription(e.target.value)}
                 placeholder="Describe what this map is for..."
                 rows={3}
-                className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
+                className="mapui:w-full mapui:border mapui:border-slate-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
               />
             </div>
 
@@ -551,7 +551,7 @@ export function ConfigWizardPage() {
                     value={branding.headerTitle ?? ''}
                     onChange={e => updateBranding({ headerTitle: e.target.value || undefined })}
                     placeholder="My Map"
-                    className="mapui:w-full mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
+                    className="mapui:w-full mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
                   />
                 </FormField>
 
@@ -565,7 +565,7 @@ export function ConfigWizardPage() {
                     value={branding.browserTitle ?? ''}
                     onChange={e => updateBranding({ browserTitle: e.target.value || undefined })}
                     placeholder="My Map"
-                    className="mapui:w-full mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
+                    className="mapui:w-full mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
                   />
                 </FormField>
 
@@ -596,7 +596,7 @@ export function ConfigWizardPage() {
                     max={200}
                     value={branding.logoHeight ?? 32}
                     onChange={e => updateBranding({ logoHeight: Number(e.target.value) })}
-                    className="mapui:w-24 mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
+                    className="mapui:w-24 mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
                   />
                 </FormField>
               </div>
@@ -606,8 +606,8 @@ export function ConfigWizardPage() {
 
         {currentStep === 'info' && (
           <div className="mapui:space-y-4">
-            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">Info Control</h2>
-            <p className="mapui:text-sm mapui:text-gray-500">
+            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-slate-800">Info Control</h2>
+            <p className="mapui:text-sm mapui:text-slate-500">
               Add an informational modal accessible from a floating button on the map. Useful for map credits,
               data sources, usage notes, or a welcome message.
             </p>
@@ -618,7 +618,7 @@ export function ConfigWizardPage() {
               return (
                 <>
                   <FormField label="Enable">
-                    <label className="mapui:inline-flex mapui:items-center mapui:gap-2 mapui:text-sm mapui:text-gray-700">
+                    <label className="mapui:inline-flex mapui:items-center mapui:gap-2 mapui:text-sm mapui:text-slate-700">
                       <input
                         type="checkbox"
                         checked={enabled}
@@ -637,7 +637,7 @@ export function ConfigWizardPage() {
                         setInfo({ ...current, title: title === '' ? undefined : title, enabled: title !== '' ? true : current.enabled });
                       }}
                       placeholder="About this map"
-                      className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
+                      className="mapui:w-full mapui:border mapui:border-slate-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
                     />
                   </FormField>
 
@@ -645,7 +645,7 @@ export function ConfigWizardPage() {
                     <select
                       value={current.position}
                       onChange={e => setInfo({ ...current, position: e.target.value as InfoConfig['position'] })}
-                      className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
+                      className="mapui:w-full mapui:border mapui:border-slate-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
                     >
                       {INFO_POSITION_OPTIONS.map(({ value, label }) => (
                         <option key={value} value={value}>
@@ -661,9 +661,9 @@ export function ConfigWizardPage() {
                       onChange={e => setInfo({ ...current, markdown: e.target.value, enabled: e.target.value !== '' ? true : current.enabled })}
                       placeholder={'# About this map\n\nDescribe your map, data sources, or usage notes here.'}
                       rows={16}
-                      className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:font-mono mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
+                      className="mapui:w-full mapui:border mapui:border-slate-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:font-mono mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
                     />
-                    <p className="mapui:text-xs mapui:text-gray-500 mapui:mt-1">
+                    <p className="mapui:text-xs mapui:text-slate-500 mapui:mt-1">
                       Markdown supports headings, lists, links, tables, and code blocks. Links open in a new tab.
                     </p>
                   </FormField>
@@ -675,12 +675,12 @@ export function ConfigWizardPage() {
 
         {currentStep === 'layer-select' && (
           <div className="mapui:space-y-6">
-            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">Layers</h2>
+            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-slate-800">Layers</h2>
 
             {/* Saved feature sources picker */}
             {savedFeatureSources.length > 0 && (
               <div>
-                <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">Feature Sources</h3>
+                <h3 className="mapui:text-sm mapui:font-semibold mapui:text-slate-700 mapui:mb-3">Feature Sources</h3>
                 <div className="mapui:flex mapui:flex-wrap mapui:gap-2">
                   {savedFeatureSources.map(saved => {
                     const alreadyAdded = sources.some(s => s.id === saved.source_id);
@@ -706,7 +706,7 @@ export function ConfigWizardPage() {
                         className={`mapui:inline-flex mapui:items-center mapui:gap-1.5 mapui:rounded-full mapui:border mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:transition-colors mapui:cursor-pointer ${
                           alreadyAdded
                             ? 'mapui:border-blue-500 mapui:bg-blue-50 mapui:text-blue-700 mapui:hover:border-blue-300 mapui:hover:bg-blue-100'
-                            : 'mapui:border-gray-300 mapui:bg-white mapui:text-gray-600 mapui:hover:border-blue-400 mapui:hover:bg-blue-50'
+                            : 'mapui:border-slate-300 mapui:bg-white mapui:text-slate-600 mapui:hover:border-blue-400 mapui:hover:bg-blue-50'
                         }`}
                       >
                         {alreadyAdded && (
@@ -735,20 +735,20 @@ export function ConfigWizardPage() {
             ) : (
               <div className="mapui:space-y-4">
                 {layers.length > 0 && (
-                  <p className="mapui:text-sm mapui:text-gray-500">
+                  <p className="mapui:text-sm mapui:text-slate-500">
                     {layers.length} layer{layers.length !== 1 ? 's' : ''} selected
                   </p>
                 )}
-                <div className="mapui:rounded mapui:border mapui:border-gray-200 mapui:p-4">
-                  <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">Browse Collections</h3>
+                <div className="mapui:rounded mapui:border mapui:border-slate-200 mapui:p-4">
+                  <h3 className="mapui:text-sm mapui:font-semibold mapui:text-slate-700 mapui:mb-3">Browse Collections</h3>
                   <div className="mapui:mb-3">
-                    <label className="mapui:block mapui:text-xs mapui:font-medium mapui:text-gray-600 mapui:mb-1">
+                    <label className="mapui:block mapui:text-xs mapui:font-medium mapui:text-slate-600 mapui:mb-1">
                       Source
                     </label>
                     <select
                       value={browseSourceId}
                       onChange={e => setBrowseSourceId(e.target.value)}
-                      className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
+                      className="mapui:w-full mapui:border mapui:border-slate-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
                     >
                       {featureSources.map(s => (
                         <option key={s.id} value={s.id}>
@@ -774,7 +774,7 @@ export function ConfigWizardPage() {
 
         {currentStep === 'layer-config' && (
           <div className="mapui:space-y-4">
-            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">Configure Layers</h2>
+            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-slate-800">Configure Layers</h2>
             {layers.length === 0 ? (
               <div className="mapui:rounded mapui:bg-blue-50 mapui:border mapui:border-blue-200 mapui:p-4 mapui:text-sm mapui:text-blue-800">
                 No layers selected yet. Go back to the <strong>Select Layers</strong> step to choose collections.
@@ -787,12 +787,12 @@ export function ConfigWizardPage() {
 
         {currentStep === 'imagery' && (
           <div className="mapui:space-y-6">
-            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">Imagery Layers</h2>
+            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-slate-800">Imagery Layers</h2>
 
             {/* Saved imagery sources picker */}
             {savedImagerySources.length > 0 && (
               <div>
-                <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">Saved Imagery Sources</h3>
+                <h3 className="mapui:text-sm mapui:font-semibold mapui:text-slate-700 mapui:mb-3">Saved Imagery Sources</h3>
                 <div className="mapui:flex mapui:flex-wrap mapui:gap-2">
                   {savedImagerySources.map(saved => {
                     const alreadyAdded = sources.some(s => s.id === saved.source_id);
@@ -841,7 +841,7 @@ export function ConfigWizardPage() {
                         className={`mapui:inline-flex mapui:items-center mapui:gap-1.5 mapui:rounded-full mapui:border mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:transition-colors mapui:cursor-pointer ${
                           alreadyAdded
                             ? 'mapui:border-purple-500 mapui:bg-purple-50 mapui:text-purple-700 mapui:hover:border-purple-300 mapui:hover:bg-purple-100'
-                            : 'mapui:border-gray-300 mapui:bg-white mapui:text-gray-600 mapui:hover:border-purple-400 mapui:hover:bg-purple-50'
+                            : 'mapui:border-slate-300 mapui:bg-white mapui:text-slate-600 mapui:hover:border-purple-400 mapui:hover:bg-purple-50'
                         }`}
                       >
                         {alreadyAdded && (
@@ -865,17 +865,17 @@ export function ConfigWizardPage() {
                       defaultOpen={true}
                       badge={imagerySelectedCollectionIds.length}
                     >
-                      <p className="mapui:text-xs mapui:text-gray-500 mapui:mb-3">
+                      <p className="mapui:text-xs mapui:text-slate-500 mapui:mb-3">
                         Select an OGC API source and check the collections you want to add as imagery layers.
                       </p>
                       <div className="mapui:mb-3">
-                        <label className="mapui:block mapui:text-xs mapui:font-medium mapui:text-gray-600 mapui:mb-1">
+                        <label className="mapui:block mapui:text-xs mapui:font-medium mapui:text-slate-600 mapui:mb-1">
                           Source
                         </label>
                         <select
                           value={imageryBrowseSourceId}
                           onChange={e => setImageryBrowseSourceId(e.target.value)}
-                          className="mapui:w-full mapui:border mapui:border-gray-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
+                          className="mapui:w-full mapui:border mapui:border-slate-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
                         >
                           <option value="">Select a source...</option>
                           {imageryOgcSources.map(s => (
@@ -909,9 +909,9 @@ export function ConfigWizardPage() {
                   {/* Section B: Configure selected layers */}
                   {imageryLayers.length > 0 && (
                     <div>
-                      <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">
+                      <h3 className="mapui:text-sm mapui:font-semibold mapui:text-slate-700 mapui:mb-3">
                         Configure Imagery Layers
-                        <span className="mapui:ml-2 mapui:text-xs mapui:font-normal mapui:text-gray-400">
+                        <span className="mapui:ml-2 mapui:text-xs mapui:font-normal mapui:text-slate-400">
                           {imageryLayers.length} layer{imageryLayers.length !== 1 ? 's' : ''}
                         </span>
                       </h3>
@@ -928,12 +928,12 @@ export function ConfigWizardPage() {
 
         {currentStep === 'basemaps' && (
           <div className="mapui:space-y-6">
-            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">Basemaps</h2>
+            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-slate-800">Basemaps</h2>
 
             {/* Saved Basemap Sources */}
             {savedBasemapSources.length > 0 ? (
               <div>
-                <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">Available Basemaps</h3>
+                <h3 className="mapui:text-sm mapui:font-semibold mapui:text-slate-700 mapui:mb-3">Available Basemaps</h3>
                 <div className="mapui:grid mapui:grid-cols-3 mapui:gap-3">
                   {savedBasemapSources.map(saved => {
                     const selected = isBasemapSelected(saved);
@@ -945,7 +945,7 @@ export function ConfigWizardPage() {
                         className={`mapui:relative mapui:flex mapui:flex-col mapui:items-center mapui:gap-2 mapui:rounded-lg mapui:border-2 mapui:p-4 mapui:text-sm mapui:transition-colors ${
                           selected
                             ? 'mapui:border-blue-500 mapui:bg-blue-50'
-                            : 'mapui:border-gray-200 mapui:bg-white mapui:hover:border-gray-300'
+                            : 'mapui:border-slate-200 mapui:bg-white mapui:hover:border-slate-300'
                         }`}
                       >
                         {selected && (
@@ -958,9 +958,9 @@ export function ConfigWizardPage() {
                         {saved.metadata?.thumbnail ? (
                           <img src={saved.metadata.thumbnail} alt="" className="mapui:w-10 mapui:h-10 mapui:rounded-full mapui:object-cover" />
                         ) : (
-                          <span className="mapui:w-10 mapui:h-10 mapui:rounded-full mapui:bg-gray-300" />
+                          <span className="mapui:w-10 mapui:h-10 mapui:rounded-full mapui:bg-slate-300" />
                         )}
-                        <span className="mapui:font-medium mapui:text-gray-700">{saved.label ?? saved.source_id}</span>
+                        <span className="mapui:font-medium mapui:text-slate-700">{saved.label ?? saved.source_id}</span>
                       </button>
                     );
                   })}
@@ -979,7 +979,7 @@ export function ConfigWizardPage() {
 
             {/* Preset Sprite Sheets */}
             <div>
-              <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-700 mapui:mb-3">Preset Sprite Sheets</h3>
+              <h3 className="mapui:text-sm mapui:font-semibold mapui:text-slate-700 mapui:mb-3">Preset Sprite Sheets</h3>
               <div className="mapui:flex mapui:flex-wrap mapui:gap-2">
                 {PRESET_SPRITES.map(preset => {
                   const selected = isSpriteSelected(preset);
@@ -991,7 +991,7 @@ export function ConfigWizardPage() {
                       className={`mapui:inline-flex mapui:items-center mapui:gap-1.5 mapui:rounded-full mapui:border mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:transition-colors ${
                         selected
                           ? 'mapui:border-blue-500 mapui:bg-blue-50 mapui:text-blue-700'
-                          : 'mapui:border-gray-300 mapui:bg-white mapui:text-gray-600 mapui:hover:border-gray-400'
+                          : 'mapui:border-slate-300 mapui:bg-white mapui:text-slate-600 mapui:hover:border-slate-400'
                       }`}
                     >
                       {selected && (
@@ -1015,7 +1015,7 @@ export function ConfigWizardPage() {
 
         {currentStep === 'ui' && (
           <div className="mapui:space-y-4">
-            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">UI Options</h2>
+            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-slate-800">UI Options</h2>
             {effectiveUIConfig.showGlobalSearch && (
               <CollapsibleSection
                 title="Global Search"
@@ -1047,15 +1047,15 @@ export function ConfigWizardPage() {
 
         {currentStep === 'view' && (
           <div className="mapui:space-y-4">
-            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">Initial View</h2>
+            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-slate-800">Initial View</h2>
             <ViewEditor value={initialView} onChange={setInitialView} />
           </div>
         )}
 
         {currentStep === 'review' && (
           <div className="mapui:space-y-4">
-            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800">Review & Save</h2>
-            <div className="mapui:bg-gray-50 mapui:rounded mapui:p-4 mapui:text-sm mapui:text-gray-600">
+            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-slate-800">Review & Save</h2>
+            <div className="mapui:bg-slate-50 mapui:rounded mapui:p-4 mapui:text-sm mapui:text-slate-600">
               <p><strong>Name:</strong> {name || '(not set)'}</p>
               <p><strong>Description:</strong> {description || '(not set)'}</p>
               <p>
@@ -1063,7 +1063,7 @@ export function ConfigWizardPage() {
                 {info?.enabled ? `enabled (${info.position})` : 'disabled'}
               </p>
               {info?.enabled && info.markdown && (
-                <p className="mapui:mt-1 mapui:text-gray-500 mapui:whitespace-pre-wrap">
+                <p className="mapui:mt-1 mapui:text-slate-500 mapui:whitespace-pre-wrap">
                   <strong>Info preview:</strong>{' '}
                   {info.markdown.slice(0, 200)}
                   {info.markdown.length > 200 ? '…' : ''}
@@ -1072,7 +1072,7 @@ export function ConfigWizardPage() {
             </div>
             <ConfigPreview config={assembledConfig} />
             <CollapsibleSection title="Edit JSON" badge="advanced">
-              <p className="mapui:text-xs mapui:text-gray-500 mapui:mb-3">
+              <p className="mapui:text-xs mapui:text-slate-500 mapui:mb-3">
                 Edit the raw config JSON, or paste a full MapConfig document to replace the current state.
                 Changes are validated against the schema and only applied when you click &quot;Apply Changes&quot;.
               </p>
@@ -1098,7 +1098,7 @@ export function ConfigWizardPage() {
         <button
           onClick={() => setCurrentStep(STEPS[currentStepIndex - 1]?.key ?? 'metadata')}
           disabled={currentStepIndex === 0}
-          className="mapui:px-4 mapui:py-2 mapui:border mapui:border-gray-300 mapui:rounded mapui:text-sm mapui:hover:bg-gray-50 mapui:disabled:opacity-50"
+          className="mapui:px-4 mapui:py-2 mapui:border mapui:border-slate-300 mapui:rounded mapui:text-sm mapui:hover:bg-slate-50 mapui:disabled:opacity-50"
         >
           Previous
         </button>
@@ -1113,7 +1113,7 @@ export function ConfigWizardPage() {
             <button
               onClick={() => setPreviewLayout('vertical')}
               title="Side-by-side layout"
-              className={`mapui:p-1.5 mapui:rounded mapui:border ${previewLayout === 'vertical' ? 'mapui:bg-blue-100 mapui:border-blue-400 mapui:text-blue-700' : 'mapui:border-gray-300 mapui:text-gray-500 mapui:hover:bg-gray-50'}`}
+              className={`mapui:p-1.5 mapui:rounded mapui:border ${previewLayout === 'vertical' ? 'mapui:bg-blue-100 mapui:border-blue-400 mapui:text-blue-700' : 'mapui:border-slate-300 mapui:text-slate-500 mapui:hover:bg-slate-50'}`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="8" height="18" rx="1"/>
@@ -1123,7 +1123,7 @@ export function ConfigWizardPage() {
             <button
               onClick={() => setPreviewLayout('horizontal')}
               title="Stacked layout"
-              className={`mapui:p-1.5 mapui:rounded mapui:border ${previewLayout === 'horizontal' ? 'mapui:bg-blue-100 mapui:border-blue-400 mapui:text-blue-700' : 'mapui:border-gray-300 mapui:text-gray-500 mapui:hover:bg-gray-50'}`}
+              className={`mapui:p-1.5 mapui:rounded mapui:border ${previewLayout === 'horizontal' ? 'mapui:bg-blue-100 mapui:border-blue-400 mapui:text-blue-700' : 'mapui:border-slate-300 mapui:text-slate-500 mapui:hover:bg-slate-50'}`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="18" height="8" rx="1"/>
@@ -1147,7 +1147,7 @@ export function ConfigWizardPage() {
               disabled={saving || justSaved}
               className={`mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:disabled:cursor-not-allowed ${
                 justSaved
-                  ? 'mapui:bg-gray-400 mapui:text-white'
+                  ? 'mapui:bg-slate-400 mapui:text-white'
                   : 'mapui:bg-green-600 mapui:text-white mapui:hover:bg-green-700 mapui:disabled:opacity-50'
               }`}
             >
@@ -1160,7 +1160,7 @@ export function ConfigWizardPage() {
       </div>
 
       {/* Right: map preview (always visible on ≥md, toggle on <md) */}
-      <div className={`mapui:shrink-0 mapui:border-gray-200 ${previewLayout === 'vertical' ? 'mapui:w-[45%] mapui:h-auto mapui:border-l' : 'mapui:w-full mapui:h-[400px] mapui:border-t'} ${showPreview ? 'mapui:block' : 'mapui:hidden'}`}>
+      <div className={`mapui:shrink-0 mapui:border-slate-200 ${previewLayout === 'vertical' ? 'mapui:w-[45%] mapui:h-auto mapui:border-l' : 'mapui:w-full mapui:h-[400px] mapui:border-t'} ${showPreview ? 'mapui:block' : 'mapui:hidden'}`}>
         <MapPreview
           sources={sources}
           layers={layers}

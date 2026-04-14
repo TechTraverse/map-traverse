@@ -76,12 +76,12 @@ function ImageryBasemapForm({
   const collections = selected?.metadata?.collections ?? [];
 
   const inputClass =
-    'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
+    'mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-3">
       <label className="mapui:flex mapui:flex-col mapui:gap-1">
-        <span className="mapui:text-xs mapui:font-medium mapui:text-gray-700">ID *</span>
+        <span className="mapui:text-xs mapui:font-medium mapui:text-slate-700">ID *</span>
         <input
           type="text"
           value={draft.source_id}
@@ -92,7 +92,7 @@ function ImageryBasemapForm({
       </label>
 
       <label className="mapui:flex mapui:flex-col mapui:gap-1">
-        <span className="mapui:text-xs mapui:font-medium mapui:text-gray-700">Label</span>
+        <span className="mapui:text-xs mapui:font-medium mapui:text-slate-700">Label</span>
         <input
           type="text"
           value={draft.label}
@@ -103,7 +103,7 @@ function ImageryBasemapForm({
       </label>
 
       <label className="mapui:flex mapui:flex-col mapui:gap-1">
-        <span className="mapui:text-xs mapui:font-medium mapui:text-gray-700">Imagery source *</span>
+        <span className="mapui:text-xs mapui:font-medium mapui:text-slate-700">Imagery source *</span>
         <select
           value={draft.imagery_source_id}
           onChange={(e) => update({ imagery_source_id: e.target.value, collection_id: '' })}
@@ -118,7 +118,7 @@ function ImageryBasemapForm({
           ))}
         </select>
         {imagerySources.length === 0 && (
-          <span className="mapui:text-xs mapui:text-gray-500">
+          <span className="mapui:text-xs mapui:text-slate-500">
             No imagery sources available. Add one in the Imagery tab first.
           </span>
         )}
@@ -126,7 +126,7 @@ function ImageryBasemapForm({
 
       {needsCollection && (
         <label className="mapui:flex mapui:flex-col mapui:gap-1">
-          <span className="mapui:text-xs mapui:font-medium mapui:text-gray-700">Collection *</span>
+          <span className="mapui:text-xs mapui:font-medium mapui:text-slate-700">Collection *</span>
           <select
             value={draft.collection_id}
             onChange={(e) => update({ collection_id: e.target.value })}
@@ -138,7 +138,7 @@ function ImageryBasemapForm({
             ))}
           </select>
           {collections.length === 0 && (
-            <span className="mapui:text-xs mapui:text-gray-500">
+            <span className="mapui:text-xs mapui:text-slate-500">
               No collections found in metadata — refresh the imagery source's metadata first.
             </span>
           )}
@@ -146,7 +146,7 @@ function ImageryBasemapForm({
       )}
 
       <label className="mapui:flex mapui:flex-col mapui:gap-1">
-        <span className="mapui:text-xs mapui:font-medium mapui:text-gray-700">Thumbnail URL (optional)</span>
+        <span className="mapui:text-xs mapui:font-medium mapui:text-slate-700">Thumbnail URL (optional)</span>
         <input
           type="url"
           value={draft.thumbnail}
@@ -678,16 +678,16 @@ export function SourcesPage() {
   const isBasemapTab = activeTab === 'basemap';
   const colCount = isBasemapTab ? 6 : 7;
 
-  if (loading) return <div className="mapui:p-8 mapui:text-center mapui:text-gray-500">Loading...</div>;
+  if (loading) return <div className="mapui:p-8 mapui:text-center mapui:text-slate-500">Loading...</div>;
 
   return (
     <div className="mapui:p-8">
       <div className="mapui:flex mapui:items-center mapui:justify-between mapui:mb-6">
-        <h1 className="mapui:text-2xl mapui:font-bold mapui:text-gray-900">Sources</h1>
+        <h1 className="mapui:text-2xl mapui:font-bold mapui:text-slate-900">Sources</h1>
         <div className="mapui:flex mapui:gap-2">
           <button
             onClick={handleImport}
-            className="mapui:border mapui:border-gray-300 mapui:text-gray-700 mapui:px-4 mapui:py-2 mapui:rounded mapui:hover:bg-gray-50 mapui:text-sm"
+            className="mapui:border mapui:border-slate-300 mapui:text-slate-700 mapui:px-4 mapui:py-2 mapui:rounded mapui:hover:bg-slate-50 mapui:text-sm"
           >
             Import from Configs
           </button>
@@ -701,7 +701,7 @@ export function SourcesPage() {
       </div>
 
       {/* Tabs */}
-      <div className="mapui:flex mapui:gap-1 mapui:mb-4 mapui:border-b mapui:border-gray-200">
+      <div className="mapui:flex mapui:gap-1 mapui:mb-4 mapui:border-b mapui:border-slate-200">
         {(['basemap', 'imagery', 'features'] as const).map(tab => {
           const count = sources.filter(s => (s.source_type ?? 'features') === tab).length;
           return (
@@ -711,12 +711,12 @@ export function SourcesPage() {
               className={`mapui:px-4 mapui:py-2 mapui:text-sm mapui:font-medium mapui:border-b-2 mapui:transition-colors ${
                 activeTab === tab
                   ? 'mapui:border-blue-600 mapui:text-blue-600'
-                  : 'mapui:border-transparent mapui:text-gray-500 mapui:hover:text-gray-700 mapui:hover:border-gray-300'
+                  : 'mapui:border-transparent mapui:text-slate-500 mapui:hover:text-slate-700 mapui:hover:border-slate-300'
               }`}
             >
               {TAB_LABELS[tab]}
               {count > 0 && (
-                <span className="mapui:ml-1.5 mapui:rounded-full mapui:bg-gray-100 mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:text-gray-600">
+                <span className="mapui:ml-1.5 mapui:rounded-full mapui:bg-slate-100 mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:text-slate-600">
                   {count}
                 </span>
               )}
@@ -732,7 +732,7 @@ export function SourcesPage() {
       {/* Create new OGC source form (features/imagery) */}
       {addingNew && !isBasemapTab && (
         <div className="mapui:mb-6 mapui:bg-white mapui:rounded-lg mapui:shadow mapui:p-6">
-          <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800 mapui:mb-4">New {activeTab === 'imagery' ? 'Imagery' : 'Feature'} Source</h2>
+          <h2 className="mapui:text-lg mapui:font-semibold mapui:text-slate-800 mapui:mb-4">New {activeTab === 'imagery' ? 'Imagery' : 'Feature'} Source</h2>
           <SourceEditor
             value={newSource}
             onChange={setNewSource}
@@ -750,7 +750,7 @@ export function SourcesPage() {
             </button>
             <button
               onClick={() => setAddingNew(false)}
-              className="mapui:border mapui:border-gray-300 mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:hover:bg-gray-50"
+              className="mapui:border mapui:border-slate-300 mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:hover:bg-slate-50"
             >
               Cancel
             </button>
@@ -761,7 +761,7 @@ export function SourcesPage() {
       {/* Create new basemap form */}
       {addingNewBasemap && isBasemapTab && (
         <div className="mapui:mb-6 mapui:bg-white mapui:rounded-lg mapui:shadow mapui:p-6">
-          <h2 className="mapui:text-lg mapui:font-semibold mapui:text-gray-800 mapui:mb-4">New Basemap</h2>
+          <h2 className="mapui:text-lg mapui:font-semibold mapui:text-slate-800 mapui:mb-4">New Basemap</h2>
 
           <div className="mapui:mb-4 mapui:flex mapui:gap-4 mapui:text-sm">
             <label className="mapui:flex mapui:items-center mapui:gap-1.5">
@@ -797,7 +797,7 @@ export function SourcesPage() {
                 </button>
                 <button
                   onClick={() => setAddingNewBasemap(false)}
-                  className="mapui:border mapui:border-gray-300 mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:hover:bg-gray-50"
+                  className="mapui:border mapui:border-slate-300 mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:hover:bg-slate-50"
                 >
                   Cancel
                 </button>
@@ -822,7 +822,7 @@ export function SourcesPage() {
               </button>
               <button
                 onClick={() => setAddingNewBasemap(false)}
-                className="mapui:border mapui:border-gray-300 mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:hover:bg-gray-50"
+                className="mapui:border mapui:border-slate-300 mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:hover:bg-slate-50"
               >
                 Cancel
               </button>
@@ -832,7 +832,7 @@ export function SourcesPage() {
       )}
 
       {filteredSources.length === 0 && !addingNew && !addingNewBasemap ? (
-        <div className="mapui:text-center mapui:text-gray-500 mapui:py-12">
+        <div className="mapui:text-center mapui:text-slate-500 mapui:py-12">
           {isBasemapTab
             ? 'No basemaps saved yet. Add one or import from existing configs.'
             : `No ${activeTab} sources saved yet. Create one or import from existing configs.`}
@@ -840,26 +840,26 @@ export function SourcesPage() {
       ) : filteredSources.length > 0 && (
         <div className="mapui:bg-white mapui:rounded-lg mapui:shadow mapui:overflow-visible">
           <table className="mapui:w-full">
-            <thead className="mapui:bg-gray-50 mapui:text-left">
+            <thead className="mapui:bg-slate-50 mapui:text-left">
               <tr>
                 {!isBasemapTab && (
-                  <th className="mapui:px-3 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600 mapui:w-8"></th>
+                  <th className="mapui:px-3 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-slate-600 mapui:w-8"></th>
                 )}
-                <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Source ID</th>
-                <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">
+                <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-slate-600">Source ID</th>
+                <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-slate-600">
                   {isBasemapTab ? 'Style URL' : 'URL'}
                 </th>
-                <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Label</th>
+                <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-slate-600">Label</th>
                 {isBasemapTab ? (
-                  <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Thumbnail</th>
+                  <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-slate-600">Thumbnail</th>
                 ) : (
-                  <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Collections</th>
+                  <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-slate-600">Collections</th>
                 )}
-                <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600">Updated</th>
-                <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-gray-600"></th>
+                <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-slate-600">Updated</th>
+                <th className="mapui:px-4 mapui:py-3 mapui:text-sm mapui:font-medium mapui:text-slate-600"></th>
               </tr>
             </thead>
-            <tbody className="mapui:divide-y mapui:divide-gray-200">
+            <tbody className="mapui:divide-y mapui:divide-slate-200">
               {filteredSources.map(source => (
                 <Fragment key={source.id}>
                   <tr>
@@ -883,7 +883,7 @@ export function SourcesPage() {
                           </button>
                           <button
                             onClick={() => { setEditingId(null); setEditingSource(null); }}
-                            className="mapui:border mapui:border-gray-300 mapui:px-3 mapui:py-1.5 mapui:rounded mapui:text-sm mapui:hover:bg-gray-50"
+                            className="mapui:border mapui:border-slate-300 mapui:px-3 mapui:py-1.5 mapui:rounded mapui:text-sm mapui:hover:bg-slate-50"
                           >
                             Cancel
                           </button>
@@ -909,7 +909,7 @@ export function SourcesPage() {
                               </button>
                               <button
                                 onClick={() => { setEditingId(null); setEditingImageryBasemap(null); }}
-                                className="mapui:border mapui:border-gray-300 mapui:px-3 mapui:py-1.5 mapui:rounded mapui:text-sm mapui:hover:bg-gray-50"
+                                className="mapui:border mapui:border-slate-300 mapui:px-3 mapui:py-1.5 mapui:rounded mapui:text-sm mapui:hover:bg-slate-50"
                               >
                                 Cancel
                               </button>
@@ -931,7 +931,7 @@ export function SourcesPage() {
                               </button>
                               <button
                                 onClick={() => { setEditingId(null); setEditingBasemap(null); }}
-                                className="mapui:border mapui:border-gray-300 mapui:px-3 mapui:py-1.5 mapui:rounded mapui:text-sm mapui:hover:bg-gray-50"
+                                className="mapui:border mapui:border-slate-300 mapui:px-3 mapui:py-1.5 mapui:rounded mapui:text-sm mapui:hover:bg-slate-50"
                               >
                                 Cancel
                               </button>
@@ -946,7 +946,7 @@ export function SourcesPage() {
                           <td className="mapui:px-3 mapui:py-4">
                             <button
                               onClick={() => toggleExpanded(source.id)}
-                              className="mapui:text-gray-400 mapui:hover:text-gray-600"
+                              className="mapui:text-slate-400 mapui:hover:text-slate-600"
                             >
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -965,38 +965,38 @@ export function SourcesPage() {
                             </button>
                           </td>
                         )}
-                        <td className="mapui:px-4 mapui:py-4 mapui:font-medium mapui:font-mono mapui:text-sm mapui:text-gray-900">{source.source_id}</td>
-                        <td className="mapui:px-4 mapui:py-4 mapui:text-gray-500 mapui:text-sm mapui:font-mono mapui:max-w-xs mapui:truncate">
+                        <td className="mapui:px-4 mapui:py-4 mapui:font-medium mapui:font-mono mapui:text-sm mapui:text-slate-900">{source.source_id}</td>
+                        <td className="mapui:px-4 mapui:py-4 mapui:text-slate-500 mapui:text-sm mapui:font-mono mapui:max-w-xs mapui:truncate">
                           {source.url}
                           {isBasemapTab && source.metadata?.imagerySourceId && (() => {
                             const linked = sources.find(s => s.id === source.metadata!.imagerySourceId);
                             return (
-                              <div className="mapui:text-xs mapui:text-gray-400 mapui:mt-0.5">
+                              <div className="mapui:text-xs mapui:text-slate-400 mapui:mt-0.5">
                                 ↳ from imagery: {linked?.label ?? linked?.source_id ?? source.metadata.imagerySourceId}
                                 {source.metadata.collectionId ? ` / ${source.metadata.collectionId}` : ''}
                               </div>
                             );
                           })()}
                         </td>
-                        <td className="mapui:px-4 mapui:py-4 mapui:text-gray-500 mapui:text-sm">{source.label ?? '—'}</td>
+                        <td className="mapui:px-4 mapui:py-4 mapui:text-slate-500 mapui:text-sm">{source.label ?? '—'}</td>
                         {isBasemapTab ? (
                           <td className="mapui:px-4 mapui:py-4 mapui:text-sm">
                             {source.metadata?.thumbnail ? (
                               <img
                                 src={source.metadata.thumbnail}
                                 alt="Thumbnail"
-                                className="mapui:h-8 mapui:w-12 mapui:rounded mapui:border mapui:border-gray-200 mapui:object-cover"
+                                className="mapui:h-8 mapui:w-12 mapui:rounded mapui:border mapui:border-slate-200 mapui:object-cover"
                               />
                             ) : (
-                              <span className="mapui:text-gray-400">—</span>
+                              <span className="mapui:text-slate-400">—</span>
                             )}
                           </td>
                         ) : (
-                          <td className="mapui:px-4 mapui:py-4 mapui:text-gray-500 mapui:text-sm">
+                          <td className="mapui:px-4 mapui:py-4 mapui:text-slate-500 mapui:text-sm">
                             {source.metadata?.collections?.length ?? '—'}
                           </td>
                         )}
-                        <td className="mapui:px-4 mapui:py-4 mapui:text-gray-500 mapui:text-sm">
+                        <td className="mapui:px-4 mapui:py-4 mapui:text-slate-500 mapui:text-sm">
                           {new Date(source.updated_at).toLocaleDateString()}
                         </td>
                         <td className="mapui:px-4 mapui:py-4">
