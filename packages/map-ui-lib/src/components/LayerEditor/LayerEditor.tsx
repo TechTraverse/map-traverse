@@ -30,17 +30,24 @@ function removeAt<T>(arr: T[] | undefined, index: number): T[] {
   return (arr ?? []).filter((_, i) => i !== index);
 }
 
+export type LayerEditorSection = 'style' | 'legend' | 'search' | 'propertyDisplay' | 'cql2Filter';
+
 export interface LayerEditorProps {
   value: LayerConfig;
   onChange: (layer: LayerConfig) => void;
   availableSources: OgcApiSource[];
   availableIcons?: string[];
+  /** Which collapsible sections to show. If omitted, all sections render. */
+  sections?: LayerEditorSection[];
+  /** Whether to show basic config fields (ID, source, collection, etc.). Default true. */
+  showBasicFields?: boolean;
 }
 
 const inputClass =
   'mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
-export function LayerEditor({ value, onChange, availableSources, availableIcons }: LayerEditorProps) {
+export function LayerEditor({ value, onChange, availableSources, availableIcons, sections, showBasicFields = true }: LayerEditorProps) {
+  const showSection = (s: LayerEditorSection) => !sections || sections.includes(s);
   const update = (patch: Partial<LayerConfig>) => onChange({ ...value, ...patch });
 
   // Refs to always have latest value/onChange in async callbacks (avoid stale closures)
@@ -145,157 +152,161 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
 
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-3">
-      <div className="mapui:grid mapui:grid-cols-2 mapui:gap-3">
-        <FormField label="Layer ID" required>
-          <input
-            type="text"
-            value={value.id}
-            onChange={(e) => update({ id: e.target.value })}
-            placeholder="my-layer"
-            className={inputClass}
-          />
-        </FormField>
-        <FormField label="Label">
-          <input
-            type="text"
-            value={value.label}
-            onChange={(e) => update({ label: e.target.value })}
-            placeholder="My Layer"
-            className={inputClass}
-          />
-        </FormField>
-      </div>
-
-      <FormField label="Source" required>
-        <select
-          value={value.sourceId}
-          onChange={(e) => update({ sourceId: e.target.value })}
-          className={inputClass}
-        >
-          <option value="">Select a source…</option>
-          {availableSources.map((src) => (
-            <option key={src.id} value={src.id}>
-              {src.label ?? src.id}
-            </option>
-          ))}
-        </select>
-      </FormField>
-
-      <FormField label="Collection" required>
-        {collections.length > 0 ? (
-          <select
-            value={value.collection}
-            onChange={(e) => update({ collection: e.target.value })}
-            className={inputClass}
-          >
-            <option value="">Select a collection…</option>
-            {collections.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.title ?? c.id}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <input
-            type="text"
-            value={value.collection}
-            onChange={(e) => update({ collection: e.target.value })}
-            placeholder={collectionsLoading ? 'Loading collections…' : 'collection-id'}
-            className={inputClass}
-          />
-        )}
-        {queryablesLoading && (
-          <span className="mapui:mt-0.5 mapui:block mapui:text-xs mapui:text-slate-400">
-            Loading properties…
-          </span>
-        )}
-      </FormField>
-
-      <FormField label="Data Mode">
-        <div className="mapui:flex mapui:gap-4">
-          {(['vector-tiles', 'geojson'] as const).map((mode) => (
-            <label key={mode} className="mapui:flex mapui:cursor-pointer mapui:items-center mapui:gap-1.5">
+      {showBasicFields && (
+        <>
+          <div className="mapui:grid mapui:grid-cols-2 mapui:gap-3">
+            <FormField label="Layer ID" required>
               <input
-                type="radio"
-                name={`data-mode-${value.id}`}
-                value={mode}
-                checked={value.dataMode === mode}
-                onChange={() => update({ dataMode: mode })}
-                className="mapui:accent-blue-600"
+                type="text"
+                value={value.id}
+                onChange={(e) => update({ id: e.target.value })}
+                placeholder="my-layer"
+                className={inputClass}
               />
-              <span className="mapui:text-sm mapui:text-slate-700">{mode}</span>
+            </FormField>
+            <FormField label="Label">
+              <input
+                type="text"
+                value={value.label}
+                onChange={(e) => update({ label: e.target.value })}
+                placeholder="My Layer"
+                className={inputClass}
+              />
+            </FormField>
+          </div>
+
+          <FormField label="Source" required>
+            <select
+              value={value.sourceId}
+              onChange={(e) => update({ sourceId: e.target.value })}
+              className={inputClass}
+            >
+              <option value="">Select a source…</option>
+              {availableSources.map((src) => (
+                <option key={src.id} value={src.id}>
+                  {src.label ?? src.id}
+                </option>
+              ))}
+            </select>
+          </FormField>
+
+          <FormField label="Collection" required>
+            {collections.length > 0 ? (
+              <select
+                value={value.collection}
+                onChange={(e) => update({ collection: e.target.value })}
+                className={inputClass}
+              >
+                <option value="">Select a collection…</option>
+                {collections.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.title ?? c.id}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={value.collection}
+                onChange={(e) => update({ collection: e.target.value })}
+                placeholder={collectionsLoading ? 'Loading collections…' : 'collection-id'}
+                className={inputClass}
+              />
+            )}
+            {queryablesLoading && (
+              <span className="mapui:mt-0.5 mapui:block mapui:text-xs mapui:text-slate-400">
+                Loading properties…
+              </span>
+            )}
+          </FormField>
+
+          <FormField label="Data Mode">
+            <div className="mapui:flex mapui:gap-4">
+              {(['vector-tiles', 'geojson'] as const).map((mode) => (
+                <label key={mode} className="mapui:flex mapui:cursor-pointer mapui:items-center mapui:gap-1.5">
+                  <input
+                    type="radio"
+                    name={`data-mode-${value.id}`}
+                    value={mode}
+                    checked={value.dataMode === mode}
+                    onChange={() => update({ dataMode: mode })}
+                    className="mapui:accent-blue-600"
+                  />
+                  <span className="mapui:text-sm mapui:text-slate-700">{mode}</span>
+                </label>
+              ))}
+            </div>
+          </FormField>
+
+          <div className="mapui:flex mapui:items-center mapui:gap-2">
+            <input
+              type="checkbox"
+              id="layer-visible"
+              checked={value.visible}
+              onChange={(e) => update({ visible: e.target.checked })}
+              className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
+            />
+            <label htmlFor="layer-visible" className="mapui:text-sm mapui:text-slate-700">
+              Visible by default
             </label>
-          ))}
-        </div>
-      </FormField>
+          </div>
 
-      <div className="mapui:flex mapui:items-center mapui:gap-2">
-        <input
-          type="checkbox"
-          id="layer-visible"
-          checked={value.visible}
-          onChange={(e) => update({ visible: e.target.checked })}
-          className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
-        />
-        <label htmlFor="layer-visible" className="mapui:text-sm mapui:text-slate-700">
-          Visible by default
-        </label>
-      </div>
+          <div className="mapui:flex mapui:items-center mapui:gap-2">
+            <input
+              type="checkbox"
+              id={`layer-tooltip-${value.id}`}
+              checked={value.showTooltip ?? true}
+              onChange={(e) => update({ showTooltip: e.target.checked })}
+              className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
+            />
+            <label htmlFor={`layer-tooltip-${value.id}`} className="mapui:text-sm mapui:text-slate-700">
+              Show tooltip on hover
+            </label>
+          </div>
 
-      <div className="mapui:flex mapui:items-center mapui:gap-2">
-        <input
-          type="checkbox"
-          id={`layer-tooltip-${value.id}`}
-          checked={value.showTooltip ?? true}
-          onChange={(e) => update({ showTooltip: e.target.checked })}
-          className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
-        />
-        <label htmlFor={`layer-tooltip-${value.id}`} className="mapui:text-sm mapui:text-slate-700">
-          Show tooltip on hover
-        </label>
-      </div>
+          <div className="mapui:flex mapui:items-center mapui:gap-2">
+            <input
+              type="checkbox"
+              id={`layer-detail-${value.id}`}
+              checked={value.showDetailPanel ?? true}
+              onChange={(e) => update({ showDetailPanel: e.target.checked })}
+              className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
+            />
+            <label htmlFor={`layer-detail-${value.id}`} className="mapui:text-sm mapui:text-slate-700">
+              Show detail panel on click
+            </label>
+          </div>
 
-      <div className="mapui:flex mapui:items-center mapui:gap-2">
-        <input
-          type="checkbox"
-          id={`layer-detail-${value.id}`}
-          checked={value.showDetailPanel ?? true}
-          onChange={(e) => update({ showDetailPanel: e.target.checked })}
-          className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
-        />
-        <label htmlFor={`layer-detail-${value.id}`} className="mapui:text-sm mapui:text-slate-700">
-          Show detail panel on click
-        </label>
-      </div>
+          <div className="mapui:grid mapui:grid-cols-2 mapui:gap-3">
+            <FormField label="Min Zoom">
+              <input
+                type="number"
+                min={0}
+                max={24}
+                step={1}
+                value={value.minZoom ?? ''}
+                onChange={(e) => { const v = e.target.valueAsNumber; update({ minZoom: isNaN(v) ? undefined : v }); }}
+                placeholder="0"
+                className={inputClass}
+              />
+            </FormField>
+            <FormField label="Max Zoom">
+              <input
+                type="number"
+                min={0}
+                max={24}
+                step={1}
+                value={value.maxZoom ?? ''}
+                onChange={(e) => { const v = e.target.valueAsNumber; update({ maxZoom: isNaN(v) ? undefined : v }); }}
+                placeholder="24"
+                className={inputClass}
+              />
+            </FormField>
+          </div>
+        </>
+      )}
 
-      <div className="mapui:grid mapui:grid-cols-2 mapui:gap-3">
-        <FormField label="Min Zoom">
-          <input
-            type="number"
-            min={0}
-            max={24}
-            step={1}
-            value={value.minZoom ?? ''}
-            onChange={(e) => { const v = e.target.valueAsNumber; update({ minZoom: isNaN(v) ? undefined : v }); }}
-            placeholder="0"
-            className={inputClass}
-          />
-        </FormField>
-        <FormField label="Max Zoom">
-          <input
-            type="number"
-            min={0}
-            max={24}
-            step={1}
-            value={value.maxZoom ?? ''}
-            onChange={(e) => { const v = e.target.valueAsNumber; update({ maxZoom: isNaN(v) ? undefined : v }); }}
-            placeholder="24"
-            className={inputClass}
-          />
-        </FormField>
-      </div>
-
-      <CollapsibleSection title="Style">
+      {showSection('style') && <CollapsibleSection title="Style">
         <div className="mapui:flex mapui:flex-col mapui:gap-4">
           {(value.styles ?? [defaultFill]).map((style, i) => (
             <div key={i} className="mapui:flex mapui:flex-col mapui:gap-2">
@@ -342,45 +353,53 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
             + Add style
           </button>
         </div>
-      </CollapsibleSection>
+      </CollapsibleSection>}
 
-      <CollapsibleSection title="Legend">
-        <LegendEditor
-          value={value.legend}
-          onChange={(legend) => update({ legend })}
-          styles={value.styles}
-          layerLabel={value.label}
-        />
-      </CollapsibleSection>
+      {showSection('legend') && (
+        <CollapsibleSection title="Legend">
+          <LegendEditor
+            value={value.legend}
+            onChange={(legend) => update({ legend })}
+            styles={value.styles}
+            layerLabel={value.label}
+          />
+        </CollapsibleSection>
+      )}
 
-      <CollapsibleSection title="Search Fields">
-        <SearchFieldList
-          fields={value.search?.fields ?? []}
-          onChange={(fields) =>
-            update({ search: fields.length > 0 ? { fields } : undefined })
-          }
-          availableProperties={availableProperties}
-        />
-      </CollapsibleSection>
+      {showSection('search') && (
+        <CollapsibleSection title="Search Fields">
+          <SearchFieldList
+            fields={value.search?.fields ?? []}
+            onChange={(fields) =>
+              update({ search: fields.length > 0 ? { fields } : undefined })
+            }
+            availableProperties={availableProperties}
+          />
+        </CollapsibleSection>
+      )}
 
-      <CollapsibleSection title="Property Display">
-        <PropertyDisplayEditor
-          value={value.propertyDisplay ?? {}}
-          onChange={(propertyDisplay) =>
-            update({ propertyDisplay: Object.keys(propertyDisplay).length > 0 ? propertyDisplay : undefined })
-          }
-          availableProperties={availableProperties}
-        />
-      </CollapsibleSection>
+      {showSection('propertyDisplay') && (
+        <CollapsibleSection title="Property Display">
+          <PropertyDisplayEditor
+            value={value.propertyDisplay ?? {}}
+            onChange={(propertyDisplay) =>
+              update({ propertyDisplay: Object.keys(propertyDisplay).length > 0 ? propertyDisplay : undefined })
+            }
+            availableProperties={availableProperties}
+          />
+        </CollapsibleSection>
+      )}
 
-      <CollapsibleSection title="CQL2 Filter" badge={value.cql2Filter?.rules.length ?? 0}>
-        <Cql2FilterEditor
-          value={value.cql2Filter as Cql2FilterConfig | undefined}
-          onChange={(cql2Filter) => update({ cql2Filter } as Partial<LayerConfig>)}
-          availableProperties={availableProperties}
-          geometryProperties={geometryProperties}
-        />
-      </CollapsibleSection>
+      {showSection('cql2Filter') && (
+        <CollapsibleSection title="CQL2 Filter" badge={value.cql2Filter?.rules.length ?? 0}>
+          <Cql2FilterEditor
+            value={value.cql2Filter as Cql2FilterConfig | undefined}
+            onChange={(cql2Filter) => update({ cql2Filter } as Partial<LayerConfig>)}
+            availableProperties={availableProperties}
+            geometryProperties={geometryProperties}
+          />
+        </CollapsibleSection>
+      )}
 
     </div>
   );

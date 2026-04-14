@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   SourceList,
-  isFeatureSource,
   LayerList,
   ImageryList,
   CollectionBrowser,
@@ -15,11 +14,6 @@ import {
   CollapsibleSection,
   FormField,
   ColorPicker,
-  detectStyleTypeForCollection,
-  defaultFill,
-  defaultLine,
-  defaultCircle,
-  defaultSymbol,
   resolveAvailableIcons,
   slugify,
   INFO_POSITIONS,
@@ -66,14 +60,14 @@ const INFO_POSITION_OPTIONS = INFO_POSITIONS.map((pos) => ({
 
 interface SavedSourceSummary { id: string; source_id: string; url: string; label: string | null; tile_matrix_set_id: string; source_type?: string; auth?: SourceAuth | null; metadata?: { thumbnail?: string; tileJson?: { tiles: string[]; name?: string; minzoom?: number; maxzoom?: number } } | null }
 
-type WizardStep = 'metadata' | 'info' | 'layer-select' | 'layer-config' | 'imagery' | 'basemaps' | 'ui' | 'view' | 'review';
+type WizardStep = 'metadata' | 'info' | 'layers' | 'search-display' | 'imagery' | 'basemaps' | 'ui' | 'view' | 'review';
 
 const STEPS: { key: WizardStep; label: string }[] = [
   { key: 'metadata', label: 'Metadata' },
   { key: 'info', label: 'Info' },
   { key: 'basemaps', label: 'Basemaps' },
-  { key: 'layer-select', label: 'Layers' },
-  { key: 'layer-config', label: 'Style' },
+  { key: 'layers', label: 'Layers' },
+  { key: 'search-display', label: 'Search & Display' },
   { key: 'imagery', label: 'Imagery' },
   { key: 'ui', label: 'UI' },
   { key: 'view', label: 'View' },
@@ -243,8 +237,7 @@ export function ConfigWizardPage() {
       .catch(() => {});
   }, []);
 
-  // CollectionBrowser source selector state
-  const [browseSourceId, setBrowseSourceId] = useState('');
+  // Imagery CollectionBrowser source selector state
   const [imageryBrowseSourceId, setImageryBrowseSourceId] = useState('');
 
   const isEditing = !!id;
@@ -266,12 +259,6 @@ export function ConfigWizardPage() {
   // Clear "Saved" indicator when config changes
   useEffect(() => { setJustSaved(false); }, [assembledConfig, name, description]);
 
-  // Sync browseSourceId when sources change (only consider feature sources)
-  useEffect(() => {
-    if (featureSources.length > 0 && !featureSources.find(s => s.id === browseSourceId)) {
-      setBrowseSourceId(featureSources[0].id);
-    }
-  }, [sources, browseSourceId]);
 
   useEffect(() => {
     if (!id) return;
@@ -356,40 +343,7 @@ export function ConfigWizardPage() {
     }
   };
 
-  const handleCollectionSelect = (collectionId: string) => {
-    if (!browseSourceId) return;
-    const source = sources.find(s => s.id === browseSourceId);
-    if (!source) return;
-
-    const layerId = `${browseSourceId}-${collectionId}`;
-    const newLayer: LayerConfig = {
-      id: layerId,
-      sourceId: browseSourceId,
-      collection: collectionId,
-      label: collectionId,
-      visible: true,
-      dataMode: 'vector-tiles',
-    };
-    setLayers(prev => [...prev, newLayer]);
-
-    detectStyleTypeForCollection(source.url, collectionId).then(styleType => {
-      if (!styleType) return;
-      const style =
-        styleType === 'fill' ? defaultFill
-        : styleType === 'line' ? defaultLine
-        : styleType === 'symbol' ? defaultSymbol
-        : defaultCircle;
-      setLayers(prev => prev.map(l => l.id === layerId && !l.styles?.length ? { ...l, styles: [style] } : l));
-    });
-  };
-
-  const handleCollectionDeselect = (collectionId: string) => {
-    setLayers(prev =>
-      prev.filter(l => !(l.sourceId === browseSourceId && l.collection === collectionId)),
-    );
-  };
-
-  // Imagery collection select/deselect (mirrors layer-select pattern)
+  // Imagery collection select/deselect
   const handleImageryCollectionSelect = (collectionId: string, collectionTitle?: string) => {
     if (!imageryBrowseSourceId) return;
     const layerId = `${imageryBrowseSourceId}-${collectionId}`;
@@ -437,7 +391,6 @@ export function ConfigWizardPage() {
   const savedFeatureSources = savedSources.filter(s => (s.source_type ?? 'features') === 'features');
   const savedImagerySources = savedSources.filter(s => s.source_type === 'imagery');
   const savedBasemapSources = savedSources.filter(s => s.source_type === 'basemap');
-  const featureSources = sources.filter(isFeatureSource);
   const imageryOgcSources = sources.filter(s => s.type === 'imagery' && detectTileSourceType(s.url) === 'ogc-api');
 
   const isBasemapSelected = (saved: SavedSourceSummary) =>
@@ -466,11 +419,6 @@ export function ConfigWizardPage() {
         : [...prev, { id: preset.id, url: preset.url }],
     );
   };
-
-  const browseSource = sources.find(s => s.id === browseSourceId);
-  const selectedCollectionIds = layers
-    .filter(l => l.sourceId === browseSourceId)
-    .map(l => l.collection);
 
   if (loading) {
     return (
@@ -673,7 +621,7 @@ export function ConfigWizardPage() {
           </div>
         )}
 
-        {currentStep === 'layer-select' && (
+        {currentStep === 'layers' && (
           <div className="mapui:space-y-6">
             <h2 className="mapui:text-lg mapui:font-semibold mapui:text-slate-800">Layers</h2>
 
@@ -727,60 +675,36 @@ export function ConfigWizardPage() {
               <SourceList sources={sources} onChange={setSources} sourceType="features" />
             </CollapsibleSection>
 
-            {/* Browse collections from selected source */}
-            {featureSources.length === 0 ? (
-              <div className="mapui:rounded mapui:bg-yellow-50 mapui:border mapui:border-yellow-200 mapui:p-4 mapui:text-sm mapui:text-yellow-800">
-                Select a saved feature source above or add a custom source to start browsing collections.
-              </div>
-            ) : (
-              <div className="mapui:space-y-4">
-                {layers.length > 0 && (
-                  <p className="mapui:text-sm mapui:text-slate-500">
-                    {layers.length} layer{layers.length !== 1 ? 's' : ''} selected
-                  </p>
-                )}
-                <div className="mapui:rounded mapui:border mapui:border-slate-200 mapui:p-4">
-                  <h3 className="mapui:text-sm mapui:font-semibold mapui:text-slate-700 mapui:mb-3">Browse Collections</h3>
-                  <div className="mapui:mb-3">
-                    <label className="mapui:block mapui:text-xs mapui:font-medium mapui:text-slate-600 mapui:mb-1">
-                      Source
-                    </label>
-                    <select
-                      value={browseSourceId}
-                      onChange={e => setBrowseSourceId(e.target.value)}
-                      className="mapui:w-full mapui:border mapui:border-slate-300 mapui:rounded mapui:px-3 mapui:py-2 mapui:text-sm mapui:focus:outline-none mapui:focus:ring-2 mapui:focus:ring-blue-500"
-                    >
-                      {featureSources.map(s => (
-                        <option key={s.id} value={s.id}>
-                          {s.label ?? s.id}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {browseSource && (
-                    <CollectionBrowser
-                      sourceUrl={browseSource.url}
-                      sourceAuth={browseSource.auth}
-                      selectedCollectionIds={selectedCollectionIds}
-                      onSelect={handleCollectionSelect}
-                      onDeselect={handleCollectionDeselect}
-                    />
-                  )}
-                </div>
-              </div>
-            )}
+            {/* Layer list — add layers one at a time, configure style + legend */}
+            <LayerList
+              layers={layers}
+              onChange={setLayers}
+              availableSources={sources}
+              availableIcons={availableIcons}
+              sections={['style', 'legend']}
+            />
           </div>
         )}
 
-        {currentStep === 'layer-config' && (
+        {currentStep === 'search-display' && (
           <div className="mapui:space-y-4">
-            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-slate-800">Configure Layers</h2>
+            <h2 className="mapui:text-lg mapui:font-semibold mapui:text-slate-800">Search & Display</h2>
+            <p className="mapui:text-sm mapui:text-slate-500 mapui:m-0">
+              Configure search fields, property display, and filters for each layer.
+            </p>
             {layers.length === 0 ? (
               <div className="mapui:rounded mapui:bg-blue-50 mapui:border mapui:border-blue-200 mapui:p-4 mapui:text-sm mapui:text-blue-800">
-                No layers selected yet. Go back to the <strong>Select Layers</strong> step to choose collections.
+                No layers configured yet. Go back to the <strong>Layers</strong> step to add layers.
               </div>
             ) : (
-              <LayerList layers={layers} onChange={setLayers} availableSources={sources} availableIcons={availableIcons} />
+              <LayerList
+                layers={layers}
+                onChange={setLayers}
+                availableSources={sources}
+                sections={['search', 'propertyDisplay', 'cql2Filter']}
+                showBasicFields={false}
+                readOnly
+              />
             )}
           </div>
         )}
