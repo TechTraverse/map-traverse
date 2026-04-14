@@ -159,7 +159,7 @@ export function ExportModal({
       <div className="mapui:mx-4 mapui:w-full mapui:max-w-md mapui:max-h-[90vh] mapui:overflow-y-auto mapui:rounded-lg mapui:bg-white mapui:p-6 mapui:shadow-xl">
         <h2
           id="export-modal-title"
-          className="mapui:m-0 mapui:mb-4 mapui:text-base mapui:font-semibold mapui:text-gray-900"
+          className="mapui:m-0 mapui:mb-4 mapui:text-base mapui:font-semibold mapui:text-slate-900"
         >
           Export Data
         </h2>
@@ -167,12 +167,12 @@ export function ExportModal({
         {/* Export mode toggle — only shown when there is an active selection and not PDF */}
         {hasSelection && !isPdf && (
           <fieldset className="mapui:mb-4">
-            <legend className="mapui:mb-1 mapui:text-sm mapui:font-medium mapui:text-gray-700">
+            <legend className="mapui:mb-1 mapui:text-sm mapui:font-medium mapui:text-slate-700">
               Source
             </legend>
             <div
               role="radiogroup"
-              className="mapui:inline-flex mapui:rounded-md mapui:border mapui:border-gray-300 mapui:text-sm mapui:overflow-hidden"
+              className="mapui:inline-flex mapui:rounded-md mapui:border mapui:border-slate-300 mapui:text-sm mapui:overflow-hidden"
             >
               <button
                 type="button"
@@ -183,7 +183,7 @@ export function ExportModal({
                   'mapui:cursor-pointer mapui:px-3 mapui:py-1.5',
                   exportMode === 'all'
                     ? 'mapui:bg-blue-600 mapui:text-white'
-                    : 'mapui:bg-white mapui:text-gray-700 hover:mapui:bg-gray-50',
+                    : 'mapui:bg-white mapui:text-slate-700 hover:mapui:bg-slate-50',
                 ].join(' ')}
               >
                 All (filtered)
@@ -194,10 +194,10 @@ export function ExportModal({
                 aria-checked={exportMode === 'selected'}
                 onClick={() => setExportMode('selected')}
                 className={[
-                  'mapui:cursor-pointer mapui:px-3 mapui:py-1.5 mapui:border-l mapui:border-gray-300',
+                  'mapui:cursor-pointer mapui:px-3 mapui:py-1.5 mapui:border-l mapui:border-slate-300',
                   exportMode === 'selected'
                     ? 'mapui:bg-blue-600 mapui:text-white'
-                    : 'mapui:bg-white mapui:text-gray-700 hover:mapui:bg-gray-50',
+                    : 'mapui:bg-white mapui:text-slate-700 hover:mapui:bg-slate-50',
                 ].join(' ')}
               >
                 Selected only ({selectionCount})
@@ -211,12 +211,12 @@ export function ExportModal({
           <div className="mapui:mb-4">
             <label
               htmlFor="export-layer-select"
-              className="mapui:mb-1 mapui:block mapui:text-sm mapui:font-medium mapui:text-gray-700"
+              className="mapui:mb-1 mapui:block mapui:text-sm mapui:font-medium mapui:text-slate-700"
             >
               Layer
             </label>
             {layerLocked || layers.length === 1 ? (
-              <div className="mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-gray-50 mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-gray-700">
+              <div className="mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-slate-50 mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-slate-700">
                 {selectedLayer?.label ?? layers[0]?.label ?? '—'}
               </div>
             ) : (
@@ -224,7 +224,7 @@ export function ExportModal({
                 id="export-layer-select"
                 value={selectedLayerId}
                 onChange={(e) => setSelectedLayerId(e.target.value)}
-                className="mapui:w-full mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-gray-700"
+                className="mapui:w-full mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-slate-700"
               >
                 <option value="" disabled>
                   Select a layer...
@@ -241,14 +241,14 @@ export function ExportModal({
 
         {/* Format select (radio group) */}
         <fieldset className="mapui:mb-4">
-          <legend className="mapui:mb-1 mapui:text-sm mapui:font-medium mapui:text-gray-700">
+          <legend className="mapui:mb-1 mapui:text-sm mapui:font-medium mapui:text-slate-700">
             Format
           </legend>
           <div className="mapui:space-y-1">
             {availableFormats.map((format) => (
               <label
                 key={format.id}
-                className="mapui:flex mapui:cursor-pointer mapui:items-center mapui:gap-2 mapui:rounded mapui:px-2 mapui:py-1.5 hover:mapui:bg-gray-50"
+                className="mapui:flex mapui:cursor-pointer mapui:items-center mapui:gap-2 mapui:rounded mapui:px-2 mapui:py-1.5 hover:mapui:bg-slate-50"
               >
                 <input
                   type="radio"
@@ -258,18 +258,18 @@ export function ExportModal({
                   onChange={() => setSelectedFormatId(format.id)}
                   className="mapui:accent-blue-600"
                 />
-                <span className="mapui:text-sm mapui:text-gray-700">
+                <span className="mapui:text-sm mapui:text-slate-700">
                   {format.label}
                   {format.description && (
-                    <span className="mapui:ml-1 mapui:text-gray-400">— {format.description}</span>
+                    <span className="mapui:ml-1 mapui:text-slate-400">— {format.description}</span>
                   )}
                 </span>
               </label>
             ))}
             {pdfAvailable && (
               <>
-                <div className="mapui:my-1 mapui:border-t mapui:border-gray-200" />
-                <label className="mapui:flex mapui:cursor-pointer mapui:items-center mapui:gap-2 mapui:rounded mapui:px-2 mapui:py-1.5 hover:mapui:bg-gray-50">
+                <div className="mapui:my-1 mapui:border-t mapui:border-slate-200" />
+                <label className="mapui:flex mapui:cursor-pointer mapui:items-center mapui:gap-2 mapui:rounded mapui:px-2 mapui:py-1.5 hover:mapui:bg-slate-50">
                   <input
                     type="radio"
                     name="export-format"
@@ -278,9 +278,9 @@ export function ExportModal({
                     onChange={() => setSelectedFormatId(PDF_FORMAT_ID)}
                     className="mapui:accent-blue-600"
                   />
-                  <span className="mapui:text-sm mapui:text-gray-700">
+                  <span className="mapui:text-sm mapui:text-slate-700">
                     PDF
-                    <span className="mapui:ml-1 mapui:text-gray-400">— Map snapshot</span>
+                    <span className="mapui:ml-1 mapui:text-slate-400">— Map snapshot</span>
                   </span>
                 </label>
               </>
@@ -292,7 +292,7 @@ export function ExportModal({
         {isPdf && (
           <>
             <div className="mapui:mb-4">
-              <label htmlFor="pdf-title" className="mapui:mb-1 mapui:block mapui:text-sm mapui:font-medium mapui:text-gray-700">
+              <label htmlFor="pdf-title" className="mapui:mb-1 mapui:block mapui:text-sm mapui:font-medium mapui:text-slate-700">
                 Title
               </label>
               <input
@@ -300,13 +300,13 @@ export function ExportModal({
                 type="text"
                 value={pdfTitle}
                 onChange={(e) => setPdfTitle(e.target.value)}
-                className="mapui:w-full mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-gray-700 focus:mapui:border-blue-500 focus:mapui:outline-none focus:mapui:ring-1 focus:mapui:ring-blue-500"
+                className="mapui:w-full mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-slate-700 focus:mapui:border-blue-500 focus:mapui:outline-none focus:mapui:ring-1 focus:mapui:ring-blue-500"
                 placeholder="Map Export"
               />
             </div>
 
             <div className="mapui:mb-4">
-              <label htmlFor="pdf-filename" className="mapui:mb-1 mapui:block mapui:text-sm mapui:font-medium mapui:text-gray-700">
+              <label htmlFor="pdf-filename" className="mapui:mb-1 mapui:block mapui:text-sm mapui:font-medium mapui:text-slate-700">
                 Filename
               </label>
               <input
@@ -314,17 +314,17 @@ export function ExportModal({
                 type="text"
                 value={pdfFilename}
                 onChange={(e) => setPdfFilename(e.target.value)}
-                className="mapui:w-full mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-gray-700 focus:mapui:border-blue-500 focus:mapui:outline-none focus:mapui:ring-1 focus:mapui:ring-blue-500"
+                className="mapui:w-full mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-slate-700 focus:mapui:border-blue-500 focus:mapui:outline-none focus:mapui:ring-1 focus:mapui:ring-blue-500"
                 placeholder="map.pdf"
               />
             </div>
 
             <fieldset className="mapui:mb-4">
-              <legend className="mapui:mb-1 mapui:text-sm mapui:font-medium mapui:text-gray-700">
+              <legend className="mapui:mb-1 mapui:text-sm mapui:font-medium mapui:text-slate-700">
                 Include
               </legend>
               <div className="mapui:space-y-1">
-                <label className="mapui:flex mapui:cursor-pointer mapui:items-center mapui:gap-2 mapui:text-sm mapui:text-gray-700">
+                <label className="mapui:flex mapui:cursor-pointer mapui:items-center mapui:gap-2 mapui:text-sm mapui:text-slate-700">
                   <input
                     type="checkbox"
                     checked={includeLegend}
@@ -333,7 +333,7 @@ export function ExportModal({
                   />
                   Legend
                 </label>
-                <label className="mapui:flex mapui:cursor-pointer mapui:items-center mapui:gap-2 mapui:text-sm mapui:text-gray-700">
+                <label className="mapui:flex mapui:cursor-pointer mapui:items-center mapui:gap-2 mapui:text-sm mapui:text-slate-700">
                   <input
                     type="checkbox"
                     checked={includeScaleBar}
@@ -342,7 +342,7 @@ export function ExportModal({
                   />
                   Scale bar
                 </label>
-                <label className="mapui:flex mapui:cursor-pointer mapui:items-center mapui:gap-2 mapui:text-sm mapui:text-gray-700">
+                <label className="mapui:flex mapui:cursor-pointer mapui:items-center mapui:gap-2 mapui:text-sm mapui:text-slate-700">
                   <input
                     type="checkbox"
                     checked={includeNorthArrow}
@@ -365,7 +365,7 @@ export function ExportModal({
               onChange={(e) => setApplyFilters(e.target.checked)}
               className="mapui:accent-blue-600"
             />
-            <span className="mapui:text-sm mapui:text-gray-700">Apply current filters</span>
+            <span className="mapui:text-sm mapui:text-slate-700">Apply current filters</span>
           </label>
         )}
 
@@ -385,7 +385,7 @@ export function ExportModal({
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:font-medium mapui:text-gray-700 hover:mapui:bg-gray-50"
+            className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:font-medium mapui:text-slate-700 hover:mapui:bg-slate-50"
           >
             Cancel
           </button>

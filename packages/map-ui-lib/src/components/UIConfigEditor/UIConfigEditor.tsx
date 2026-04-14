@@ -78,7 +78,7 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
       <span
         className={[
           'mapui:relative mapui:block mapui:h-5 mapui:w-9 mapui:rounded-full mapui:transition-colors',
-          checked ? 'mapui:bg-blue-600' : 'mapui:bg-gray-300',
+          checked ? 'mapui:bg-blue-600' : 'mapui:bg-slate-300',
         ].join(' ')}
       >
         <span
@@ -229,14 +229,14 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
     <div className="mapui:flex mapui:flex-col mapui:gap-4">
       {/* Control layout */}
       <CollapsibleSection title="Control Layout" defaultOpen>
-        <p className="mapui:m-0 mapui:mb-2 mapui:text-xs mapui:text-gray-500">
+        <p className="mapui:m-0 mapui:mb-2 mapui:text-xs mapui:text-slate-500">
           How controls are displayed on the map.
         </p>
         <div className="mapui:flex mapui:flex-col mapui:gap-1.5">
           {CONTROL_LAYOUTS.map((layout) => (
             <label
               key={layout}
-              className="mapui:flex mapui:cursor-pointer mapui:items-start mapui:gap-2 mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:px-3 mapui:py-2 hover:mapui:bg-gray-50"
+              className="mapui:flex mapui:cursor-pointer mapui:items-start mapui:gap-2 mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:px-3 mapui:py-2 hover:mapui:bg-slate-50"
             >
               <input
                 type="radio"
@@ -247,10 +247,10 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
                 className="mapui:mt-0.5"
               />
               <span className="mapui:flex mapui:flex-col mapui:gap-0.5">
-                <span className="mapui:text-sm mapui:font-medium mapui:text-gray-800">
+                <span className="mapui:text-sm mapui:font-medium mapui:text-slate-800">
                   {LAYOUT_LABELS[layout].label}
                 </span>
-                <span className="mapui:text-xs mapui:text-gray-500">
+                <span className="mapui:text-xs mapui:text-slate-500">
                   {LAYOUT_LABELS[layout].description}
                 </span>
               </span>
@@ -259,12 +259,12 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
         </div>
         {(value.controlLayout === 'side-menu' || value.controlLayout === 'auto') && (
           <div className="mapui:mt-2 mapui:flex mapui:items-center mapui:gap-2">
-            <span className="mapui:text-xs mapui:text-gray-600">Menu button position:</span>
+            <span className="mapui:text-xs mapui:text-slate-600">Menu button position:</span>
             <select
               value={value.sideMenuToggleCorner ?? 'top-right'}
               onChange={(e) => onChange({ ...value, sideMenuToggleCorner: e.target.value as ControlCorner })}
               aria-label="Menu button position"
-              className="mapui:shrink-0 mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-1.5 mapui:py-1 mapui:text-xs mapui:text-gray-700 focus:mapui:border-blue-500 focus:mapui:outline-none"
+              className="mapui:shrink-0 mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-1.5 mapui:py-1 mapui:text-xs mapui:text-slate-700 focus:mapui:border-blue-500 focus:mapui:outline-none"
             >
               {CONTROL_CORNERS.map((c) => (
                 <option key={c} value={c}>
@@ -278,7 +278,7 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
 
       {/* Orderable controls */}
       <CollapsibleSection title="Control Stack Order">
-        <p className="mapui:m-0 mapui:mb-2 mapui:text-xs mapui:text-gray-500">
+        <p className="mapui:m-0 mapui:mb-2 mapui:text-xs mapui:text-slate-500">
           Drag or use arrows to set the display order of map controls.
         </p>
         <ul className="mapui:m-0 mapui:list-none mapui:flex mapui:flex-col mapui:gap-1.5 mapui:p-0">
@@ -301,7 +301,7 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
                 onDragEnd={handleDragEnd}
                 className={[
                   'mapui:flex mapui:items-center mapui:gap-2 mapui:rounded mapui:border mapui:bg-white mapui:px-2 mapui:py-1.5 mapui:transition-colors',
-                  isDragOver ? 'mapui:border-blue-400 mapui:bg-blue-50' : 'mapui:border-gray-200',
+                  isDragOver ? 'mapui:border-blue-400 mapui:bg-blue-50' : 'mapui:border-slate-200',
                   isDragged ? 'mapui:opacity-50' : 'mapui:opacity-100',
                 ].join(' ')}
               >
@@ -311,7 +311,7 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
                     onClick={() => handleMoveUp(index)}
                     disabled={index === 0}
                     aria-label="Move control up"
-                    className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:px-1 mapui:text-xs mapui:text-gray-400 hover:mapui:text-gray-600 disabled:mapui:opacity-30"
+                    className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:px-1 mapui:text-xs mapui:text-slate-400 hover:mapui:text-slate-600 disabled:mapui:opacity-30"
                   >
                     ▲
                   </button>
@@ -320,20 +320,20 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
                     onClick={() => handleMoveDown(index)}
                     disabled={index === controlOrder.length - 1}
                     aria-label="Move control down"
-                    className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:px-1 mapui:text-xs mapui:text-gray-400 hover:mapui:text-gray-600 disabled:mapui:opacity-30"
+                    className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:px-1 mapui:text-xs mapui:text-slate-400 hover:mapui:text-slate-600 disabled:mapui:opacity-30"
                   >
                     ▼
                   </button>
                 </div>
                 <span
-                  className="mapui:shrink-0 mapui:cursor-grab mapui:text-gray-400 active:mapui:cursor-grabbing"
+                  className="mapui:shrink-0 mapui:cursor-grab mapui:text-slate-400 active:mapui:cursor-grabbing"
                   aria-hidden="true"
                 >
                   ⠿
                 </span>
                 <div className="mapui:flex mapui:min-w-0 mapui:flex-1 mapui:flex-col mapui:gap-0.5">
-                  <span className="mapui:text-sm mapui:font-medium mapui:text-gray-800">{info.label}</span>
-                  <span className="mapui:text-xs mapui:text-gray-500">{info.description}</span>
+                  <span className="mapui:text-sm mapui:font-medium mapui:text-slate-800">{info.label}</span>
+                  <span className="mapui:text-xs mapui:text-slate-500">{info.description}</span>
                   {autoEnabled?.has(key as keyof UIConfig) && (
                     <span className="mapui:text-[10px] mapui:font-medium mapui:text-blue-500">Auto-enabled</span>
                   )}
@@ -342,7 +342,7 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
                   value={resolveControlCorner(value, key)}
                   onChange={(e) => handleCornerChange(key, e.target.value as ControlCorner)}
                   aria-label={`${info.label} position`}
-                  className="mapui:shrink-0 mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-1.5 mapui:py-1 mapui:text-xs mapui:text-gray-700 focus:mapui:border-blue-500 focus:mapui:outline-none"
+                  className="mapui:shrink-0 mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-1.5 mapui:py-1 mapui:text-xs mapui:text-slate-700 focus:mapui:border-blue-500 focus:mapui:outline-none"
                 >
                   {CONTROL_CORNERS.map((c) => (
                     <option key={c} value={c}>
@@ -358,22 +358,22 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
                     }
                     aria-label={`${info.label} icon`}
                     title="Change icon"
-                    className="mapui:flex mapui:h-7 mapui:w-7 mapui:shrink-0 mapui:cursor-pointer mapui:items-center mapui:justify-center mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white hover:mapui:bg-gray-50"
+                    className="mapui:flex mapui:h-7 mapui:w-7 mapui:shrink-0 mapui:cursor-pointer mapui:items-center mapui:justify-center mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white hover:mapui:bg-slate-50"
                   >
                     {(() => {
                       const iconName = value.controlIcons?.[key as OrderableControlKey];
                       const Icon = iconName ? CONTROL_ICON_MAP[iconName] : null;
                       return Icon ? (
-                        <Icon size={14} className="mapui:text-gray-700" />
+                        <Icon size={14} className="mapui:text-slate-700" />
                       ) : (
-                        <span className="mapui:text-[10px] mapui:text-gray-500">icon</span>
+                        <span className="mapui:text-[10px] mapui:text-slate-500">icon</span>
                       );
                     })()}
                   </button>
                   {iconPickerFor === key && (
-                    <div className="mapui:absolute mapui:right-0 mapui:top-8 mapui:z-10 mapui:w-48 mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:p-2 mapui:shadow-lg">
+                    <div className="mapui:absolute mapui:right-0 mapui:top-8 mapui:z-10 mapui:w-48 mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:p-2 mapui:shadow-lg">
                       <div className="mapui:mb-1 mapui:flex mapui:items-center mapui:justify-between">
-                        <span className="mapui:text-[10px] mapui:font-semibold mapui:text-gray-600">
+                        <span className="mapui:text-[10px] mapui:font-semibold mapui:text-slate-600">
                           Pick an icon
                         </span>
                         <button
@@ -404,10 +404,10 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
                               className={`mapui:flex mapui:h-6 mapui:w-6 mapui:cursor-pointer mapui:items-center mapui:justify-center mapui:rounded mapui:border ${
                                 selected
                                   ? 'mapui:border-blue-500 mapui:bg-blue-50'
-                                  : 'mapui:border-gray-200 mapui:bg-white hover:mapui:bg-gray-50'
+                                  : 'mapui:border-slate-200 mapui:bg-white hover:mapui:bg-slate-50'
                               }`}
                             >
-                              <Icon size={14} className="mapui:text-gray-700" />
+                              <Icon size={14} className="mapui:text-slate-700" />
                             </button>
                           );
                         })}
@@ -428,7 +428,7 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
 
       {/* Non-orderable controls */}
       <CollapsibleSection title="Other Controls">
-        <p className="mapui:m-0 mapui:mb-2 mapui:text-xs mapui:text-gray-500">
+        <p className="mapui:m-0 mapui:mb-2 mapui:text-xs mapui:text-slate-500">
           These controls have fixed positions on the map.
         </p>
         <div className="mapui:grid mapui:grid-cols-1 mapui:gap-2 sm:mapui:grid-cols-2">
@@ -438,11 +438,11 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
             return (
               <label
                 key={key}
-                className="mapui:flex mapui:cursor-pointer mapui:items-center mapui:justify-between mapui:gap-3 mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:px-3 mapui:py-2 hover:mapui:bg-gray-50"
+                className="mapui:flex mapui:cursor-pointer mapui:items-center mapui:justify-between mapui:gap-3 mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:px-3 mapui:py-2 hover:mapui:bg-slate-50"
               >
                 <div className="mapui:flex mapui:flex-col mapui:gap-0.5">
-                  <span className="mapui:text-sm mapui:font-medium mapui:text-gray-800">{label}</span>
-                  <span className="mapui:text-xs mapui:text-gray-500">{description}</span>
+                  <span className="mapui:text-sm mapui:font-medium mapui:text-slate-800">{label}</span>
+                  <span className="mapui:text-xs mapui:text-slate-500">{description}</span>
                   {autoEnabled?.has(uiKey) && (
                     <span className="mapui:text-[10px] mapui:font-medium mapui:text-blue-500">Auto-enabled</span>
                   )}
@@ -457,7 +457,7 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
       {/* Coordinate format */}
       {value.showCoordinateDisplay && (
         <CollapsibleSection title="Coordinate Format">
-          <p className="mapui:m-0 mapui:mb-2 mapui:text-xs mapui:text-gray-500">
+          <p className="mapui:m-0 mapui:mb-2 mapui:text-xs mapui:text-slate-500">
             Default display format for the cursor coordinate readout.
           </p>
           <select
@@ -468,7 +468,7 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
                 coordinateFormat: e.target.value as UIConfig['coordinateFormat'],
               })
             }
-            className="mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-2 mapui:py-1.5 mapui:text-sm mapui:text-gray-800 focus:mapui:border-blue-500 focus:mapui:outline-none"
+            className="mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-2 mapui:py-1.5 mapui:text-sm mapui:text-slate-800 focus:mapui:border-blue-500 focus:mapui:outline-none"
           >
             {COORDINATE_FORMATS.map((format) => (
               <option key={format} value={format}>
@@ -482,7 +482,7 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
       {/* Legend order */}
       {value.showLegend && legendLayerOptions.length > 0 && (
         <CollapsibleSection title="Legend Order">
-          <p className="mapui:m-0 mapui:mb-2 mapui:text-xs mapui:text-gray-500">
+          <p className="mapui:m-0 mapui:mb-2 mapui:text-xs mapui:text-slate-500">
             Set the display order of layers in the legend. Only layers with a legend configured are shown.
           </p>
           <ul className="mapui:m-0 mapui:list-none mapui:flex mapui:flex-col mapui:gap-1.5 mapui:p-0">
@@ -492,7 +492,7 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
               return (
                 <li
                   key={layerId}
-                  className="mapui:flex mapui:items-center mapui:gap-2 mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:px-2 mapui:py-1.5"
+                  className="mapui:flex mapui:items-center mapui:gap-2 mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:px-2 mapui:py-1.5"
                 >
                   <div className="mapui:flex mapui:shrink-0 mapui:flex-col mapui:gap-0.5">
                     <button
@@ -500,7 +500,7 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
                       onClick={() => handleLegendMoveUp(index)}
                       disabled={index === 0}
                       aria-label="Move legend entry up"
-                      className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:px-1 mapui:text-xs mapui:text-gray-400 hover:mapui:text-gray-600 disabled:mapui:opacity-30"
+                      className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:px-1 mapui:text-xs mapui:text-slate-400 hover:mapui:text-slate-600 disabled:mapui:opacity-30"
                     >
                       ▲
                     </button>
@@ -509,12 +509,12 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
                       onClick={() => handleLegendMoveDown(index)}
                       disabled={index === effectiveLegendOrder.length - 1}
                       aria-label="Move legend entry down"
-                      className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:px-1 mapui:text-xs mapui:text-gray-400 hover:mapui:text-gray-600 disabled:mapui:opacity-30"
+                      className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:px-1 mapui:text-xs mapui:text-slate-400 hover:mapui:text-slate-600 disabled:mapui:opacity-30"
                     >
                       ▼
                     </button>
                   </div>
-                  <span className="mapui:text-sm mapui:text-gray-800">{layer.label}</span>
+                  <span className="mapui:text-sm mapui:text-slate-800">{layer.label}</span>
                 </li>
               );
             })}

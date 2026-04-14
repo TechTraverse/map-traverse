@@ -96,7 +96,7 @@ export const ParcelsNearby: Story = {
           hasSelectionGeometry={true}
         />
         {lastParams && (
-          <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-2 mapui:text-xs">
+          <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-2 mapui:text-xs">
             {JSON.stringify(lastParams, null, 2)}
           </pre>
         )}

@@ -72,21 +72,21 @@ export function CollapsibleControl({
         onClick={handleToggle}
         title={label}
         aria-label={label}
-        className={`mapui:flex mapui:items-center mapui:justify-center mapui:w-10 mapui:h-10 mapui:bg-white mapui:rounded mapui:shadow-md hover:mapui:bg-gray-50 mapui:transition-colors ${
-          isCollapsed ? '' : 'mapui:bg-gray-100'
+        className={`mapui:flex mapui:items-center mapui:justify-center mapui:w-10 mapui:h-10 mapui:bg-white mapui:rounded mapui:shadow-md hover:mapui:bg-slate-50 mapui:transition-colors ${
+          isCollapsed ? '' : 'mapui:bg-slate-100'
         }`}
       >
-        <Icon size={20} className="mapui:text-gray-700" />
+        <Icon size={20} className="mapui:text-slate-700" />
       </button>
 
       {/* Expanded panel - positioned based on corner prop */}
       {!isCollapsed && (
         <div className={`mapui:absolute ${PANEL_POSITION_CLASSES[corner]} mapui:z-10 mapui:bg-white mapui:rounded-lg mapui:shadow-lg`}>
           {/* Header with icon and close button */}
-          <div className="mapui:flex mapui:items-center mapui:justify-between mapui:p-2 mapui:border-b mapui:border-gray-200">
+          <div className="mapui:flex mapui:items-center mapui:justify-between mapui:p-2 mapui:border-b mapui:border-slate-200">
             <div className="mapui:flex mapui:items-center mapui:gap-2">
-              <Icon size={18} className="mapui:text-gray-700" />
-              <span className="mapui:text-sm mapui:font-medium mapui:text-gray-700">
+              <Icon size={18} className="mapui:text-slate-700" />
+              <span className="mapui:text-sm mapui:font-medium mapui:text-slate-700">
                 {label}
               </span>
             </div>
@@ -95,9 +95,9 @@ export function CollapsibleControl({
               onClick={handleToggle}
               title={`Collapse ${label}`}
               aria-label={`Collapse ${label}`}
-              className="mapui:flex mapui:items-center mapui:justify-center mapui:min-w-[44px] mapui:min-h-[44px] mapui:w-8 mapui:h-8 mapui:rounded hover:mapui:bg-gray-100 mapui:transition-colors"
+              className="mapui:flex mapui:items-center mapui:justify-center mapui:min-w-[44px] mapui:min-h-[44px] mapui:w-8 mapui:h-8 mapui:rounded hover:mapui:bg-slate-100 mapui:transition-colors"
             >
-              <LuX size={16} className="mapui:text-gray-600" />
+              <LuX size={16} className="mapui:text-slate-600" />
             </button>
           </div>
 

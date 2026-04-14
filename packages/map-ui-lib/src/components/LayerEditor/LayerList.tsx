@@ -100,7 +100,7 @@ export function LayerList({ layers, onChange, availableSources, availableIcons }
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-3">
       <div className="mapui:flex mapui:items-center mapui:justify-between">
-        <h3 className="mapui:m-0 mapui:text-sm mapui:font-semibold mapui:text-gray-700">
+        <h3 className="mapui:m-0 mapui:text-sm mapui:font-semibold mapui:text-slate-700">
           Layers
         </h3>
         <button
@@ -113,7 +113,7 @@ export function LayerList({ layers, onChange, availableSources, availableIcons }
       </div>
 
       {layers.length === 0 && !addingNew && (
-        <p className="mapui:m-0 mapui:text-sm mapui:text-gray-500">No layers configured.</p>
+        <p className="mapui:m-0 mapui:text-sm mapui:text-slate-500">No layers configured.</p>
       )}
 
       <ul className="mapui:m-0 mapui:list-none mapui:flex mapui:flex-col mapui:gap-2 mapui:p-0">
@@ -133,7 +133,7 @@ export function LayerList({ layers, onChange, availableSources, availableIcons }
               onDragEnd={handleDragEnd}
               className={[
                 'mapui:rounded-lg mapui:border mapui:bg-white mapui:transition-colors',
-                isDragOver ? 'mapui:border-blue-400 mapui:bg-blue-50' : 'mapui:border-gray-200',
+                isDragOver ? 'mapui:border-blue-400 mapui:bg-blue-50' : 'mapui:border-slate-200',
                 isDragged ? 'mapui:opacity-50' : 'mapui:opacity-100',
               ].join(' ')}
             >
@@ -145,7 +145,7 @@ export function LayerList({ layers, onChange, availableSources, availableIcons }
                       onClick={() => handleMoveUp(index)}
                       disabled={index === 0}
                       aria-label="Move layer up"
-                      className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:px-1 mapui:text-xs mapui:text-gray-400 hover:mapui:text-gray-600 disabled:mapui:opacity-30"
+                      className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:px-1 mapui:text-xs mapui:text-slate-400 hover:mapui:text-slate-600 disabled:mapui:opacity-30"
                     >
                       ▲
                     </button>
@@ -154,22 +154,22 @@ export function LayerList({ layers, onChange, availableSources, availableIcons }
                       onClick={() => handleMoveDown(index)}
                       disabled={index === layers.length - 1}
                       aria-label="Move layer down"
-                      className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:px-1 mapui:text-xs mapui:text-gray-400 hover:mapui:text-gray-600 disabled:mapui:opacity-30"
+                      className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:px-1 mapui:text-xs mapui:text-slate-400 hover:mapui:text-slate-600 disabled:mapui:opacity-30"
                     >
                       ▼
                     </button>
                   </div>
                   <span
-                    className="mapui:shrink-0 mapui:cursor-grab mapui:text-gray-400 active:mapui:cursor-grabbing"
+                    className="mapui:shrink-0 mapui:cursor-grab mapui:text-slate-400 active:mapui:cursor-grabbing"
                     aria-hidden="true"
                   >
                     ⠿
                   </span>
                   <div className="mapui:flex mapui:min-w-0 mapui:flex-col mapui:gap-0.5">
-                    <span className="mapui:text-sm mapui:font-medium mapui:text-gray-800">
+                    <span className="mapui:text-sm mapui:font-medium mapui:text-slate-800">
                       {layer.label || layer.id}
                     </span>
-                    <span className="mapui:font-mono mapui:text-xs mapui:text-gray-500">
+                    <span className="mapui:font-mono mapui:text-xs mapui:text-slate-500">
                       {layer.collection}
                     </span>
                     <div className="mapui:mt-1 mapui:flex mapui:flex-wrap mapui:gap-1">
@@ -208,7 +208,7 @@ export function LayerList({ layers, onChange, availableSources, availableIcons }
                   <button
                     type="button"
                     onClick={() => setEditingId(editingId === layer.id ? null : layer.id)}
-                    className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-gray-600 hover:mapui:bg-gray-50"
+                    className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-slate-600 hover:mapui:bg-slate-50"
                   >
                     {editingId === layer.id ? 'Close' : 'Edit'}
                   </button>
@@ -223,7 +223,7 @@ export function LayerList({ layers, onChange, availableSources, availableIcons }
               </div>
 
               {editingId === layer.id && (
-                <div className="mapui:border-t mapui:border-gray-100 mapui:p-3">
+                <div className="mapui:border-t mapui:border-slate-100 mapui:p-3">
                   <LayerEditor
                     value={layer}
                     onChange={handleUpdate}
@@ -260,7 +260,7 @@ export function LayerList({ layers, onChange, availableSources, availableIcons }
             <button
               type="button"
               onClick={() => setAddingNew(false)}
-              className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-3 mapui:py-1 mapui:text-xs mapui:text-gray-700 hover:mapui:bg-gray-50"
+              className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-3 mapui:py-1 mapui:text-xs mapui:text-slate-700 hover:mapui:bg-slate-50"
             >
               Cancel
             </button>

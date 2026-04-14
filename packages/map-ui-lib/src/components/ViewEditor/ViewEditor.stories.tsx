@@ -30,7 +30,7 @@ export const Default: Story = {
     return (
       <div className="mapui:max-w-md mapui:p-4">
         <ViewEditor value={view} onChange={setView} />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(view, null, 2)}
         </pre>
       </div>
@@ -69,7 +69,7 @@ export const WithZoomConstraints: Story = {
     return (
       <div className="mapui:max-w-md mapui:p-4">
         <ViewEditor value={view} onChange={setView} />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(view, null, 2)}
         </pre>
       </div>

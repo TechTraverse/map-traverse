@@ -139,10 +139,10 @@ export const ManyLayers: Story = {
           <LayerList layers={layers} onChange={setLayers} availableSources={sampleSources} />
         </div>
         <div className="mapui:flex-1">
-          <p className="mapui:m-0 mapui:mb-2 mapui:text-xs mapui:font-semibold mapui:text-gray-500">
+          <p className="mapui:m-0 mapui:mb-2 mapui:text-xs mapui:font-semibold mapui:text-slate-500">
             Current order (index 0 = bottom of map):
           </p>
-          <pre className="mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs mapui:text-gray-700">
+          <pre className="mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs mapui:text-slate-700">
             {layers.map((l, i) => `${i}: ${l.id} (${l.label})`).join('\n')}
           </pre>
         </div>

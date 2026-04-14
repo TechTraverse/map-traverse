@@ -49,7 +49,7 @@ function InteractiveWrapper({
         formats={formats}
         onFormatChange={setActiveFormat}
       />
-      <p className="mapui:text-sm mapui:text-gray-600">
+      <p className="mapui:text-sm mapui:text-slate-600">
         Click the format label to cycle through formats
       </p>
     </div>
@@ -154,7 +154,7 @@ export const GoToLatLong: Story = {
           onFormatChange={setActiveFormat}
           onNavigate={(lat, lng) => setLastNavigated({ lat, lng })}
         />
-        <p className="mapui:text-sm mapui:text-gray-600">
+        <p className="mapui:text-sm mapui:text-slate-600">
           Click the coordinate readout to open the input form. Accepts decimal,
           DDM, or DMS (with optional N/S/E/W).
         </p>

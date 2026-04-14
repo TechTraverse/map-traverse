@@ -30,7 +30,7 @@ export function BasemapSwitcher({
             className={`mapui:flex mapui:flex-col mapui:items-center mapui:gap-1 mapui:rounded-md mapui:border-2 mapui:px-3 mapui:py-2 mapui:text-sm mapui:font-medium mapui:cursor-pointer mapui:transition-colors ${
               isActive
                 ? 'mapui:border-blue-500 mapui:bg-blue-50 mapui:text-blue-700'
-                : 'mapui:border-gray-200 mapui:bg-white mapui:text-gray-700 hover:mapui:border-gray-300 hover:mapui:bg-gray-50'
+                : 'mapui:border-slate-200 mapui:bg-white mapui:text-slate-700 hover:mapui:border-slate-300 hover:mapui:bg-slate-50'
             }`}
           >
             {basemap.thumbnail && (

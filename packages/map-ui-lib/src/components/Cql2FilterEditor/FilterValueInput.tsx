@@ -4,7 +4,7 @@ import { isSpatialOperator } from './operatorOptions';
 import { inputClass, smallInputClass } from './styles';
 
 const pillBtnClass = (active: boolean) =>
-  `mapui:px-2 mapui:py-0.5 mapui:text-xs ${active ? 'mapui:bg-blue-600 mapui:text-white' : 'mapui:bg-white mapui:text-gray-600 hover:mapui:bg-gray-100'}`;
+  `mapui:px-2 mapui:py-0.5 mapui:text-xs ${active ? 'mapui:bg-blue-600 mapui:text-white' : 'mapui:bg-white mapui:text-slate-600 hover:mapui:bg-slate-100'}`;
 
 function CommaSeparatedInput({
   values,
@@ -67,7 +67,7 @@ function OffsetValueEditor({
           if (isParam) onChange({ kind: 'static', value: 0 });
           else onChange({ kind: 'parameter', name: '', label: '', default: value.value });
         }}
-        className="mapui:rounded mapui:border mapui:border-gray-300 mapui:px-1 mapui:py-0.5 mapui:text-xs mapui:text-gray-600 hover:mapui:bg-gray-100"
+        className="mapui:rounded mapui:border mapui:border-slate-300 mapui:px-1 mapui:py-0.5 mapui:text-xs mapui:text-slate-600 hover:mapui:bg-slate-100"
         title={isParam ? 'Switch to static' : 'Switch to parameter'}
       >
         {isParam ? 'P' : 'V'}
@@ -115,7 +115,7 @@ export function FilterValueInput({
 
   // --- isNull ---
   if (operator === 'isNull') {
-    return <span className="mapui:text-sm mapui:text-gray-500 mapui:italic">is empty</span>;
+    return <span className="mapui:text-sm mapui:text-slate-500 mapui:italic">is empty</span>;
   }
 
   // --- between: static range vs computed range ---
@@ -151,7 +151,7 @@ function SpatialValueInput({
   onSpatialChange?: (s: SpatialConfig) => void;
 }) {
   if (operator !== 's_dwithin') {
-    return <span className="mapui:text-xs mapui:text-gray-500 mapui:italic">(uses selected feature geometry)</span>;
+    return <span className="mapui:text-xs mapui:text-slate-500 mapui:italic">(uses selected feature geometry)</span>;
   }
 
   const dist = spatial?.distance;
@@ -171,7 +171,7 @@ function SpatialValueInput({
       <button
         type="button"
         onClick={toggleDistMode}
-        className="mapui:rounded mapui:border mapui:border-gray-300 mapui:px-1 mapui:py-0.5 mapui:text-xs mapui:text-gray-600 hover:mapui:bg-gray-100"
+        className="mapui:rounded mapui:border mapui:border-slate-300 mapui:px-1 mapui:py-0.5 mapui:text-xs mapui:text-slate-600 hover:mapui:bg-slate-100"
         title={isParam ? 'Static distance' : 'Parameterized distance'}
       >
         {isParam ? 'P' : 'V'}
@@ -207,7 +207,7 @@ function SpatialValueInput({
         <option value="miles">miles</option>
         <option value="feet">feet</option>
       </select>
-      <span className="mapui:text-xs mapui:text-gray-500 mapui:italic">(from selection)</span>
+      <span className="mapui:text-xs mapui:text-slate-500 mapui:italic">(from selection)</span>
     </div>
   );
 }
@@ -221,7 +221,7 @@ function BetweenValueInput({ value, onChange }: { value: FilterRuleValue; onChan
 
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-1.5">
-      <div className="mapui:inline-flex mapui:rounded-md mapui:border mapui:border-gray-300 mapui:text-xs">
+      <div className="mapui:inline-flex mapui:rounded-md mapui:border mapui:border-slate-300 mapui:text-xs">
         <button type="button" onClick={() => !isComputed || onChange({ kind: 'static', value: { lower: 0, upper: 100 } })} className={`mapui:rounded-l-md ${pillBtnClass(!isComputed)}`}>Static</button>
         <button type="button" onClick={() => isComputed || onChange({ kind: 'computedRange', baseParam: '', baseLabel: '', offsetType: 'percentage', offsetAmount: { kind: 'static', value: 20 } })} className={`mapui:rounded-r-md ${pillBtnClass(isComputed)}`}>Computed</button>
       </div>
@@ -244,7 +244,7 @@ function StaticBetweenInputs({ value, onChange }: { value: FilterRuleValue; onCh
   return (
     <div className="mapui:flex mapui:items-center mapui:gap-1">
       <input type="number" value={v.lower} onChange={(e) => onChange({ kind: 'static', value: { lower: parseFloat(e.target.value) || 0, upper: v.upper } })} placeholder="Lower" className={smallInputClass} />
-      <span className="mapui:text-sm mapui:text-gray-500">to</span>
+      <span className="mapui:text-sm mapui:text-slate-500">to</span>
       <input type="number" value={v.upper} onChange={(e) => onChange({ kind: 'static', value: { lower: v.lower, upper: parseFloat(e.target.value) || 0 } })} placeholder="Upper" className={smallInputClass} />
     </div>
   );
@@ -258,7 +258,7 @@ function ComputedRangeInputs({ value, onChange }: { value: ComputedRangeValue; o
         <input type="text" value={value.baseLabel} onChange={(e) => onChange({ ...value, baseLabel: e.target.value })} placeholder="label" className={`${inputClass} mapui:w-28`} />
       </div>
       <div className="mapui:flex mapui:items-center mapui:gap-1.5">
-        <span className="mapui:text-xs mapui:text-gray-500">&plusmn;</span>
+        <span className="mapui:text-xs mapui:text-slate-500">&plusmn;</span>
         <OffsetValueEditor value={value.offsetAmount} onChange={(offsetAmount) => onChange({ ...value, offsetAmount })} placeholder="Amount" />
         <select value={value.offsetType} onChange={(e) => onChange({ ...value, offsetType: e.target.value as 'percentage' | 'absolute' })} className={inputClass}>
           <option value="percentage">%</option>
@@ -278,7 +278,7 @@ function DuringValueInput({ value, onChange }: { value: FilterRuleValue; onChang
 
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-1.5">
-      <div className="mapui:inline-flex mapui:rounded-md mapui:border mapui:border-gray-300 mapui:text-xs">
+      <div className="mapui:inline-flex mapui:rounded-md mapui:border mapui:border-slate-300 mapui:text-xs">
         <button type="button" onClick={() => isDateRange && onChange({ kind: 'static', value: { start: '', end: '' } })} className={`mapui:rounded-l-md ${pillBtnClass(!isDateRange)}`}>Absolute</button>
         <button type="button" onClick={() => !isDateRange && onChange({
           kind: 'dateRange',
@@ -302,7 +302,7 @@ function StaticDuringInputs({ value, onChange }: { value: FilterRuleValue; onCha
   return (
     <div className="mapui:flex mapui:items-center mapui:gap-1">
       <input type="datetime-local" value={v.start} onChange={(e) => onChange({ kind: 'static', value: { start: e.target.value, end: v.end } })} className={inputClass} />
-      <span className="mapui:text-sm mapui:text-gray-500">to</span>
+      <span className="mapui:text-sm mapui:text-slate-500">to</span>
       <input type="datetime-local" value={v.end} onChange={(e) => onChange({ kind: 'static', value: { start: v.start, end: e.target.value } })} className={inputClass} />
     </div>
   );
@@ -312,11 +312,11 @@ function DateRangeInputs({ value, onChange }: { value: DateRangeValue; onChange:
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-1.5">
       <div className="mapui:flex mapui:items-center mapui:gap-1">
-        <span className="mapui:text-xs mapui:text-gray-500 mapui:w-10">From:</span>
+        <span className="mapui:text-xs mapui:text-slate-500 mapui:w-10">From:</span>
         <DateEndpointEditor value={value.start} onChange={(start) => onChange({ ...value, start })} />
       </div>
       <div className="mapui:flex mapui:items-center mapui:gap-1">
-        <span className="mapui:text-xs mapui:text-gray-500 mapui:w-10">To:</span>
+        <span className="mapui:text-xs mapui:text-slate-500 mapui:w-10">To:</span>
         <DateEndpointEditor value={value.end} onChange={(end) => onChange({ ...value, end })} />
       </div>
     </div>
@@ -389,7 +389,7 @@ function TemporalSingleInput({ value, onChange }: { value: FilterRuleValue; onCh
   if (value.kind === 'parameter') {
     return (
       <div className="mapui:flex mapui:items-center mapui:gap-2">
-        <button type="button" onClick={() => onChange({ kind: 'static', value: '' })} className="mapui:rounded mapui:border mapui:border-gray-300 mapui:px-1.5 mapui:py-0.5 mapui:text-xs mapui:text-gray-600 hover:mapui:bg-gray-100" title="Switch to static">P</button>
+        <button type="button" onClick={() => onChange({ kind: 'static', value: '' })} className="mapui:rounded mapui:border mapui:border-slate-300 mapui:px-1.5 mapui:py-0.5 mapui:text-xs mapui:text-slate-600 hover:mapui:bg-slate-100" title="Switch to static">P</button>
         <ParameterInputs value={value} onChange={onChange} />
       </div>
     );
@@ -398,7 +398,7 @@ function TemporalSingleInput({ value, onChange }: { value: FilterRuleValue; onCh
   // static
   return (
     <div className="mapui:flex mapui:items-center mapui:gap-1">
-      <div className="mapui:inline-flex mapui:rounded-md mapui:border mapui:border-gray-300 mapui:text-xs">
+      <div className="mapui:inline-flex mapui:rounded-md mapui:border mapui:border-slate-300 mapui:text-xs">
         <button type="button" className={`mapui:rounded-l-md ${pillBtnClass(true)}`}>Abs</button>
         <button type="button" onClick={() => onChange({ kind: 'relativeDate', direction: 'past', offset: { kind: 'static', value: 0 }, unit: 'days' })} className={`${pillBtnClass(false)}`}>Rel</button>
         <button type="button" onClick={() => onChange({ kind: 'parameter', name: '', label: '', inputType: 'date' })} className={`mapui:rounded-r-md ${pillBtnClass(false)}`}>Param</button>
@@ -440,7 +440,7 @@ function GenericValueInput({
       <button
         type="button"
         onClick={toggleMode}
-        className="mapui:rounded mapui:border mapui:border-gray-300 mapui:px-1.5 mapui:py-0.5 mapui:text-xs mapui:text-gray-600 hover:mapui:bg-gray-100"
+        className="mapui:rounded mapui:border mapui:border-slate-300 mapui:px-1.5 mapui:py-0.5 mapui:text-xs mapui:text-slate-600 hover:mapui:bg-slate-100"
         title={isParameter ? 'Switch to static value' : 'Switch to parameter'}
       >
         {isParameter ? 'P' : 'V'}

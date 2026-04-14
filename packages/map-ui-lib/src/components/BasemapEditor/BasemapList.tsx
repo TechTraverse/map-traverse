@@ -34,7 +34,7 @@ export function BasemapList({ basemaps, onChange }: BasemapListProps) {
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-3">
       <div className="mapui:flex mapui:items-center mapui:justify-between">
-        <h3 className="mapui:m-0 mapui:text-sm mapui:font-semibold mapui:text-gray-700">
+        <h3 className="mapui:m-0 mapui:text-sm mapui:font-semibold mapui:text-slate-700">
           Basemaps
         </h3>
         <button
@@ -47,14 +47,14 @@ export function BasemapList({ basemaps, onChange }: BasemapListProps) {
       </div>
 
       {basemaps.length === 0 && !addingNew && (
-        <p className="mapui:m-0 mapui:text-sm mapui:text-gray-500">No basemaps configured.</p>
+        <p className="mapui:m-0 mapui:text-sm mapui:text-slate-500">No basemaps configured.</p>
       )}
 
       <ul className="mapui:m-0 mapui:list-none mapui:flex mapui:flex-col mapui:gap-2 mapui:p-0">
         {basemaps.map((basemap) => (
           <li
             key={basemap.id}
-            className="mapui:rounded-lg mapui:border mapui:border-gray-200 mapui:bg-white"
+            className="mapui:rounded-lg mapui:border mapui:border-slate-200 mapui:bg-white"
           >
             <div className="mapui:flex mapui:items-center mapui:gap-3 mapui:px-3 mapui:py-2">
               {basemap.thumbnail && (
@@ -65,10 +65,10 @@ export function BasemapList({ basemaps, onChange }: BasemapListProps) {
                 />
               )}
               <div className="mapui:flex-1 mapui:overflow-hidden">
-                <span className="mapui:block mapui:text-sm mapui:font-medium mapui:text-gray-800">
+                <span className="mapui:block mapui:text-sm mapui:font-medium mapui:text-slate-800">
                   {basemap.label || basemap.id}
                 </span>
-                <span className="mapui:block mapui:truncate mapui:font-mono mapui:text-xs mapui:text-gray-500">
+                <span className="mapui:block mapui:truncate mapui:font-mono mapui:text-xs mapui:text-slate-500">
                   {basemap.url}
                 </span>
               </div>
@@ -76,7 +76,7 @@ export function BasemapList({ basemaps, onChange }: BasemapListProps) {
                 <button
                   type="button"
                   onClick={() => setEditingId(editingId === basemap.id ? null : basemap.id)}
-                  className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-gray-600 hover:mapui:bg-gray-50"
+                  className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-slate-600 hover:mapui:bg-slate-50"
                 >
                   {editingId === basemap.id ? 'Close' : 'Edit'}
                 </button>
@@ -91,7 +91,7 @@ export function BasemapList({ basemaps, onChange }: BasemapListProps) {
             </div>
 
             {editingId === basemap.id && (
-              <div className="mapui:border-t mapui:border-gray-100 mapui:p-3">
+              <div className="mapui:border-t mapui:border-slate-100 mapui:p-3">
                 <BasemapEditor value={basemap} onChange={handleUpdate} />
               </div>
             )}
@@ -117,7 +117,7 @@ export function BasemapList({ basemaps, onChange }: BasemapListProps) {
             <button
               type="button"
               onClick={() => setAddingNew(false)}
-              className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-3 mapui:py-1 mapui:text-xs mapui:text-gray-700 hover:mapui:bg-gray-50"
+              className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-3 mapui:py-1 mapui:text-xs mapui:text-slate-700 hover:mapui:bg-slate-50"
             >
               Cancel
             </button>

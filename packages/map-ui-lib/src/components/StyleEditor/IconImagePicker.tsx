@@ -68,7 +68,7 @@ export function IconImagePicker({ value, onChange, availableIcons }: IconImagePi
   }, []);
 
   const inputClass =
-    'mapui:w-full mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
+    'mapui:w-full mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
   if (!availableIcons || availableIcons.length === 0) {
     return (
@@ -102,7 +102,7 @@ export function IconImagePicker({ value, onChange, availableIcons }: IconImagePi
         <ul
           id={listboxId}
           role="listbox"
-          className="mapui:absolute mapui:z-10 mapui:mt-1 mapui:w-full mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:shadow-lg mapui:max-h-48 mapui:overflow-y-auto mapui:p-0 mapui:m-0 mapui:list-none"
+          className="mapui:absolute mapui:z-10 mapui:mt-1 mapui:w-full mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:shadow-lg mapui:max-h-48 mapui:overflow-y-auto mapui:p-0 mapui:m-0 mapui:list-none"
         >
           {filtered.map((icon, index) => (
             <li
@@ -115,7 +115,7 @@ export function IconImagePicker({ value, onChange, availableIcons }: IconImagePi
                 selectItem(icon);
               }}
               className={`mapui:cursor-pointer mapui:px-2 mapui:py-1 mapui:text-sm mapui:font-mono ${
-                index === highlightedIndex ? 'mapui:bg-blue-100' : 'hover:mapui:bg-gray-50'
+                index === highlightedIndex ? 'mapui:bg-blue-100' : 'hover:mapui:bg-slate-50'
               }`}
             >
               {icon}

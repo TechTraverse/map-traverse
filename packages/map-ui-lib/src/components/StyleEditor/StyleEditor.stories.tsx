@@ -28,7 +28,7 @@ export const FillStyle: Story = {
     return (
       <div className="mapui:max-w-sm mapui:p-4">
         <StyleEditor value={style} onChange={setStyle} />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(style, null, 2)}
         </pre>
       </div>
@@ -45,7 +45,7 @@ export const LineStyle: Story = {
     return (
       <div className="mapui:max-w-sm mapui:p-4">
         <StyleEditor value={style} onChange={setStyle} />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(style, null, 2)}
         </pre>
       </div>
@@ -62,7 +62,7 @@ export const CircleStyle: Story = {
     return (
       <div className="mapui:max-w-sm mapui:p-4">
         <StyleEditor value={style} onChange={setStyle} />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(style, null, 2)}
         </pre>
       </div>
@@ -80,7 +80,7 @@ export const SymbolStyle: Story = {
     return (
       <div className="mapui:max-w-sm mapui:p-4">
         <StyleEditor value={style} onChange={setStyle} />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(style, null, 2)}
         </pre>
       </div>
@@ -123,7 +123,7 @@ export const DataDrivenCategorical: Story = {
             return [];
           }}
         />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(style, null, 2)}
         </pre>
       </div>
@@ -158,7 +158,7 @@ export const DataDrivenGradient: Story = {
             { name: 'area', type: 'number' },
           ]}
         />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(style, null, 2)}
         </pre>
       </div>
@@ -201,7 +201,7 @@ export const WithColorTheme: Story = {
             return [];
           }}
         />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           theme: {theme}{'\n'}
           {JSON.stringify(style, null, 2)}
         </pre>

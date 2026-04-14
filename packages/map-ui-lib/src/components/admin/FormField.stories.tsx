@@ -22,7 +22,7 @@ export const Default: Story = {
       <input
         type="text"
         placeholder="https://example.com"
-        className="mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm"
+        className="mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm"
       />
     ),
   },
@@ -36,7 +36,7 @@ export const Required: Story = {
       <input
         type="text"
         placeholder="my-source"
-        className="mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm"
+        className="mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm"
       />
     ),
   },

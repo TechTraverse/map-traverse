@@ -70,17 +70,17 @@ export function FilterRuleGroupEditor({
   };
 
   return (
-    <div className={`mapui:rounded mapui:border-l-2 ${borderColor} mapui:bg-gray-50 mapui:p-3`}>
+    <div className={`mapui:rounded mapui:border-l-2 ${borderColor} mapui:bg-slate-50 mapui:p-3`}>
       {/* Header: combinator toggle + remove */}
       <div className="mapui:mb-2 mapui:flex mapui:items-center mapui:gap-2">
-        <div className="mapui:inline-flex mapui:rounded-md mapui:border mapui:border-gray-300 mapui:text-xs">
+        <div className="mapui:inline-flex mapui:rounded-md mapui:border mapui:border-slate-300 mapui:text-xs">
           <button
             type="button"
             onClick={() => value.combinator !== 'and' && toggleCombinator()}
             className={`mapui:rounded-l-md mapui:px-2.5 mapui:py-1 ${
               value.combinator === 'and'
                 ? 'mapui:bg-blue-600 mapui:text-white'
-                : 'mapui:bg-white mapui:text-gray-600 hover:mapui:bg-gray-100'
+                : 'mapui:bg-white mapui:text-slate-600 hover:mapui:bg-slate-100'
             }`}
           >
             AND
@@ -91,14 +91,14 @@ export function FilterRuleGroupEditor({
             className={`mapui:rounded-r-md mapui:px-2.5 mapui:py-1 ${
               value.combinator === 'or'
                 ? 'mapui:bg-blue-600 mapui:text-white'
-                : 'mapui:bg-white mapui:text-gray-600 hover:mapui:bg-gray-100'
+                : 'mapui:bg-white mapui:text-slate-600 hover:mapui:bg-slate-100'
             }`}
           >
             OR
           </button>
         </div>
 
-        <span className="mapui:text-xs mapui:text-gray-500">
+        <span className="mapui:text-xs mapui:text-slate-500">
           {value.combinator === 'and' ? 'All conditions must match' : 'Any condition must match'}
         </span>
 
@@ -106,7 +106,7 @@ export function FilterRuleGroupEditor({
           <button
             type="button"
             onClick={onRemove}
-            className="mapui:ml-auto mapui:rounded mapui:p-1 mapui:text-gray-400 hover:mapui:bg-red-50 hover:mapui:text-red-500"
+            className="mapui:ml-auto mapui:rounded mapui:p-1 mapui:text-slate-400 hover:mapui:bg-red-50 hover:mapui:text-red-500"
             title="Remove group"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="mapui:h-4 mapui:w-4">
@@ -145,14 +145,14 @@ export function FilterRuleGroupEditor({
         <button
           type="button"
           onClick={addRule}
-          className="mapui:rounded mapui:border mapui:border-dashed mapui:border-gray-300 mapui:px-3 mapui:py-1 mapui:text-xs mapui:text-gray-600 hover:mapui:border-blue-400 hover:mapui:text-blue-600"
+          className="mapui:rounded mapui:border mapui:border-dashed mapui:border-slate-300 mapui:px-3 mapui:py-1 mapui:text-xs mapui:text-slate-600 hover:mapui:border-blue-400 hover:mapui:text-blue-600"
         >
           + Add Rule
         </button>
         <button
           type="button"
           onClick={addGroup}
-          className="mapui:rounded mapui:border mapui:border-dashed mapui:border-gray-300 mapui:px-3 mapui:py-1 mapui:text-xs mapui:text-gray-600 hover:mapui:border-blue-400 hover:mapui:text-blue-600"
+          className="mapui:rounded mapui:border mapui:border-dashed mapui:border-slate-300 mapui:px-3 mapui:py-1 mapui:text-xs mapui:text-slate-600 hover:mapui:border-blue-400 hover:mapui:text-blue-600"
         >
           + Add Group
         </button>

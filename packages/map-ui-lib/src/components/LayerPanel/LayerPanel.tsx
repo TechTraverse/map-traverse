@@ -72,7 +72,7 @@ export function LayerPanel({
   return (
     <div className={`mapui:flex mapui:flex-col mapui:gap-1 ${className}`.trim()}>
       {!hideTitle && (
-        <h3 className="mapui:m-0 mapui:mb-2 mapui:text-sm mapui:font-semibold mapui:text-gray-700">
+        <h3 className="mapui:m-0 mapui:mb-2 mapui:text-sm mapui:font-semibold mapui:text-slate-700">
           Layers
         </h3>
       )}
@@ -95,14 +95,14 @@ export function LayerPanel({
                 'mapui:flex mapui:items-center mapui:gap-2 mapui:rounded mapui:px-2 mapui:py-1.5',
                 'mapui:select-none mapui:transition-colors',
                 isDragOver
-                  ? 'mapui:bg-gray-200'
-                  : 'mapui:bg-transparent hover:mapui:bg-gray-100',
+                  ? 'mapui:bg-slate-200'
+                  : 'mapui:bg-transparent hover:mapui:bg-slate-100',
                 isDragged ? 'mapui:opacity-50' : 'mapui:opacity-100',
               ].join(' ')}
             >
               {onReorder && (
                 <span
-                  className="mapui:cursor-grab mapui:text-gray-400 active:mapui:cursor-grabbing"
+                  className="mapui:cursor-grab mapui:text-slate-400 active:mapui:cursor-grabbing"
                   aria-hidden="true"
                 >
                   ⠿
@@ -113,9 +113,9 @@ export function LayerPanel({
                   type="checkbox"
                   checked={isActive}
                   onChange={() => onToggleVisibility(layer.id)}
-                  className="mapui:h-4 mapui:w-4 mapui:cursor-pointer mapui:accent-gray-700"
+                  className="mapui:h-4 mapui:w-4 mapui:cursor-pointer mapui:accent-slate-700"
                 />
-                <span className="mapui:text-sm mapui:text-gray-800 mapui:truncate">{layer.label}</span>
+                <span className="mapui:text-sm mapui:text-slate-800 mapui:truncate">{layer.label}</span>
               </label>
             </li>
           );

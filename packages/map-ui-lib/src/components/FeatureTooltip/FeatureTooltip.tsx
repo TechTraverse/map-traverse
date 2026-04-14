@@ -39,16 +39,16 @@ export function FeatureTooltip({
   if (entries.length === 0) {
     return (
       <div
-        className={`mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:px-3 mapui:py-2 mapui:shadow-md ${className}`.trim()}
+        className={`mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:px-3 mapui:py-2 mapui:shadow-md ${className}`.trim()}
       >
-        <p className="mapui:m-0 mapui:text-xs mapui:text-gray-400">No data</p>
+        <p className="mapui:m-0 mapui:text-xs mapui:text-slate-400">No data</p>
       </div>
     );
   }
 
   return (
     <div
-      className={`mapui:min-w-[140px] mapui:max-w-[240px] mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:shadow-md ${className}`.trim()}
+      className={`mapui:min-w-[140px] mapui:max-w-[240px] mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:shadow-md ${className}`.trim()}
     >
       {entries.map((entry, i) => {
         const keys = entry.fields ?? Object.keys(entry.properties);
@@ -56,10 +56,10 @@ export function FeatureTooltip({
         const extra = keys.length - maxItems;
 
         return (
-          <div key={i} className={i > 0 ? 'mapui:border-t mapui:border-gray-200' : ''}>
+          <div key={i} className={i > 0 ? 'mapui:border-t mapui:border-slate-200' : ''}>
             <div className="mapui:px-3 mapui:py-2">
               {entry.title && (
-                <p className="mapui:mb-1.5 mapui:mt-0 mapui:text-xs mapui:font-semibold mapui:text-gray-700">
+                <p className="mapui:mb-1.5 mapui:mt-0 mapui:text-xs mapui:font-semibold mapui:text-slate-700">
                   {entry.title}
                 </p>
               )}
@@ -71,7 +71,7 @@ export function FeatureTooltip({
                 density="compact"
               />
               {truncated && (
-                <p className="mapui:mb-0 mapui:mt-1 mapui:text-xs mapui:text-gray-400">
+                <p className="mapui:mb-0 mapui:mt-1 mapui:text-xs mapui:text-slate-400">
                   +{extra} more
                 </p>
               )}

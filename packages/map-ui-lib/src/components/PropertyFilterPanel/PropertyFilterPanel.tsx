@@ -41,9 +41,9 @@ function createEmptyFilter(layerId: string): PropertyFilter {
 }
 
 const selectClass =
-  'mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
+  'mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 const inputClass =
-  'mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
+  'mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
 const OPERATORS = [
   { value: 'eq', label: '=' },
@@ -170,7 +170,7 @@ function DatetimeValueInput({
   return (
     <div className="mapui:flex mapui:flex-1 mapui:flex-col mapui:gap-1">
       <div className="mapui:flex mapui:items-center mapui:gap-1">
-        <span className="mapui:text-xs mapui:text-gray-400 mapui:w-8 mapui:shrink-0">From</span>
+        <span className="mapui:text-xs mapui:text-slate-400 mapui:w-8 mapui:shrink-0">From</span>
         <input
           aria-label="Start date"
           type="datetime-local"
@@ -182,7 +182,7 @@ function DatetimeValueInput({
         />
       </div>
       <div className="mapui:flex mapui:items-center mapui:gap-1">
-        <span className="mapui:text-xs mapui:text-gray-400 mapui:w-8 mapui:shrink-0">To</span>
+        <span className="mapui:text-xs mapui:text-slate-400 mapui:w-8 mapui:shrink-0">To</span>
         <input
           aria-label="End date"
           type="datetime-local"
@@ -215,7 +215,7 @@ export function PropertyFilterPanel({
 }: PropertyFilterPanelProps) {
   if (layers.length === 0) {
     return (
-      <p className="mapui:m-0 mapui:text-xs mapui:text-gray-500">
+      <p className="mapui:m-0 mapui:text-xs mapui:text-slate-500">
         No layers available.
       </p>
     );
@@ -258,10 +258,10 @@ export function PropertyFilterPanel({
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-4">
       <div>
-        <h4 className="mapui:m-0 mapui:mb-1 mapui:text-sm mapui:font-semibold mapui:text-gray-700">
+        <h4 className="mapui:m-0 mapui:mb-1 mapui:text-sm mapui:font-semibold mapui:text-slate-700">
           All Filters
         </h4>
-        <p className="mapui:m-0 mapui:text-xs mapui:text-gray-500">
+        <p className="mapui:m-0 mapui:text-xs mapui:text-slate-500">
           Pick a layer property and enter a value. Combined with search filters via AND.
         </p>
       </div>
@@ -274,10 +274,10 @@ export function PropertyFilterPanel({
         return (
           <div
             key={layer.id}
-            className="mapui:flex mapui:flex-col mapui:gap-2 mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-gray-50 mapui:p-3"
+            className="mapui:flex mapui:flex-col mapui:gap-2 mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-slate-50 mapui:p-3"
           >
             <div className="mapui:flex mapui:items-center mapui:justify-between">
-              <span className="mapui:text-sm mapui:font-medium mapui:text-gray-700">
+              <span className="mapui:text-sm mapui:font-medium mapui:text-slate-700">
                 {layer.label}
               </span>
               {layerFilters.length > 0 && (
@@ -292,7 +292,7 @@ export function PropertyFilterPanel({
             </div>
 
             {layerFilters.length === 0 ? (
-              <p className="mapui:m-0 mapui:text-xs mapui:text-gray-500">
+              <p className="mapui:m-0 mapui:text-xs mapui:text-slate-500">
                 No filters added for this layer.
               </p>
             ) : (
@@ -334,7 +334,7 @@ export function PropertyFilterPanel({
                         onClick={() => removeFilter(filter.id)}
                         aria-label="Remove filter"
                         title="Remove filter"
-                        className="mapui:cursor-pointer mapui:border-none mapui:bg-transparent mapui:px-1 mapui:text-sm mapui:text-gray-500 hover:mapui:text-red-600"
+                        className="mapui:cursor-pointer mapui:border-none mapui:bg-transparent mapui:px-1 mapui:text-sm mapui:text-slate-500 hover:mapui:text-red-600"
                       >
                         ×
                       </button>
@@ -345,14 +345,14 @@ export function PropertyFilterPanel({
             )}
 
             {capReached ? (
-              <p className="mapui:m-0 mapui:text-xs mapui:text-gray-500">
+              <p className="mapui:m-0 mapui:text-xs mapui:text-slate-500">
                 Up to {maxFiltersPerLayer} filters per layer.
               </p>
             ) : (
               <button
                 type="button"
                 onClick={() => addFilter(layer.id)}
-                className="mapui:cursor-pointer mapui:self-start mapui:rounded mapui:border mapui:border-dashed mapui:border-gray-300 mapui:bg-white mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:text-gray-600 hover:mapui:border-blue-400 hover:mapui:text-blue-600"
+                className="mapui:cursor-pointer mapui:self-start mapui:rounded mapui:border mapui:border-dashed mapui:border-slate-300 mapui:bg-white mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:text-slate-600 hover:mapui:border-blue-400 hover:mapui:text-blue-600"
               >
                 + Add filter
               </button>

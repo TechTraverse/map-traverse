@@ -48,7 +48,7 @@ export function ImageryList({
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-3">
       {imageryLayers.length === 0 ? (
-        <p className="mapui:text-sm mapui:text-gray-500">
+        <p className="mapui:text-sm mapui:text-slate-500">
           No imagery layers configured.
         </p>
       ) : (
@@ -56,11 +56,11 @@ export function ImageryList({
           {imageryLayers.map((layer, index) => (
             <li
               key={index}
-              className="mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white"
+              className="mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white"
             >
               <div className="mapui:flex mapui:items-center mapui:justify-between mapui:px-3 mapui:py-2">
                 <div className="mapui:flex mapui:items-center mapui:gap-2 mapui:min-w-0">
-                  <span className="mapui:text-sm mapui:font-medium mapui:text-gray-800 mapui:truncate">
+                  <span className="mapui:text-sm mapui:font-medium mapui:text-slate-800 mapui:truncate">
                     {layer.label || layer.id || 'Untitled'}
                   </span>
                   {layer.exclusive && (
@@ -69,11 +69,11 @@ export function ImageryList({
                     </span>
                   )}
                   {layer.tileUrlTemplate ? (
-                    <span className="mapui:text-xs mapui:text-gray-400 mapui:truncate">
+                    <span className="mapui:text-xs mapui:text-slate-400 mapui:truncate">
                       Custom URL
                     </span>
                   ) : layer.sourceId && (
-                    <span className="mapui:text-xs mapui:text-gray-400 mapui:truncate">
+                    <span className="mapui:text-xs mapui:text-slate-400 mapui:truncate">
                       {layer.sourceId}/{layer.collection}
                     </span>
                   )}
@@ -98,7 +98,7 @@ export function ImageryList({
                 </div>
               </div>
               {editingIndex === index && (
-                <div className="mapui:border-t mapui:border-gray-200 mapui:px-3 mapui:py-3">
+                <div className="mapui:border-t mapui:border-slate-200 mapui:px-3 mapui:py-3">
                   <ImageryEditor
                     value={layer}
                     onChange={(updated) => handleUpdate(index, updated)}
@@ -116,7 +116,7 @@ export function ImageryList({
       <button
         type="button"
         onClick={handleAdd}
-        className="mapui:self-start mapui:rounded mapui:border mapui:border-dashed mapui:border-gray-300 mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:text-gray-600 hover:mapui:border-blue-400 hover:mapui:text-blue-600"
+        className="mapui:self-start mapui:rounded mapui:border mapui:border-dashed mapui:border-slate-300 mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:text-slate-600 hover:mapui:border-blue-400 hover:mapui:text-blue-600"
       >
         + Add Imagery Layer
       </button>

@@ -20,8 +20,8 @@ export function CollectionBrowser({
 
   if (loading) {
     return (
-      <div className="mapui:flex mapui:items-center mapui:gap-2 mapui:py-4 mapui:text-sm mapui:text-gray-500">
-        <span className="mapui:inline-block mapui:h-4 mapui:w-4 mapui:animate-spin mapui:rounded-full mapui:border-2 mapui:border-gray-300 mapui:border-t-blue-600" />
+      <div className="mapui:flex mapui:items-center mapui:gap-2 mapui:py-4 mapui:text-sm mapui:text-slate-500">
+        <span className="mapui:inline-block mapui:h-4 mapui:w-4 mapui:animate-spin mapui:rounded-full mapui:border-2 mapui:border-slate-300 mapui:border-t-blue-600" />
         Loading collections…
       </div>
     );
@@ -37,7 +37,7 @@ export function CollectionBrowser({
 
   if (collections.length === 0) {
     return (
-      <p className="mapui:m-0 mapui:text-sm mapui:text-gray-500">
+      <p className="mapui:m-0 mapui:text-sm mapui:text-slate-500">
         No collections found at this source.
       </p>
     );
@@ -50,7 +50,7 @@ export function CollectionBrowser({
         return (
           <li
             key={collection.id}
-            className="mapui:flex mapui:items-start mapui:gap-3 mapui:rounded mapui:border mapui:border-gray-200 mapui:p-2 hover:mapui:bg-gray-50"
+            className="mapui:flex mapui:items-start mapui:gap-3 mapui:rounded mapui:border mapui:border-slate-200 mapui:p-2 hover:mapui:bg-slate-50"
           >
             <input
               type="checkbox"
@@ -63,14 +63,14 @@ export function CollectionBrowser({
               htmlFor={`collection-${collection.id}`}
               className="mapui:flex mapui:cursor-pointer mapui:flex-col mapui:gap-0.5"
             >
-              <span className="mapui:text-sm mapui:font-medium mapui:text-gray-800">
+              <span className="mapui:text-sm mapui:font-medium mapui:text-slate-800">
                 {collection.title ?? collection.id}
               </span>
-              <span className="mapui:font-mono mapui:text-xs mapui:text-gray-500">
+              <span className="mapui:font-mono mapui:text-xs mapui:text-slate-500">
                 {collection.id}
               </span>
               {collection.description && (
-                <span className="mapui:text-xs mapui:text-gray-400 mapui:line-clamp-2">
+                <span className="mapui:text-xs mapui:text-slate-400 mapui:line-clamp-2">
                   {collection.description}
                 </span>
               )}

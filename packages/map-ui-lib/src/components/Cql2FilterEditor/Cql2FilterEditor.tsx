@@ -31,7 +31,7 @@ export function Cql2FilterEditor({ value, onChange, availableProperties, geometr
   if (!value) {
     return (
       <div className="mapui:flex mapui:flex-col mapui:items-start mapui:gap-2">
-        <p className="mapui:text-sm mapui:text-gray-500">No CQL2 filter configured.</p>
+        <p className="mapui:text-sm mapui:text-slate-500">No CQL2 filter configured.</p>
         <button
           type="button"
           onClick={() => onChange(createDefaultConfig())}
@@ -57,12 +57,12 @@ export function Cql2FilterEditor({ value, onChange, availableProperties, geometr
       />
 
       {/* Query Options: Sort & Limit */}
-      <div className="mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:p-3">
-        <h4 className="mapui:mb-2 mapui:text-xs mapui:font-semibold mapui:uppercase mapui:tracking-wide mapui:text-gray-500">Query Options</h4>
+      <div className="mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:p-3">
+        <h4 className="mapui:mb-2 mapui:text-xs mapui:font-semibold mapui:uppercase mapui:tracking-wide mapui:text-slate-500">Query Options</h4>
 
         {/* Sort By */}
         <div className="mapui:mb-2">
-          <label className="mapui:mb-1 mapui:block mapui:text-xs mapui:text-gray-600">Sort by</label>
+          <label className="mapui:mb-1 mapui:block mapui:text-xs mapui:text-slate-600">Sort by</label>
           <div className="mapui:flex mapui:flex-col mapui:gap-1">
             {(value.sortby ?? []).map((sort, i) => (
               <div key={i} className="mapui:flex mapui:items-center mapui:gap-1.5">
@@ -109,7 +109,7 @@ export function Cql2FilterEditor({ value, onChange, availableProperties, geometr
                 <button
                   type="button"
                   onClick={() => updateSort((value.sortby ?? []).filter((_, j) => j !== i))}
-                  className="mapui:rounded mapui:p-1 mapui:text-gray-400 hover:mapui:text-red-500"
+                  className="mapui:rounded mapui:p-1 mapui:text-slate-400 hover:mapui:text-red-500"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="mapui:h-3.5 mapui:w-3.5">
                     <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
@@ -120,7 +120,7 @@ export function Cql2FilterEditor({ value, onChange, availableProperties, geometr
             <button
               type="button"
               onClick={() => updateSort([...(value.sortby ?? []), { property: '', direction: 'asc' }])}
-              className="mapui:self-start mapui:rounded mapui:border mapui:border-dashed mapui:border-gray-300 mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:text-gray-600 hover:mapui:border-blue-400 hover:mapui:text-blue-600"
+              className="mapui:self-start mapui:rounded mapui:border mapui:border-dashed mapui:border-slate-300 mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:text-slate-600 hover:mapui:border-blue-400 hover:mapui:text-blue-600"
             >
               + Add Sort
             </button>
@@ -129,7 +129,7 @@ export function Cql2FilterEditor({ value, onChange, availableProperties, geometr
 
         {/* Limit */}
         <div className="mapui:mb-2">
-          <label className="mapui:mb-1 mapui:block mapui:text-xs mapui:text-gray-600">Limit results</label>
+          <label className="mapui:mb-1 mapui:block mapui:text-xs mapui:text-slate-600">Limit results</label>
           <input
             type="number"
             value={value.limit ?? ''}
@@ -142,7 +142,7 @@ export function Cql2FilterEditor({ value, onChange, availableProperties, geometr
 
         {/* Spatial Constraint */}
         <div>
-          <label className="mapui:mb-1 mapui:block mapui:text-xs mapui:text-gray-600">
+          <label className="mapui:mb-1 mapui:block mapui:text-xs mapui:text-slate-600">
             Spatial constraint (selection geometry)
           </label>
           {!value.spatialConstraint ? (
@@ -157,7 +157,7 @@ export function Cql2FilterEditor({ value, onChange, availableProperties, geometr
                   },
                 })
               }
-              className="mapui:self-start mapui:rounded mapui:border mapui:border-dashed mapui:border-gray-300 mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:text-gray-600 hover:mapui:border-blue-400 hover:mapui:text-blue-600"
+              className="mapui:self-start mapui:rounded mapui:border mapui:border-dashed mapui:border-slate-300 mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:text-slate-600 hover:mapui:border-blue-400 hover:mapui:text-blue-600"
             >
               + Add Spatial Constraint
             </button>
@@ -219,7 +219,7 @@ export function Cql2FilterEditor({ value, onChange, availableProperties, geometr
                 <button
                   type="button"
                   onClick={() => onChange({ ...value, spatialConstraint: undefined })}
-                  className="mapui:rounded mapui:p-1 mapui:text-gray-400 hover:mapui:text-red-500"
+                  className="mapui:rounded mapui:p-1 mapui:text-slate-400 hover:mapui:text-red-500"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="mapui:h-3.5 mapui:w-3.5">
                     <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />

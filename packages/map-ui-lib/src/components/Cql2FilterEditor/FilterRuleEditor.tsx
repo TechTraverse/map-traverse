@@ -38,7 +38,7 @@ export function FilterRuleEditor({ value, onChange, onRemove, availablePropertie
   };
 
   return (
-    <div className="mapui:flex mapui:flex-wrap mapui:items-center mapui:gap-2 mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:p-2">
+    <div className="mapui:flex mapui:flex-wrap mapui:items-center mapui:gap-2 mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:p-2">
       {/* Property selector */}
       {!isSpatial && (
         hasProperties ? (
@@ -66,7 +66,7 @@ export function FilterRuleEditor({ value, onChange, onRemove, availablePropertie
       )}
 
       {isSpatial && (
-        <span className="mapui:text-sm mapui:font-medium mapui:text-gray-700">
+        <span className="mapui:text-sm mapui:font-medium mapui:text-slate-700">
           {value.property || 'geom'}
         </span>
       )}
@@ -99,7 +99,7 @@ export function FilterRuleEditor({ value, onChange, onRemove, availablePropertie
       <button
         type="button"
         onClick={onRemove}
-        className="mapui:ml-auto mapui:rounded mapui:p-1 mapui:text-gray-400 hover:mapui:bg-red-50 hover:mapui:text-red-500"
+        className="mapui:ml-auto mapui:rounded mapui:p-1 mapui:text-slate-400 hover:mapui:bg-red-50 hover:mapui:text-red-500"
         title="Remove rule"
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="mapui:h-4 mapui:w-4">

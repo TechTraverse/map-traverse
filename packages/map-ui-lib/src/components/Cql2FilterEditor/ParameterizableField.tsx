@@ -52,7 +52,7 @@ export function ParameterizableField<T>({
       <button
         type="button"
         onClick={toggleMode}
-        className="mapui:rounded mapui:border mapui:border-gray-300 mapui:px-1 mapui:py-0.5 mapui:text-xs mapui:text-gray-600 hover:mapui:bg-gray-100"
+        className="mapui:rounded mapui:border mapui:border-slate-300 mapui:px-1 mapui:py-0.5 mapui:text-xs mapui:text-slate-600 hover:mapui:bg-slate-100"
         title={isParam ? `Static ${defaultParamLabel.toLowerCase()}` : `Parameterized ${defaultParamLabel.toLowerCase()}`}
       >
         {isParam ? 'P' : 'V'}

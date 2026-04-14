@@ -27,7 +27,7 @@ export const Default: Story = {
     return (
       <div className="mapui:max-w-md mapui:p-4">
         <BasemapEditor value={basemap} onChange={setBasemap} />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(basemap, null, 2)}
         </pre>
       </div>

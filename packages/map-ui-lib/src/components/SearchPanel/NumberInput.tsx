@@ -38,10 +38,10 @@ function getOperatorFromValue(value: SearchFilterValue, fieldOperator: string): 
 }
 
 const inputClass =
-  'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
+  'mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
 const selectClass =
-  'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500 mapui:bg-white';
+  'mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500 mapui:bg-white';
 
 export function NumberInput({ field, value, onChange, className = '', id }: NumberInputProps) {
   const [localOperator, setLocalOperator] = useState(() =>
@@ -175,7 +175,7 @@ export function NumberInput({ field, value, onChange, className = '', id }: Numb
         field.showRange ? (
           <div className="mapui:flex mapui:flex-col mapui:gap-0.5">
             <div className="mapui:flex mapui:items-center mapui:gap-2">
-              <span className="mapui:text-xs mapui:text-gray-400 mapui:whitespace-nowrap">
+              <span className="mapui:text-xs mapui:text-slate-400 mapui:whitespace-nowrap">
                 {field.min ?? 0}
               </span>
               <input
@@ -188,11 +188,11 @@ export function NumberInput({ field, value, onChange, className = '', id }: Numb
                 aria-label={field.label}
                 className="mapui:flex-1"
               />
-              <span className="mapui:text-xs mapui:text-gray-400 mapui:whitespace-nowrap">
+              <span className="mapui:text-xs mapui:text-slate-400 mapui:whitespace-nowrap">
                 {field.max ?? 100}
               </span>
             </div>
-            <span className="mapui:text-xs mapui:text-gray-600 mapui:text-center">
+            <span className="mapui:text-xs mapui:text-slate-600 mapui:text-center">
               {singleNumValue !== '' ? singleNumValue : (field.min ?? 0)}
             </span>
           </div>
@@ -208,7 +208,7 @@ export function NumberInput({ field, value, onChange, className = '', id }: Numb
               aria-label={field.label}
               className="mapui:flex-1"
             />
-            <span className="mapui:text-xs mapui:text-gray-600 mapui:min-w-12 mapui:whitespace-nowrap mapui:text-right">
+            <span className="mapui:text-xs mapui:text-slate-600 mapui:min-w-12 mapui:whitespace-nowrap mapui:text-right">
               {singleNumValue !== '' ? singleNumValue : (field.min ?? 0)}
             </span>
           </div>

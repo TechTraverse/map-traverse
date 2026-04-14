@@ -7,7 +7,7 @@ export interface SpriteSourceEditorProps {
 }
 
 const inputClass =
-  'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
+  'mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
 export function SpriteSourceEditor({ value, onChange }: SpriteSourceEditorProps) {
   const update = (patch: Partial<SpriteSource>) => onChange({ ...value, ...patch });
@@ -32,7 +32,7 @@ export function SpriteSourceEditor({ value, onChange }: SpriteSourceEditorProps)
           placeholder="https://example.com/sprites/sprite"
           className={inputClass}
         />
-        <p className="mapui:mt-1 mapui:text-xs mapui:text-gray-400">
+        <p className="mapui:mt-1 mapui:text-xs mapui:text-slate-400">
           Base URL without extension. MapLibre will append <code>.json</code> and <code>.png</code>.
         </p>
       </FormField>

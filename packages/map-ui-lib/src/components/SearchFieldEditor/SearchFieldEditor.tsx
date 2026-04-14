@@ -54,7 +54,7 @@ export interface SearchFieldEditorProps {
 }
 
 const inputClass =
-  'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
+  'mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
 const defaultsByType: Record<SearchField['type'], SearchField> = {
   text: { type: 'text', property: '', label: '', autocomplete: false },
@@ -145,7 +145,7 @@ export function SearchFieldEditor({ value, onChange, availableProperties }: Sear
               }
               className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
             />
-            <label htmlFor="text-autocomplete" className="mapui:text-sm mapui:text-gray-700">
+            <label htmlFor="text-autocomplete" className="mapui:text-sm mapui:text-slate-700">
               Enable Autocomplete
             </label>
           </div>
@@ -159,7 +159,7 @@ export function SearchFieldEditor({ value, onChange, availableProperties }: Sear
               }
               className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
             />
-            <label htmlFor="text-prefetch" className="mapui:text-sm mapui:text-gray-700">
+            <label htmlFor="text-prefetch" className="mapui:text-sm mapui:text-slate-700">
               Prefetch Options
             </label>
           </div>
@@ -173,7 +173,7 @@ export function SearchFieldEditor({ value, onChange, availableProperties }: Sear
               }
               className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
             />
-            <label htmlFor="text-zoomTo" className="mapui:text-sm mapui:text-gray-700">
+            <label htmlFor="text-zoomTo" className="mapui:text-sm mapui:text-slate-700">
               Zoom to Result
             </label>
           </div>
@@ -249,7 +249,7 @@ export function SearchFieldEditor({ value, onChange, availableProperties }: Sear
               }
               className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
             />
-            <label htmlFor="number-show-range" className="mapui:text-sm mapui:text-gray-700">
+            <label htmlFor="number-show-range" className="mapui:text-sm mapui:text-slate-700">
               Show Range on Slider
             </label>
           </div>
@@ -308,7 +308,7 @@ export function SearchFieldEditor({ value, onChange, availableProperties }: Sear
             }
             className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
           />
-          <label htmlFor="datetime-range" className="mapui:text-sm mapui:text-gray-700">
+          <label htmlFor="datetime-range" className="mapui:text-sm mapui:text-slate-700">
             Date Range
           </label>
         </div>
@@ -326,7 +326,7 @@ export function SearchFieldEditor({ value, onChange, availableProperties }: Sear
               }
               className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
             />
-            <label htmlFor="select-prefetch" className="mapui:text-sm mapui:text-gray-700">
+            <label htmlFor="select-prefetch" className="mapui:text-sm mapui:text-slate-700">
               Prefetch Options
             </label>
           </div>
@@ -340,7 +340,7 @@ export function SearchFieldEditor({ value, onChange, availableProperties }: Sear
               }
               className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
             />
-            <label htmlFor="select-zoomTo" className="mapui:text-sm mapui:text-gray-700">
+            <label htmlFor="select-zoomTo" className="mapui:text-sm mapui:text-slate-700">
               Zoom to Result
             </label>
           </div>

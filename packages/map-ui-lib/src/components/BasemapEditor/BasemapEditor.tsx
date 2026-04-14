@@ -7,7 +7,7 @@ export interface BasemapEditorProps {
 }
 
 const inputClass =
-  'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
+  'mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
 export function BasemapEditor({ value, onChange }: BasemapEditorProps) {
   const update = (patch: Partial<BasemapConfig>) => onChange({ ...value, ...patch });
@@ -56,7 +56,7 @@ export function BasemapEditor({ value, onChange }: BasemapEditorProps) {
           <img
             src={value.thumbnail}
             alt="Thumbnail preview"
-            className="mapui:mt-1 mapui:h-16 mapui:w-24 mapui:rounded mapui:border mapui:border-gray-200 mapui:object-cover"
+            className="mapui:mt-1 mapui:h-16 mapui:w-24 mapui:rounded mapui:border mapui:border-slate-200 mapui:object-cover"
           />
         )}
       </FormField>

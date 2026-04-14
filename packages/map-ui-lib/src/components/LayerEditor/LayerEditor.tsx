@@ -38,7 +38,7 @@ export interface LayerEditorProps {
 }
 
 const inputClass =
-  'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
+  'mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
 export function LayerEditor({ value, onChange, availableSources, availableIcons }: LayerEditorProps) {
   const update = (patch: Partial<LayerConfig>) => onChange({ ...value, ...patch });
@@ -205,7 +205,7 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
           />
         )}
         {queryablesLoading && (
-          <span className="mapui:mt-0.5 mapui:block mapui:text-xs mapui:text-gray-400">
+          <span className="mapui:mt-0.5 mapui:block mapui:text-xs mapui:text-slate-400">
             Loading properties…
           </span>
         )}
@@ -223,7 +223,7 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
                 onChange={() => update({ dataMode: mode })}
                 className="mapui:accent-blue-600"
               />
-              <span className="mapui:text-sm mapui:text-gray-700">{mode}</span>
+              <span className="mapui:text-sm mapui:text-slate-700">{mode}</span>
             </label>
           ))}
         </div>
@@ -237,7 +237,7 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
           onChange={(e) => update({ visible: e.target.checked })}
           className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
         />
-        <label htmlFor="layer-visible" className="mapui:text-sm mapui:text-gray-700">
+        <label htmlFor="layer-visible" className="mapui:text-sm mapui:text-slate-700">
           Visible by default
         </label>
       </div>
@@ -250,7 +250,7 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
           onChange={(e) => update({ showTooltip: e.target.checked })}
           className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
         />
-        <label htmlFor={`layer-tooltip-${value.id}`} className="mapui:text-sm mapui:text-gray-700">
+        <label htmlFor={`layer-tooltip-${value.id}`} className="mapui:text-sm mapui:text-slate-700">
           Show tooltip on hover
         </label>
       </div>
@@ -263,7 +263,7 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
           onChange={(e) => update({ showDetailPanel: e.target.checked })}
           className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
         />
-        <label htmlFor={`layer-detail-${value.id}`} className="mapui:text-sm mapui:text-gray-700">
+        <label htmlFor={`layer-detail-${value.id}`} className="mapui:text-sm mapui:text-slate-700">
           Show detail panel on click
         </label>
       </div>
@@ -337,7 +337,7 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons 
           <button
             type="button"
             onClick={() => update({ styles: [...(value.styles ?? [defaultFill]), defaultCircle] })}
-            className="mapui:cursor-pointer mapui:self-start mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-gray-700 hover:mapui:bg-gray-50"
+            className="mapui:cursor-pointer mapui:self-start mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-slate-700 hover:mapui:bg-slate-50"
           >
             + Add style
           </button>

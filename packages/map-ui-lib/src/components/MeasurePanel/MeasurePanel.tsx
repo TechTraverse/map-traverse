@@ -61,7 +61,7 @@ export function MeasurePanel({
                 'mapui:flex mapui:flex-1 mapui:items-center mapui:justify-center mapui:gap-1.5 mapui:rounded mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:font-medium mapui:transition-colors',
                 active
                   ? 'mapui:bg-blue-600 mapui:text-white'
-                  : 'mapui:bg-gray-100 mapui:text-gray-700 hover:mapui:bg-gray-200',
+                  : 'mapui:bg-slate-100 mapui:text-slate-700 hover:mapui:bg-slate-200',
               ].join(' ')}
             >
               <Icon size={16} />
@@ -75,7 +75,7 @@ export function MeasurePanel({
       {mode && (
         <>
           <div className="mapui:text-center">
-            <div className="mapui:text-2xl mapui:font-semibold mapui:text-gray-900">
+            <div className="mapui:text-2xl mapui:font-semibold mapui:text-slate-900">
               {measurement ? formatMeasurement(measurement) : '—'}
             </div>
           </div>
@@ -94,7 +94,7 @@ export function MeasurePanel({
                     'mapui:flex-1 mapui:rounded mapui:px-2 mapui:py-1 mapui:text-xs mapui:font-medium mapui:transition-colors',
                     active
                       ? 'mapui:bg-blue-100 mapui:text-blue-700'
-                      : 'mapui:bg-gray-50 mapui:text-gray-500 hover:mapui:bg-gray-100',
+                      : 'mapui:bg-slate-50 mapui:text-slate-500 hover:mapui:bg-slate-100',
                   ].join(' ')}
                 >
                   {UNIT_LABELS[u]}
@@ -104,7 +104,7 @@ export function MeasurePanel({
           </div>
 
           {/* Instructions */}
-          <p className="mapui:m-0 mapui:text-center mapui:text-xs mapui:text-gray-500">
+          <p className="mapui:m-0 mapui:text-center mapui:text-xs mapui:text-slate-500">
             {getInstructionText(mode, points.length)}
           </p>
 
@@ -113,7 +113,7 @@ export function MeasurePanel({
             <button
               type="button"
               onClick={onClear}
-              className="mapui:flex mapui:items-center mapui:justify-center mapui:gap-1.5 mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:px-3 mapui:py-1.5 mapui:text-xs mapui:text-gray-600 hover:mapui:bg-gray-50"
+              className="mapui:flex mapui:items-center mapui:justify-center mapui:gap-1.5 mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:px-3 mapui:py-1.5 mapui:text-xs mapui:text-slate-600 hover:mapui:bg-slate-50"
             >
               <LuTrash2 size={14} />
               Clear

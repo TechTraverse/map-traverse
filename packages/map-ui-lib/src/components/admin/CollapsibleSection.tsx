@@ -15,11 +15,11 @@ export function CollapsibleSection({
 }: CollapsibleSectionProps) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="mapui:rounded mapui:border mapui:border-gray-200">
+    <div className="mapui:rounded mapui:border mapui:border-slate-200">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="mapui:flex mapui:w-full mapui:cursor-pointer mapui:items-center mapui:justify-between mapui:rounded mapui:border-none mapui:bg-gray-50 mapui:px-3 mapui:py-2 mapui:text-sm mapui:font-medium mapui:text-gray-700 hover:mapui:bg-gray-100"
+        className="mapui:flex mapui:w-full mapui:cursor-pointer mapui:items-center mapui:justify-between mapui:rounded mapui:border-none mapui:bg-slate-50 mapui:px-3 mapui:py-2 mapui:text-sm mapui:font-medium mapui:text-slate-700 hover:mapui:bg-slate-100"
       >
         <span className="mapui:flex mapui:items-center mapui:gap-2">
           {title}

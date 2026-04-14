@@ -110,10 +110,10 @@ function editableToInterpolateStops(stops: EditableStop[]): InterpolateStop[] | 
 }
 
 const inputClass =
-  'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
+  'mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
 const btnClass =
-  'mapui:cursor-pointer mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-gray-700 hover:mapui:bg-gray-50';
+  'mapui:cursor-pointer mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-slate-700 hover:mapui:bg-slate-50';
 
 const dangerBtnClass =
   'mapui:cursor-pointer mapui:rounded mapui:border mapui:border-red-200 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-red-600 hover:mapui:bg-red-50';
@@ -280,7 +280,7 @@ export function DataDrivenColorEditor({
     <div className="mapui:flex mapui:flex-col mapui:gap-2">
       {onThemeChange && (
         <div className="mapui:flex mapui:items-center mapui:gap-2">
-          <label className="mapui:text-xs mapui:text-gray-600 mapui:shrink-0">Color theme:</label>
+          <label className="mapui:text-xs mapui:text-slate-600 mapui:shrink-0">Color theme:</label>
           <select
             value={theme ?? 'default'}
             onChange={(e) => onThemeChange(e.target.value as ColorThemeId)}
@@ -296,7 +296,7 @@ export function DataDrivenColorEditor({
         </div>
       )}
       {/* Mode toggle */}
-      <div className="mapui:flex mapui:overflow-hidden mapui:rounded mapui:border mapui:border-gray-300">
+      <div className="mapui:flex mapui:overflow-hidden mapui:rounded mapui:border mapui:border-slate-300">
         {(['match', 'interpolate'] as ExprMode[]).map((m) => (
           <button
             key={m}
@@ -307,7 +307,7 @@ export function DataDrivenColorEditor({
               'focus:mapui:ring-1 focus:mapui:ring-inset focus:mapui:ring-blue-400',
               mode === m
                 ? 'mapui:bg-blue-500 mapui:text-white'
-                : 'mapui:bg-white mapui:text-gray-700 hover:mapui:bg-gray-50',
+                : 'mapui:bg-white mapui:text-slate-700 hover:mapui:bg-slate-50',
             ].join(' ')}
           >
             {m === 'match' ? 'Categorical' : 'Gradient'}
@@ -358,7 +358,7 @@ export function DataDrivenColorEditor({
 
           {/* Fallback color */}
           <div className="mapui:flex mapui:items-center mapui:gap-2">
-            <span className="mapui:text-xs mapui:text-gray-500 mapui:shrink-0">Fallback:</span>
+            <span className="mapui:text-xs mapui:text-slate-500 mapui:shrink-0">Fallback:</span>
             <ColorPicker value={matchFallback} onChange={handleMatchFallbackChange} label="Fallback color" />
           </div>
 
@@ -377,7 +377,7 @@ export function DataDrivenColorEditor({
                 >
                   {autoPopulating ? 'Loading…' : 'Auto-populate'}
                 </button>
-                <label className="mapui:flex mapui:items-center mapui:gap-1 mapui:text-xs mapui:text-gray-600">
+                <label className="mapui:flex mapui:items-center mapui:gap-1 mapui:text-xs mapui:text-slate-600">
                   <input
                     type="checkbox"
                     checked={scanAll}

@@ -15,7 +15,7 @@ export interface ImageryEditorProps {
 }
 
 const inputClass =
-  'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
+  'mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
 export function slugify(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -123,7 +123,7 @@ export function ImageryEditor({
             onChange={() => toggleCustomUrl(false)}
             className="mapui:accent-blue-600"
           />
-          <span className="mapui:text-gray-700">OGC Collection</span>
+          <span className="mapui:text-slate-700">OGC Collection</span>
         </label>
         <label className="mapui:flex mapui:items-center mapui:gap-1.5 mapui:cursor-pointer">
           <input
@@ -132,7 +132,7 @@ export function ImageryEditor({
             onChange={() => toggleCustomUrl(true)}
             className="mapui:accent-blue-600"
           />
-          <span className="mapui:text-gray-700">Custom Tile URL</span>
+          <span className="mapui:text-slate-700">Custom Tile URL</span>
         </label>
       </div>
 
@@ -167,8 +167,8 @@ export function ImageryEditor({
             />
           </FormField>
           {tileJsonLoading && (
-            <div className="mapui:flex mapui:items-center mapui:gap-2 mapui:text-sm mapui:text-gray-500">
-              <span className="mapui:inline-block mapui:h-3 mapui:w-3 mapui:animate-spin mapui:rounded-full mapui:border-2 mapui:border-gray-300 mapui:border-t-blue-600" />
+            <div className="mapui:flex mapui:items-center mapui:gap-2 mapui:text-sm mapui:text-slate-500">
+              <span className="mapui:inline-block mapui:h-3 mapui:w-3 mapui:animate-spin mapui:rounded-full mapui:border-2 mapui:border-slate-300 mapui:border-t-blue-600" />
               Resolving TileJSON…
             </div>
           )}
@@ -237,8 +237,8 @@ export function ImageryEditor({
                 ))}
               </select>
             ) : collectionsLoading ? (
-              <div className="mapui:flex mapui:items-center mapui:gap-2 mapui:text-sm mapui:text-gray-500 mapui:py-1">
-                <span className="mapui:inline-block mapui:h-3 mapui:w-3 mapui:animate-spin mapui:rounded-full mapui:border-2 mapui:border-gray-300 mapui:border-t-blue-600" />
+              <div className="mapui:flex mapui:items-center mapui:gap-2 mapui:text-sm mapui:text-slate-500 mapui:py-1">
+                <span className="mapui:inline-block mapui:h-3 mapui:w-3 mapui:animate-spin mapui:rounded-full mapui:border-2 mapui:border-slate-300 mapui:border-t-blue-600" />
                 Loading collections…
               </div>
             ) : (
@@ -266,7 +266,7 @@ export function ImageryEditor({
               onChange={(e) => update({ opacity: Number(e.target.value) })}
               className="mapui:flex-1 mapui:cursor-pointer mapui:accent-blue-600"
             />
-            <span className="mapui:text-xs mapui:text-gray-500 mapui:w-8 mapui:text-right">
+            <span className="mapui:text-xs mapui:text-slate-500 mapui:w-8 mapui:text-right">
               {Math.round((value.opacity ?? 1) * 100)}%
             </span>
           </div>
@@ -332,7 +332,7 @@ export function ImageryEditor({
             onChange={(e) => update({ visible: e.target.checked })}
             className="mapui:h-4 mapui:w-4 mapui:cursor-pointer mapui:accent-blue-600"
           />
-          <span className="mapui:text-sm mapui:text-gray-700">Initially visible</span>
+          <span className="mapui:text-sm mapui:text-slate-700">Initially visible</span>
         </label>
 
         <label className="mapui:flex mapui:items-center mapui:gap-2 mapui:cursor-pointer">
@@ -343,8 +343,8 @@ export function ImageryEditor({
             className="mapui:h-4 mapui:w-4 mapui:cursor-pointer mapui:accent-blue-600"
           />
           <div className="mapui:flex mapui:flex-col">
-            <span className="mapui:text-sm mapui:text-gray-700">Exclusive mode</span>
-            <span className="mapui:text-xs mapui:text-gray-400">
+            <span className="mapui:text-sm mapui:text-slate-700">Exclusive mode</span>
+            <span className="mapui:text-xs mapui:text-slate-400">
               Enabling this layer disables other imagery layers
             </span>
           </div>

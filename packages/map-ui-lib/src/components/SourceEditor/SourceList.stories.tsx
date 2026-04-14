@@ -55,11 +55,11 @@ export const FeaturesOnly: Story = {
     const [sources, setSources] = useState<OgcApiSource[]>(mixedSources);
     return (
       <div className="mapui:max-w-lg mapui:p-4">
-        <p className="mapui:text-xs mapui:text-gray-500 mapui:mb-2">
+        <p className="mapui:text-xs mapui:text-slate-500 mapui:mb-2">
           Only feature sources shown (imagery source &quot;NAIP Imagery&quot; is hidden)
         </p>
         <SourceList sources={sources} onChange={setSources} sourceType="features" />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(sources, null, 2)}
         </pre>
       </div>

@@ -14,7 +14,7 @@ export function FormField({ label, error, required, description, htmlFor, childr
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-1">
       <div className="mapui:flex mapui:items-center mapui:gap-1">
-        <label htmlFor={htmlFor} className="mapui:flex mapui:items-center mapui:gap-1 mapui:text-xs mapui:font-medium mapui:text-gray-700">
+        <label htmlFor={htmlFor} className="mapui:flex mapui:items-center mapui:gap-1 mapui:text-xs mapui:font-medium mapui:text-slate-700">
           {label}
           {required && (
             <span className="mapui:ml-0.5 mapui:text-red-500" aria-hidden="true">

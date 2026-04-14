@@ -260,17 +260,17 @@ export function ResultsDrawer({
     >
       {/* Drag handle */}
       <div
-        className="mapui:flex mapui:items-center mapui:justify-center mapui:h-5 mapui:cursor-ns-resize mapui:bg-gray-100 mapui:border-b mapui:border-gray-200 hover:mapui:bg-gray-200"
+        className="mapui:flex mapui:items-center mapui:justify-center mapui:h-5 mapui:cursor-ns-resize mapui:bg-slate-100 mapui:border-b mapui:border-slate-200 hover:mapui:bg-slate-200"
         onMouseDown={handleMouseDown}
       >
-        <LuGripHorizontal size={14} className="mapui:text-gray-400" />
+        <LuGripHorizontal size={14} className="mapui:text-slate-400" />
       </div>
 
       {/* Header */}
-      <div className="mapui:flex mapui:items-center mapui:justify-between mapui:px-4 mapui:py-2 mapui:border-b mapui:border-gray-200 mapui:shrink-0">
+      <div className="mapui:flex mapui:items-center mapui:justify-between mapui:px-4 mapui:py-2 mapui:border-b mapui:border-slate-200 mapui:shrink-0">
         <div className="mapui:flex mapui:items-center mapui:gap-2">
           {isTabMode && tabs.length > 1 ? (
-            <div className="mapui:inline-flex mapui:rounded-md mapui:border mapui:border-gray-300 mapui:text-xs">
+            <div className="mapui:inline-flex mapui:rounded-md mapui:border mapui:border-slate-300 mapui:text-xs">
               {tabs.map((tab, i) => (
                 <button
                   key={tab.id}
@@ -282,7 +282,7 @@ export function ResultsDrawer({
                     i === tabs.length - 1 ? 'mapui:rounded-r-md' : '',
                     (activeTab?.id ?? tabs[0].id) === tab.id
                       ? 'mapui:bg-blue-600 mapui:text-white'
-                      : 'mapui:bg-white mapui:text-gray-600 hover:mapui:bg-gray-100',
+                      : 'mapui:bg-white mapui:text-slate-600 hover:mapui:bg-slate-100',
                   ].join(' ')}
                 >
                   {tab.label}
@@ -291,7 +291,7 @@ export function ResultsDrawer({
                       'mapui:rounded-full mapui:px-1.5 mapui:py-0.5 mapui:text-xs mapui:font-medium',
                       (activeTab?.id ?? tabs[0].id) === tab.id
                         ? 'mapui:bg-blue-500 mapui:text-white'
-                        : 'mapui:bg-gray-100 mapui:text-gray-600',
+                        : 'mapui:bg-slate-100 mapui:text-slate-600',
                     ].join(' ')}
                   >
                     {tab.features.length}
@@ -301,7 +301,7 @@ export function ResultsDrawer({
             </div>
           ) : (
             <>
-              <span className="mapui:text-sm mapui:font-semibold mapui:text-gray-800">{displayTitle}</span>
+              <span className="mapui:text-sm mapui:font-semibold mapui:text-slate-800">{displayTitle}</span>
               <span className="mapui:rounded-full mapui:bg-blue-100 mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:font-medium mapui:text-blue-700">
                 {features.length}
               </span>
@@ -317,16 +317,16 @@ export function ResultsDrawer({
                 title="Show/hide columns"
                 aria-haspopup="true"
                 aria-expanded={columnMenuOpen}
-                className="mapui:flex mapui:items-center mapui:justify-center mapui:min-w-[44px] mapui:min-h-[44px] mapui:w-8 mapui:h-8 mapui:rounded hover:mapui:bg-gray-100 mapui:text-gray-500"
+                className="mapui:flex mapui:items-center mapui:justify-center mapui:min-w-[44px] mapui:min-h-[44px] mapui:w-8 mapui:h-8 mapui:rounded hover:mapui:bg-slate-100 mapui:text-slate-500"
               >
                 <LuColumns3 size={16} />
               </button>
               {columnMenuOpen && (
                 <div
                   role="menu"
-                  className="mapui:absolute mapui:right-0 mapui:top-full mapui:mt-1 mapui:z-30 mapui:min-w-[180px] mapui:rounded-md mapui:border mapui:border-gray-200 mapui:bg-white mapui:shadow-lg mapui:py-1"
+                  className="mapui:absolute mapui:right-0 mapui:top-full mapui:mt-1 mapui:z-30 mapui:min-w-[180px] mapui:rounded-md mapui:border mapui:border-slate-200 mapui:bg-white mapui:shadow-lg mapui:py-1"
                 >
-                  <div className="mapui:px-3 mapui:py-1 mapui:text-xs mapui:font-semibold mapui:text-gray-500 mapui:uppercase mapui:tracking-wide">
+                  <div className="mapui:px-3 mapui:py-1 mapui:text-xs mapui:font-semibold mapui:text-slate-500 mapui:uppercase mapui:tracking-wide">
                     Columns
                   </div>
                   {orderedColumns.map((col) => {
@@ -334,7 +334,7 @@ export function ResultsDrawer({
                     return (
                       <label
                         key={col}
-                        className="mapui:flex mapui:items-center mapui:gap-2 mapui:px-3 mapui:py-1 mapui:cursor-pointer mapui:text-sm mapui:text-gray-700 hover:mapui:bg-gray-50"
+                        className="mapui:flex mapui:items-center mapui:gap-2 mapui:px-3 mapui:py-1 mapui:cursor-pointer mapui:text-sm mapui:text-slate-700 hover:mapui:bg-slate-50"
                       >
                         <input
                           type="checkbox"
@@ -355,7 +355,7 @@ export function ResultsDrawer({
               type="button"
               onClick={onExport}
               title="Export"
-              className="mapui:flex mapui:items-center mapui:justify-center mapui:min-w-[44px] mapui:min-h-[44px] mapui:w-8 mapui:h-8 mapui:rounded hover:mapui:bg-gray-100 mapui:text-gray-500"
+              className="mapui:flex mapui:items-center mapui:justify-center mapui:min-w-[44px] mapui:min-h-[44px] mapui:w-8 mapui:h-8 mapui:rounded hover:mapui:bg-slate-100 mapui:text-slate-500"
             >
               <LuDownload size={16} />
             </button>
@@ -365,7 +365,7 @@ export function ResultsDrawer({
               type="button"
               onClick={onClear}
               title="Clear"
-              className="mapui:flex mapui:items-center mapui:justify-center mapui:min-w-[44px] mapui:min-h-[44px] mapui:w-8 mapui:h-8 mapui:rounded hover:mapui:bg-gray-100 mapui:text-gray-500"
+              className="mapui:flex mapui:items-center mapui:justify-center mapui:min-w-[44px] mapui:min-h-[44px] mapui:w-8 mapui:h-8 mapui:rounded hover:mapui:bg-slate-100 mapui:text-slate-500"
             >
               <LuTrash2 size={16} />
             </button>
@@ -374,7 +374,7 @@ export function ResultsDrawer({
             type="button"
             onClick={onClose}
             title="Close"
-            className="mapui:flex mapui:items-center mapui:justify-center mapui:min-w-[44px] mapui:min-h-[44px] mapui:w-8 mapui:h-8 mapui:rounded hover:mapui:bg-gray-100 mapui:text-gray-500"
+            className="mapui:flex mapui:items-center mapui:justify-center mapui:min-w-[44px] mapui:min-h-[44px] mapui:w-8 mapui:h-8 mapui:rounded hover:mapui:bg-slate-100 mapui:text-slate-500"
           >
             <LuX size={16} />
           </button>
@@ -384,14 +384,14 @@ export function ResultsDrawer({
       {/* Table */}
       <div className="mapui:overflow-auto mapui:flex-1">
         {displayedFeatures.length === 0 ? (
-          <div className="mapui:flex mapui:items-center mapui:justify-center mapui:h-full mapui:text-sm mapui:text-gray-400">
+          <div className="mapui:flex mapui:items-center mapui:justify-center mapui:h-full mapui:text-sm mapui:text-slate-400">
             No features to display
           </div>
         ) : (
           <table className="mapui:w-full mapui:text-xs mapui:border-collapse">
             <thead>
-              <tr className="mapui:bg-gray-50 mapui:sticky mapui:top-0">
-                <th className="mapui:px-3 mapui:py-2 mapui:text-left mapui:font-medium mapui:text-gray-600 mapui:border-b mapui:border-gray-200">
+              <tr className="mapui:bg-slate-50 mapui:sticky mapui:top-0">
+                <th className="mapui:px-3 mapui:py-2 mapui:text-left mapui:font-medium mapui:text-slate-600 mapui:border-b mapui:border-slate-200">
                   #
                 </th>
                 {visibleColumns.map((col) => {
@@ -415,7 +415,7 @@ export function ResultsDrawer({
                             : 'descending'
                           : 'none'
                       }
-                      className="mapui:px-2 mapui:py-2 mapui:text-left mapui:font-medium mapui:text-gray-600 mapui:border-b mapui:border-gray-200 mapui:whitespace-nowrap"
+                      className="mapui:px-2 mapui:py-2 mapui:text-left mapui:font-medium mapui:text-slate-600 mapui:border-b mapui:border-slate-200 mapui:whitespace-nowrap"
                     >
                       <div className="mapui:flex mapui:items-center mapui:gap-1">
                         <button
@@ -426,8 +426,8 @@ export function ResultsDrawer({
                           className={[
                             'mapui:flex mapui:items-center mapui:justify-center mapui:min-w-[28px] mapui:min-h-[28px] mapui:w-5 mapui:h-5 mapui:rounded',
                             canMoveLeft
-                              ? 'mapui:text-gray-400 hover:mapui:text-gray-700 hover:mapui:bg-gray-200 mapui:cursor-pointer'
-                              : 'mapui:text-gray-200 mapui:cursor-not-allowed',
+                              ? 'mapui:text-slate-400 hover:mapui:text-slate-700 hover:mapui:bg-slate-200 mapui:cursor-pointer'
+                              : 'mapui:text-slate-200 mapui:cursor-not-allowed',
                           ].join(' ')}
                         >
                           <LuArrowLeft size={11} />
@@ -435,7 +435,7 @@ export function ResultsDrawer({
                         <button
                           type="button"
                           onClick={() => cycleSort(col)}
-                          className="mapui:flex mapui:items-center mapui:gap-1 mapui:cursor-pointer mapui:select-none hover:mapui:text-gray-900"
+                          className="mapui:flex mapui:items-center mapui:gap-1 mapui:cursor-pointer mapui:select-none hover:mapui:text-slate-900"
                           title="Sort"
                         >
                           <span>{col}</span>
@@ -449,8 +449,8 @@ export function ResultsDrawer({
                           className={[
                             'mapui:flex mapui:items-center mapui:justify-center mapui:min-w-[28px] mapui:min-h-[28px] mapui:w-5 mapui:h-5 mapui:rounded',
                             canMoveRight
-                              ? 'mapui:text-gray-400 hover:mapui:text-gray-700 hover:mapui:bg-gray-200 mapui:cursor-pointer'
-                              : 'mapui:text-gray-200 mapui:cursor-not-allowed',
+                              ? 'mapui:text-slate-400 hover:mapui:text-slate-700 hover:mapui:bg-slate-200 mapui:cursor-pointer'
+                              : 'mapui:text-slate-200 mapui:cursor-not-allowed',
                           ].join(' ')}
                         >
                           <LuArrowRight size={11} />
@@ -468,17 +468,17 @@ export function ResultsDrawer({
                   onClick={() => onFeatureClick?.(i)}
                   className={[
                     onFeatureClick ? 'mapui:cursor-pointer' : '',
-                    i % 2 === 0 ? 'mapui:bg-white' : 'mapui:bg-gray-50',
+                    i % 2 === 0 ? 'mapui:bg-white' : 'mapui:bg-slate-50',
                     'hover:mapui:bg-blue-50',
                   ].join(' ')}
                 >
-                  <td className="mapui:px-3 mapui:py-1.5 mapui:text-gray-400 mapui:border-b mapui:border-gray-100">
+                  <td className="mapui:px-3 mapui:py-1.5 mapui:text-slate-400 mapui:border-b mapui:border-slate-100">
                     {i + 1}
                   </td>
                   {visibleColumns.map((col) => (
                     <td
                       key={col}
-                      className="mapui:px-3 mapui:py-1.5 mapui:text-gray-700 mapui:border-b mapui:border-gray-100 mapui:whitespace-nowrap"
+                      className="mapui:px-3 mapui:py-1.5 mapui:text-slate-700 mapui:border-b mapui:border-slate-100 mapui:whitespace-nowrap"
                     >
                       {formatCellValue(feature.properties[col])}
                     </td>

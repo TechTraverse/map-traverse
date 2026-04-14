@@ -23,7 +23,7 @@ export const Default: Story = {
     return (
       <div className="mapui:max-w-sm mapui:p-4">
         <LegendEditor value={legend} onChange={setLegend} />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(legend, null, 2)}
         </pre>
       </div>
@@ -43,7 +43,7 @@ export const WithEntries: Story = {
     return (
       <div className="mapui:max-w-sm mapui:p-4">
         <LegendEditor value={legend} onChange={setLegend} />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(legend, null, 2)}
         </pre>
       </div>
@@ -75,7 +75,7 @@ export const WithMatchExpression: Story = {
     return (
       <div className="mapui:max-w-sm mapui:p-4">
         <LegendEditor value={legend} onChange={setLegend} style={matchStyle} />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(legend, null, 2)}
         </pre>
       </div>
@@ -107,7 +107,7 @@ export const WithInterpolateExpression: Story = {
     return (
       <div className="mapui:max-w-sm mapui:p-4">
         <LegendEditor value={legend} onChange={setLegend} style={interpolateStyle} />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(legend, null, 2)}
         </pre>
       </div>
@@ -126,7 +126,7 @@ export const WithExpressionAndExistingEntries: Story = {
     return (
       <div className="mapui:max-w-sm mapui:p-4">
         <LegendEditor value={legend} onChange={setLegend} style={matchStyle} />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(legend, null, 2)}
         </pre>
       </div>
@@ -151,7 +151,7 @@ export const CategoricalMode: Story = {
     return (
       <div className="mapui:max-w-sm mapui:p-4">
         <LegendEditor value={legend} onChange={setLegend} style={matchStyle} />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(legend, null, 2)}
         </pre>
       </div>
@@ -174,7 +174,7 @@ export const GradientMode: Story = {
     return (
       <div className="mapui:max-w-sm mapui:p-4">
         <LegendEditor value={legend} onChange={setLegend} style={interpolateStyle} />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(legend, null, 2)}
         </pre>
       </div>
