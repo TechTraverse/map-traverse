@@ -167,23 +167,23 @@ export function GlobalSearchBar({
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => setIsFocused(true)}
         onKeyDown={handleKeyDown}
-        className="mapui:w-full mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-3 mapui:py-2 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
+        className="mapui:w-full mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-3 mapui:py-2 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
       />
 
       {shouldOpen && (
         <div
           id={`${reactId}-listbox`}
           role="listbox"
-          className="mapui:absolute mapui:left-0 mapui:right-0 mapui:top-full mapui:z-50 mapui:mt-1 mapui:max-h-96 mapui:overflow-auto mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:shadow-lg"
+          className="mapui:absolute mapui:left-0 mapui:right-0 mapui:top-full mapui:z-50 mapui:mt-1 mapui:max-h-96 mapui:overflow-auto mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:shadow-lg"
         >
           {showLoadingState && (
             <div
-              className="mapui:flex mapui:items-center mapui:gap-2 mapui:px-3 mapui:py-2 mapui:text-xs mapui:text-gray-500"
+              className="mapui:flex mapui:items-center mapui:gap-2 mapui:px-3 mapui:py-2 mapui:text-xs mapui:text-slate-500"
               data-testid="global-search-loading"
             >
               <span
                 aria-hidden="true"
-                className="mapui:inline-block mapui:h-3 mapui:w-3 mapui:animate-spin mapui:rounded-full mapui:border-2 mapui:border-gray-300 mapui:border-t-blue-500"
+                className="mapui:inline-block mapui:h-3 mapui:w-3 mapui:animate-spin mapui:rounded-full mapui:border-2 mapui:border-slate-300 mapui:border-t-blue-500"
               />
               <span>Searching…</span>
             </div>
@@ -191,7 +191,7 @@ export function GlobalSearchBar({
 
           {showEmptyState && (
             <div
-              className="mapui:px-3 mapui:py-2 mapui:text-xs mapui:text-gray-500"
+              className="mapui:px-3 mapui:py-2 mapui:text-xs mapui:text-slate-500"
               data-testid="global-search-empty"
             >
               No results
@@ -203,9 +203,9 @@ export function GlobalSearchBar({
               {(() => {
                 let runningIndex = 0;
                 return groups.map((group) => (
-                <li key={group.layerId} className="mapui:border-b mapui:border-gray-100 last:mapui:border-0">
+                <li key={group.layerId} className="mapui:border-b mapui:border-slate-100 last:mapui:border-0">
                   <div
-                    className="mapui:bg-gray-50 mapui:px-3 mapui:py-1 mapui:text-xs mapui:font-semibold mapui:text-gray-600"
+                    className="mapui:bg-slate-50 mapui:px-3 mapui:py-1 mapui:text-xs mapui:font-semibold mapui:text-slate-600"
                     data-testid={`global-search-group-${group.layerId}`}
                   >
                     {group.layer.label}
@@ -231,8 +231,8 @@ export function GlobalSearchBar({
                             isActive ? 'mapui:bg-blue-50' : ''
                           }`}
                         >
-                          <span className="mapui:text-gray-900">{match.label}</span>
-                          <span className="mapui:text-xs mapui:text-gray-400">
+                          <span className="mapui:text-slate-900">{match.label}</span>
+                          <span className="mapui:text-xs mapui:text-slate-400">
                             matched: {match.matchedProperty}
                           </span>
                         </li>

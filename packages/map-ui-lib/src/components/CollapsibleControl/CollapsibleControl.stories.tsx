@@ -65,13 +65,13 @@ export const Default: Story = {
     defaultCollapsed: true,
     children: (
       <div className="mapui:p-4">
-        <p className="mapui:text-sm mapui:text-gray-700">
+        <p className="mapui:text-sm mapui:text-slate-700">
           This is sample panel content that appears when expanded.
         </p>
         <div className="mapui:mt-2 mapui:space-y-2">
-          <div className="mapui:p-2 mapui:bg-gray-100 mapui:rounded">Item 1</div>
-          <div className="mapui:p-2 mapui:bg-gray-100 mapui:rounded">Item 2</div>
-          <div className="mapui:p-2 mapui:bg-gray-100 mapui:rounded">Item 3</div>
+          <div className="mapui:p-2 mapui:bg-slate-100 mapui:rounded">Item 1</div>
+          <div className="mapui:p-2 mapui:bg-slate-100 mapui:rounded">Item 2</div>
+          <div className="mapui:p-2 mapui:bg-slate-100 mapui:rounded">Item 3</div>
         </div>
       </div>
     ),
@@ -86,7 +86,7 @@ export const DefaultExpanded: Story = {
     defaultCollapsed: false,
     children: (
       <div className="mapui:p-4">
-        <p className="mapui:text-sm mapui:text-gray-700">This control starts expanded.</p>
+        <p className="mapui:text-sm mapui:text-slate-700">This control starts expanded.</p>
       </div>
     ),
   },
@@ -113,10 +113,10 @@ export const Controlled: Story = {
           onToggle={setCollapsed}
         >
           <div className="mapui:p-4">
-            <p className="mapui:text-sm mapui:text-gray-700">
+            <p className="mapui:text-sm mapui:text-slate-700">
               This control's state is managed externally.
             </p>
-            <p className="mapui:text-sm mapui:text-gray-500 mapui:mt-2">
+            <p className="mapui:text-sm mapui:text-slate-500 mapui:mt-2">
               Collapsed: {collapsed ? 'Yes' : 'No'}
             </p>
           </div>
@@ -170,11 +170,11 @@ export const CornerPositions: Story = {
   render: () => {
     const panel = (
       <div className="mapui:p-4 mapui:w-48">
-        <p className="mapui:text-sm mapui:text-gray-700">Panel content</p>
+        <p className="mapui:text-sm mapui:text-slate-700">Panel content</p>
       </div>
     );
     return (
-      <div className="mapui:relative mapui:w-[600px] mapui:h-[400px] mapui:border mapui:border-gray-300 mapui:rounded-lg mapui:bg-gray-50">
+      <div className="mapui:relative mapui:w-[600px] mapui:h-[400px] mapui:border mapui:border-slate-300 mapui:rounded-lg mapui:bg-slate-50">
         <div className="mapui:absolute mapui:top-4 mapui:right-4">
           <CollapsibleControl icon={LuLayers3} label="Top Right" corner="top-right" defaultCollapsed={false}>
             {panel}
@@ -235,7 +235,7 @@ export const MultipleControls: Story = {
             <input
               type="text"
               placeholder="Search..."
-              className="mapui:w-full mapui:px-3 mapui:py-2 mapui:border mapui:border-gray-300 mapui:rounded"
+              className="mapui:w-full mapui:px-3 mapui:py-2 mapui:border mapui:border-slate-300 mapui:rounded"
             />
           </div>
         </CollapsibleControl>

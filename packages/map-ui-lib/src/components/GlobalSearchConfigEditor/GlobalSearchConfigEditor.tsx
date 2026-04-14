@@ -16,7 +16,7 @@ export interface GlobalSearchConfigEditorProps {
 }
 
 const inputClass =
-  'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
+  'mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
 // ----- Pure update helpers (exported for testing) -----
 
@@ -130,11 +130,11 @@ export function GlobalSearchConfigEditor({
 
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-4">
-      <p className="mapui:text-sm mapui:text-gray-500">
+      <p className="mapui:text-sm mapui:text-slate-500">
         Configure the global search bar that searches across layer properties. Add layers and pick which properties to index.
       </p>
-      <fieldset className="mapui:flex mapui:flex-col mapui:gap-3 mapui:rounded mapui:border mapui:border-gray-200 mapui:p-3">
-        <legend className="mapui:px-1 mapui:text-sm mapui:font-semibold mapui:text-gray-700">Settings</legend>
+      <fieldset className="mapui:flex mapui:flex-col mapui:gap-3 mapui:rounded mapui:border mapui:border-slate-200 mapui:p-3">
+        <legend className="mapui:px-1 mapui:text-sm mapui:font-semibold mapui:text-slate-700">Settings</legend>
         <FormField label="Placeholder">
           <input
             type="text"
@@ -185,7 +185,7 @@ export function GlobalSearchConfigEditor({
 
       <div className="mapui:flex mapui:flex-col mapui:gap-3">
         <div className="mapui:flex mapui:items-center mapui:justify-between">
-          <h3 className="mapui:text-sm mapui:font-semibold mapui:text-gray-800">Layers</h3>
+          <h3 className="mapui:text-sm mapui:font-semibold mapui:text-slate-800">Layers</h3>
         </div>
 
         <div className="mapui:flex mapui:items-center mapui:gap-2">
@@ -212,7 +212,7 @@ export function GlobalSearchConfigEditor({
         </div>
 
         {value.layers.length === 0 && (
-          <p className="mapui:text-xs mapui:text-gray-500">No layers configured yet.</p>
+          <p className="mapui:text-xs mapui:text-slate-500">No layers configured yet.</p>
         )}
 
         {value.layers.map((entry) => {
@@ -226,16 +226,16 @@ export function GlobalSearchConfigEditor({
             <div
               key={entry.layerId}
               data-testid={`gs-layer-card-${entry.layerId}`}
-              className="mapui:flex mapui:flex-col mapui:gap-2 mapui:rounded mapui:border mapui:border-gray-200 mapui:p-3"
+              className="mapui:flex mapui:flex-col mapui:gap-2 mapui:rounded mapui:border mapui:border-slate-200 mapui:p-3"
             >
               <div className="mapui:flex mapui:items-center mapui:justify-between">
-                <span className="mapui:text-sm mapui:font-medium mapui:text-gray-800">
+                <span className="mapui:text-sm mapui:font-medium mapui:text-slate-800">
                   {layerLabel}
                 </span>
                 <button
                   type="button"
                   onClick={() => onChange(removeLayerEntry(value, entry.layerId))}
-                  className="mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:text-gray-700 hover:mapui:bg-gray-50"
+                  className="mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:text-slate-700 hover:mapui:bg-slate-50"
                   aria-label={`Remove layer ${layerLabel}`}
                 >
                   Remove
@@ -254,7 +254,7 @@ export function GlobalSearchConfigEditor({
 
               {loading && (
                 <p
-                  className="mapui:text-xs mapui:text-gray-500"
+                  className="mapui:text-xs mapui:text-slate-500"
                   data-testid={`gs-layer-loading-${entry.layerId}`}
                 >
                   Loading properties…
@@ -262,7 +262,7 @@ export function GlobalSearchConfigEditor({
               )}
 
               {!loading && !hasProps && (
-                <p className="mapui:text-xs mapui:text-gray-500">
+                <p className="mapui:text-xs mapui:text-slate-500">
                   (no properties available)
                 </p>
               )}
@@ -275,7 +275,7 @@ export function GlobalSearchConfigEditor({
                     <div
                       key={idx}
                       data-testid={`gs-property-row-${entry.layerId}-${idx}`}
-                      className="mapui:flex mapui:flex-col mapui:gap-2 mapui:rounded mapui:border mapui:border-gray-100 mapui:p-2"
+                      className="mapui:flex mapui:flex-col mapui:gap-2 mapui:rounded mapui:border mapui:border-slate-100 mapui:p-2"
                     >
                       <div className="mapui:grid mapui:grid-cols-2 mapui:gap-2">
                         <FormField label="Property" required>
@@ -334,7 +334,7 @@ export function GlobalSearchConfigEditor({
                         </FormField>
                       </div>
                       <div className="mapui:flex mapui:items-center mapui:gap-4">
-                        <label className="mapui:flex mapui:items-center mapui:gap-1 mapui:text-xs mapui:text-gray-700">
+                        <label className="mapui:flex mapui:items-center mapui:gap-1 mapui:text-xs mapui:text-slate-700">
                           <input
                             type="checkbox"
                             checked={ac}
@@ -356,7 +356,7 @@ export function GlobalSearchConfigEditor({
                         </label>
                         <label
                           className={`mapui:flex mapui:items-center mapui:gap-1 mapui:text-xs ${
-                            ac ? 'mapui:text-gray-700' : 'mapui:text-gray-400'
+                            ac ? 'mapui:text-slate-700' : 'mapui:text-slate-400'
                           }`}
                           title={
                             ac
@@ -389,7 +389,7 @@ export function GlobalSearchConfigEditor({
                           onClick={() =>
                             onChange(removePropertyAt(value, entry.layerId, idx))
                           }
-                          className="mapui:ml-auto mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:text-gray-700 hover:mapui:bg-gray-50"
+                          className="mapui:ml-auto mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:text-slate-700 hover:mapui:bg-slate-50"
                           aria-label={`Remove property row ${idx + 1} from ${layerLabel}`}
                         >
                           Remove
@@ -406,7 +406,7 @@ export function GlobalSearchConfigEditor({
                     const firstUnused = props.find((ap) => !used.has(ap.name))?.name ?? '';
                     onChange(addPropertyToLayer(value, entry.layerId, firstUnused));
                   }}
-                  className="mapui:self-start mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-gray-700 hover:mapui:bg-gray-50"
+                  className="mapui:self-start mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-slate-700 hover:mapui:bg-slate-50"
                   aria-label={`Add property to ${layerLabel}`}
                 >
                   Add property

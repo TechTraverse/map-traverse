@@ -23,9 +23,9 @@ export function InfoControl({
       title={title}
       aria-label={ariaLabel}
       onClick={onClick}
-      className={`mapui:flex mapui:items-center mapui:justify-center mapui:w-10 mapui:h-10 mapui:bg-white mapui:rounded mapui:shadow-md mapui:cursor-pointer hover:mapui:bg-gray-50 mapui:transition-colors ${className}`.trim()}
+      className={`mapui:flex mapui:items-center mapui:justify-center mapui:w-10 mapui:h-10 mapui:bg-white mapui:rounded mapui:shadow-md mapui:cursor-pointer hover:mapui:bg-slate-50 mapui:transition-colors ${className}`.trim()}
     >
-      <LuInfo size={20} aria-hidden="true" className="mapui:text-gray-700" />
+      <LuInfo size={20} aria-hidden="true" className="mapui:text-slate-700" />
     </button>
   );
 }

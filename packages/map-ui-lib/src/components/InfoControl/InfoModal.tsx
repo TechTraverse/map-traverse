@@ -15,12 +15,12 @@ export interface InfoModalProps {
 }
 
 const BODY_CLASSES = [
-  'mapui:overflow-y-auto mapui:px-6 mapui:py-4 mapui:text-sm mapui:text-gray-800',
+  'mapui:overflow-y-auto mapui:px-6 mapui:py-4 mapui:text-sm mapui:text-slate-800',
   // Headings
-  'mapui:[&_h1]:mb-2 mapui:[&_h1]:mt-4 mapui:[&_h1]:text-xl mapui:[&_h1]:font-bold mapui:[&_h1]:text-gray-900',
-  'mapui:[&_h2]:mb-2 mapui:[&_h2]:mt-4 mapui:[&_h2]:text-lg mapui:[&_h2]:font-semibold mapui:[&_h2]:text-gray-900',
-  'mapui:[&_h3]:mb-2 mapui:[&_h3]:mt-3 mapui:[&_h3]:text-base mapui:[&_h3]:font-semibold mapui:[&_h3]:text-gray-900',
-  'mapui:[&_h4]:mb-1 mapui:[&_h4]:mt-3 mapui:[&_h4]:text-sm mapui:[&_h4]:font-semibold mapui:[&_h4]:text-gray-900',
+  'mapui:[&_h1]:mb-2 mapui:[&_h1]:mt-4 mapui:[&_h1]:text-xl mapui:[&_h1]:font-bold mapui:[&_h1]:text-slate-900',
+  'mapui:[&_h2]:mb-2 mapui:[&_h2]:mt-4 mapui:[&_h2]:text-lg mapui:[&_h2]:font-semibold mapui:[&_h2]:text-slate-900',
+  'mapui:[&_h3]:mb-2 mapui:[&_h3]:mt-3 mapui:[&_h3]:text-base mapui:[&_h3]:font-semibold mapui:[&_h3]:text-slate-900',
+  'mapui:[&_h4]:mb-1 mapui:[&_h4]:mt-3 mapui:[&_h4]:text-sm mapui:[&_h4]:font-semibold mapui:[&_h4]:text-slate-900',
   // Paragraphs
   'mapui:[&_p]:my-2 mapui:[&_p]:leading-relaxed',
   // Links
@@ -30,17 +30,17 @@ const BODY_CLASSES = [
   'mapui:[&_ol]:my-2 mapui:[&_ol]:list-decimal mapui:[&_ol]:pl-5',
   'mapui:[&_li]:my-1',
   // Code
-  'mapui:[&_code]:rounded mapui:[&_code]:bg-gray-100 mapui:[&_code]:px-1 mapui:[&_code]:py-0.5 mapui:[&_code]:text-xs mapui:[&_code]:font-mono mapui:[&_code]:text-gray-800',
-  'mapui:[&_pre]:my-3 mapui:[&_pre]:overflow-x-auto mapui:[&_pre]:rounded mapui:[&_pre]:bg-gray-100 mapui:[&_pre]:p-3',
+  'mapui:[&_code]:rounded mapui:[&_code]:bg-slate-100 mapui:[&_code]:px-1 mapui:[&_code]:py-0.5 mapui:[&_code]:text-xs mapui:[&_code]:font-mono mapui:[&_code]:text-slate-800',
+  'mapui:[&_pre]:my-3 mapui:[&_pre]:overflow-x-auto mapui:[&_pre]:rounded mapui:[&_pre]:bg-slate-100 mapui:[&_pre]:p-3',
   'mapui:[&_pre_code]:bg-transparent mapui:[&_pre_code]:p-0',
   // Blockquotes
-  'mapui:[&_blockquote]:my-3 mapui:[&_blockquote]:border-l-4 mapui:[&_blockquote]:border-gray-300 mapui:[&_blockquote]:pl-4 mapui:[&_blockquote]:italic mapui:[&_blockquote]:text-gray-600',
+  'mapui:[&_blockquote]:my-3 mapui:[&_blockquote]:border-l-4 mapui:[&_blockquote]:border-slate-300 mapui:[&_blockquote]:pl-4 mapui:[&_blockquote]:italic mapui:[&_blockquote]:text-slate-600',
   // Tables (GFM)
   'mapui:[&_table]:my-3 mapui:[&_table]:w-full mapui:[&_table]:border-collapse mapui:[&_table]:text-left',
-  'mapui:[&_th]:border mapui:[&_th]:border-gray-300 mapui:[&_th]:bg-gray-50 mapui:[&_th]:px-2 mapui:[&_th]:py-1 mapui:[&_th]:font-semibold',
-  'mapui:[&_td]:border mapui:[&_td]:border-gray-300 mapui:[&_td]:px-2 mapui:[&_td]:py-1',
+  'mapui:[&_th]:border mapui:[&_th]:border-slate-300 mapui:[&_th]:bg-slate-50 mapui:[&_th]:px-2 mapui:[&_th]:py-1 mapui:[&_th]:font-semibold',
+  'mapui:[&_td]:border mapui:[&_td]:border-slate-300 mapui:[&_td]:px-2 mapui:[&_td]:py-1',
   // Horizontal rule
-  'mapui:[&_hr]:my-4 mapui:[&_hr]:border-t mapui:[&_hr]:border-gray-200',
+  'mapui:[&_hr]:my-4 mapui:[&_hr]:border-t mapui:[&_hr]:border-slate-200',
   // Images
   'mapui:[&_img]:my-3 mapui:[&_img]:max-w-full mapui:[&_img]:rounded',
 ].join(' ');
@@ -88,10 +88,10 @@ export function InfoModal({
         className="mapui:relative mapui:mx-4 mapui:flex mapui:w-full mapui:max-w-[640px] mapui:max-h-[80vh] mapui:flex-col mapui:rounded-lg mapui:bg-white mapui:shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="mapui:flex mapui:items-start mapui:justify-between mapui:gap-4 mapui:border-b mapui:border-gray-200 mapui:px-6 mapui:py-4">
+        <div className="mapui:flex mapui:items-start mapui:justify-between mapui:gap-4 mapui:border-b mapui:border-slate-200 mapui:px-6 mapui:py-4">
           <h2
             id="info-modal-title"
-            className="mapui:m-0 mapui:text-base mapui:font-semibold mapui:text-gray-900"
+            className="mapui:m-0 mapui:text-base mapui:font-semibold mapui:text-slate-900"
           >
             {title}
           </h2>
@@ -100,7 +100,7 @@ export function InfoModal({
             onClick={onClose}
             aria-label="Close"
             title="Close"
-            className="mapui:flex mapui:h-8 mapui:w-8 mapui:items-center mapui:justify-center mapui:rounded mapui:text-gray-500 mapui:cursor-pointer hover:mapui:bg-gray-100 hover:mapui:text-gray-700 mapui:transition-colors"
+            className="mapui:flex mapui:h-8 mapui:w-8 mapui:items-center mapui:justify-center mapui:rounded mapui:text-slate-500 mapui:cursor-pointer hover:mapui:bg-slate-100 hover:mapui:text-slate-700 mapui:transition-colors"
           >
             <LuX size={18} aria-hidden="true" />
           </button>

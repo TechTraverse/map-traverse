@@ -12,9 +12,9 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-label={label ?? 'Color'}
-        className="mapui:h-8 mapui:w-10 mapui:cursor-pointer mapui:rounded mapui:border mapui:border-gray-300 mapui:p-0.5"
+        className="mapui:h-8 mapui:w-10 mapui:cursor-pointer mapui:rounded mapui:border mapui:border-slate-300 mapui:p-0.5"
       />
-      <span className="mapui:font-mono mapui:text-xs mapui:text-gray-600">{value}</span>
+      <span className="mapui:font-mono mapui:text-xs mapui:text-slate-600">{value}</span>
     </div>
   );
 }

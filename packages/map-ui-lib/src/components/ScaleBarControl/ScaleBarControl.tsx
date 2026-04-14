@@ -94,12 +94,12 @@ export function ScaleBarControl({
 
   return (
     <div
-      className={`mapui:inline-flex mapui:flex-col mapui:items-start mapui:bg-white/80 mapui:px-1.5 mapui:py-1 mapui:rounded mapui:shadow-sm mapui:text-[10px] mapui:font-medium mapui:text-gray-800 ${className}`.trim()}
+      className={`mapui:inline-flex mapui:flex-col mapui:items-start mapui:bg-white/80 mapui:px-1.5 mapui:py-1 mapui:rounded mapui:shadow-sm mapui:text-[10px] mapui:font-medium mapui:text-slate-800 ${className}`.trim()}
       aria-label={`Map scale: ${label}`}
     >
       <span className="mapui:tabular-nums">{label}</span>
       <span
-        className="mapui:block mapui:h-1 mapui:border-b mapui:border-l mapui:border-r mapui:border-gray-800"
+        className="mapui:block mapui:h-1 mapui:border-b mapui:border-l mapui:border-r mapui:border-slate-800"
         style={{ width: `${Math.max(1, Math.round(widthPx))}px` }}
       />
     </div>

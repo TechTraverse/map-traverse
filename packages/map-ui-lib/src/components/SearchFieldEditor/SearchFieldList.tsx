@@ -52,12 +52,12 @@ export function SearchFieldList({ fields, onChange, availableProperties }: Searc
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-2">
       {fields.length === 0 && (
-        <p className="mapui:m-0 mapui:text-sm mapui:text-gray-500">No search fields configured.</p>
+        <p className="mapui:m-0 mapui:text-sm mapui:text-slate-500">No search fields configured.</p>
       )}
 
       <ul className="mapui:m-0 mapui:list-none mapui:flex mapui:flex-col mapui:gap-2 mapui:p-0">
         {fields.map((field, index) => (
-          <li key={index} className="mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white">
+          <li key={index} className="mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white">
             <div className="mapui:flex mapui:items-center mapui:gap-1 mapui:px-3 mapui:py-2">
               <div className="mapui:flex mapui:flex-col mapui:gap-0.5">
                 <button
@@ -65,7 +65,7 @@ export function SearchFieldList({ fields, onChange, availableProperties }: Searc
                   onClick={() => handleMoveUp(index)}
                   disabled={index === 0}
                   aria-label="Move up"
-                  className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:px-1 mapui:text-xs mapui:text-gray-400 hover:mapui:text-gray-600 disabled:mapui:opacity-30"
+                  className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:px-1 mapui:text-xs mapui:text-slate-400 hover:mapui:text-slate-600 disabled:mapui:opacity-30"
                 >
                   ▲
                 </button>
@@ -74,7 +74,7 @@ export function SearchFieldList({ fields, onChange, availableProperties }: Searc
                   onClick={() => handleMoveDown(index)}
                   disabled={index === fields.length - 1}
                   aria-label="Move down"
-                  className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:px-1 mapui:text-xs mapui:text-gray-400 hover:mapui:text-gray-600 disabled:mapui:opacity-30"
+                  className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:px-1 mapui:text-xs mapui:text-slate-400 hover:mapui:text-slate-600 disabled:mapui:opacity-30"
                 >
                   ▼
                 </button>
@@ -82,9 +82,9 @@ export function SearchFieldList({ fields, onChange, availableProperties }: Searc
               <button
                 type="button"
                 onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}
-                className="mapui:flex-1 mapui:cursor-pointer mapui:border-none mapui:bg-transparent mapui:text-left mapui:text-sm mapui:font-medium mapui:text-gray-800"
+                className="mapui:flex-1 mapui:cursor-pointer mapui:border-none mapui:bg-transparent mapui:text-left mapui:text-sm mapui:font-medium mapui:text-slate-800"
               >
-                <span className="mapui:mr-1 mapui:rounded mapui:bg-gray-100 mapui:px-1 mapui:py-0.5 mapui:text-xs mapui:font-mono mapui:text-gray-500">
+                <span className="mapui:mr-1 mapui:rounded mapui:bg-slate-100 mapui:px-1 mapui:py-0.5 mapui:text-xs mapui:font-mono mapui:text-slate-500">
                   {field.type}
                 </span>
                 {field.label || field.property || 'Untitled field'}
@@ -100,7 +100,7 @@ export function SearchFieldList({ fields, onChange, availableProperties }: Searc
             </div>
 
             {expandedIndex === index && (
-              <div className="mapui:border-t mapui:border-gray-100 mapui:p-3">
+              <div className="mapui:border-t mapui:border-slate-100 mapui:p-3">
                 <SearchFieldEditor
                   value={field}
                   onChange={(updated) => handleUpdate(index, updated)}
@@ -115,7 +115,7 @@ export function SearchFieldList({ fields, onChange, availableProperties }: Searc
       <button
         type="button"
         onClick={handleAdd}
-        className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-dashed mapui:border-gray-300 mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-gray-600 hover:mapui:border-blue-400 hover:mapui:text-blue-600"
+        className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-dashed mapui:border-slate-300 mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-slate-600 hover:mapui:border-blue-400 hover:mapui:text-blue-600"
       >
         + Add Search Field
       </button>

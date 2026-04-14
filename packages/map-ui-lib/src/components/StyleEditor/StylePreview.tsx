@@ -45,7 +45,7 @@ export function StylePreview({ style }: { style: StyleConfig }) {
     const fillColor = style.paint['fill-color'];
     return (
       <div
-        className="mapui:h-8 mapui:w-full mapui:rounded mapui:border mapui:border-gray-200 mapui:overflow-hidden"
+        className="mapui:h-8 mapui:w-full mapui:rounded mapui:border mapui:border-slate-200 mapui:overflow-hidden"
         aria-label="Style preview"
       >
         {isExpression(fillColor) ? (
@@ -70,7 +70,7 @@ export function StylePreview({ style }: { style: StyleConfig }) {
     const lineColor = style.paint['line-color'];
     return (
       <div
-        className="mapui:flex mapui:h-8 mapui:w-full mapui:items-center mapui:rounded mapui:border mapui:border-gray-200 mapui:px-2"
+        className="mapui:flex mapui:h-8 mapui:w-full mapui:items-center mapui:rounded mapui:border mapui:border-slate-200 mapui:px-2"
         aria-label="Style preview"
       >
         {isExpression(lineColor) ? (
@@ -93,7 +93,7 @@ export function StylePreview({ style }: { style: StyleConfig }) {
     const diameter = style.paint['circle-radius'] * 2;
     return (
       <div
-        className="mapui:flex mapui:h-8 mapui:w-full mapui:items-center mapui:justify-center mapui:rounded mapui:border mapui:border-gray-200"
+        className="mapui:flex mapui:h-8 mapui:w-full mapui:items-center mapui:justify-center mapui:rounded mapui:border mapui:border-slate-200"
         aria-label="Style preview"
       >
         {isExpression(circleColor) ? (
@@ -122,7 +122,7 @@ export function StylePreview({ style }: { style: StyleConfig }) {
   const iconColor = resolveColor(style.paint['icon-color'], '#333333');
   return (
     <div
-      className="mapui:flex mapui:h-8 mapui:w-full mapui:items-center mapui:justify-center mapui:rounded mapui:border mapui:border-gray-200"
+      className="mapui:flex mapui:h-8 mapui:w-full mapui:items-center mapui:justify-center mapui:rounded mapui:border mapui:border-slate-200"
       aria-label="Style preview"
     >
       <span

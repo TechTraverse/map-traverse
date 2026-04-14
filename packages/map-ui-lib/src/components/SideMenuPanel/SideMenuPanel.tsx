@@ -65,23 +65,23 @@ export function SideMenuPanel({
       role="dialog"
       aria-label={title}
     >
-      <div className="mapui:flex mapui:items-center mapui:justify-between mapui:border-b mapui:border-gray-200 mapui:px-4 mapui:py-3">
-        <h2 className="mapui:m-0 mapui:text-base mapui:font-semibold mapui:text-gray-900">
+      <div className="mapui:flex mapui:items-center mapui:justify-between mapui:border-b mapui:border-slate-200 mapui:px-4 mapui:py-3">
+        <h2 className="mapui:m-0 mapui:text-base mapui:font-semibold mapui:text-slate-900">
           {title}
         </h2>
         <button
           type="button"
           onClick={onClose}
           aria-label="Close menu"
-          className="mapui:flex mapui:h-8 mapui:w-8 mapui:cursor-pointer mapui:items-center mapui:justify-center mapui:rounded hover:mapui:bg-gray-100"
+          className="mapui:flex mapui:h-8 mapui:w-8 mapui:cursor-pointer mapui:items-center mapui:justify-center mapui:rounded hover:mapui:bg-slate-100"
         >
-          <LuX size={18} className="mapui:text-gray-700" />
+          <LuX size={18} className="mapui:text-slate-700" />
         </button>
       </div>
 
       <div className="mapui:flex-1 mapui:overflow-y-auto">
         {controls.length === 0 ? (
-          <p className="mapui:m-0 mapui:p-4 mapui:text-sm mapui:text-gray-500">
+          <p className="mapui:m-0 mapui:p-4 mapui:text-sm mapui:text-slate-500">
             No controls available.
           </p>
         ) : (
@@ -92,13 +92,13 @@ export function SideMenuPanel({
               // Action item: plain button, no accordion
               if (item.onAction) {
                 return (
-                  <li key={item.key} className="mapui:border-b mapui:border-gray-100">
+                  <li key={item.key} className="mapui:border-b mapui:border-slate-100">
                     <button
                       type="button"
                       onClick={item.onAction}
-                      className="mapui:flex mapui:w-full mapui:cursor-pointer mapui:items-center mapui:gap-3 mapui:bg-white mapui:px-4 mapui:py-3 mapui:text-left mapui:text-sm mapui:font-medium mapui:text-gray-800 hover:mapui:bg-gray-50"
+                      className="mapui:flex mapui:w-full mapui:cursor-pointer mapui:items-center mapui:gap-3 mapui:bg-white mapui:px-4 mapui:py-3 mapui:text-left mapui:text-sm mapui:font-medium mapui:text-slate-800 hover:mapui:bg-slate-50"
                     >
-                      <Icon size={18} className="mapui:text-gray-600" />
+                      <Icon size={18} className="mapui:text-slate-600" />
                       {item.label}
                     </button>
                   </li>
@@ -108,7 +108,7 @@ export function SideMenuPanel({
               // Accordion item (existing behavior)
               const expanded = openSections.includes(item.key);
               return (
-                <li key={item.key} className="mapui:border-b mapui:border-gray-100">
+                <li key={item.key} className="mapui:border-b mapui:border-slate-100">
                   <button
                     type="button"
                     onClick={() =>
@@ -119,21 +119,21 @@ export function SideMenuPanel({
                       )
                     }
                     aria-expanded={expanded}
-                    className="mapui:flex mapui:w-full mapui:cursor-pointer mapui:items-center mapui:justify-between mapui:gap-3 mapui:bg-white mapui:px-4 mapui:py-3 mapui:text-left mapui:text-sm mapui:font-medium mapui:text-gray-800 hover:mapui:bg-gray-50"
+                    className="mapui:flex mapui:w-full mapui:cursor-pointer mapui:items-center mapui:justify-between mapui:gap-3 mapui:bg-white mapui:px-4 mapui:py-3 mapui:text-left mapui:text-sm mapui:font-medium mapui:text-slate-800 hover:mapui:bg-slate-50"
                   >
                     <span className="mapui:flex mapui:items-center mapui:gap-3">
-                      <Icon size={18} className="mapui:text-gray-600" />
+                      <Icon size={18} className="mapui:text-slate-600" />
                       {item.label}
                     </span>
                     <LuChevronDown
                       size={16}
-                      className={`mapui:text-gray-500 mapui:transition-transform ${
+                      className={`mapui:text-slate-500 mapui:transition-transform ${
                         expanded ? 'mapui:rotate-180' : ''
                       }`}
                     />
                   </button>
                   {expanded && (
-                    <div className="mapui:bg-gray-50 mapui:px-4 mapui:py-3">
+                    <div className="mapui:bg-slate-50 mapui:px-4 mapui:py-3">
                       {item.content}
                     </div>
                   )}
@@ -169,9 +169,9 @@ export function SideMenuToggle({
       onClick={onClick}
       title={label}
       aria-label={label}
-      className={`mapui:flex mapui:h-10 mapui:w-10 mapui:cursor-pointer mapui:items-center mapui:justify-center mapui:rounded mapui:bg-white mapui:shadow-md mapui:transition-colors hover:mapui:bg-gray-50 ${className}`.trim()}
+      className={`mapui:flex mapui:h-10 mapui:w-10 mapui:cursor-pointer mapui:items-center mapui:justify-center mapui:rounded mapui:bg-white mapui:shadow-md mapui:transition-colors hover:mapui:bg-slate-50 ${className}`.trim()}
     >
-      <LuMenu size={20} className="mapui:text-gray-700" />
+      <LuMenu size={20} className="mapui:text-slate-700" />
     </button>
   );
 }

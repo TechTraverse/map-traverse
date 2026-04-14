@@ -47,7 +47,7 @@ function InteractiveWrapper() {
         onUnitChange={setUnit}
         onClear={() => setPoints([])}
       />
-      <p className="mapui:mt-3 mapui:text-xs mapui:text-gray-400">
+      <p className="mapui:mt-3 mapui:text-xs mapui:text-slate-400">
         Toggle modes, switch units, and clear to see different states
       </p>
     </div>

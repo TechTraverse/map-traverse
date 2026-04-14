@@ -10,12 +10,12 @@
   }
   .range-sm::-webkit-slider-runnable-track {
     height: 2px;
-    background: #9ca3af;
+    background: #94a3b8;
     border-radius: 1px;
   }
   .range-sm::-moz-range-track {
     height: 2px;
-    background: #9ca3af;
+    background: #94a3b8;
     border-radius: 1px;
   }
   .range-sm::-webkit-slider-thumb {
@@ -24,14 +24,14 @@
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: #9ca3af;
+    background: #94a3b8;
     margin-top: -4px;
   }
   .range-sm::-moz-range-thumb {
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: #9ca3af;
+    background: #94a3b8;
     border: none;
   }
 }

@@ -46,7 +46,7 @@ export function SpriteSourceList({ sprites, onChange }: SpriteSourceListProps) {
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-3">
       <div className="mapui:flex mapui:items-center mapui:justify-between">
-        <h3 className="mapui:m-0 mapui:text-sm mapui:font-semibold mapui:text-gray-700">
+        <h3 className="mapui:m-0 mapui:text-sm mapui:font-semibold mapui:text-slate-700">
           Custom Sprite Sheets
         </h3>
         <button
@@ -59,7 +59,7 @@ export function SpriteSourceList({ sprites, onChange }: SpriteSourceListProps) {
       </div>
 
       {sprites.length === 0 && !addingNew && (
-        <p className="mapui:m-0 mapui:text-sm mapui:text-gray-500">
+        <p className="mapui:m-0 mapui:text-sm mapui:text-slate-500">
           No custom sprite sheets. Basemap icons are available automatically.
         </p>
       )}
@@ -68,14 +68,14 @@ export function SpriteSourceList({ sprites, onChange }: SpriteSourceListProps) {
         {sprites.map((sprite, index) => (
           <li
             key={index}
-            className="mapui:rounded-lg mapui:border mapui:border-gray-200 mapui:bg-white"
+            className="mapui:rounded-lg mapui:border mapui:border-slate-200 mapui:bg-white"
           >
             <div className="mapui:flex mapui:items-center mapui:gap-3 mapui:px-3 mapui:py-2">
               <div className="mapui:flex-1 mapui:overflow-hidden">
-                <span className="mapui:block mapui:text-sm mapui:font-medium mapui:text-gray-800">
+                <span className="mapui:block mapui:text-sm mapui:font-medium mapui:text-slate-800">
                   {sprite.id}
                 </span>
-                <span className="mapui:block mapui:truncate mapui:font-mono mapui:text-xs mapui:text-gray-500">
+                <span className="mapui:block mapui:truncate mapui:font-mono mapui:text-xs mapui:text-slate-500">
                   {sprite.url}
                 </span>
               </div>
@@ -83,7 +83,7 @@ export function SpriteSourceList({ sprites, onChange }: SpriteSourceListProps) {
                 <button
                   type="button"
                   onClick={() => setEditingIndex(editingIndex === index ? null : index)}
-                  className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-gray-600 hover:mapui:bg-gray-50"
+                  className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-slate-600 hover:mapui:bg-slate-50"
                 >
                   {editingIndex === index ? 'Close' : 'Edit'}
                 </button>
@@ -98,7 +98,7 @@ export function SpriteSourceList({ sprites, onChange }: SpriteSourceListProps) {
             </div>
 
             {editingIndex === index && (
-              <div className="mapui:border-t mapui:border-gray-100 mapui:p-3">
+              <div className="mapui:border-t mapui:border-slate-100 mapui:p-3">
                 <SpriteSourceEditor value={sprite} onChange={handleUpdate} />
               </div>
             )}
@@ -124,7 +124,7 @@ export function SpriteSourceList({ sprites, onChange }: SpriteSourceListProps) {
             <button
               type="button"
               onClick={() => setAddingNew(false)}
-              className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-3 mapui:py-1 mapui:text-xs mapui:text-gray-700 hover:mapui:bg-gray-50"
+              className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-3 mapui:py-1 mapui:text-xs mapui:text-slate-700 hover:mapui:bg-slate-50"
             >
               Cancel
             </button>

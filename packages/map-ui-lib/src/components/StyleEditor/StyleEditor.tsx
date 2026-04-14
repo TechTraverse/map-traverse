@@ -59,7 +59,7 @@ function deriveSymbolMode(value: StyleConfig): SymbolMode {
 }
 
 const inputClass =
-  'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
+  'mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
 const STYLE_TYPE_LABELS: Record<StyleConfig['type'], string> = {
   fill: 'Fill',
@@ -215,7 +215,7 @@ export function StyleEditor({ value, onChange, suggestedType, suggestedTypes, av
 
       {value.type === 'symbol' && (
         <FormField label="Symbol Mode">
-          <div className="mapui:flex mapui:overflow-hidden mapui:rounded mapui:border mapui:border-gray-300">
+          <div className="mapui:flex mapui:overflow-hidden mapui:rounded mapui:border mapui:border-slate-300">
             {SYMBOL_MODES.map((mode) => (
               <button
                 key={mode}
@@ -226,7 +226,7 @@ export function StyleEditor({ value, onChange, suggestedType, suggestedTypes, av
                   'focus:mapui:ring-1 focus:mapui:ring-inset focus:mapui:ring-blue-400',
                   symbolMode === mode
                     ? 'mapui:bg-blue-500 mapui:text-white'
-                    : 'mapui:bg-white mapui:text-gray-700 hover:mapui:bg-gray-50',
+                    : 'mapui:bg-white mapui:text-slate-700 hover:mapui:bg-slate-50',
                 ].join(' ')}
               >
                 {mode === 'both' ? 'Both' : mode.charAt(0).toUpperCase() + mode.slice(1)}
@@ -236,14 +236,14 @@ export function StyleEditor({ value, onChange, suggestedType, suggestedTypes, av
         </FormField>
       )}
 
-      <div className="mapui:rounded mapui:border mapui:border-gray-100 mapui:p-2">
-        <p className="mapui:m-0 mapui:mb-1 mapui:text-xs mapui:text-gray-500">Preview</p>
+      <div className="mapui:rounded mapui:border mapui:border-slate-100 mapui:p-2">
+        <p className="mapui:m-0 mapui:mb-1 mapui:text-xs mapui:text-slate-500">Preview</p>
         <StylePreview style={value} />
       </div>
 
       {layoutGroupNames.length > 0 && (
         <div className="mapui:flex mapui:flex-col mapui:gap-2">
-          <p className="mapui:m-0 mapui:text-xs mapui:font-medium mapui:uppercase mapui:tracking-wide mapui:text-gray-500">
+          <p className="mapui:m-0 mapui:text-xs mapui:font-medium mapui:uppercase mapui:tracking-wide mapui:text-slate-500">
             Layout
           </p>
           {layoutGroupNames.map((groupName, i) => (
@@ -266,7 +266,7 @@ export function StyleEditor({ value, onChange, suggestedType, suggestedTypes, av
 
       {paintGroupNames.length > 0 && (
         <div className="mapui:flex mapui:flex-col mapui:gap-2">
-          <p className="mapui:m-0 mapui:text-xs mapui:font-medium mapui:uppercase mapui:tracking-wide mapui:text-gray-500">
+          <p className="mapui:m-0 mapui:text-xs mapui:font-medium mapui:uppercase mapui:tracking-wide mapui:text-slate-500">
             Paint
           </p>
           {paintGroupNames.map((groupName) => (

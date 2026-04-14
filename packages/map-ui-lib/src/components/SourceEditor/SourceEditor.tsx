@@ -12,7 +12,7 @@ export interface SourceEditorProps {
 }
 
 const inputClass =
-  'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
+  'mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
 export function SourceEditor({
   value,
@@ -59,7 +59,7 @@ export function SourceEditor({
                   onChange={() => update({ type: t })}
                   className="mapui:accent-blue-600"
                 />
-                <span className="mapui:text-sm mapui:text-gray-700 mapui:capitalize">{t}</span>
+                <span className="mapui:text-sm mapui:text-slate-700 mapui:capitalize">{t}</span>
               </label>
             ))}
           </div>
@@ -169,9 +169,9 @@ export function SourceEditor({
             onChange={() => update({ proxy: !value.proxy })}
             className="mapui:accent-blue-600"
           />
-          <span className="mapui:text-sm mapui:text-gray-700">Proxy requests through server</span>
+          <span className="mapui:text-sm mapui:text-slate-700">Proxy requests through server</span>
         </label>
-        <p className="mapui:text-xs mapui:text-gray-500 mapui:mt-1">
+        <p className="mapui:text-xs mapui:text-slate-500 mapui:mt-1">
           Route requests through the server to protect API keys and bypass CORS restrictions.
         </p>
         {value.proxy && value.auth && (

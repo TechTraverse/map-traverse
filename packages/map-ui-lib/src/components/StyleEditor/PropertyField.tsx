@@ -7,7 +7,7 @@ import { DataDrivenColorEditor } from './DataDrivenColorEditor';
 import type { ColorThemeId } from '../../utils/colorThemes';
 
 const inputClass =
-  'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
+  'mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
 interface PropertyFieldProps {
   def: PropertyDefinition;
@@ -72,7 +72,7 @@ function OpacityWidget({
         onChange={(e) => onChange(parseFloat(e.target.value))}
         className="mapui:flex-1"
       />
-      <span className="mapui:w-8 mapui:text-right mapui:text-xs mapui:text-gray-600">
+      <span className="mapui:w-8 mapui:text-right mapui:text-xs mapui:text-slate-600">
         {v.toFixed(2)}
       </span>
     </div>
@@ -122,7 +122,7 @@ function WidgetContent({
                 'focus:mapui:ring-1 focus:mapui:ring-blue-400',
                 isExpression
                   ? 'mapui:border-blue-400 mapui:bg-blue-50 mapui:text-blue-700'
-                  : 'mapui:border-gray-300 mapui:bg-white mapui:text-gray-500 hover:mapui:border-blue-400 hover:mapui:text-blue-600',
+                  : 'mapui:border-slate-300 mapui:bg-white mapui:text-slate-500 hover:mapui:border-blue-400 hover:mapui:text-blue-600',
               ].join(' ')}
             >
               fx

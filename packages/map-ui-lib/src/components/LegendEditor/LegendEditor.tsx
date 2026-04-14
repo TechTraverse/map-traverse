@@ -22,7 +22,7 @@ const defaultEntry = (): LegendEntry => ({ label: '', color: '#4a90d9', shape: '
 const MAX_PREVIEW_SWATCHES = 8;
 
 const inputClass =
-  'mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
+  'mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
 type StyleEntries = {
   entries: LegendEntry[];
@@ -117,7 +117,7 @@ export function LegendEditor({ value, onChange, styles, layerLabel }: LegendEdit
           onChange={(e) => handleToggle(e.target.checked)}
           className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
         />
-        <label htmlFor="legend-enabled" className="mapui:text-sm mapui:font-medium mapui:text-gray-700">
+        <label htmlFor="legend-enabled" className="mapui:text-sm mapui:font-medium mapui:text-slate-700">
           Enable Legend
         </label>
       </div>
@@ -166,7 +166,7 @@ export function LegendEditor({ value, onChange, styles, layerLabel }: LegendEdit
         <>
           {/* Display Mode selector */}
           <div className="mapui:flex mapui:items-center mapui:gap-2">
-            <label htmlFor="legend-display-mode" className="mapui:text-sm mapui:text-gray-700">
+            <label htmlFor="legend-display-mode" className="mapui:text-sm mapui:text-slate-700">
               Display Mode
             </label>
             <select
@@ -191,7 +191,7 @@ export function LegendEditor({ value, onChange, styles, layerLabel }: LegendEdit
                 onChange={(e) => onChange({ ...value, showLabelsCollapsed: e.target.checked })}
                 className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
               />
-              <label htmlFor="legend-show-labels-collapsed" className="mapui:text-sm mapui:text-gray-700">
+              <label htmlFor="legend-show-labels-collapsed" className="mapui:text-sm mapui:text-slate-700">
                 Show labels in collapsed view
               </label>
             </div>
@@ -207,7 +207,7 @@ export function LegendEditor({ value, onChange, styles, layerLabel }: LegendEdit
                 onChange={(e) => onChange({ ...value, showColorBar: e.target.checked })}
                 className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
               />
-              <label htmlFor="legend-show-color-bar" className="mapui:text-sm mapui:text-gray-700">
+              <label htmlFor="legend-show-color-bar" className="mapui:text-sm mapui:text-slate-700">
                 Show color bar
               </label>
             </div>
@@ -223,7 +223,7 @@ export function LegendEditor({ value, onChange, styles, layerLabel }: LegendEdit
                 onChange={(e) => onChange({ ...value, showDisclosureArrow: e.target.checked })}
                 className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
               />
-              <label htmlFor="legend-show-disclosure-arrow" className="mapui:text-sm mapui:text-gray-700">
+              <label htmlFor="legend-show-disclosure-arrow" className="mapui:text-sm mapui:text-slate-700">
                 Show disclosure arrow
               </label>
             </div>
@@ -232,7 +232,7 @@ export function LegendEditor({ value, onChange, styles, layerLabel }: LegendEdit
           {/* Gradient-specific: Property name */}
           {displayMode === 'gradient' && (
             <div className="mapui:flex mapui:items-center mapui:gap-2">
-              <label htmlFor="legend-gradient-property" className="mapui:text-sm mapui:text-gray-700">
+              <label htmlFor="legend-gradient-property" className="mapui:text-sm mapui:text-slate-700">
                 Gradient Label
               </label>
               <input
@@ -251,10 +251,10 @@ export function LegendEditor({ value, onChange, styles, layerLabel }: LegendEdit
             {entries.map((entry, index) => (
               <li
                 key={index}
-                className="mapui:rounded mapui:border mapui:border-gray-200 mapui:p-3"
+                className="mapui:rounded mapui:border mapui:border-slate-200 mapui:p-3"
               >
                 <div className="mapui:mb-2 mapui:flex mapui:items-center mapui:justify-between">
-                  <span className="mapui:text-xs mapui:font-medium mapui:text-gray-600">
+                  <span className="mapui:text-xs mapui:font-medium mapui:text-slate-600">
                     Entry {index + 1}
                   </span>
                   <button
@@ -277,7 +277,7 @@ export function LegendEditor({ value, onChange, styles, layerLabel }: LegendEdit
             <button
               type="button"
               onClick={handleAddEntry}
-              className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-dashed mapui:border-gray-300 mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-gray-600 hover:mapui:border-blue-400 hover:mapui:text-blue-600"
+              className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-dashed mapui:border-slate-300 mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-slate-600 hover:mapui:border-blue-400 hover:mapui:text-blue-600"
             >
               + Add Entry
             </button>

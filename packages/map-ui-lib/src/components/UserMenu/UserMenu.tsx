@@ -38,7 +38,7 @@ export function UserMenu({ username, menuItems = [], onLogout }: UserMenuProps) 
   }, [open]);
 
   const itemClass =
-    'mapui:flex mapui:items-center mapui:gap-2 mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-gray-700 mapui:hover:bg-gray-100 mapui:w-full mapui:text-left';
+    'mapui:flex mapui:items-center mapui:gap-2 mapui:px-3 mapui:py-2 mapui:text-sm mapui:text-slate-700 mapui:hover:bg-slate-100 mapui:w-full mapui:text-left';
 
   return (
     <div ref={menuRef} className="mapui:relative">
@@ -54,10 +54,10 @@ export function UserMenu({ username, menuItems = [], onLogout }: UserMenuProps) 
         <div className="mapui:absolute mapui:right-0 mapui:z-20 mapui:mt-1 mapui:w-48 mapui:rounded-md mapui:bg-white mapui:shadow-lg mapui:ring-1 mapui:ring-black/5 mapui:py-1">
           {username && (
             <>
-              <div className="mapui:px-3 mapui:py-2 mapui:text-sm mapui:font-medium mapui:text-gray-900">
+              <div className="mapui:px-3 mapui:py-2 mapui:text-sm mapui:font-medium mapui:text-slate-900">
                 {username}
               </div>
-              <div className="mapui:border-t mapui:border-gray-100 mapui:my-1" />
+              <div className="mapui:border-t mapui:border-slate-100 mapui:my-1" />
             </>
           )}
           {menuItems.map((item, i) => {
@@ -81,7 +81,7 @@ export function UserMenu({ username, menuItems = [], onLogout }: UserMenuProps) 
             );
           })}
           {menuItems.length > 0 && (
-            <div className="mapui:border-t mapui:border-gray-100 mapui:my-1" />
+            <div className="mapui:border-t mapui:border-slate-100 mapui:my-1" />
           )}
           <button
             onClick={() => {

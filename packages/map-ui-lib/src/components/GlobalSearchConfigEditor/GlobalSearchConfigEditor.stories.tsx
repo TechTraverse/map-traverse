@@ -84,7 +84,7 @@ function Wrapper({ initial, propertiesByLayer = mockPropsByLayer, isLoadingPrope
         propertiesByLayer={propertiesByLayer}
         isLoadingProperties={isLoadingProperties}
       />
-      <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+      <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
         {JSON.stringify(value, null, 2)}
       </pre>
     </div>

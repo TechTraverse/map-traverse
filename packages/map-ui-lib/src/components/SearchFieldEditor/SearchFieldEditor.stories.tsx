@@ -28,7 +28,7 @@ export const TextType: Story = {
     return (
       <div className="mapui:max-w-sm mapui:p-4">
         <SearchFieldEditor value={field} onChange={setField} />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(field, null, 2)}
         </pre>
       </div>

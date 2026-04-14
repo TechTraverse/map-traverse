@@ -20,7 +20,7 @@ export function ConfigPreview({ config }: ConfigPreviewProps) {
         >
           {result.success ? 'Valid' : 'Invalid'}
         </span>
-        <span className="mapui:text-xs mapui:text-gray-500">MapConfig validation</span>
+        <span className="mapui:text-xs mapui:text-slate-500">MapConfig validation</span>
       </div>
 
       {!result.success && (
@@ -41,8 +41,8 @@ export function ConfigPreview({ config }: ConfigPreviewProps) {
         </div>
       )}
 
-      <div className="mapui:overflow-auto mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-gray-50">
-        <pre className="mapui:m-0 mapui:p-3 mapui:text-xs mapui:text-gray-800 mapui:whitespace-pre">
+      <div className="mapui:overflow-auto mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-slate-50">
+        <pre className="mapui:m-0 mapui:p-3 mapui:text-xs mapui:text-slate-800 mapui:whitespace-pre">
           {JSON.stringify(config, null, 2)}
         </pre>
       </div>

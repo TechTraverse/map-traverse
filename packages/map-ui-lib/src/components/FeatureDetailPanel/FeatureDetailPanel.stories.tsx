@@ -23,7 +23,7 @@ function InteractivePanel(props: FeatureDetailPanelProps) {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:text-gray-700 hover:mapui:bg-gray-50"
+          className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:text-slate-700 hover:mapui:bg-slate-50"
         >
           Open Panel
         </button>

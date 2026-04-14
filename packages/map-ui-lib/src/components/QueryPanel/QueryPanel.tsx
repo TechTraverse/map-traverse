@@ -51,13 +51,13 @@ export function QueryPanel({
 
   return (
     <div className={`mapui:flex mapui:flex-col mapui:gap-2 ${className ?? ''}`}>
-      <div className="mapui:border-t mapui:border-gray-200 mapui:pt-2">
-        <span className="mapui:text-xs mapui:font-medium mapui:text-gray-600">Query</span>
+      <div className="mapui:border-t mapui:border-slate-200 mapui:pt-2">
+        <span className="mapui:text-xs mapui:font-medium mapui:text-slate-600">Query</span>
       </div>
 
       {parameters.map((param) => (
         <div key={param.name} className="mapui:flex mapui:flex-col mapui:gap-0.5">
-          <label className="mapui:text-xs mapui:text-gray-500">{param.label}</label>
+          <label className="mapui:text-xs mapui:text-slate-500">{param.label}</label>
           {param.inputType === 'number' ? (
             <input
               type="number"
@@ -108,7 +108,7 @@ export function QueryPanel({
           'mapui:flex mapui:items-center mapui:justify-center mapui:gap-1.5 mapui:rounded mapui:px-3 mapui:py-1.5 mapui:text-xs mapui:font-medium mapui:transition-colors',
           canRun
             ? 'mapui:bg-green-600 mapui:text-white hover:mapui:bg-green-700'
-            : 'mapui:bg-gray-200 mapui:text-gray-400 mapui:cursor-not-allowed',
+            : 'mapui:bg-slate-200 mapui:text-slate-400 mapui:cursor-not-allowed',
         ].join(' ')}
       >
         {loading ? 'Running…' : 'Run Query'}

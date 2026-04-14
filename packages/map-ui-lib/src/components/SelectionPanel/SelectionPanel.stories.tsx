@@ -121,7 +121,7 @@ export const Interactive: Story = {
           <button
             type="button"
             onClick={() => setCount((c) => c + 1)}
-            className="mapui:mt-2 mapui:ml-3 mapui:rounded mapui:bg-gray-200 mapui:px-3 mapui:py-1 mapui:text-xs"
+            className="mapui:mt-2 mapui:ml-3 mapui:rounded mapui:bg-slate-200 mapui:px-3 mapui:py-1 mapui:text-xs"
           >
             Simulate selection (+1)
           </button>

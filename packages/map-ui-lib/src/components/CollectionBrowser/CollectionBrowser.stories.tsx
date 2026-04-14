@@ -29,7 +29,7 @@ export const Default: Story = {
           onDeselect={(id) => setSelected((prev) => prev.filter((x) => x !== id))}
         />
         {selected.length > 0 && (
-          <p className="mapui:mt-2 mapui:text-xs mapui:text-gray-600">
+          <p className="mapui:mt-2 mapui:text-xs mapui:text-slate-600">
             Selected: {selected.join(', ')}
           </p>
         )}

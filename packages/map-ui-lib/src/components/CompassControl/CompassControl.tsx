@@ -31,7 +31,7 @@ export function CompassControl({
       type="button"
       title={ariaLabel}
       aria-label={ariaLabel}
-      className={`mapui:flex mapui:items-center mapui:justify-center mapui:w-10 mapui:h-10 mapui:bg-white mapui:rounded mapui:shadow-md mapui:cursor-pointer hover:mapui:bg-gray-50 mapui:transition-colors ${className}`.trim()}
+      className={`mapui:flex mapui:items-center mapui:justify-center mapui:w-10 mapui:h-10 mapui:bg-white mapui:rounded mapui:shadow-md mapui:cursor-pointer hover:mapui:bg-slate-50 mapui:transition-colors ${className}`.trim()}
       onClick={onReset}
     >
       <svg width={28} height={28} viewBox="0 0 40 40" data-testid="compass-needle" aria-hidden="true">

@@ -82,7 +82,7 @@ export function SourceList({ sources, onChange, sourceType }: SourceListProps) {
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-3">
       <div className="mapui:flex mapui:items-center mapui:justify-between">
-        <h3 className="mapui:m-0 mapui:text-sm mapui:font-semibold mapui:text-gray-700">
+        <h3 className="mapui:m-0 mapui:text-sm mapui:font-semibold mapui:text-slate-700">
           Sources
         </h3>
         <button
@@ -95,14 +95,14 @@ export function SourceList({ sources, onChange, sourceType }: SourceListProps) {
       </div>
 
       {displaySources.length === 0 && !addingNew && (
-        <p className="mapui:m-0 mapui:text-sm mapui:text-gray-500">No sources configured.</p>
+        <p className="mapui:m-0 mapui:text-sm mapui:text-slate-500">No sources configured.</p>
       )}
 
       <ul className="mapui:m-0 mapui:list-none mapui:flex mapui:flex-col mapui:gap-2 mapui:p-0">
         {displaySources.map((source) => (
           <li
             key={source.id}
-            className="mapui:rounded-lg mapui:border mapui:border-gray-200 mapui:bg-white mapui:p-3"
+            className="mapui:rounded-lg mapui:border mapui:border-slate-200 mapui:bg-white mapui:p-3"
           >
             {editingId === source.id ? (
               <div className="mapui:flex mapui:flex-col mapui:gap-3">
@@ -126,7 +126,7 @@ export function SourceList({ sources, onChange, sourceType }: SourceListProps) {
                   <button
                     type="button"
                     onClick={() => { setEditingId(null); setEditingSource(null); }}
-                    className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-3 mapui:py-1 mapui:text-xs mapui:text-gray-700 hover:mapui:bg-gray-50"
+                    className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-3 mapui:py-1 mapui:text-xs mapui:text-slate-700 hover:mapui:bg-slate-50"
                   >
                     Cancel
                   </button>
@@ -136,7 +136,7 @@ export function SourceList({ sources, onChange, sourceType }: SourceListProps) {
               <div className="mapui:flex mapui:items-start mapui:justify-between mapui:gap-2">
                 <div className="mapui:flex mapui:flex-col mapui:gap-0.5">
                   <div className="mapui:flex mapui:items-center mapui:gap-1.5">
-                    <span className="mapui:text-sm mapui:font-medium mapui:text-gray-800">
+                    <span className="mapui:text-sm mapui:font-medium mapui:text-slate-800">
                       {source.label ?? source.id}
                     </span>
                     {source.type === 'imagery' && (
@@ -145,11 +145,11 @@ export function SourceList({ sources, onChange, sourceType }: SourceListProps) {
                       </span>
                     )}
                   </div>
-                  <span className="mapui:font-mono mapui:text-xs mapui:text-gray-500">
+                  <span className="mapui:font-mono mapui:text-xs mapui:text-slate-500">
                     {source.url}
                   </span>
                   {source.tileMatrixSetId && (
-                    <span className="mapui:text-xs mapui:text-gray-400">
+                    <span className="mapui:text-xs mapui:text-slate-400">
                       TMS: {source.tileMatrixSetId}
                     </span>
                   )}
@@ -158,7 +158,7 @@ export function SourceList({ sources, onChange, sourceType }: SourceListProps) {
                   <button
                     type="button"
                     onClick={() => { setEditingId(source.id); setEditingSource(source); }}
-                    className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-gray-600 hover:mapui:bg-gray-50"
+                    className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-slate-600 hover:mapui:bg-slate-50"
                   >
                     Edit
                   </button>
@@ -201,7 +201,7 @@ export function SourceList({ sources, onChange, sourceType }: SourceListProps) {
             <button
               type="button"
               onClick={() => setAddingNew(false)}
-              className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-3 mapui:py-1 mapui:text-xs mapui:text-gray-700 hover:mapui:bg-gray-50"
+              className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-3 mapui:py-1 mapui:text-xs mapui:text-slate-700 hover:mapui:bg-slate-50"
             >
               Cancel
             </button>

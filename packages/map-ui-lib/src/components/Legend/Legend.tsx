@@ -123,7 +123,7 @@ function SimpleLegend({ legend, label, hasArrowColumn }: { legend: LegendConfig;
       <div className="mapui:flex mapui:items-center mapui:gap-2 mapui:min-w-0">
         {arrowSpacer}
         <Swatch color={entries[0].color} shape={entries[0].shape} />
-        <span className="mapui:text-gray-700 mapui:truncate">
+        <span className="mapui:text-slate-700 mapui:truncate">
           {entries[0].label || label}
         </span>
       </div>
@@ -131,7 +131,7 @@ function SimpleLegend({ legend, label, hasArrowColumn }: { legend: LegendConfig;
   }
   return (
     <div>
-      <div className="mapui:mb-1 mapui:text-xs mapui:font-medium mapui:text-gray-600">
+      <div className="mapui:mb-1 mapui:text-xs mapui:font-medium mapui:text-slate-600">
         {label}
       </div>
       <ul className="mapui:m-0 mapui:list-none mapui:space-y-1 mapui:p-0 mapui:pl-1">
@@ -142,7 +142,7 @@ function SimpleLegend({ legend, label, hasArrowColumn }: { legend: LegendConfig;
           >
             {arrowSpacer}
             <Swatch color={entry.color} shape={entry.shape} />
-            <span className="mapui:text-gray-700 mapui:truncate">{entry.label}</span>
+            <span className="mapui:text-slate-700 mapui:truncate">{entry.label}</span>
           </li>
         ))}
       </ul>
@@ -172,7 +172,7 @@ function CategoricalLegend({
 
   const arrowElement = (
     <span className="mapui:inline-flex mapui:items-center mapui:justify-center mapui:w-5 mapui:shrink-0">
-      <span className="mapui:text-gray-400">
+      <span className="mapui:text-slate-400">
         {expanded ? <MdOutlineKeyboardArrowDown /> : <MdOutlineKeyboardArrowRight />}
       </span>
     </span>
@@ -201,14 +201,14 @@ function CategoricalLegend({
       {showArrow ? (
         <button
           type="button"
-          className="mapui:flex mapui:items-center mapui:gap-2 mapui:bg-transparent mapui:border-none mapui:p-0 mapui:cursor-pointer mapui:text-left mapui:text-gray-700 mapui:text-sm mapui:font-medium mapui:min-w-0"
+          className="mapui:flex mapui:items-center mapui:gap-2 mapui:bg-transparent mapui:border-none mapui:p-0 mapui:cursor-pointer mapui:text-left mapui:text-slate-700 mapui:text-sm mapui:font-medium mapui:min-w-0"
           onClick={onToggle}
           aria-expanded={expanded}
         >
           {header}
         </button>
       ) : (
-        <div className="mapui:flex mapui:items-center mapui:gap-2 mapui:text-gray-700 mapui:text-sm mapui:font-medium mapui:min-w-0">
+        <div className="mapui:flex mapui:items-center mapui:gap-2 mapui:text-slate-700 mapui:text-sm mapui:font-medium mapui:min-w-0">
           {header}
         </div>
       )}
@@ -220,7 +220,7 @@ function CategoricalLegend({
               className="mapui:flex mapui:items-center mapui:gap-2 mapui:min-w-0"
             >
               <Swatch color={entry.color} shape={entry.shape} />
-              <span className="mapui:text-gray-700 mapui:truncate mapui:text-xs">
+              <span className="mapui:text-slate-700 mapui:truncate mapui:text-xs">
                 {entry.label}
               </span>
             </li>
@@ -250,7 +250,7 @@ function GradientLegend({
 
   const arrowElement = (
     <span className="mapui:inline-flex mapui:items-center mapui:justify-center mapui:w-5 mapui:shrink-0">
-      <span className="mapui:text-gray-400">
+      <span className="mapui:text-slate-400">
         {expanded ? <MdOutlineKeyboardArrowDown /> : <MdOutlineKeyboardArrowRight />}
       </span>
     </span>
@@ -279,21 +279,21 @@ function GradientLegend({
       {showArrow ? (
         <button
           type="button"
-          className="mapui:flex mapui:items-center mapui:gap-2 mapui:bg-transparent mapui:border-none mapui:p-0 mapui:cursor-pointer mapui:text-left mapui:text-gray-700 mapui:text-sm mapui:font-medium"
+          className="mapui:flex mapui:items-center mapui:gap-2 mapui:bg-transparent mapui:border-none mapui:p-0 mapui:cursor-pointer mapui:text-left mapui:text-slate-700 mapui:text-sm mapui:font-medium"
           onClick={onToggle}
           aria-expanded={expanded}
         >
           {header}
         </button>
       ) : (
-        <div className="mapui:flex mapui:items-center mapui:gap-2 mapui:text-gray-700 mapui:text-sm mapui:font-medium">
+        <div className="mapui:flex mapui:items-center mapui:gap-2 mapui:text-slate-700 mapui:text-sm mapui:font-medium">
           {header}
         </div>
       )}
       {expanded && (
         <>
         {gradientProperty && (
-          <div className={`mapui:mt-1 mapui:text-xs mapui:font-medium mapui:text-gray-600${showArrow ? ' mapui:ml-7' : ''}`}>
+          <div className={`mapui:mt-1 mapui:text-xs mapui:font-medium mapui:text-slate-600${showArrow ? ' mapui:ml-7' : ''}`}>
             {gradientProperty}
           </div>
         )}
@@ -304,7 +304,7 @@ function GradientLegend({
               className="mapui:flex mapui:items-center mapui:gap-2 mapui:min-w-0"
             >
               <Swatch color={entry.color} shape={entry.shape} />
-              <span className="mapui:text-gray-700 mapui:truncate mapui:text-xs">
+              <span className="mapui:text-slate-700 mapui:truncate mapui:text-xs">
                 {entry.label}
               </span>
             </li>
@@ -338,7 +338,7 @@ function OpacitySlider({
         onChange={(e) => onChange(layerId, parseFloat(e.target.value))}
         className="range-sm mapui:w-14"
       />
-      <span className="mapui:text-[9px] mapui:text-gray-400 mapui:w-6 mapui:text-right mapui:tabular-nums">
+      <span className="mapui:text-[9px] mapui:text-slate-400 mapui:w-6 mapui:text-right mapui:tabular-nums">
         {Math.round(opacity * 100)}%
       </span>
     </div>
@@ -402,13 +402,13 @@ export function Legend({ layers, visibleLayerIds, legendOrder, onOpacityChange, 
       className={`mapui:rounded-lg mapui:bg-white mapui:p-3 mapui:shadow-md mapui:text-sm${className ? ` ${className}` : ''}`}
     >
       <div className="mapui:flex mapui:items-center mapui:justify-between mapui:mb-2">
-        <h3 className="mapui:m-0 mapui:text-xs mapui:font-semibold mapui:uppercase mapui:tracking-wide mapui:text-gray-500">
+        <h3 className="mapui:m-0 mapui:text-xs mapui:font-semibold mapui:uppercase mapui:tracking-wide mapui:text-slate-500">
           Legend
         </h3>
         {onOpacityChange && (
           <button
             type="button"
-            className="mapui:bg-transparent mapui:border-none mapui:p-0 mapui:cursor-pointer mapui:text-gray-400 hover:mapui:text-gray-600 mapui:text-sm"
+            className="mapui:bg-transparent mapui:border-none mapui:p-0 mapui:cursor-pointer mapui:text-slate-400 hover:mapui:text-slate-600 mapui:text-sm"
             onClick={() => setExpanded((v) => !v)}
             aria-label={expanded ? 'Collapse legend' : 'Expand legend'}
           >

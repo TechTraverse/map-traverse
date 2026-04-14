@@ -39,7 +39,7 @@ export const Default: Story = {
     return (
       <div className="mapui:max-w-lg mapui:p-4">
         <LayerEditor value={layer} onChange={setLayer} availableSources={sampleSources} />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(layer, null, 2)}
         </pre>
       </div>
@@ -83,7 +83,7 @@ export const SymbolLayer: Story = {
     return (
       <div className="mapui:max-w-lg mapui:p-4">
         <LayerEditor value={layer} onChange={setLayer} availableSources={sampleSources} />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(layer, null, 2)}
         </pre>
       </div>

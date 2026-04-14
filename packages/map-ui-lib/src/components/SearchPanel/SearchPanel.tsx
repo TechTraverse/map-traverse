@@ -82,7 +82,7 @@ export function SearchPanel({
   const titleNode = !hideTitle || showCollapseButton ? (
     <div className="mapui:flex mapui:items-center mapui:justify-between mapui:mb-2">
       {!hideTitle ? (
-        <h3 className="mapui:m-0 mapui:text-sm mapui:font-semibold mapui:text-gray-700">
+        <h3 className="mapui:m-0 mapui:text-sm mapui:font-semibold mapui:text-slate-700">
           Search &amp; Filter
         </h3>
       ) : <span />}
@@ -91,7 +91,7 @@ export function SearchPanel({
           type="button"
           onClick={() => onExpandedChange?.(false)}
           title="Close"
-          className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:p-2 mapui:min-w-[44px] mapui:min-h-[44px] mapui:flex mapui:items-center mapui:justify-center mapui:text-gray-500 hover:mapui:text-gray-800"
+          className="mapui:cursor-pointer mapui:rounded mapui:border-none mapui:bg-transparent mapui:p-2 mapui:min-w-[44px] mapui:min-h-[44px] mapui:flex mapui:items-center mapui:justify-center mapui:text-slate-500 hover:mapui:text-slate-800"
           aria-label="Close expanded search"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="mapui:h-4 mapui:w-4">
@@ -108,7 +108,7 @@ export function SearchPanel({
       onClick={() => onExpandedChange?.(true)}
       title="Expand to full search builder"
       aria-label="Expand to full search builder"
-      className="mapui:mt-1 mapui:w-full mapui:cursor-pointer mapui:border-0 mapui:border-t mapui:border-solid mapui:border-gray-200 mapui:bg-transparent mapui:pt-2 mapui:text-center mapui:text-xs mapui:text-gray-600 hover:mapui:text-blue-600"
+      className="mapui:mt-1 mapui:w-full mapui:cursor-pointer mapui:border-0 mapui:border-t mapui:border-solid mapui:border-slate-200 mapui:bg-transparent mapui:pt-2 mapui:text-center mapui:text-xs mapui:text-slate-600 hover:mapui:text-blue-600"
     >
       Expand
     </button>
@@ -118,7 +118,7 @@ export function SearchPanel({
     const body = (
       <div className={`mapui:flex mapui:flex-col mapui:gap-1 ${className}`.trim()}>
         {titleNode}
-        <p className="mapui:m-0 mapui:text-xs mapui:text-gray-500">
+        <p className="mapui:m-0 mapui:text-xs mapui:text-slate-500">
           No searchable layers configured.
         </p>
         {expandFooter}
@@ -136,9 +136,9 @@ export function SearchPanel({
         const hasActiveFilters = Object.values(layerFilters).some(isFilterActive);
 
         return (
-          <div key={layer.id} className="mapui:flex mapui:flex-col mapui:gap-3 mapui:border-b mapui:border-gray-100 mapui:pb-3 last:mapui:border-0">
+          <div key={layer.id} className="mapui:flex mapui:flex-col mapui:gap-3 mapui:border-b mapui:border-slate-100 mapui:pb-3 last:mapui:border-0">
             <div className="mapui:flex mapui:items-center mapui:justify-between">
-              <span className="mapui:text-sm mapui:font-medium mapui:text-gray-600">
+              <span className="mapui:text-sm mapui:font-medium mapui:text-slate-600">
                 {layer.label}
               </span>
               {hasActiveFilters && (
@@ -158,7 +158,7 @@ export function SearchPanel({
 
               return (
                 <div key={field.property} className="mapui:flex mapui:flex-col mapui:gap-1">
-                  <label htmlFor={fieldId} className="mapui:text-xs mapui:text-gray-500">{field.label}</label>
+                  <label htmlFor={fieldId} className="mapui:text-xs mapui:text-slate-500">{field.label}</label>
 
                   {field.type === 'text' && (field as TextSearchField).autocomplete ? (
                     <AutocompleteInput
@@ -196,7 +196,7 @@ export function SearchPanel({
                           onZoomToFeature?.(layer.id, field.property, (e.target as HTMLInputElement).value);
                         }
                       }}
-                      className="mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
+                      className="mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
                     />
                   ) : field.type === 'datetime' && (field as DatetimeSearchField).range ? (
                     <DateRangeInput
@@ -238,7 +238,7 @@ export function SearchPanel({
                       onChange={(e) =>
                         onFilterChange(layer.id, field.property, e.target.value || undefined)
                       }
-                      className="mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
+                      className="mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
                     />
                   ) : field.type === 'number' ? (
                     <NumberInput
@@ -263,7 +263,7 @@ export function SearchPanel({
                             onZoomToFeature?.(layer.id, field.property, newValue);
                           }
                         }}
-                        className="mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
+                        className="mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
                       >
                         <option value="">{field.placeholder ?? 'Select...'}</option>
                         {allOptions.map((opt) => (
@@ -282,7 +282,7 @@ export function SearchPanel({
       })}
 
       {showPropertyFilters && (
-        <div className="mapui:mt-2 mapui:border-t mapui:border-gray-200 mapui:pt-3">
+        <div className="mapui:mt-2 mapui:border-t mapui:border-slate-200 mapui:pt-3">
           <PropertyFilterPanel
             layers={layers}
             availableProperties={availableProperties}

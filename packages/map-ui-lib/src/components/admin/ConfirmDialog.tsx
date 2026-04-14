@@ -26,13 +26,13 @@ export function ConfirmDialog({
       <div className="mapui:mx-4 mapui:w-full mapui:max-w-sm mapui:rounded-lg mapui:bg-white mapui:p-6 mapui:shadow-xl">
         <h2
           id="confirm-dialog-title"
-          className="mapui:m-0 mapui:mb-2 mapui:text-base mapui:font-semibold mapui:text-gray-900"
+          className="mapui:m-0 mapui:mb-2 mapui:text-base mapui:font-semibold mapui:text-slate-900"
         >
           {title}
         </h2>
         <p
           id="confirm-dialog-description"
-          className="mapui:m-0 mapui:mb-6 mapui:text-sm mapui:text-gray-600"
+          className="mapui:m-0 mapui:mb-6 mapui:text-sm mapui:text-slate-600"
         >
           {description}
         </p>
@@ -40,7 +40,7 @@ export function ConfirmDialog({
           <button
             type="button"
             onClick={onCancel}
-            className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-gray-300 mapui:bg-white mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:font-medium mapui:text-gray-700 hover:mapui:bg-gray-50"
+            className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:font-medium mapui:text-slate-700 hover:mapui:bg-slate-50"
           >
             Cancel
           </button>

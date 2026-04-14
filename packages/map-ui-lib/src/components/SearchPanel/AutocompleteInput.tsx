@@ -95,13 +95,13 @@ export function AutocompleteInput({
         onChange={handleInputChange}
         onFocus={() => setIsOpen(true)}
         onKeyDown={handleKeyDown}
-        className="mapui:w-full mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
+        className="mapui:w-full mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
       />
       {shouldShowDropdown && (
         <ul
           id={listboxId}
           role="listbox"
-          className="mapui:absolute mapui:z-10 mapui:mt-1 mapui:w-full mapui:rounded mapui:border mapui:border-gray-200 mapui:bg-white mapui:shadow-lg mapui:max-h-48 mapui:overflow-y-auto mapui:p-0 mapui:m-0 mapui:list-none"
+          className="mapui:absolute mapui:z-10 mapui:mt-1 mapui:w-full mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:shadow-lg mapui:max-h-48 mapui:overflow-y-auto mapui:p-0 mapui:m-0 mapui:list-none"
         >
           {filtered.map((item, index) => (
             <li
@@ -114,7 +114,7 @@ export function AutocompleteInput({
                 selectItem(item);
               }}
               className={`mapui:cursor-pointer mapui:px-2 mapui:py-1 mapui:text-sm ${
-                index === highlightedIndex ? 'mapui:bg-blue-100' : 'hover:mapui:bg-gray-50'
+                index === highlightedIndex ? 'mapui:bg-blue-100' : 'hover:mapui:bg-slate-50'
               }`}
             >
               {item}

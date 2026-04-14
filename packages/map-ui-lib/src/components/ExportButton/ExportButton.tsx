@@ -27,12 +27,12 @@ export function ExportButton({
       className={`mapui:flex mapui:items-center mapui:justify-center mapui:w-10 mapui:h-10 mapui:bg-white mapui:rounded mapui:shadow-md mapui:transition-colors ${
         isDisabled
           ? 'mapui:cursor-not-allowed mapui:opacity-50'
-          : 'mapui:cursor-pointer hover:mapui:bg-gray-50'
+          : 'mapui:cursor-pointer hover:mapui:bg-slate-50'
       } ${className}`.trim()}
       disabled={isDisabled}
       onClick={onExport}
     >
-      <Icon size={20} className="mapui:text-gray-700" />
+      <Icon size={20} className="mapui:text-slate-700" />
     </button>
   );
 }

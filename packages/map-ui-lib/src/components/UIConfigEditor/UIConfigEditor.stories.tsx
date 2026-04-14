@@ -40,7 +40,7 @@ export const Default: Story = {
     return (
       <div className="mapui:max-w-xl mapui:p-4">
         <UIConfigEditor value={config} onChange={setConfig} />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(config, null, 2)}
         </pre>
       </div>
@@ -92,7 +92,7 @@ export const CustomOrder: Story = {
     return (
       <div className="mapui:max-w-xl mapui:p-4">
         <UIConfigEditor value={config} onChange={setConfig} />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(config, null, 2)}
         </pre>
       </div>

@@ -10,7 +10,7 @@ const SAMPLE_CONTROLS: SideMenuPanelItem[] = [
     label: 'Layers',
     icon: LuLayers3,
     content: (
-      <div className="mapui:flex mapui:flex-col mapui:gap-1 mapui:text-sm mapui:text-gray-700">
+      <div className="mapui:flex mapui:flex-col mapui:gap-1 mapui:text-sm mapui:text-slate-700">
         <label className="mapui:flex mapui:items-center mapui:gap-2">
           <input type="checkbox" defaultChecked /> Countries
         </label>
@@ -31,7 +31,7 @@ const SAMPLE_CONTROLS: SideMenuPanelItem[] = [
       <input
         type="text"
         placeholder="Search features..."
-        className="mapui:w-full mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm"
+        className="mapui:w-full mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm"
       />
     ),
   },
@@ -39,19 +39,19 @@ const SAMPLE_CONTROLS: SideMenuPanelItem[] = [
     key: 'measure',
     label: 'Measure',
     icon: LuRuler,
-    content: <p className="mapui:m-0 mapui:text-sm mapui:text-gray-600">Measure distance or area.</p>,
+    content: <p className="mapui:m-0 mapui:text-sm mapui:text-slate-600">Measure distance or area.</p>,
   },
   {
     key: 'selection',
     label: 'Select',
     icon: LuMousePointer2,
-    content: <p className="mapui:m-0 mapui:text-sm mapui:text-gray-600">Box or polygon select.</p>,
+    content: <p className="mapui:m-0 mapui:text-sm mapui:text-slate-600">Box or polygon select.</p>,
   },
   {
     key: 'basemap',
     label: 'Basemap',
     icon: LuMap,
-    content: <p className="mapui:m-0 mapui:text-sm mapui:text-gray-600">Switch base layer.</p>,
+    content: <p className="mapui:m-0 mapui:text-sm mapui:text-slate-600">Switch base layer.</p>,
   },
 ];
 

@@ -30,12 +30,12 @@ export function Cql2Preview({ value }: Cql2PreviewProps) {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="mapui:text-xs mapui:text-gray-500 hover:mapui:text-gray-700"
+        className="mapui:text-xs mapui:text-slate-500 hover:mapui:text-slate-700"
       >
         {open ? '\u25BC' : '\u25B6'} Preview Query
       </button>
       {open && (
-        <pre className="mapui:mt-1 mapui:max-h-48 mapui:overflow-auto mapui:rounded mapui:bg-gray-800 mapui:p-3 mapui:text-xs mapui:text-green-300">
+        <pre className="mapui:mt-1 mapui:max-h-48 mapui:overflow-auto mapui:rounded mapui:bg-slate-800 mapui:p-3 mapui:text-xs mapui:text-green-300">
           {previewJson ?? '(no valid filter)'}
         </pre>
       )}

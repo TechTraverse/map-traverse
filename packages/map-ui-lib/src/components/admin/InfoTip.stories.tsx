@@ -23,7 +23,7 @@ export const Default: Story = {
   decorators: [
     (Story) => (
       <div className="mapui:flex mapui:items-center mapui:gap-2 mapui:p-8">
-        <span className="mapui:text-sm mapui:text-gray-700">Antialias</span>
+        <span className="mapui:text-sm mapui:text-slate-700">Antialias</span>
         <Story />
       </div>
     ),
@@ -40,7 +40,7 @@ export const InFormField: Story = {
         <input
           type="text"
           defaultValue="#3b82f6"
-          className="mapui:rounded mapui:border mapui:border-gray-300 mapui:px-2 mapui:py-1 mapui:text-sm"
+          className="mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm"
         />
       </FormField>
     </div>
@@ -54,7 +54,7 @@ export const LongText: Story = {
   decorators: [
     (Story) => (
       <div className="mapui:flex mapui:items-center mapui:gap-2 mapui:p-16">
-        <span className="mapui:text-sm mapui:text-gray-700">Symbol Placement</span>
+        <span className="mapui:text-sm mapui:text-slate-700">Symbol Placement</span>
         <Story />
       </div>
     ),

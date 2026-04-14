@@ -23,7 +23,7 @@ export const Default: Story = {
     return (
       <div className="mapui:max-w-lg mapui:p-4">
         <PropertyDisplayEditor value={config} onChange={setConfig} />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(config, null, 2)}
         </pre>
       </div>
@@ -44,7 +44,7 @@ export const WithExistingConfig: Story = {
     return (
       <div className="mapui:max-w-lg mapui:p-4">
         <PropertyDisplayEditor value={config} onChange={setConfig} />
-        <pre className="mapui:mt-4 mapui:rounded mapui:bg-gray-100 mapui:p-3 mapui:text-xs">
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
           {JSON.stringify(config, null, 2)}
         </pre>
       </div>
