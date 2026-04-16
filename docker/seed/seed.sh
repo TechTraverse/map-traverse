@@ -19,6 +19,10 @@ echo "Running admin UI migrations..."
 psql -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" -f /scripts/init_admin.sql
 echo "Admin UI migrations completed!"
 
+echo "Installing normalize-public-ddl triggers..."
+psql -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" -f /scripts/init_normalize_triggers.sql
+echo "Normalize-public-ddl triggers installed!"
+
 echo "Creating example schema..."
 psql -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" -c "CREATE SCHEMA IF NOT EXISTS example;"
 
