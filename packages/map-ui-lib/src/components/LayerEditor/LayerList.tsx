@@ -267,22 +267,16 @@ export function LayerList({ layers, onChange, availableSources, availableIcons, 
       {!readOnly && addingNew && (
         <div
           ref={newFormRef}
-          className="mapui:relative mapui:overflow-hidden mapui:rounded-xl mapui:border mapui:border-indigo-200 mapui:bg-gradient-to-br mapui:from-white mapui:via-indigo-50/40 mapui:to-violet-50/40 mapui:p-5 mapui:shadow-[0_10px_40px_-12px_rgb(99_102_241/0.35)] mapui:ring-1 mapui:ring-indigo-500/15"
+          className="mapui:relative mapui:overflow-hidden mapui:rounded-lg mapui:border mapui:border-indigo-200 mapui:bg-indigo-50/50 mapui:p-4 mapui:shadow-sm"
           style={{ animation: 'mapui-form-pop 240ms cubic-bezier(0.22, 1, 0.36, 1)' }}
         >
           {/* Left accent stripe */}
-          <div className="mapui:pointer-events-none mapui:absolute mapui:inset-y-0 mapui:left-0 mapui:w-[3px] mapui:bg-gradient-to-b mapui:from-indigo-500 mapui:to-violet-600" />
+          <div className="mapui:pointer-events-none mapui:absolute mapui:inset-y-0 mapui:left-0 mapui:w-[3px] mapui:bg-indigo-400" />
 
           {/* Header row */}
-          <div className="mapui:mb-4 mapui:flex mapui:items-center mapui:gap-2">
-            <span className="mapui:relative mapui:flex mapui:h-2 mapui:w-2">
-              <span className="mapui:absolute mapui:inline-flex mapui:h-full mapui:w-full mapui:animate-ping mapui:rounded-full mapui:bg-indigo-400 mapui:opacity-60" />
-              <span className="mapui:relative mapui:inline-flex mapui:h-2 mapui:w-2 mapui:rounded-full mapui:bg-indigo-500" />
-            </span>
-            <span className="mapui:text-[10px] mapui:font-semibold mapui:uppercase mapui:tracking-[0.12em] mapui:text-indigo-600">
-              Configuring
-            </span>
-            <h4 className="mapui:m-0 mapui:text-sm mapui:font-semibold mapui:text-slate-900">
+          <div className="mapui:mb-3 mapui:flex mapui:items-center mapui:gap-2">
+            <span className="mapui:inline-flex mapui:h-1.5 mapui:w-1.5 mapui:rounded-full mapui:bg-indigo-500" />
+            <h4 className="mapui:m-0 mapui:text-sm mapui:font-semibold mapui:text-slate-800">
               New Layer
             </h4>
           </div>
@@ -297,34 +291,22 @@ export function LayerList({ layers, onChange, availableSources, availableIcons, 
           />
 
           {/* Action row */}
-          <div className="mapui:mt-4 mapui:flex mapui:items-center mapui:justify-between mapui:border-t mapui:border-indigo-100 mapui:pt-3">
-            <span className={[
-              'mapui:text-[11px]',
-              !newLayer.id || !newLayer.sourceId || !newLayer.collection
-                ? 'mapui:text-slate-500'
-                : 'mapui:font-medium mapui:text-emerald-600',
-            ].join(' ')}>
-              {!newLayer.id || !newLayer.sourceId || !newLayer.collection
-                ? 'Fill in required fields to continue'
-                : 'Ready to add'}
-            </span>
-            <div className="mapui:flex mapui:gap-2">
-              <button
-                type="button"
-                onClick={() => setAddingNew(false)}
-                className="mapui:cursor-pointer mapui:rounded-md mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-3 mapui:py-1.5 mapui:text-xs mapui:text-slate-700 hover:mapui:bg-slate-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveNew}
-                disabled={!newLayer.id || !newLayer.sourceId || !newLayer.collection}
-                className="mapui:cursor-pointer mapui:rounded-md mapui:bg-gradient-to-r mapui:from-indigo-600 mapui:to-violet-600 mapui:px-3 mapui:py-1.5 mapui:text-xs mapui:font-medium mapui:text-white mapui:shadow-sm hover:mapui:from-indigo-700 hover:mapui:to-violet-700 disabled:mapui:cursor-not-allowed disabled:mapui:from-slate-400 disabled:mapui:to-slate-400 disabled:mapui:opacity-60"
-              >
-                Save Layer
-              </button>
-            </div>
+          <div className="mapui:mt-3 mapui:flex mapui:justify-end mapui:gap-2 mapui:border-t mapui:border-indigo-100 mapui:pt-3">
+            <button
+              type="button"
+              onClick={() => setAddingNew(false)}
+              className="mapui:cursor-pointer mapui:rounded-md mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-3 mapui:py-1.5 mapui:text-xs mapui:text-slate-700 hover:mapui:bg-slate-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveNew}
+              disabled={!newLayer.id || !newLayer.sourceId || !newLayer.collection}
+              className="mapui:cursor-pointer mapui:rounded-md mapui:bg-indigo-600 mapui:px-3 mapui:py-1.5 mapui:text-xs mapui:font-medium mapui:text-white hover:mapui:bg-indigo-700 disabled:mapui:cursor-not-allowed disabled:mapui:bg-slate-400 disabled:mapui:opacity-60"
+            >
+              Save Layer
+            </button>
           </div>
         </div>
       )}
