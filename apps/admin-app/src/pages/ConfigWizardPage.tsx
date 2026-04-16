@@ -1,7 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  SourceList,
   LayerList,
   ImageryList,
   CollectionBrowser,
@@ -393,6 +392,54 @@ export function ConfigWizardPage() {
   const savedBasemapSources = savedSources.filter(s => s.source_type === 'basemap');
   const imageryOgcSources = sources.filter(s => s.type === 'imagery' && detectTileSourceType(s.url) === 'ogc-api');
 
+  // All feature sources available for the layer dropdown: config-embedded + saved catalog (deduped)
+  const allFeatureSourcesForDropdown = useMemo<OgcApiSource[]>(() => {
+    const catalogSources: OgcApiSource[] = savedFeatureSources.map(saved => ({
+      id: saved.source_id,
+      url: saved.url,
+      label: saved.label ?? undefined,
+      tileMatrixSetId: saved.tile_matrix_set_id,
+      type: 'features' as const,
+      auth: saved.auth ?? undefined,
+    }));
+    const existingIds = new Set(sources.map(s => s.id));
+    return [
+      ...sources.filter(s => (s.type ?? 'features') === 'features'),
+      ...catalogSources.filter(cs => !existingIds.has(cs.id)),
+    ];
+  }, [sources, savedFeatureSources]);
+
+  // Wrapper around setLayers that keeps sources[] in sync:
+  // auto-adds newly referenced sources from the catalog,
+  // auto-removes feature sources no longer referenced by any layer.
+  const handleLayersChange = useCallback((nextLayers: LayerConfig[]) => {
+    setLayers(nextLayers);
+    setSources(prev => {
+      const referencedIds = new Set(nextLayers.map(l => l.sourceId).filter(Boolean));
+      // Remove orphaned feature sources
+      const pruned = prev.filter(s => (s.type ?? 'features') !== 'features' || referencedIds.has(s.id));
+      // Add newly needed sources from catalog
+      const currentIds = new Set(pruned.map(s => s.id));
+      const toAdd: OgcApiSource[] = [];
+      for (const sid of referencedIds) {
+        if (!currentIds.has(sid)) {
+          const saved = savedFeatureSources.find(s => s.source_id === sid);
+          if (saved) {
+            toAdd.push({
+              id: saved.source_id,
+              url: saved.url,
+              label: saved.label ?? undefined,
+              tileMatrixSetId: saved.tile_matrix_set_id,
+              type: 'features' as const,
+              auth: saved.auth ?? undefined,
+            });
+          }
+        }
+      }
+      return toAdd.length > 0 ? [...pruned, ...toAdd] : pruned;
+    });
+  }, [savedFeatureSources]);
+
   const isBasemapSelected = (saved: SavedSourceSummary) =>
     basemaps.some(b => b.url === saved.url);
 
@@ -625,61 +672,11 @@ export function ConfigWizardPage() {
           <div className="mapui:space-y-6">
             <h2 className="mapui:text-lg mapui:font-semibold mapui:text-slate-800">Layers</h2>
 
-            {/* Saved feature sources picker */}
-            {savedFeatureSources.length > 0 && (
-              <div>
-                <h3 className="mapui:text-sm mapui:font-semibold mapui:text-slate-700 mapui:mb-3">Feature Sources</h3>
-                <div className="mapui:flex mapui:flex-wrap mapui:gap-2">
-                  {savedFeatureSources.map(saved => {
-                    const alreadyAdded = sources.some(s => s.id === saved.source_id);
-                    return (
-                      <button
-                        key={saved.id}
-                        type="button"
-                        onClick={() => {
-                          if (alreadyAdded) {
-                            setSources(prev => prev.filter(s => s.id !== saved.source_id));
-                            setLayers(prev => prev.filter(l => l.sourceId !== saved.source_id));
-                          } else {
-                            setSources(prev => [...prev, {
-                              id: saved.source_id,
-                              url: saved.url,
-                              label: saved.label ?? undefined,
-                              tileMatrixSetId: saved.tile_matrix_set_id,
-                              type: 'features' as const,
-                              auth: saved.auth ?? undefined,
-                            }]);
-                          }
-                        }}
-                        className={`mapui:inline-flex mapui:items-center mapui:gap-1.5 mapui:rounded-full mapui:border mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:transition-colors mapui:cursor-pointer ${
-                          alreadyAdded
-                            ? 'mapui:border-blue-500 mapui:bg-blue-50 mapui:text-blue-700 mapui:hover:border-blue-300 mapui:hover:bg-blue-100'
-                            : 'mapui:border-slate-300 mapui:bg-white mapui:text-slate-600 mapui:hover:border-blue-400 mapui:hover:bg-blue-50'
-                        }`}
-                      >
-                        {alreadyAdded && (
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        )}
-                        {saved.label ?? saved.source_id}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Custom source editor */}
-            <CollapsibleSection title="Add or Edit Feature Layer Sources" defaultOpen={false}>
-              <SourceList sources={sources} onChange={setSources} sourceType="features" />
-            </CollapsibleSection>
-
             {/* Layer list — add layers one at a time, configure style + legend */}
             <LayerList
               layers={layers}
-              onChange={setLayers}
-              availableSources={sources}
+              onChange={handleLayersChange}
+              availableSources={allFeatureSourcesForDropdown}
               availableIcons={availableIcons}
               sections={['style', 'legend']}
             />
@@ -699,8 +696,8 @@ export function ConfigWizardPage() {
             ) : (
               <LayerList
                 layers={layers}
-                onChange={setLayers}
-                availableSources={sources}
+                onChange={handleLayersChange}
+                availableSources={allFeatureSourcesForDropdown}
                 sections={['search', 'propertyDisplay', 'cql2Filter']}
                 showBasicFields={false}
                 readOnly
