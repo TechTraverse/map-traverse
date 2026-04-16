@@ -410,33 +410,31 @@ export function ConfigWizardPage() {
   }, [sources, savedFeatureSources]);
 
   // Wrapper around setLayers that keeps sources[] in sync:
-  // auto-adds newly referenced sources from the catalog,
-  // auto-removes feature sources no longer referenced by any layer.
+  // auto-adds newly referenced feature sources from the catalog.
+  // Does NOT auto-prune — pruning caused sources already embedded in the config
+  // (and not present in the /api/sources catalog) to be silently dropped when a
+  // layer's sourceId was edited, breaking MapConfig validation (sources: min(1)).
   const handleLayersChange = useCallback((nextLayers: LayerConfig[]) => {
     setLayers(nextLayers);
     setSources(prev => {
       const referencedIds = new Set(nextLayers.map(l => l.sourceId).filter(Boolean));
-      // Remove orphaned feature sources
-      const pruned = prev.filter(s => (s.type ?? 'features') !== 'features' || referencedIds.has(s.id));
-      // Add newly needed sources from catalog
-      const currentIds = new Set(pruned.map(s => s.id));
+      const currentIds = new Set(prev.map(s => s.id));
       const toAdd: OgcApiSource[] = [];
       for (const sid of referencedIds) {
-        if (!currentIds.has(sid)) {
-          const saved = savedFeatureSources.find(s => s.source_id === sid);
-          if (saved) {
-            toAdd.push({
-              id: saved.source_id,
-              url: saved.url,
-              label: saved.label ?? undefined,
-              tileMatrixSetId: saved.tile_matrix_set_id,
-              type: 'features' as const,
-              auth: saved.auth ?? undefined,
-            });
-          }
+        if (currentIds.has(sid)) continue;
+        const saved = savedFeatureSources.find(s => s.source_id === sid);
+        if (saved) {
+          toAdd.push({
+            id: saved.source_id,
+            url: saved.url,
+            label: saved.label ?? undefined,
+            tileMatrixSetId: saved.tile_matrix_set_id,
+            type: 'features' as const,
+            auth: saved.auth ?? undefined,
+          });
         }
       }
-      return toAdd.length > 0 ? [...pruned, ...toAdd] : pruned;
+      return toAdd.length > 0 ? [...prev, ...toAdd] : prev;
     });
   }, [savedFeatureSources]);
 
