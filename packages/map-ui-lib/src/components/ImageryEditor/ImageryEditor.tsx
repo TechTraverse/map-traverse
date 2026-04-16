@@ -3,6 +3,7 @@ import type { ImageryLayerConfig, OgcApiSource, SourceAuth } from '../../types';
 import { useOgcCollections } from '../../hooks/useOgcCollections';
 import { fetchGenericTileJson, tileSizeFromTileJson, detectTileSourceType } from '../../utils/ogcApi';
 import { FormField } from '../admin/FormField';
+import { slugify } from '../../utils/slugify';
 
 export interface ImageryEditorProps {
   value: ImageryLayerConfig;
@@ -16,10 +17,6 @@ export interface ImageryEditorProps {
 
 const inputClass =
   'mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
-
-export function slugify(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-}
 
 export function ImageryEditor({
   value,
