@@ -990,6 +990,18 @@ export function ConfigWizardPage() {
               )}
             </div>
             <ConfigPreview config={assembledConfig} />
+            {!name && (
+              <div className="mapui:rounded mapui:bg-amber-50 mapui:border mapui:border-amber-200 mapui:p-4 mapui:text-sm mapui:text-amber-800 mapui:flex mapui:items-center mapui:justify-between mapui:gap-3">
+                <span>Enter a name in the <strong>Metadata</strong> step to save this map.</span>
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep('metadata')}
+                  className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-amber-300 mapui:bg-white mapui:px-3 mapui:py-1 mapui:text-xs mapui:text-amber-800 hover:mapui:bg-amber-100"
+                >
+                  Go to Metadata
+                </button>
+              </div>
+            )}
             <CollapsibleSection title="Edit JSON" badge="advanced">
               <p className="mapui:text-xs mapui:text-slate-500 mapui:mb-3">
                 Edit the raw config JSON, or paste a full MapConfig document to replace the current state.
@@ -1060,19 +1072,24 @@ export function ConfigWizardPage() {
               Next
             </button>
           )}
-          {isConfigValid && (
-            <button
-              onClick={handleSave}
-              disabled={saving || justSaved}
-              className={`mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:disabled:cursor-not-allowed ${
-                justSaved
-                  ? 'mapui:bg-slate-400 mapui:text-white'
-                  : 'mapui:bg-green-600 mapui:text-white mapui:hover:bg-green-700 mapui:disabled:opacity-50'
-              }`}
-            >
-              {saving ? 'Saving...' : justSaved ? 'Saved' : 'Save'}
-            </button>
-          )}
+          <button
+            onClick={handleSave}
+            disabled={saving || justSaved || !isConfigValid}
+            title={
+              !name
+                ? 'Enter a name in the Metadata step to save.'
+                : !isConfigValid
+                ? 'Config has validation errors — see the Review step.'
+                : undefined
+            }
+            className={`mapui:px-4 mapui:py-2 mapui:rounded mapui:text-sm mapui:disabled:cursor-not-allowed ${
+              justSaved
+                ? 'mapui:bg-slate-400 mapui:text-white'
+                : 'mapui:bg-green-600 mapui:text-white mapui:hover:bg-green-700 mapui:disabled:opacity-50'
+            }`}
+          >
+            {saving ? 'Saving...' : justSaved ? 'Saved' : 'Save'}
+          </button>
         </div>
       </div>
         </div>
