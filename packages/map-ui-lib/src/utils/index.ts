@@ -17,3 +17,4 @@ export * from './exportFormats';
 export * from './queryParameters';
 export * from './exportConverters';
 export * from './id';
+export * from './slugify';
