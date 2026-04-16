@@ -40,7 +40,7 @@ import { groupControlsByCorner, resolveControlCorner } from '@ogc-maps/storybook
 import { useMapStore, useActiveLayerIds } from '../stores/mapStore';
 import { useAutocompleteSuggestions } from '../hooks/useAutocompleteSuggestions';
 import { useLayerQueryables } from '../hooks/useLayerQueryables';
-import { LuDownload, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSatellite, LuSearch } from 'react-icons/lu';
+import { LuDownload, LuLayers3, LuList, LuMap, LuMousePointer2, LuRuler, LuSatellite, LuSearch } from 'react-icons/lu';
 
 const INFO_CORNER_CLASSES: Record<InfoPosition, string> = {
   'top-right': 'absolute top-4 right-4 pointer-events-auto',
@@ -54,13 +54,6 @@ const CORNER_CLASSES: Record<ControlCorner, string> = {
   'top-left': 'absolute top-4 left-4 flex flex-col gap-4 items-start',
   'bottom-right': 'absolute bottom-4 right-4 flex flex-col gap-4 items-end',
   'bottom-left': 'absolute bottom-4 left-4 flex flex-col gap-4 items-start',
-};
-
-const CORNER_POSITION_CLASSES: Record<ControlCorner, string> = {
-  'top-right': 'absolute top-4 right-4',
-  'top-left': 'absolute top-4 left-4',
-  'bottom-right': 'absolute bottom-4 right-4',
-  'bottom-left': 'absolute bottom-4 left-4',
 };
 
 interface MapOverlayProps {
@@ -490,6 +483,13 @@ export function MapOverlay({
 
         if (effectiveLayout === 'side-menu') {
           const items: SideMenuPanelItem[] = [];
+          if (legendInner) items.push({
+            key: 'legend',
+            label: 'Legend',
+            icon: iconFor('showLegend', LuList),
+            content: <div ref={legendContainerRef}>{legendInner}</div>,
+            defaultExpanded: true,
+          });
           if (searchInner) items.push({ key: 'search', label: 'Search', icon: iconFor('showSearchPanel', LuSearch), content: searchInner });
           if (layerInner) items.push({ key: 'layers', label: 'Layers', icon: iconFor('showLayerPanel', LuLayers3), content: layerInner });
           if (measureInner) items.push({ key: 'measure', label: 'Measure', icon: iconFor('showMeasureTool', LuRuler), content: measureInner });
@@ -510,11 +510,6 @@ export function MapOverlay({
                   <InfoControl onClick={() => setInfoModalOpen(true)} title={info.title} />
                 )}
               </div>
-              {legendInner && (
-                <div className={`${CORNER_POSITION_CLASSES[resolveControlCorner(uiConfig, 'showLegend')]} pointer-events-auto`} ref={legendContainerRef}>
-                  {legendInner}
-                </div>
-              )}
               <SideMenuPanel
                 controls={items}
                 isOpen={sideMenuOpen}

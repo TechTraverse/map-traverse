@@ -12,6 +12,8 @@ export interface SideMenuPanelItem {
   content?: React.ReactNode;
   /** When set, the row becomes a direct-action button (no accordion, no chevron). */
   onAction?: () => void;
+  /** When true, the section starts expanded on first render. Ignored for action items. */
+  defaultExpanded?: boolean;
 }
 
 export interface SideMenuPanelProps {
@@ -23,7 +25,7 @@ export interface SideMenuPanelProps {
   onClose: () => void;
   /** Title rendered at the top of the panel. Defaults to "Menu". */
   title?: string;
-  /** Key of the section to render expanded initially. Defaults to the first item. */
+  /** Key of the section to render expanded initially. Used only when no item declares `defaultExpanded`. Defaults to the first item. */
   defaultOpenKey?: string;
 }
 
@@ -44,6 +46,8 @@ export function SideMenuPanel({
   defaultOpenKey,
 }: SideMenuPanelProps) {
   const [openSections, setOpenSections] = useState<string[]>(() => {
+    const pinnedOpen = controls.filter((c) => c.defaultExpanded && !c.onAction).map((c) => c.key);
+    if (pinnedOpen.length > 0) return pinnedOpen;
     const initial = defaultOpenKey ?? controls[0]?.key;
     return initial ? [initial] : [];
   });

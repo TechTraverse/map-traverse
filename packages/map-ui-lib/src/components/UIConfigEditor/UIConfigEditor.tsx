@@ -287,6 +287,26 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
             if (!info) return null;
             const isInfoControl = key === 'showInfoControl';
             const checked = isInfoControl ? (infoEnabled ?? false) : !!(value[key as keyof UIConfig]);
+
+            if (key === 'showLegend' && value.controlLayout === 'side-menu') {
+              return (
+                <li
+                  key={key}
+                  className="mapui:flex mapui:items-center mapui:gap-2 mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:px-2 mapui:py-1.5"
+                >
+                  <div className="mapui:flex mapui:min-w-0 mapui:flex-1 mapui:flex-col mapui:gap-0.5">
+                    <span className="mapui:text-sm mapui:font-medium mapui:text-slate-800">{info.label}</span>
+                    <span className="mapui:text-xs mapui:text-slate-500">Pinned to top of side menu in this layout.</span>
+                  </div>
+                  <Toggle
+                    checked={checked}
+                    onChange={(v) => handleToggle(key as keyof UIConfig, v)}
+                    label={info.label}
+                  />
+                </li>
+              );
+            }
+
             const isDragged = draggedKey === key;
             const isDragOver = dragOverKey === key;
 
