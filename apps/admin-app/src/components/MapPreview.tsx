@@ -69,7 +69,7 @@ import type {
 import type { SearchFilterValue, SearchFilterValues, Cql2FilterConfig, InfoPosition } from '@ogc-maps/storybook-components/types';
 import { useMeasure, useSelection } from '@ogc-maps/storybook-components/hooks';
 
-import { LuDownload, LuLayers3, LuMap, LuMousePointer2, LuRuler, LuSatellite, LuSearch } from 'react-icons/lu';
+import { LuDownload, LuLayers3, LuList, LuMap, LuMousePointer2, LuRuler, LuSatellite, LuSearch } from 'react-icons/lu';
 import { resolveEffectiveLayout } from './mapPreviewLayout';
 import { useBoxDraw } from '../hooks/useBoxDraw';
 import { usePolygonDraw } from '../hooks/usePolygonDraw';
@@ -95,13 +95,6 @@ const CORNER_CLASSES: Record<ControlCorner, string> = {
   'top-left': 'mapui:absolute mapui:top-4 mapui:left-4 mapui:flex mapui:flex-col mapui:gap-4 mapui:items-start',
   'bottom-right': 'mapui:absolute mapui:bottom-4 mapui:right-4 mapui:flex mapui:flex-col mapui:gap-4 mapui:items-end',
   'bottom-left': 'mapui:absolute mapui:bottom-4 mapui:left-4 mapui:flex mapui:flex-col mapui:gap-4 mapui:items-start',
-};
-
-const CORNER_POSITION_CLASSES: Record<ControlCorner, string> = {
-  'top-right': 'mapui:absolute mapui:top-4 mapui:right-4',
-  'top-left': 'mapui:absolute mapui:top-4 mapui:left-4',
-  'bottom-right': 'mapui:absolute mapui:bottom-4 mapui:right-4',
-  'bottom-left': 'mapui:absolute mapui:bottom-4 mapui:left-4',
 };
 
 function PreviewVectorTileLayer({
@@ -1099,6 +1092,21 @@ export function MapPreview({
             const iconFor = (k: OrderableControlKey, fallback: typeof LuSearch) =>
               getControlIcon(uiConfig.controlIcons?.[k], fallback);
             const items: SideMenuPanelItem[] = [];
+            if (uiConfig.showLegend) {
+              items.push({
+                key: 'legend',
+                label: 'Legend',
+                icon: iconFor('showLegend', LuList),
+                content: (
+                  <Legend
+                    layers={layersWithDefaults}
+                    visibleLayerIds={visibleLayerIds}
+                    onOpacityChange={uiConfig.showLegendOpacity ? handleLayerOpacity : undefined}
+                  />
+                ),
+                defaultExpanded: true,
+              });
+            }
             if (uiConfig.showSearchPanel) {
               items.push({
                 key: 'search',
@@ -1252,15 +1260,6 @@ export function MapPreview({
                     <InfoControl onClick={() => setInfoModalOpen(true)} />
                   )}
                 </div>
-                {uiConfig.showLegend && (
-                  <div className={`${CORNER_POSITION_CLASSES[resolveControlCorner(uiConfig, 'showLegend')]} mapui:pointer-events-auto`}>
-                    <Legend
-                      layers={layersWithDefaults}
-                      visibleLayerIds={visibleLayerIds}
-                      onOpacityChange={uiConfig.showLegendOpacity ? handleLayerOpacity : undefined}
-                    />
-                  </div>
-                )}
                 <SideMenuPanel
                   controls={items}
                   isOpen={sideMenuOpen}

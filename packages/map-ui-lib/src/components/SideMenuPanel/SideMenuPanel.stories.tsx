@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
-import { LuLayers3, LuMap, LuRuler, LuSearch, LuMousePointer2 } from 'react-icons/lu';
+import { LuLayers3, LuList, LuMap, LuRuler, LuSearch, LuMousePointer2 } from 'react-icons/lu';
 import { SideMenuPanel, SideMenuToggle } from './SideMenuPanel';
 import type { SideMenuPanelItem } from './SideMenuPanel';
 
@@ -108,6 +108,31 @@ export const Empty: Story = {
   render: () => (
     <div className="mapui:relative mapui:h-[500px] mapui:w-full">
       <SideMenuPanel controls={[]} isOpen onClose={() => undefined} />
+    </div>
+  ),
+};
+
+export const WithDefaultExpanded: Story = {
+  render: () => (
+    <div className="mapui:relative mapui:h-[500px] mapui:w-full mapui:bg-gradient-to-br mapui:from-blue-100 mapui:to-green-100">
+      <SideMenuPanel
+        controls={[
+          {
+            key: 'legend',
+            label: 'Legend',
+            icon: LuList,
+            defaultExpanded: true,
+            content: (
+              <p className="mapui:m-0 mapui:text-sm mapui:text-slate-600">
+                Pinned legend content (starts expanded).
+              </p>
+            ),
+          },
+          ...SAMPLE_CONTROLS,
+        ]}
+        isOpen
+        onClose={() => undefined}
+      />
     </div>
   ),
 };
