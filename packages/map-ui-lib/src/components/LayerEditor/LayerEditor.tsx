@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { LayerConfig, OgcApiSource, AvailableProperty, StyleConfig, Cql2FilterConfig } from '../../types';
+import { slugify } from '../../utils/slugify';
 import { FormField } from '../admin/FormField';
 import { CollapsibleSection } from '../admin/CollapsibleSection';
 import { StyleEditor, defaultFill, defaultCircle } from '../StyleEditor/StyleEditor';
@@ -48,7 +49,23 @@ const inputClass =
 
 export function LayerEditor({ value, onChange, availableSources, availableIcons, sections, showBasicFields = true }: LayerEditorProps) {
   const showSection = (s: LayerEditorSection) => !sections || sections.includes(s);
-  const update = (patch: Partial<LayerConfig>) => onChange({ ...value, ...patch });
+
+  // Track whether the user has manually set the layer ID (disables auto-generation)
+  const idManuallySet = useRef(value.id.length > 0);
+  const [editingId, setEditingId] = useState(false);
+
+  const update = (patch: Partial<LayerConfig>) => {
+    const next = { ...value, ...patch };
+    // Auto-generate ID from label or collection unless user has manually set it
+    if (!idManuallySet.current) {
+      if (patch.label !== undefined && patch.label) {
+        next.id = slugify(patch.label);
+      } else if (patch.collection !== undefined && patch.collection && !next.label) {
+        next.id = slugify(patch.collection);
+      }
+    }
+    onChange(next);
+  };
 
   // Refs to always have latest value/onChange in async callbacks (avoid stale closures)
   const valueRef = useRef(value);
@@ -154,27 +171,6 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons,
     <div className="mapui:flex mapui:flex-col mapui:gap-3">
       {showBasicFields && (
         <>
-          <div className="mapui:grid mapui:grid-cols-2 mapui:gap-3">
-            <FormField label="Layer ID" required>
-              <input
-                type="text"
-                value={value.id}
-                onChange={(e) => update({ id: e.target.value })}
-                placeholder="my-layer"
-                className={inputClass}
-              />
-            </FormField>
-            <FormField label="Label">
-              <input
-                type="text"
-                value={value.label}
-                onChange={(e) => update({ label: e.target.value })}
-                placeholder="My Layer"
-                className={inputClass}
-              />
-            </FormField>
-          </div>
-
           <FormField label="Source" required>
             <select
               value={value.sourceId}
@@ -218,6 +214,16 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons,
                 Loading properties…
               </span>
             )}
+          </FormField>
+
+          <FormField label="Label">
+            <input
+              type="text"
+              value={value.label}
+              onChange={(e) => update({ label: e.target.value })}
+              placeholder="My Layer"
+              className={inputClass}
+            />
           </FormField>
 
           <FormField label="Data Mode">
@@ -302,6 +308,39 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons,
                 className={inputClass}
               />
             </FormField>
+          </div>
+
+          {/* Layer ID — auto-generated, collapsed by default */}
+          <div className="mapui:flex mapui:items-center mapui:gap-2">
+            {editingId ? (
+              <FormField label="Layer ID" required>
+                <input
+                  type="text"
+                  value={value.id}
+                  onChange={(e) => {
+                    idManuallySet.current = true;
+                    update({ id: e.target.value });
+                  }}
+                  placeholder="my-layer"
+                  className={inputClass}
+                  autoFocus
+                  onBlur={() => { if (value.id) setEditingId(false); }}
+                />
+              </FormField>
+            ) : (
+              <div className="mapui:flex mapui:items-center mapui:gap-2">
+                <span className="mapui:text-xs mapui:text-slate-400">
+                  ID: <span className="mapui:font-mono mapui:text-slate-600">{value.id || '—'}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setEditingId(true)}
+                  className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:px-1.5 mapui:py-0.5 mapui:text-[10px] mapui:text-slate-500 hover:mapui:bg-slate-50"
+                >
+                  Edit ID
+                </button>
+              </div>
+            )}
           </div>
         </>
       )}
