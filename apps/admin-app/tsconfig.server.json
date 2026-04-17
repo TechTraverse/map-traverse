@@ -6,6 +6,7 @@
     "noEmit": false,
     "allowImportingTsExtensions": false,
     "outDir": "./dist-server",
+    "rootDir": "./server",
     "declaration": false,
     "composite": false
   },
