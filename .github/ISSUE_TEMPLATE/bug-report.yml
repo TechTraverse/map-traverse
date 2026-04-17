@@ -32,6 +32,20 @@ body:
     validations:
       required: true
 
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: How will we know it's fixed?
+      description: |
+        In plain language, what should happen after the fix? Skip this if the
+        answer is just "the thing in 'What happened?' stops happening."
+      placeholder: |
+        Example: "When I toggle the satellite layer, the tiles load and
+        replace the default basemap. The toggle state persists when I
+        reload the page."
+    validations:
+      required: false
+
   - type: dropdown
     id: severity
     attributes:
