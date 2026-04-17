@@ -77,7 +77,16 @@ jobs:
               number: parseInt(process.env.PROJECT_NUMBER),
             });
 
-            const items = result.organization.projectV2.items.nodes;
+            const project = result?.organization?.projectV2;
+            if (!project) {
+              core.setFailed(
+                `projectV2(number: ${process.env.PROJECT_NUMBER}) returned null for org ${process.env.ORG}. ` +
+                `Check that PROJECT_TOKEN has 'read:project' scope and the project exists.`
+              );
+              return;
+            }
+
+            const items = project.items.nodes;
 
             for (const item of items) {
               const content = item.content;
