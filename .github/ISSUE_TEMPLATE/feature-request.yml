@@ -50,6 +50,22 @@ body:
       required: true
 
   - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: How will we know it's done?
+      description: |
+        In plain language, what does success look like? Describe the
+        behavior you expect to see — not how to build it. Our agent will
+        turn this into a technical checklist during triage.
+      placeholder: |
+        Example:
+        - I can see a searchable list of collections in the layer config panel.
+        - Typing filters the list as I type.
+        - Picking one fills in the collection ID automatically.
+    validations:
+      required: false
+
+  - type: textarea
     id: alternatives
     attributes:
       label: Alternatives or workarounds you've tried
@@ -57,20 +73,6 @@ body:
       placeholder: |
         Example: "Right now I open a separate browser tab and hit the
         /collections endpoint directly, then copy-paste the ID."
-    validations:
-      required: false
-
-  - type: textarea
-    id: technical-pointers
-    attributes:
-      label: Technical pointers (optional)
-      description: |
-        If you're a developer and have ideas about implementation — relevant
-        files, components, APIs, or patterns — share them here. Totally optional.
-      placeholder: |
-        - Related component: packages/map-ui-lib/src/components/LayerConfig
-        - API to use: /collections with ?f=json
-        - Similar pattern: the useOgcCollections hook
     validations:
       required: false
 
