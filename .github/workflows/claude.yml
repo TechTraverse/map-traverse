@@ -184,6 +184,14 @@ jobs:
                *When you're satisfied with the criteria, apply the `status:ready`
                label or comment `@claude plan` to proceed to planning.*
 
+            BUDGET: Read at most ~10 files total. After that, you
+              MUST post the
+              comment even if you still have questions (list them in
+              the Questions
+              section). Posting the comment is the ONLY success
+              criterion —
+              exploration that never posts is a failure.
+
             HARD CONSTRAINTS:
             - DO NOT modify any files.
             - DO NOT create branches, commits, or pull requests.
@@ -325,7 +333,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           claude_args: |
-            --max-turns 30
+            --max-turns 50
           prompt: |
             You are in REVIEW MODE. A pull request has been submitted and
             needs a thorough code review. You will review the code, run
