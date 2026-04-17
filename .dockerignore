@@ -1,0 +1,17 @@
+**/node_modules
+**/dist
+**/dist-server
+**/.turbo
+**/.vite
+**/storybook-static
+.git
+.github
+.claude
+.agent
+.env
+.env.*
+GISData
+terraform
+terraform-gcp
+ansible
+*.log
