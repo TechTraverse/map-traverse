@@ -3,6 +3,11 @@ import type { AvailableProperty, FetchDistinctValuesFn } from '../../types';
 import { ColorPicker } from '../admin/ColorPicker';
 import { getColorFromPalette } from '../../utils/colorPalettes';
 import { COLOR_THEMES, COLOR_THEME_IDS, type ColorThemeId } from '../../utils/colorThemes';
+import {
+  buildCategoricalCaseTest,
+  parseCategoricalCase,
+  type CategoricalMatchType,
+} from '../../utils/expressionColors';
 
 export interface DataDrivenColorEditorProps {
   value: unknown[];
@@ -17,7 +22,7 @@ export interface DataDrivenColorEditorProps {
 
 type ExprMode = 'match' | 'interpolate';
 
-type MatchType = 'equals' | 'contains';
+type MatchType = CategoricalMatchType;
 
 interface MatchPair {
   value: string;
@@ -39,49 +44,19 @@ function detectMode(expr: unknown[]): ExprMode {
   return expr[0] === 'interpolate' ? 'interpolate' : 'match';
 }
 
-/**
- * Parses the test side of a `case` branch produced by this editor into a
- * (property, value, matchType) triple, or returns null for unrecognized shapes.
- */
-function parseCaseTest(test: unknown): { property: string; value: string; matchType: MatchType } | null {
-  if (!Array.isArray(test)) return null;
-  // Equals: ['==', ['get', p], v]
-  if (test[0] === '==' && Array.isArray(test[1]) && test[1][0] === 'get' && typeof test[1][1] === 'string') {
-    return { property: test[1][1], value: String(test[2] ?? ''), matchType: 'equals' };
-  }
-  // Contains: ['in', ['downcase', v], ['downcase', ['to-string', ['get', p]]]]
-  if (
-    test[0] === 'in' &&
-    Array.isArray(test[1]) && test[1][0] === 'downcase' && typeof test[1][1] === 'string' &&
-    Array.isArray(test[2]) && test[2][0] === 'downcase' &&
-    Array.isArray(test[2][1]) && test[2][1][0] === 'to-string' &&
-    Array.isArray(test[2][1][1]) && test[2][1][1][0] === 'get' && typeof test[2][1][1][1] === 'string'
-  ) {
-    return { property: test[2][1][1][1], value: test[1][1], matchType: 'contains' };
-  }
-  return null;
-}
-
 function parseMatchExpr(expr: unknown[]): { property: string; pairs: MatchPair[]; fallback: string } {
   if (expr[0] === 'case') {
-    // ["case", test1, color1, test2, color2, ..., fallback]
-    const pairs: MatchPair[] = [];
-    let property = '';
-    for (let i = 1; i < expr.length - 1; i += 2) {
-      const parsed = parseCaseTest(expr[i]);
-      if (!parsed) {
-        // Unrecognized case shape — bail out with graceful defaults.
-        return { property: '', pairs: [], fallback: '#000000' };
-      }
-      if (!property) property = parsed.property;
-      pairs.push({
-        value: parsed.value,
-        color: (expr[i + 1] as string) ?? '#000000',
-        matchType: parsed.matchType,
-      });
-    }
-    const fallback = (expr[expr.length - 1] as string) ?? '#000000';
-    return { property, pairs, fallback };
+    const categorical = parseCategoricalCase(expr);
+    if (!categorical) return { property: '', pairs: [], fallback: '#000000' };
+    return {
+      property: categorical.property,
+      pairs: categorical.entries.map((e) => ({
+        value: e.value,
+        color: e.color || '#000000',
+        matchType: e.matchType,
+      })),
+      fallback: categorical.fallback ?? '#000000',
+    };
   }
   // ["match", ["get", prop], val1, color1, ..., fallback]
   const property = Array.isArray(expr[1]) ? (expr[1][1] as string) ?? '' : '';
@@ -97,17 +72,6 @@ function parseMatchExpr(expr: unknown[]): { property: string; pairs: MatchPair[]
   return { property, pairs, fallback };
 }
 
-function testForPair(property: string, pair: MatchPair): unknown[] {
-  if (pair.matchType === 'contains') {
-    return [
-      'in',
-      ['downcase', pair.value],
-      ['downcase', ['to-string', ['get', property]]],
-    ];
-  }
-  return ['==', ['get', property], pair.value];
-}
-
 function buildMatchExpr(property: string, pairs: MatchPair[], fallback: string): unknown[] {
   const hasContains = pairs.some((p) => p.matchType === 'contains');
   if (!hasContains) {
@@ -120,7 +84,7 @@ function buildMatchExpr(property: string, pairs: MatchPair[], fallback: string):
   }
   const flat: unknown[] = ['case'];
   for (const p of pairs) {
-    flat.push(testForPair(property, p), p.color);
+    flat.push(buildCategoricalCaseTest(property, p.value, p.matchType), p.color);
   }
   flat.push(fallback);
   return flat;

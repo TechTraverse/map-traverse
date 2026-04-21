@@ -5,18 +5,29 @@ export function isExpression(value: unknown): value is unknown[] {
   return Array.isArray(value);
 }
 
-/**
- * Parses a single `case` branch test produced by the categorical editor.
- * Returns null for anything the editor didn't emit (so arbitrary `case`
- * expressions aren't mistaken for categorical styles).
- */
-function parseCategoricalCaseTest(
+export type CategoricalMatchType = 'equals' | 'contains';
+
+export interface CategoricalCaseEntry {
+  value: string;
+  color: string;
+  matchType: CategoricalMatchType;
+}
+
+export interface ParsedCategoricalCase {
+  property: string;
+  entries: CategoricalCaseEntry[];
+  fallback: string | null;
+}
+
+export function parseCategoricalCaseTest(
   test: unknown,
-): { property: string; value: string; matchType: 'equals' | 'contains' } | null {
+): { property: string; value: string; matchType: CategoricalMatchType } | null {
   if (!Array.isArray(test)) return null;
+  // Equals: ['==', ['get', p], v]
   if (test[0] === '==' && Array.isArray(test[1]) && test[1][0] === 'get' && typeof test[1][1] === 'string') {
     return { property: test[1][1], value: String(test[2] ?? ''), matchType: 'equals' };
   }
+  // Contains: ['in', ['downcase', v], ['downcase', ['to-string', ['get', p]]]]
   if (
     test[0] === 'in' &&
     Array.isArray(test[1]) && test[1][0] === 'downcase' && typeof test[1][1] === 'string' &&
@@ -29,22 +40,47 @@ function parseCategoricalCaseTest(
   return null;
 }
 
-/** True when a `case` expression has the shape our categorical editor produces. */
-function isCategoricalCaseExpr(expr: unknown[]): boolean {
-  if (expr[0] !== 'case') return false;
-  // Shape: ['case', test1, color1, ..., fallback] → odd total length, at least one pair.
-  if (expr.length < 4 || expr.length % 2 !== 0) return false;
-  for (let i = 1; i < expr.length - 1; i += 2) {
-    if (!parseCategoricalCaseTest(expr[i])) return false;
+export function buildCategoricalCaseTest(
+  property: string,
+  value: string,
+  matchType: CategoricalMatchType,
+): unknown[] {
+  if (matchType === 'contains') {
+    return ['in', ['downcase', value], ['downcase', ['to-string', ['get', property]]]];
   }
-  return true;
+  return ['==', ['get', property], value];
+}
+
+/**
+ * Parses a `case` expression in the shape the categorical editor emits. Returns
+ * null for anything else, so arbitrary `case` expressions aren't mistaken for
+ * categorical styles. One pass through `expr`; reuse the result instead of
+ * re-walking.
+ */
+export function parseCategoricalCase(expr: unknown[]): ParsedCategoricalCase | null {
+  if (expr[0] !== 'case' || expr.length < 4 || expr.length % 2 !== 0) return null;
+  const entries: CategoricalCaseEntry[] = [];
+  let property = '';
+  for (let i = 1; i < expr.length - 1; i += 2) {
+    const parsed = parseCategoricalCaseTest(expr[i]);
+    if (!parsed) return null;
+    if (!property) property = parsed.property;
+    const color = expr[i + 1];
+    entries.push({
+      value: parsed.value,
+      color: typeof color === 'string' ? color : '',
+      matchType: parsed.matchType,
+    });
+  }
+  const fallback = expr[expr.length - 1];
+  return { property, entries, fallback: typeof fallback === 'string' ? fallback : null };
 }
 
 /** Returns the expression type ('match' or 'interpolate'), or null for unsupported expressions. */
 export function expressionType(expr: unknown[]): 'match' | 'interpolate' | null {
   if (expr[0] === 'match') return 'match';
   if (expr[0] === 'interpolate') return 'interpolate';
-  if (isCategoricalCaseExpr(expr)) return 'match';
+  if (parseCategoricalCase(expr)) return 'match';
   return null;
 }
 
@@ -60,14 +96,10 @@ export function expressionColors(expr: unknown[]): string[] {
     if (typeof fallback === 'string') colors.push(fallback);
     return colors;
   }
-  if (isCategoricalCaseExpr(expr)) {
-    // ["case", test1, color1, test2, color2, ..., fallback]
-    const colors: string[] = [];
-    for (let i = 2; i < expr.length - 1; i += 2) {
-      if (typeof expr[i] === 'string') colors.push(expr[i] as string);
-    }
-    const fallback = expr[expr.length - 1];
-    if (typeof fallback === 'string') colors.push(fallback);
+  const categorical = parseCategoricalCase(expr);
+  if (categorical) {
+    const colors = categorical.entries.filter((e) => e.color).map((e) => e.color);
+    if (categorical.fallback) colors.push(categorical.fallback);
     return colors;
   }
   if (expr[0] === 'interpolate') {
@@ -104,18 +136,16 @@ export function expressionEntries(expr: unknown[]): ExpressionColorEntry[] {
     }
     return entries;
   }
-  if (isCategoricalCaseExpr(expr)) {
+  const categorical = parseCategoricalCase(expr);
+  if (categorical) {
     const entries: ExpressionColorEntry[] = [];
-    for (let i = 1; i < expr.length - 1; i += 2) {
-      const parsed = parseCategoricalCaseTest(expr[i]);
-      const color = expr[i + 1];
-      if (!parsed || typeof color !== 'string') continue;
-      const label = parsed.matchType === 'contains' ? `contains "${parsed.value}"` : parsed.value;
-      entries.push({ label, color });
+    for (const e of categorical.entries) {
+      if (!e.color) continue;
+      const label = e.matchType === 'contains' ? `contains "${e.value}"` : e.value;
+      entries.push({ label, color: e.color });
     }
-    const fallback = expr[expr.length - 1];
-    if (typeof fallback === 'string') {
-      entries.push({ label: 'Other', color: fallback });
+    if (categorical.fallback) {
+      entries.push({ label: 'Other', color: categorical.fallback });
     }
     return entries;
   }
@@ -136,9 +166,8 @@ export function expressionEntries(expr: unknown[]): ExpressionColorEntry[] {
 
 /** Extracts the property name from a match, categorical case, or interpolate expression. */
 export function expressionPropertyName(expr: unknown[]): string | null {
-  if (isCategoricalCaseExpr(expr)) {
-    const firstTest = parseCategoricalCaseTest(expr[1]);
-    return firstTest?.property ?? null;
+  if (expr[0] === 'case') {
+    return parseCategoricalCase(expr)?.property ?? null;
   }
   // match: ["match", ["get", prop], ...]
   // interpolate: ["interpolate", [...], ["get", prop] | ["to-number", ["get", prop]], ...]
