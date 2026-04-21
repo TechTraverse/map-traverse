@@ -21,7 +21,7 @@ const fillProperties: PropertyDefinition[] = [
 const lineProperties: PropertyDefinition[] = [
   // Appearance (paint)
   { key: 'line-color', label: 'Line Color', widget: 'color', group: 'Appearance', category: 'paint' },
-  { key: 'line-width', label: 'Line Width', widget: 'number', group: 'Appearance', category: 'paint', min: 0, step: 0.5 },
+  { key: 'line-width', label: 'Line Width', widget: 'number', group: 'Appearance', category: 'paint', min: 0, step: 0.5, dataDriven: true },
   { key: 'line-opacity', label: 'Line Opacity', widget: 'opacity', group: 'Appearance', category: 'paint' },
   { key: 'line-blur', label: 'Blur', widget: 'number', group: 'Appearance', category: 'paint', min: 0, step: 0.5, enableDefault: 0 },
   { key: 'line-dasharray', label: 'Dash Array', widget: 'dasharray', group: 'Appearance', category: 'paint', enableDefault: [2, 4], description: 'Lengths of alternating dashes and gaps in pixels (e.g. "2, 4" gives 2px dash, 4px gap).' },
@@ -46,7 +46,7 @@ const lineProperties: PropertyDefinition[] = [
 const circleProperties: PropertyDefinition[] = [
   // Appearance (paint)
   { key: 'circle-color', label: 'Circle Color', widget: 'color', group: 'Appearance', category: 'paint' },
-  { key: 'circle-radius', label: 'Radius', widget: 'number', group: 'Appearance', category: 'paint', min: 0, step: 1 },
+  { key: 'circle-radius', label: 'Radius', widget: 'number', group: 'Appearance', category: 'paint', min: 0, step: 1, dataDriven: true },
   { key: 'circle-opacity', label: 'Circle Opacity', widget: 'opacity', group: 'Appearance', category: 'paint' },
   { key: 'circle-blur', label: 'Blur', widget: 'number', group: 'Appearance', category: 'paint', min: 0, step: 0.1, enableDefault: 0 },
   // Stroke (paint)
@@ -85,7 +85,7 @@ const symbolProperties: PropertyDefinition[] = [
   { key: 'text-translate', label: 'Text Translate (X, Y)', widget: 'translate', group: 'Text Transform', category: 'paint', enableDefault: [0, 0] },
   { key: 'text-translate-anchor', label: 'Text Translate Anchor', widget: 'enum', group: 'Text Transform', category: 'paint', options: ['map', 'viewport'], enableDefault: 'map' },
   // Icon Layout (layout)
-  { key: 'icon-image', label: 'Icon Image', widget: 'icon-image', group: 'Icon Layout', category: 'layout', enableDefault: '', description: 'Name of an image in the style sprite to use as an icon. Use {property} tokens to reference feature data (e.g. "{icon}").' },
+  { key: 'icon-image', label: 'Icon Image', widget: 'icon-image', group: 'Icon Layout', category: 'layout', enableDefault: '', dataDriven: true, description: 'Name of an image in the style sprite to use as an icon. Use {property} tokens to reference feature data (e.g. "{icon}").' },
   { key: 'icon-size', label: 'Icon Size', widget: 'number', group: 'Icon Layout', category: 'layout', min: 0, step: 0.1, enableDefault: 1 },
   { key: 'icon-rotate', label: 'Icon Rotate', widget: 'number', group: 'Icon Layout', category: 'layout', step: 1, enableDefault: 0 },
   { key: 'icon-padding', label: 'Icon Padding', widget: 'number', group: 'Icon Layout', category: 'layout', min: 0, step: 1, enableDefault: 2 },

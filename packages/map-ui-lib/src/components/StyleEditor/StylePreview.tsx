@@ -40,6 +40,12 @@ function resolveColor(value: unknown, fallback: string): string {
   return fallback;
 }
 
+/** Resolves a numeric paint value (plain number or expression) to a number for preview. */
+function resolveNumber(value: unknown, fallback: number): number {
+  if (typeof value === 'number') return value;
+  return fallback;
+}
+
 export function StylePreview({ style }: { style: StyleConfig }) {
   if (style.type === 'fill') {
     const fillColor = style.paint['fill-color'];
@@ -68,18 +74,19 @@ export function StylePreview({ style }: { style: StyleConfig }) {
   }
   if (style.type === 'line') {
     const lineColor = style.paint['line-color'];
+    const lineWidth = resolveNumber(style.paint['line-width'], 2);
     return (
       <div
         className="mapui:flex mapui:h-8 mapui:w-full mapui:items-center mapui:rounded mapui:border mapui:border-slate-200 mapui:px-2"
         aria-label="Style preview"
       >
         {isExpression(lineColor) ? (
-          <ExpressionSwatch expr={lineColor} height={style.paint['line-width']} />
+          <ExpressionSwatch expr={lineColor} height={lineWidth} />
         ) : (
           <div
             style={{
               width: '100%',
-              height: style.paint['line-width'],
+              height: lineWidth,
               backgroundColor: lineColor,
               opacity: style.paint['line-opacity'],
             }}
@@ -90,7 +97,7 @@ export function StylePreview({ style }: { style: StyleConfig }) {
   }
   if (style.type === 'circle') {
     const circleColor = style.paint['circle-color'];
-    const diameter = style.paint['circle-radius'] * 2;
+    const diameter = resolveNumber(style.paint['circle-radius'], 5) * 2;
     return (
       <div
         className="mapui:flex mapui:h-8 mapui:w-full mapui:items-center mapui:justify-center mapui:rounded mapui:border mapui:border-slate-200"

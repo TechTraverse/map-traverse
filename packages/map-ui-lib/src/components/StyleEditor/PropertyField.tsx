@@ -4,7 +4,45 @@ import { ColorPicker } from '../admin/ColorPicker';
 import { FormField } from '../admin/FormField';
 import { IconImagePicker } from './IconImagePicker';
 import { DataDrivenColorEditor } from './DataDrivenColorEditor';
+import { DataDrivenNumberEditor } from './DataDrivenNumberEditor';
+import { DataDrivenIconEditor } from './DataDrivenIconEditor';
 import type { ColorThemeId } from '../../utils/colorThemes';
+
+function FxToggle({
+  isExpression,
+  onToggle,
+  staticTitle = 'Switch to static value',
+  expressionTitle = 'Switch to data-driven value',
+}: {
+  isExpression: boolean;
+  onToggle: () => void;
+  staticTitle?: string;
+  expressionTitle?: string;
+}) {
+  return (
+    <button
+      type="button"
+      title={isExpression ? staticTitle : expressionTitle}
+      onClick={onToggle}
+      className={[
+        'mapui:cursor-pointer mapui:rounded mapui:border mapui:px-1.5 mapui:py-0.5 mapui:font-mono mapui:text-xs mapui:outline-none',
+        'focus:mapui:ring-1 focus:mapui:ring-blue-400',
+        isExpression
+          ? 'mapui:border-blue-400 mapui:bg-blue-50 mapui:text-blue-700'
+          : 'mapui:border-slate-300 mapui:bg-white mapui:text-slate-500 hover:mapui:border-blue-400 hover:mapui:text-blue-600',
+      ].join(' ')}
+    >
+      fx
+    </button>
+  );
+}
+
+function extractExpressionFallback(expr: unknown[]): unknown {
+  // ['match', ['get', p], v1, o1, ..., fallback]
+  // ['case', test1, o1, ..., fallback]
+  // ['interpolate', ['linear'], getter, stop1, o1, ...] → no explicit fallback; use last output
+  return expr[expr.length - 1];
+}
 
 const inputClass =
   'mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
@@ -107,26 +145,15 @@ function WidgetContent({
       return (
         <div className="mapui:flex mapui:flex-col mapui:gap-1 mapui:w-full">
           <div className="mapui:flex mapui:items-center mapui:justify-end">
-            <button
-              type="button"
-              title={isExpression ? 'Switch to static color' : 'Switch to data-driven color'}
-              onClick={() => {
-                if (isExpression) {
-                  onChange(fallbackColor);
-                } else {
-                  onChange(['match', ['get', ''], fallbackColor]);
-                }
+            <FxToggle
+              isExpression={isExpression}
+              onToggle={() => {
+                if (isExpression) onChange(fallbackColor);
+                else onChange(['match', ['get', ''], fallbackColor]);
               }}
-              className={[
-                'mapui:cursor-pointer mapui:rounded mapui:border mapui:px-1.5 mapui:py-0.5 mapui:font-mono mapui:text-xs mapui:outline-none',
-                'focus:mapui:ring-1 focus:mapui:ring-blue-400',
-                isExpression
-                  ? 'mapui:border-blue-400 mapui:bg-blue-50 mapui:text-blue-700'
-                  : 'mapui:border-slate-300 mapui:bg-white mapui:text-slate-500 hover:mapui:border-blue-400 hover:mapui:text-blue-600',
-              ].join(' ')}
-            >
-              fx
-            </button>
+              staticTitle="Switch to static color"
+              expressionTitle="Switch to data-driven color"
+            />
           </div>
           {isExpression ? (
             <DataDrivenColorEditor
@@ -156,18 +183,56 @@ function WidgetContent({
         />
       );
 
-    case 'number':
-      return (
+    case 'number': {
+      const isExpression = Array.isArray(value);
+      const staticInput = (
         <input
           type="number"
           min={def.min}
           max={def.max}
           step={def.step ?? 1}
-          value={(value as number | undefined) ?? def.min ?? 0}
+          value={isExpression ? (def.min ?? 0) : ((value as number | undefined) ?? def.min ?? 0)}
           onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
           className={inputClass}
         />
       );
+      if (!def.dataDriven) return staticInput;
+      const fallbackNumber: number = isExpression
+        ? (() => {
+            const raw = extractExpressionFallback(value as unknown[]);
+            const n = typeof raw === 'number' ? raw : parseFloat(String(raw ?? ''));
+            return isNaN(n) ? (def.min ?? 1) : n;
+          })()
+        : ((value as number | undefined) ?? def.min ?? 1);
+      return (
+        <div className="mapui:flex mapui:flex-col mapui:gap-1 mapui:w-full">
+          <div className="mapui:flex mapui:items-center mapui:justify-end">
+            <FxToggle
+              isExpression={isExpression}
+              onToggle={() => {
+                if (isExpression) onChange(fallbackNumber);
+                else onChange(['match', ['get', ''], fallbackNumber]);
+              }}
+              staticTitle="Switch to static value"
+              expressionTitle="Switch to data-driven value"
+            />
+          </div>
+          {isExpression ? (
+            <DataDrivenNumberEditor
+              value={value as unknown[]}
+              onChange={(expr) => onChange(expr)}
+              availableProperties={availableProperties}
+              onFetchDistinctValues={onFetchDistinctValues}
+              min={def.min}
+              max={def.max}
+              step={def.step}
+            />
+          ) : (
+            staticInput
+          )}
+        </div>
+      );
+    }
 
     case 'boolean':
       return (
@@ -240,14 +305,49 @@ function WidgetContent({
         />
       );
 
-    case 'icon-image':
-      return (
+    case 'icon-image': {
+      const isExpression = Array.isArray(value);
+      const staticPicker = (
         <IconImagePicker
-          value={(value as string | undefined) ?? ''}
+          value={isExpression ? '' : ((value as string | undefined) ?? '')}
           onChange={(v) => onChange(v ?? undefined)}
           availableIcons={availableIcons}
         />
       );
+      if (!def.dataDriven) return staticPicker;
+      const fallbackIcon: string = isExpression
+        ? (() => {
+            const raw = extractExpressionFallback(value as unknown[]);
+            return typeof raw === 'string' ? raw : '';
+          })()
+        : ((value as string | undefined) ?? '');
+      return (
+        <div className="mapui:flex mapui:flex-col mapui:gap-1 mapui:w-full">
+          <div className="mapui:flex mapui:items-center mapui:justify-end">
+            <FxToggle
+              isExpression={isExpression}
+              onToggle={() => {
+                if (isExpression) onChange(fallbackIcon || undefined);
+                else onChange(['match', ['get', ''], fallbackIcon]);
+              }}
+              staticTitle="Switch to static icon"
+              expressionTitle="Switch to data-driven icon"
+            />
+          </div>
+          {isExpression ? (
+            <DataDrivenIconEditor
+              value={value as unknown[]}
+              onChange={(expr) => onChange(expr)}
+              availableProperties={availableProperties}
+              onFetchDistinctValues={onFetchDistinctValues}
+              availableIcons={availableIcons}
+            />
+          ) : (
+            staticPicker
+          )}
+        </div>
+      );
+    }
 
     default:
       return null;
