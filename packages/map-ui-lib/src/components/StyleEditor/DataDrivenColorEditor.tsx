@@ -3,6 +3,11 @@ import type { AvailableProperty, FetchDistinctValuesFn } from '../../types';
 import { ColorPicker } from '../admin/ColorPicker';
 import { getColorFromPalette } from '../../utils/colorPalettes';
 import { COLOR_THEMES, COLOR_THEME_IDS, type ColorThemeId } from '../../utils/colorThemes';
+import {
+  buildCategoricalCaseTest,
+  parseCategoricalCase,
+  type CategoricalMatchType,
+} from '../../utils/expressionColors';
 
 export interface DataDrivenColorEditorProps {
   value: unknown[];
@@ -17,9 +22,12 @@ export interface DataDrivenColorEditorProps {
 
 type ExprMode = 'match' | 'interpolate';
 
+type MatchType = CategoricalMatchType;
+
 interface MatchPair {
   value: string;
   color: string;
+  matchType: MatchType;
 }
 
 interface InterpolateStop {
@@ -37,20 +45,46 @@ function detectMode(expr: unknown[]): ExprMode {
 }
 
 function parseMatchExpr(expr: unknown[]): { property: string; pairs: MatchPair[]; fallback: string } {
+  if (expr[0] === 'case') {
+    const categorical = parseCategoricalCase(expr);
+    if (!categorical) return { property: '', pairs: [], fallback: '#000000' };
+    return {
+      property: categorical.property,
+      pairs: categorical.entries.map((e) => ({
+        value: e.value,
+        color: e.color || '#000000',
+        matchType: e.matchType,
+      })),
+      fallback: categorical.fallback ?? '#000000',
+    };
+  }
   // ["match", ["get", prop], val1, color1, ..., fallback]
   const property = Array.isArray(expr[1]) ? (expr[1][1] as string) ?? '' : '';
   const fallback = (expr[expr.length - 1] as string) ?? '#000000';
   const pairs: MatchPair[] = [];
   for (let i = 2; i < expr.length - 1; i += 2) {
-    pairs.push({ value: String(expr[i] ?? ''), color: (expr[i + 1] as string) ?? '#000000' });
+    pairs.push({
+      value: String(expr[i] ?? ''),
+      color: (expr[i + 1] as string) ?? '#000000',
+      matchType: 'equals',
+    });
   }
   return { property, pairs, fallback };
 }
 
 function buildMatchExpr(property: string, pairs: MatchPair[], fallback: string): unknown[] {
-  const flat: unknown[] = ['match', ['get', property]];
+  const hasContains = pairs.some((p) => p.matchType === 'contains');
+  if (!hasContains) {
+    const flat: unknown[] = ['match', ['get', property]];
+    for (const p of pairs) {
+      flat.push(p.value, p.color);
+    }
+    flat.push(fallback);
+    return flat;
+  }
+  const flat: unknown[] = ['case'];
   for (const p of pairs) {
-    flat.push(p.value, p.color);
+    flat.push(buildCategoricalCaseTest(property, p.value, p.matchType), p.color);
   }
   flat.push(fallback);
   return flat;
@@ -193,13 +227,21 @@ export function DataDrivenColorEditor({
     updateMatch(matchProperty, next, matchFallback);
   };
 
+  const handleMatchPairTypeChange = (index: number, matchType: MatchType) => {
+    const next = matchPairs.map((p, i) => (i === index ? { ...p, matchType } : p));
+    updateMatch(matchProperty, next, matchFallback);
+  };
+
   const handleMatchPairRemove = (index: number) => {
     const next = matchPairs.filter((_, i) => i !== index);
     updateMatch(matchProperty, next, matchFallback);
   };
 
   const handleMatchPairAdd = () => {
-    const next = [...matchPairs, { value: '', color: getColorFromPalette(matchPairs.length, theme) }];
+    const next: MatchPair[] = [
+      ...matchPairs,
+      { value: '', color: getColorFromPalette(matchPairs.length, theme), matchType: 'equals' },
+    ];
     updateMatch(matchProperty, next, matchFallback);
   };
 
@@ -211,9 +253,10 @@ export function DataDrivenColorEditor({
         matchProperty,
         scanAll ? { maxFeatures: 500_000 } : undefined,
       );
-      const pairs = values.map((v, i) => ({
+      const pairs: MatchPair[] = values.map((v, i) => ({
         value: v,
         color: getColorFromPalette(i, theme),
+        matchType: 'equals',
       }));
       updateMatch(matchProperty, pairs, matchFallback);
     } finally {
@@ -336,11 +379,20 @@ export function DataDrivenColorEditor({
             <div className="mapui:flex mapui:flex-col mapui:gap-1">
               {matchPairs.map((pair, i) => (
                 <div key={i} className="mapui:flex mapui:items-center mapui:gap-2">
+                  <select
+                    value={pair.matchType}
+                    onChange={(e) => handleMatchPairTypeChange(i, e.target.value as MatchType)}
+                    className={`${inputClass} mapui:shrink-0`}
+                    aria-label="Match type"
+                  >
+                    <option value="equals">Equals</option>
+                    <option value="contains">Contains</option>
+                  </select>
                   <input
                     type="text"
                     value={pair.value}
                     onChange={(e) => handleMatchPairValueChange(i, e.target.value)}
-                    placeholder="value"
+                    placeholder={pair.matchType === 'contains' ? 'substring' : 'value'}
                     className={`${inputClass} mapui:flex-1`}
                   />
                   <ColorPicker
