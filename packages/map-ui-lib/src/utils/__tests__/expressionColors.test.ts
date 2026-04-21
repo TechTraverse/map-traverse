@@ -46,6 +46,32 @@ describe('expressionType', () => {
   it('returns null for empty arrays', () => {
     expect(expressionType([])).toBe(null);
   });
+
+  it('returns "match" for a categorical case expression (contains only)', () => {
+    const expr = [
+      'case',
+      ['in', ['downcase', 'LLC'], ['downcase', ['to-string', ['get', 'name']]]],
+      '#ff0000',
+      '#cccccc',
+    ];
+    expect(expressionType(expr)).toBe('match');
+  });
+
+  it('returns "match" for a categorical case expression (mixed equals/contains)', () => {
+    const expr = [
+      'case',
+      ['in', ['downcase', 'LLC'], ['downcase', ['to-string', ['get', 'name']]]],
+      '#ff0000',
+      ['==', ['get', 'name'], 'Acme'],
+      '#0000ff',
+      '#cccccc',
+    ];
+    expect(expressionType(expr)).toBe('match');
+  });
+
+  it('returns null for a malformed case expression', () => {
+    expect(expressionType(['case', true, '#fff', '#000'])).toBe(null);
+  });
 });
 
 describe('expressionColors', () => {
@@ -70,6 +96,22 @@ describe('expressionColors', () => {
 
   it('returns empty array for empty expression', () => {
     expect(expressionColors([])).toEqual([]);
+  });
+
+  it('extracts colors from a categorical case expression (equals + contains)', () => {
+    const expr = [
+      'case',
+      ['in', ['downcase', 'LLC'], ['downcase', ['to-string', ['get', 'name']]]],
+      '#ff0000',
+      ['==', ['get', 'name'], 'Acme'],
+      '#0000ff',
+      '#cccccc',
+    ];
+    expect(expressionColors(expr)).toEqual(['#ff0000', '#0000ff', '#cccccc']);
+  });
+
+  it('returns empty array for a malformed case expression', () => {
+    expect(expressionColors(['case', true, '#fff', '#000'])).toEqual([]);
   });
 });
 
@@ -123,6 +165,22 @@ describe('expressionEntries', () => {
   it('returns empty array for empty expression', () => {
     expect(expressionEntries([])).toEqual([]);
   });
+
+  it('formats entries from a categorical case expression (mixed)', () => {
+    const expr = [
+      'case',
+      ['in', ['downcase', 'LLC'], ['downcase', ['to-string', ['get', 'name']]]],
+      '#ff0000',
+      ['==', ['get', 'name'], 'Acme'],
+      '#0000ff',
+      '#cccccc',
+    ];
+    expect(expressionEntries(expr)).toEqual([
+      { label: 'contains "LLC"', color: '#ff0000' },
+      { label: 'Acme', color: '#0000ff' },
+      { label: 'Other', color: '#cccccc' },
+    ]);
+  });
 });
 
 describe('expressionPropertyName', () => {
@@ -150,6 +208,21 @@ describe('expressionPropertyName', () => {
 
   it('returns null when property is not a string', () => {
     expect(expressionPropertyName(['match', ['get', 42], 'a', '#fff', '#000'])).toBe(null);
+  });
+
+  it('extracts property from a categorical case expression (contains)', () => {
+    const expr = [
+      'case',
+      ['in', ['downcase', 'LLC'], ['downcase', ['to-string', ['get', 'name']]]],
+      '#ff0000',
+      '#cccccc',
+    ];
+    expect(expressionPropertyName(expr)).toBe('name');
+  });
+
+  it('extracts property from a categorical case expression (equals)', () => {
+    const expr = ['case', ['==', ['get', 'region'], 'Europe'], '#4a90d9', '#cccccc'];
+    expect(expressionPropertyName(expr)).toBe('region');
   });
 });
 

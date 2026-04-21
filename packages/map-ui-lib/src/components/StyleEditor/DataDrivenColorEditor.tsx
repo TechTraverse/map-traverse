@@ -17,9 +17,12 @@ export interface DataDrivenColorEditorProps {
 
 type ExprMode = 'match' | 'interpolate';
 
+type MatchType = 'equals' | 'contains';
+
 interface MatchPair {
   value: string;
   color: string;
+  matchType: MatchType;
 }
 
 interface InterpolateStop {
@@ -36,21 +39,88 @@ function detectMode(expr: unknown[]): ExprMode {
   return expr[0] === 'interpolate' ? 'interpolate' : 'match';
 }
 
+/**
+ * Parses the test side of a `case` branch produced by this editor into a
+ * (property, value, matchType) triple, or returns null for unrecognized shapes.
+ */
+function parseCaseTest(test: unknown): { property: string; value: string; matchType: MatchType } | null {
+  if (!Array.isArray(test)) return null;
+  // Equals: ['==', ['get', p], v]
+  if (test[0] === '==' && Array.isArray(test[1]) && test[1][0] === 'get' && typeof test[1][1] === 'string') {
+    return { property: test[1][1], value: String(test[2] ?? ''), matchType: 'equals' };
+  }
+  // Contains: ['in', ['downcase', v], ['downcase', ['to-string', ['get', p]]]]
+  if (
+    test[0] === 'in' &&
+    Array.isArray(test[1]) && test[1][0] === 'downcase' && typeof test[1][1] === 'string' &&
+    Array.isArray(test[2]) && test[2][0] === 'downcase' &&
+    Array.isArray(test[2][1]) && test[2][1][0] === 'to-string' &&
+    Array.isArray(test[2][1][1]) && test[2][1][1][0] === 'get' && typeof test[2][1][1][1] === 'string'
+  ) {
+    return { property: test[2][1][1][1], value: test[1][1], matchType: 'contains' };
+  }
+  return null;
+}
+
 function parseMatchExpr(expr: unknown[]): { property: string; pairs: MatchPair[]; fallback: string } {
+  if (expr[0] === 'case') {
+    // ["case", test1, color1, test2, color2, ..., fallback]
+    const pairs: MatchPair[] = [];
+    let property = '';
+    for (let i = 1; i < expr.length - 1; i += 2) {
+      const parsed = parseCaseTest(expr[i]);
+      if (!parsed) {
+        // Unrecognized case shape — bail out with graceful defaults.
+        return { property: '', pairs: [], fallback: '#000000' };
+      }
+      if (!property) property = parsed.property;
+      pairs.push({
+        value: parsed.value,
+        color: (expr[i + 1] as string) ?? '#000000',
+        matchType: parsed.matchType,
+      });
+    }
+    const fallback = (expr[expr.length - 1] as string) ?? '#000000';
+    return { property, pairs, fallback };
+  }
   // ["match", ["get", prop], val1, color1, ..., fallback]
   const property = Array.isArray(expr[1]) ? (expr[1][1] as string) ?? '' : '';
   const fallback = (expr[expr.length - 1] as string) ?? '#000000';
   const pairs: MatchPair[] = [];
   for (let i = 2; i < expr.length - 1; i += 2) {
-    pairs.push({ value: String(expr[i] ?? ''), color: (expr[i + 1] as string) ?? '#000000' });
+    pairs.push({
+      value: String(expr[i] ?? ''),
+      color: (expr[i + 1] as string) ?? '#000000',
+      matchType: 'equals',
+    });
   }
   return { property, pairs, fallback };
 }
 
+function testForPair(property: string, pair: MatchPair): unknown[] {
+  if (pair.matchType === 'contains') {
+    return [
+      'in',
+      ['downcase', pair.value],
+      ['downcase', ['to-string', ['get', property]]],
+    ];
+  }
+  return ['==', ['get', property], pair.value];
+}
+
 function buildMatchExpr(property: string, pairs: MatchPair[], fallback: string): unknown[] {
-  const flat: unknown[] = ['match', ['get', property]];
+  const hasContains = pairs.some((p) => p.matchType === 'contains');
+  if (!hasContains) {
+    const flat: unknown[] = ['match', ['get', property]];
+    for (const p of pairs) {
+      flat.push(p.value, p.color);
+    }
+    flat.push(fallback);
+    return flat;
+  }
+  const flat: unknown[] = ['case'];
   for (const p of pairs) {
-    flat.push(p.value, p.color);
+    flat.push(testForPair(property, p), p.color);
   }
   flat.push(fallback);
   return flat;
@@ -193,13 +263,21 @@ export function DataDrivenColorEditor({
     updateMatch(matchProperty, next, matchFallback);
   };
 
+  const handleMatchPairTypeChange = (index: number, matchType: MatchType) => {
+    const next = matchPairs.map((p, i) => (i === index ? { ...p, matchType } : p));
+    updateMatch(matchProperty, next, matchFallback);
+  };
+
   const handleMatchPairRemove = (index: number) => {
     const next = matchPairs.filter((_, i) => i !== index);
     updateMatch(matchProperty, next, matchFallback);
   };
 
   const handleMatchPairAdd = () => {
-    const next = [...matchPairs, { value: '', color: getColorFromPalette(matchPairs.length, theme) }];
+    const next: MatchPair[] = [
+      ...matchPairs,
+      { value: '', color: getColorFromPalette(matchPairs.length, theme), matchType: 'equals' },
+    ];
     updateMatch(matchProperty, next, matchFallback);
   };
 
@@ -211,9 +289,10 @@ export function DataDrivenColorEditor({
         matchProperty,
         scanAll ? { maxFeatures: 500_000 } : undefined,
       );
-      const pairs = values.map((v, i) => ({
+      const pairs: MatchPair[] = values.map((v, i) => ({
         value: v,
         color: getColorFromPalette(i, theme),
+        matchType: 'equals',
       }));
       updateMatch(matchProperty, pairs, matchFallback);
     } finally {
@@ -336,11 +415,20 @@ export function DataDrivenColorEditor({
             <div className="mapui:flex mapui:flex-col mapui:gap-1">
               {matchPairs.map((pair, i) => (
                 <div key={i} className="mapui:flex mapui:items-center mapui:gap-2">
+                  <select
+                    value={pair.matchType}
+                    onChange={(e) => handleMatchPairTypeChange(i, e.target.value as MatchType)}
+                    className={`${inputClass} mapui:shrink-0`}
+                    aria-label="Match type"
+                  >
+                    <option value="equals">Equals</option>
+                    <option value="contains">Contains</option>
+                  </select>
                   <input
                     type="text"
                     value={pair.value}
                     onChange={(e) => handleMatchPairValueChange(i, e.target.value)}
-                    placeholder="value"
+                    placeholder={pair.matchType === 'contains' ? 'substring' : 'value'}
                     className={`${inputClass} mapui:flex-1`}
                   />
                   <ColorPicker
