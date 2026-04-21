@@ -66,6 +66,54 @@ describe('LayerConfigSchema backward-compat preprocess', () => {
     expect(result.styles).toBeUndefined();
   });
 
+  it('accepts expression values for line-width, circle-radius, and icon-image', () => {
+    const input = {
+      ...base,
+      styles: [
+        {
+          type: 'line',
+          paint: {
+            'line-color': '#2980b9',
+            'line-width': ['interpolate', ['linear'], ['to-number', ['get', 'aadt']], 0, 1, 10000, 8],
+          },
+        },
+        {
+          type: 'circle',
+          paint: {
+            'circle-color': '#e74c3c',
+            'circle-radius': ['match', ['get', 'class'], 'major', 10, 'minor', 4, 6],
+          },
+        },
+        {
+          type: 'symbol',
+          paint: {},
+          layout: {
+            'icon-image': ['match', ['get', 'category'], 'park', 'tree', 'school', 'book', 'dot'],
+          },
+        },
+      ],
+    };
+    const result = LayerConfigSchema.parse(input);
+    expect(Array.isArray((result.styles![0] as any).paint['line-width'])).toBe(true);
+    expect(Array.isArray((result.styles![1] as any).paint['circle-radius'])).toBe(true);
+    expect(Array.isArray((result.styles![2] as any).layout['icon-image'])).toBe(true);
+  });
+
+  it('still accepts plain number/string values for line-width, circle-radius, icon-image (back-compat)', () => {
+    const input = {
+      ...base,
+      styles: [
+        { type: 'line', paint: { 'line-color': '#fff', 'line-width': 2 } },
+        { type: 'circle', paint: { 'circle-color': '#fff', 'circle-radius': 5 } },
+        { type: 'symbol', paint: {}, layout: { 'icon-image': 'dot' } },
+      ],
+    };
+    const result = LayerConfigSchema.parse(input);
+    expect((result.styles![0] as any).paint['line-width']).toBe(2);
+    expect((result.styles![1] as any).paint['circle-radius']).toBe(5);
+    expect((result.styles![2] as any).layout['icon-image']).toBe('dot');
+  });
+
   it('parses geometryFilter on style entries', () => {
     const input = {
       ...base,

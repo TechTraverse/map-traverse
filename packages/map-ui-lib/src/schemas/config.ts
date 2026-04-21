@@ -14,6 +14,9 @@ const ExpressionSchema = z.array(z.unknown());
 const colorOrExpr = (defaultColor: string) =>
   z.union([z.string(), ExpressionSchema]).default(defaultColor);
 const colorOrExprOptional = () => z.union([z.string(), ExpressionSchema]).optional();
+const numberOrExpr = (defaultValue: number, min = 0) =>
+  z.union([z.number().min(min), ExpressionSchema]).default(defaultValue);
+const stringOrExprOptional = () => z.union([z.string(), ExpressionSchema]).optional();
 
 // --- View Configuration ---
 
@@ -85,7 +88,7 @@ export const FillPaintSchema = z.object({
 
 export const LinePaintSchema = z.object({
   'line-color': colorOrExpr('#000000'),
-  'line-width': z.number().min(0).default(1),
+  'line-width': numberOrExpr(1, 0),
   'line-opacity': z.number().min(0).max(1).default(1),
   'line-dasharray': z.array(z.number()).optional(),
   'line-translate': z.tuple([z.number(), z.number()]).optional(),
@@ -99,7 +102,7 @@ export const LinePaintSchema = z.object({
 
 export const CirclePaintSchema = z.object({
   'circle-color': colorOrExpr('#000000'),
-  'circle-radius': z.number().min(0).default(5),
+  'circle-radius': numberOrExpr(5, 0),
   'circle-opacity': z.number().min(0).max(1).default(1),
   'circle-stroke-color': colorOrExprOptional(),
   'circle-stroke-width': z.number().min(0).optional(),
@@ -162,7 +165,7 @@ export const SymbolLayoutSchema = z.object({
   'icon-size': z.number().min(0).optional(),
   'icon-text-fit': z.enum(['none', 'width', 'height', 'both']).optional(),
   'icon-text-fit-padding': z.tuple([z.number(), z.number(), z.number(), z.number()]).optional(),
-  'icon-image': z.string().optional(),
+  'icon-image': stringOrExprOptional(),
   'icon-rotate': z.number().optional(),
   'icon-padding': z.number().min(0).optional(),
   'icon-keep-upright': z.boolean().optional(),
