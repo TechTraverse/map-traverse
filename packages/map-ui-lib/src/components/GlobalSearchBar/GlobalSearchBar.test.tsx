@@ -29,7 +29,7 @@ const countriesLayer: LayerConfig = {
   label: 'Countries',
   visible: true,
   dataMode: 'vector-tiles',
-  style: { type: 'fill', paint: { 'fill-color': '#000', 'fill-opacity': 1 } },
+  styles: [{ type: 'fill', paint: { 'fill-color': '#000', 'fill-opacity': 1 } }],
 };
 
 const citiesLayer: LayerConfig = {
@@ -39,7 +39,7 @@ const citiesLayer: LayerConfig = {
   label: 'Populated Places',
   visible: true,
   dataMode: 'geojson',
-  style: { type: 'circle', paint: { 'circle-color': '#000', 'circle-radius': 3, 'circle-opacity': 1 } },
+  styles: [{ type: 'circle', paint: { 'circle-color': '#000', 'circle-radius': 3, 'circle-opacity': 1 } }],
 };
 
 const countryMatches: FeatureMatch[] = [

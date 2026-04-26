@@ -28,7 +28,7 @@ export function useSelection(): UseSelectionResult {
       features: features.map((f) => ({
         type: 'Feature' as const,
         properties: f.properties,
-        geometry: f.geometry as GeoJSON.Geometry,
+        geometry: f.geometry as unknown as GeoJSON.Geometry,
       })),
     };
   }, [features]);

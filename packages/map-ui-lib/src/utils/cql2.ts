@@ -191,7 +191,12 @@ export function sDwithin(property: string, geometry: CQL2Geometry, distance: num
   // Use s_intersects with buffered geometry — tipg doesn't handle s_dwithin
   const { value, turfUnits } = convertDistanceForTurf(distance, units);
   if (value > 0) {
-    const buffered = turfBuffer(geometry as GeoJSON.Geometry, value, { units: turfUnits });
+    const feature: GeoJSON.Feature<GeoJSON.Geometry> = {
+      type: 'Feature',
+      properties: {},
+      geometry: geometry as GeoJSON.Geometry,
+    };
+    const buffered = turfBuffer(feature, value, { units: turfUnits });
     if (buffered) {
       return sIntersects(property, buffered.geometry as CQL2Geometry);
     }

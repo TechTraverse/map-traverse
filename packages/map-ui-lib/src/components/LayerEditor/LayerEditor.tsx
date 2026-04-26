@@ -92,7 +92,7 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons,
   const geometryProperties = queryables ? getGeometryPropertyNames(queryables) : [];
 
   // Detect suggested styles from queryables; fall back to fetching features
-  const [suggestedStyles, setSuggestedStyles] = useState<StyleConfig[]>([]);
+  const [, setSuggestedStyles] = useState<StyleConfig[]>([]);
   // All suitable style types for the detected geometry (e.g. ['circle', 'symbol'] for Point)
   const [suitableStyleTypes, setSuitableStyleTypes] = useState<StyleConfig['type'][]>([]);
 
