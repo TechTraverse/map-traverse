@@ -1,6 +1,5 @@
 import type {
   GlobalSearchConfig,
-  GlobalSearchLayerConfig,
   GlobalSearchProperty,
   LayerConfig,
   AvailableProperty,

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { FilterOperator, FilterRuleValue, SpatialConfig, RelativeDateValue, DateRangeValue, ComputedRangeValue } from '../../types';
+import type { FilterOperator, FilterRuleValue, SpatialConfig, DateRangeValue, ComputedRangeValue } from '../../types';
 import { isSpatialOperator } from './operatorOptions';
 import { inputClass, smallInputClass } from './styles';
 
