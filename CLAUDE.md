@@ -46,6 +46,10 @@ Each teammate gets its own worktree. The lead merges all branches into `ralph/ma
 
 For dev setup and Docker troubleshooting, see `.agent/workflows/development.md`.
 
+## Gotchas
+- Widening a paint/layout field in `schemas/config.ts` to accept `Expression` (unknown[]) can break `<Layer>` typing in `apps/map-client/src/components/MapContainer.tsx`. Cast `layout` as `any` to match the existing `paint as any` pattern.
+- No `@testing-library/react` in map-ui-lib. Tests use `renderToStaticMarkup` for components; extract pure logic to `utils/` for direct vitest coverage.
+
 ## Claude Skills
 This repo ships task-specific skills under `.claude/skills/`. Read the relevant `SKILL.md` *before* starting any non-trivial change — they encode the project's architectural rules and the *why* behind them, so you don't have to rediscover them mid-task.
 
