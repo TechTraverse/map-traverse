@@ -256,9 +256,18 @@ export function ConfigWizardPage() {
   // Synthesizes a stable preview-only id so MapLibre doesn't collide with empty/duplicate ids,
   // and so that draft-induced edits coming back through onLayersChange can be filtered out.
   const PREVIEW_DRAFT_ID = '__draft_layer_preview__';
+  // Multi-geometry default style applied to drafts that don't yet have a style configured.
+  // MapLibre silently no-ops style types that don't match the source-layer geometry, so attaching
+  // all three lets the draft show up regardless of whether the collection is polygon, line, or point.
+  const DRAFT_DEFAULT_STYLES: NonNullable<LayerConfig['styles']> = [
+    { type: 'fill', paint: { 'fill-color': '#6366f1', 'fill-opacity': 0.35 } },
+    { type: 'line', paint: { 'line-color': '#6366f1', 'line-width': 1.5, 'line-opacity': 1 } },
+    { type: 'circle', paint: { 'circle-color': '#6366f1', 'circle-radius': 5, 'circle-opacity': 1, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 1 } },
+  ];
   const previewLayers = useMemo<LayerConfig[]>(() => {
     if (!layerDraft || !layerDraft.sourceId || !layerDraft.collection) return layers;
-    return [...layers, { ...layerDraft, id: PREVIEW_DRAFT_ID }];
+    const styles = layerDraft.styles?.length ? layerDraft.styles : DRAFT_DEFAULT_STYLES;
+    return [...layers, { ...layerDraft, id: PREVIEW_DRAFT_ID, styles }];
   }, [layers, layerDraft]);
 
   const handlePreviewLayersChange = useCallback((next: LayerConfig[]) => {
@@ -458,6 +467,27 @@ export function ConfigWizardPage() {
       return toAdd.length > 0 ? [...prev, ...toAdd] : prev;
     });
   }, [savedFeatureSources]);
+
+  // Keep `sources` in sync with the in-progress draft layer too, so the MapPreview
+  // can resolve a sourceUrl for it before the user clicks "Save Layer".
+  // Mirrors handleLayersChange's auto-add path (no auto-prune, same reason).
+  useEffect(() => {
+    const sid = layerDraft?.sourceId;
+    if (!sid) return;
+    setSources(prev => {
+      if (prev.some(s => s.id === sid)) return prev;
+      const saved = savedFeatureSources.find(s => s.source_id === sid);
+      if (!saved) return prev;
+      return [...prev, {
+        id: saved.source_id,
+        url: saved.url,
+        label: saved.label ?? undefined,
+        tileMatrixSetId: saved.tile_matrix_set_id,
+        type: 'features' as const,
+        auth: saved.auth ?? undefined,
+      }];
+    });
+  }, [layerDraft?.sourceId, savedFeatureSources]);
 
   const isBasemapSelected = (saved: SavedSourceSummary) =>
     basemaps.some(b => b.url === saved.url);
