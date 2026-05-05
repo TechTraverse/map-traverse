@@ -15,6 +15,10 @@ export interface LayerListProps {
   showBasicFields?: boolean;
   /** Hide add/remove/reorder controls. */
   readOnly?: boolean;
+  /** When provided alongside `onDraftChange`, the new-layer draft becomes a fully controlled prop (consumer holds the state). Pass null to mean "not adding". */
+  draftLayer?: LayerConfig | null;
+  /** Required if `draftLayer` is provided. Called with the next draft on edits, and with null on cancel/save. */
+  onDraftChange?: (draft: LayerConfig | null) => void;
 }
 
 const defaultLayer = (): LayerConfig => ({
@@ -26,13 +30,32 @@ const defaultLayer = (): LayerConfig => ({
   dataMode: 'vector-tiles',
 });
 
-export function LayerList({ layers, onChange, availableSources, availableIcons, sections, showBasicFields, readOnly }: LayerListProps) {
+export function LayerList({ layers, onChange, availableSources, availableIcons, sections, showBasicFields, readOnly, draftLayer, onDraftChange }: LayerListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [addingNew, setAddingNew] = useState(false);
-  const [newLayer, setNewLayer] = useState<LayerConfig>(defaultLayer());
+  const [addingNewState, setAddingNewState] = useState(false);
+  const [newLayerState, setNewLayerState] = useState<LayerConfig>(defaultLayer());
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+
+  const isDraftControlled = onDraftChange !== undefined;
+  const addingNew = isDraftControlled ? draftLayer != null : addingNewState;
+  const newLayer = isDraftControlled ? (draftLayer ?? defaultLayer()) : newLayerState;
+  const setNewLayer = (l: LayerConfig) => {
+    if (isDraftControlled) onDraftChange!(l);
+    else setNewLayerState(l);
+  };
+  const beginAddingNew = () => {
+    if (isDraftControlled) onDraftChange!(defaultLayer());
+    else {
+      setAddingNewState(true);
+      setNewLayerState(defaultLayer());
+    }
+  };
+  const cancelAddingNew = () => {
+    if (isDraftControlled) onDraftChange!(null);
+    else setAddingNewState(false);
+  };
 
   const newFormRef = useRef<HTMLDivElement>(null);
 
@@ -46,8 +69,11 @@ export function LayerList({ layers, onChange, availableSources, availableIcons, 
 
   const handleSaveNew = () => {
     onChange([...layers, newLayer]);
-    setAddingNew(false);
-    setNewLayer(defaultLayer());
+    if (isDraftControlled) onDraftChange!(null);
+    else {
+      setAddingNewState(false);
+      setNewLayerState(defaultLayer());
+    }
   };
 
   const handleUpdate = (updated: LayerConfig) => {
@@ -123,7 +149,7 @@ export function LayerList({ layers, onChange, availableSources, availableIcons, 
         {!readOnly && (
           <button
             type="button"
-            onClick={() => { setAddingNew(true); setNewLayer(defaultLayer()); }}
+            onClick={beginAddingNew}
             className="mapui:cursor-pointer mapui:rounded mapui:bg-blue-600 mapui:px-3 mapui:py-1 mapui:text-xs mapui:font-medium mapui:text-white hover:mapui:bg-blue-700"
           >
             + Add Layer
@@ -294,7 +320,7 @@ export function LayerList({ layers, onChange, availableSources, availableIcons, 
           <div className="mapui:mt-3 mapui:flex mapui:justify-end mapui:gap-2 mapui:border-t mapui:border-indigo-100 mapui:pt-3">
             <button
               type="button"
-              onClick={() => setAddingNew(false)}
+              onClick={cancelAddingNew}
               className="mapui:cursor-pointer mapui:rounded-md mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-3 mapui:py-1.5 mapui:text-xs mapui:text-slate-700 hover:mapui:bg-slate-50"
             >
               Cancel
