@@ -60,6 +60,16 @@ services:
       dockerfile: apps/admin-app/Dockerfile
       args:
         VITE_BASE_PATH: /admin/
+    develop:
+      watch:
+        - action: sync
+          path: apps/admin-app
+          target: /app
+          ignore:
+            - node_modules/
+            - .git/
+            - .env
+            - .env.local
     container_name: storybook-components-admin-app
     depends_on:
       postgis:
@@ -86,6 +96,16 @@ services:
     build:
       context: .
       dockerfile: apps/map-client/Dockerfile
+    develop:
+      watch:
+        - action: sync
+          path: apps/map-client
+          target: /app
+          ignore:
+            - node_modules/
+            - .git/
+            - .env
+            - .env.local
     container_name: storybook-components-map-client
     depends_on:
       tipg:

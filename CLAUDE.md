@@ -5,8 +5,10 @@
 - **Dev**: `pnpm storybook` (Lib), `pnpm dev:app` (App), `pnpm dev:lib` (Lib watch), `pnpm --filter admin-app dev` (Admin UI)
 - **Build**: `pnpm build` (All), `pnpm build:lib`, `pnpm build:app`
 - **Test**: `pnpm test`
+- **Test (single)**: `cd packages/map-ui-lib && pnpm exec vitest run path/to/file.test.ts`
 - **Verify**: `pnpm verify` (runs build + test — **must pass before declaring any task done**)
 - **Docker**: `docker compose up -d` (Start all services), `docker restart storybook-components-tipg` (Refresh tipg)
+- **Dev URLs**: gateway `:80`, map-client `:3000`, admin-app `:3001`, tipg `:8000`, postgis `:5432`
 
 ## Architecture Guidelines
 - **No MapLibre in Lib**: `packages/map-ui-lib` must be framework-agnostic.
@@ -21,6 +23,7 @@
 - `apps/map-client`: Main map app (MapLibre, Zustand, nuqs).
 - `apps/admin-app`: Admin UI for managing map configs (Express + React, PostgreSQL, auth).
 - `docker-compose.yml`: Six services — PostGIS, tipg (OGC API), seed (data loader), admin-app, map-client, gateway (nginx reverse proxy).
+- `docs/`: Topic guides — see `SEARCH-INTEGRATION.md` (CQL2/SearchPanel), `CONFIGURATION.md`, `HOOKS.md`, `PROXY.md`, `CONFIG_VERSIONING.md`.
 
 ## Workflow — Worktree Isolation (Mandatory)
 
@@ -46,9 +49,16 @@ Each teammate gets its own worktree. The lead merges all branches into `ralph/ma
 
 For dev setup and Docker troubleshooting, see `.agent/workflows/development.md`.
 
+## Dependabot
+- `main` is guarded by a ruleset (1 approval + linear history), not branch protection — `gh api .../branches/main/protection` returns 404. Merge with: `gh pr review N --approve && gh pr merge N --squash --admin --delete-branch`.
+- The `claude-review` CI job is currently broken and fails on every PR — ignore it. Trust `test` / `analyze` / `CodeQL`.
+- Hold major bumps of build/runtime deps (`maplibre-gl`, `vite`, `@vitejs/plugin-react`, etc.) for manual review in a worktree.
+- Sync flow: merge dependabot PRs into `main`, then locally `git merge main --no-ff -m "merge: ..."` into `ralph/main`. This sync is allowed — the "never commit to ralph/main" rule means no direct edits, not no merges.
+
 ## Gotchas
 - Widening a paint/layout field in `schemas/config.ts` to accept `Expression` (unknown[]) can break `<Layer>` typing in `apps/map-client/src/components/MapContainer.tsx`. Cast `layout` as `any` to match the existing `paint as any` pattern.
 - No `@testing-library/react` in map-ui-lib. Tests use `renderToStaticMarkup` for components; extract pure logic to `utils/` for direct vitest coverage.
+- After loading data into a new PostGIS schema (or changing `TIPG_DB_SCHEMAS`), `docker restart storybook-components-tipg` is required — tipg discovers schemas only at boot. Without this the new `/collections` entry won't appear.
 
 ## Claude Skills
 This repo ships task-specific skills under `.claude/skills/`. Read the relevant `SKILL.md` *before* starting any non-trivial change — they encode the project's architectural rules and the *why* behind them, so you don't have to rediscover them mid-task.
