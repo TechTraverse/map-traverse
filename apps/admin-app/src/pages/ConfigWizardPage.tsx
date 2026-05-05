@@ -179,10 +179,30 @@ export function ConfigWizardPage() {
   const [info, setInfo] = useState<InfoConfig | undefined>(undefined);
   const [initialView, setInitialView] = useState<ViewConfig>(DEFAULT_VIEW);
 
-  // Derive effective UI config: all-false defaults → auto-suggestions → user overrides
+  // Layers as displayed in the right-hand MapPreview: real layers + an optional draft entry.
+  // Synthesizes a stable preview-only id so MapLibre doesn't collide with empty/duplicate ids,
+  // and so that draft-induced edits coming back through onLayersChange can be filtered out.
+  const PREVIEW_DRAFT_ID = '__draft_layer_preview__';
+  // Multi-geometry default style applied to drafts that don't yet have a style configured.
+  // MapLibre silently no-ops style types that don't match the source-layer geometry, so attaching
+  // all three lets the draft show up regardless of whether the collection is polygon, line, or point.
+  const DRAFT_DEFAULT_STYLES: NonNullable<LayerConfig['styles']> = [
+    { type: 'fill', paint: { 'fill-color': '#6366f1', 'fill-opacity': 0.35 } },
+    { type: 'line', paint: { 'line-color': '#6366f1', 'line-width': 1.5, 'line-opacity': 1 } },
+    { type: 'circle', paint: { 'circle-color': '#6366f1', 'circle-radius': 5, 'circle-opacity': 1, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 1 } },
+  ];
+  const previewLayers = useMemo<LayerConfig[]>(() => {
+    if (!layerDraft || !layerDraft.sourceId || !layerDraft.collection) return layers;
+    const styles = layerDraft.styles?.length ? layerDraft.styles : DRAFT_DEFAULT_STYLES;
+    return [...layers, { ...layerDraft, id: PREVIEW_DRAFT_ID, styles }];
+  }, [layers, layerDraft]);
+
+  // Derive effective UI config: all-false defaults → auto-suggestions → user overrides.
+  // Suggestions are computed against `previewLayers` (committed + in-progress draft) so that
+  // enabling a feature on a draft layer immediately lights up the corresponding panel in the live preview.
   const suggestedUI = useMemo(
-    () => computeSuggestedUI(layers, basemaps, imageryLayers),
-    [layers, basemaps, imageryLayers],
+    () => computeSuggestedUI(previewLayers, basemaps, imageryLayers),
+    [previewLayers, basemaps, imageryLayers],
   );
 
   const { effectiveUIConfig, autoEnabledKeys } = useMemo(() => {
@@ -251,24 +271,6 @@ export function ConfigWizardPage() {
   const hasBranding = Object.keys(branding).length > 0;
 
   const assembledConfig: MapConfig = { sources, layers, ...(imageryLayers.length > 0 ? { imageryLayers } : {}), basemaps, sprites: sprites.length > 0 ? sprites : undefined, ui: effectiveUIConfig, initialView, ...(hasBranding && { branding }), ...(globalSearch ? { globalSearch } : {}), ...(info ? { info } : {}) };
-
-  // Layers as displayed in the right-hand MapPreview: real layers + an optional draft entry.
-  // Synthesizes a stable preview-only id so MapLibre doesn't collide with empty/duplicate ids,
-  // and so that draft-induced edits coming back through onLayersChange can be filtered out.
-  const PREVIEW_DRAFT_ID = '__draft_layer_preview__';
-  // Multi-geometry default style applied to drafts that don't yet have a style configured.
-  // MapLibre silently no-ops style types that don't match the source-layer geometry, so attaching
-  // all three lets the draft show up regardless of whether the collection is polygon, line, or point.
-  const DRAFT_DEFAULT_STYLES: NonNullable<LayerConfig['styles']> = [
-    { type: 'fill', paint: { 'fill-color': '#6366f1', 'fill-opacity': 0.35 } },
-    { type: 'line', paint: { 'line-color': '#6366f1', 'line-width': 1.5, 'line-opacity': 1 } },
-    { type: 'circle', paint: { 'circle-color': '#6366f1', 'circle-radius': 5, 'circle-opacity': 1, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 1 } },
-  ];
-  const previewLayers = useMemo<LayerConfig[]>(() => {
-    if (!layerDraft || !layerDraft.sourceId || !layerDraft.collection) return layers;
-    const styles = layerDraft.styles?.length ? layerDraft.styles : DRAFT_DEFAULT_STYLES;
-    return [...layers, { ...layerDraft, id: PREVIEW_DRAFT_ID, styles }];
-  }, [layers, layerDraft]);
 
   const handlePreviewLayersChange = useCallback((next: LayerConfig[]) => {
     setLayers(next.filter(l => l.id !== PREVIEW_DRAFT_ID));
