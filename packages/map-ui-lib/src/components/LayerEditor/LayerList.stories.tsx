@@ -150,3 +150,37 @@ export const ManyLayers: Story = {
     );
   },
 };
+
+export const ControlledDraft: Story = {
+  render: () => {
+    const [layers, setLayers] = useState<LayerConfig[]>(sampleLayers);
+    const [draft, setDraft] = useState<LayerConfig | null>(null);
+    return (
+      <div className="mapui:flex mapui:gap-6 mapui:p-4">
+        <div className="mapui:w-[28rem]">
+          <LayerList
+            layers={layers}
+            onChange={setLayers}
+            availableSources={sampleSources}
+            draftLayer={draft}
+            onDraftChange={setDraft}
+          />
+        </div>
+        <div className="mapui:flex-1">
+          <p className="mapui:m-0 mapui:mb-2 mapui:text-xs mapui:font-semibold mapui:text-slate-500">
+            Live draft (visible to consumer before "Save Layer"):
+          </p>
+          <pre className="mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs mapui:text-slate-700">
+            {draft ? JSON.stringify(draft, null, 2) : 'null'}
+          </pre>
+          <p className="mapui:mt-3 mapui:mb-2 mapui:text-xs mapui:font-semibold mapui:text-slate-500">
+            Committed layers:
+          </p>
+          <pre className="mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs mapui:text-slate-700">
+            {layers.map((l, i) => `${i}: ${l.id} (${l.label})`).join('\n')}
+          </pre>
+        </div>
+      </div>
+    );
+  },
+};

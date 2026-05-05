@@ -168,6 +168,8 @@ export function ConfigWizardPage() {
   // Config state
   const [sources, setSources] = useState<OgcApiSource[]>([]);
   const [layers, setLayers] = useState<LayerConfig[]>([]);
+  // In-progress new-layer draft, lifted out of LayerList so the MapPreview can render it live before "Save Layer" is clicked.
+  const [layerDraft, setLayerDraft] = useState<LayerConfig | null>(null);
   const [basemaps, setBasemaps] = useState<BasemapConfig[]>([]);
   const [sprites, setSprites] = useState<SpriteSource[]>([]);
   const [availableIcons, setAvailableIcons] = useState<string[]>([]);
@@ -249,6 +251,25 @@ export function ConfigWizardPage() {
   const hasBranding = Object.keys(branding).length > 0;
 
   const assembledConfig: MapConfig = { sources, layers, ...(imageryLayers.length > 0 ? { imageryLayers } : {}), basemaps, sprites: sprites.length > 0 ? sprites : undefined, ui: effectiveUIConfig, initialView, ...(hasBranding && { branding }), ...(globalSearch ? { globalSearch } : {}), ...(info ? { info } : {}) };
+
+  // Layers as displayed in the right-hand MapPreview: real layers + an optional draft entry.
+  // Synthesizes a stable preview-only id so MapLibre doesn't collide with empty/duplicate ids,
+  // and so that draft-induced edits coming back through onLayersChange can be filtered out.
+  const PREVIEW_DRAFT_ID = '__draft_layer_preview__';
+  const previewLayers = useMemo<LayerConfig[]>(() => {
+    if (!layerDraft || !layerDraft.sourceId || !layerDraft.collection) return layers;
+    return [...layers, { ...layerDraft, id: PREVIEW_DRAFT_ID }];
+  }, [layers, layerDraft]);
+
+  const handlePreviewLayersChange = useCallback((next: LayerConfig[]) => {
+    setLayers(next.filter(l => l.id !== PREVIEW_DRAFT_ID));
+  }, []);
+
+  // Drop a half-edited draft when navigating away from the layers step, so returning later
+  // doesn't show a stale Add-Layer form.
+  useEffect(() => {
+    if (currentStep !== 'layers' && layerDraft !== null) setLayerDraft(null);
+  }, [currentStep, layerDraft]);
 
   const isConfigValid = useMemo(() => {
     if (!name) return false;
@@ -677,6 +698,8 @@ export function ConfigWizardPage() {
               availableSources={allFeatureSourcesForDropdown}
               availableIcons={availableIcons}
               sections={['style', 'legend']}
+              draftLayer={layerDraft}
+              onDraftChange={setLayerDraft}
             />
           </div>
         )}
@@ -1099,13 +1122,13 @@ export function ConfigWizardPage() {
       <div className={`mapui:shrink-0 mapui:border-slate-200 ${previewLayout === 'vertical' ? 'mapui:w-[45%] mapui:h-auto mapui:border-l' : 'mapui:w-full mapui:h-[400px] mapui:border-t'} ${showPreview ? 'mapui:block' : 'mapui:hidden'}`}>
         <MapPreview
           sources={sources}
-          layers={layers}
+          layers={previewLayers}
           imageryLayers={imageryLayers}
           basemaps={basemaps}
           sprites={sprites}
           viewState={initialView}
           onViewStateChange={currentStep === 'view' ? setInitialView : undefined}
-          onLayersChange={setLayers}
+          onLayersChange={handlePreviewLayersChange}
           onImageryLayersChange={setImageryLayers}
           currentStep={currentStep}
           uiConfig={effectiveUIConfig}
