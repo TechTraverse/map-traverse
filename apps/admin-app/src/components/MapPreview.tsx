@@ -1101,6 +1101,8 @@ export function MapPreview({
                   <Legend
                     layers={layersWithDefaults}
                     visibleLayerIds={visibleLayerIds}
+                    legendOrder={uiConfig.legendOrder}
+                    display={uiConfig.legendDisplay}
                     onOpacityChange={uiConfig.showLegendOpacity ? handleLayerOpacity : undefined}
                   />
                 ),
@@ -1274,7 +1276,7 @@ export function MapPreview({
               const controlNodes: Record<OrderableControlKey, React.ReactNode> = {
                 showLegend: uiConfig.showLegend ? (
                   <div className="mapui:pointer-events-auto">
-                    <Legend layers={layersWithDefaults} visibleLayerIds={visibleLayerIds} onOpacityChange={uiConfig.showLegendOpacity ? handleLayerOpacity : undefined} />
+                    <Legend layers={layersWithDefaults} visibleLayerIds={visibleLayerIds} legendOrder={uiConfig.legendOrder} display={uiConfig.legendDisplay} onOpacityChange={uiConfig.showLegendOpacity ? handleLayerOpacity : undefined} />
                   </div>
                 ) : null,
 

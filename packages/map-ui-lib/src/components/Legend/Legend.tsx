@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import type { CSSProperties } from 'react';
 import { LuMaximize2, LuMinimize2 } from 'react-icons/lu';
 import { MdOutlineKeyboardArrowRight, MdOutlineKeyboardArrowDown } from 'react-icons/md';
-import type { LayerConfig, LegendConfig, LegendEntry } from '../../types';
+import type { LayerConfig, LegendConfig, LegendDisplayConfig, LegendEntry } from '../../types';
 
 export interface LegendProps {
   layers: LayerConfig[];
@@ -12,6 +13,12 @@ export interface LegendProps {
    * in their natural order. Unknown IDs are ignored.
    */
   legendOrder?: string[];
+  /**
+   * Optional global presentation overrides for the legend panel chrome
+   * (background, text, border colors). Per-entry colors live on each
+   * `LegendEntry`; this controls the panel itself.
+   */
+  display?: LegendDisplayConfig;
   onOpacityChange?: (layerId: string, opacity: number) => void;
   className?: string;
 }
@@ -32,7 +39,17 @@ function getLayerOpacity(layer: LayerConfig): number {
   return typeof val === 'number' ? val : 1;
 }
 
-function Swatch({ color, shape }: { color: string; shape?: string }) {
+function Swatch({
+  color,
+  shape,
+  outlineColor,
+  outlineWidth,
+}: {
+  color: string;
+  shape?: string;
+  outlineColor?: string;
+  outlineWidth?: number;
+}) {
   const resolvedShape = shape ?? 'square';
   let inner: React.ReactNode;
 
@@ -48,6 +65,27 @@ function Swatch({ color, shape }: { color: string; shape?: string }) {
       <span
         className="mapui:inline-block mapui:h-0.5 mapui:w-4 mapui:rounded-full"
         style={{ backgroundColor: color }}
+      />
+    );
+  } else if (resolvedShape === 'outline-square') {
+    // Transparent fill with a solid border. Border color falls back to `color`.
+    inner = (
+      <span
+        className="mapui:inline-block mapui:h-3 mapui:w-3 mapui:rounded-sm"
+        style={{
+          backgroundColor: 'transparent',
+          border: `${outlineWidth ?? 1}px solid ${outlineColor ?? color}`,
+        }}
+      />
+    );
+  } else if (resolvedShape === 'outline-circle') {
+    inner = (
+      <span
+        className="mapui:inline-block mapui:h-3 mapui:w-3 mapui:rounded-full"
+        style={{
+          backgroundColor: 'transparent',
+          border: `${outlineWidth ?? 1}px solid ${outlineColor ?? color}`,
+        }}
       />
     );
   } else {
@@ -115,15 +153,15 @@ function sortByHue(entries: LegendEntry[]): LegendEntry[] {
   });
 }
 
-function SimpleLegend({ legend, label, hasArrowColumn }: { legend: LegendConfig; label: string; hasArrowColumn?: boolean }) {
+function SimpleLegend({ legend, label, hasArrowColumn, textStyle }: { legend: LegendConfig; label: string; hasArrowColumn?: boolean; textStyle?: CSSProperties }) {
   const { entries } = legend;
   const arrowSpacer = hasArrowColumn ? <span className="mapui:w-5 mapui:shrink-0" /> : null;
   if (entries.length === 1) {
     return (
       <div className="mapui:flex mapui:items-center mapui:gap-2 mapui:min-w-0">
         {arrowSpacer}
-        <Swatch color={entries[0].color} shape={entries[0].shape} />
-        <span className="mapui:text-slate-700 mapui:truncate">
+        <Swatch color={entries[0].color} shape={entries[0].shape} outlineColor={entries[0].outlineColor} outlineWidth={entries[0].outlineWidth} />
+        <span className="mapui:text-slate-700 mapui:truncate" style={textStyle}>
           {entries[0].label || label}
         </span>
       </div>
@@ -131,7 +169,7 @@ function SimpleLegend({ legend, label, hasArrowColumn }: { legend: LegendConfig;
   }
   return (
     <div>
-      <div className="mapui:mb-1 mapui:text-xs mapui:font-medium mapui:text-slate-600">
+      <div className="mapui:mb-1 mapui:text-xs mapui:font-medium mapui:text-slate-600" style={textStyle}>
         {label}
       </div>
       <ul className="mapui:m-0 mapui:list-none mapui:space-y-1 mapui:p-0 mapui:pl-1">
@@ -141,8 +179,8 @@ function SimpleLegend({ legend, label, hasArrowColumn }: { legend: LegendConfig;
             className="mapui:flex mapui:items-center mapui:gap-2 mapui:min-w-0"
           >
             {arrowSpacer}
-            <Swatch color={entry.color} shape={entry.shape} />
-            <span className="mapui:text-slate-700 mapui:truncate">{entry.label}</span>
+            <Swatch color={entry.color} shape={entry.shape} outlineColor={entry.outlineColor} outlineWidth={entry.outlineWidth} />
+            <span className="mapui:text-slate-700 mapui:truncate" style={textStyle}>{entry.label}</span>
           </li>
         ))}
       </ul>
@@ -156,12 +194,14 @@ function CategoricalLegend({
   expanded,
   onToggle,
   hasArrowColumn,
+  textStyle,
 }: {
   legend: LegendConfig;
   label: string;
   expanded: boolean;
   onToggle: () => void;
   hasArrowColumn?: boolean;
+  textStyle?: CSSProperties;
 }) {
   const { entries } = legend;
   const showColorBar = legend.showColorBar !== false;
@@ -202,13 +242,14 @@ function CategoricalLegend({
         <button
           type="button"
           className="mapui:flex mapui:items-center mapui:gap-2 mapui:bg-transparent mapui:border-none mapui:p-0 mapui:cursor-pointer mapui:text-left mapui:text-slate-700 mapui:text-sm mapui:font-medium mapui:min-w-0"
+          style={textStyle}
           onClick={onToggle}
           aria-expanded={expanded}
         >
           {header}
         </button>
       ) : (
-        <div className="mapui:flex mapui:items-center mapui:gap-2 mapui:text-slate-700 mapui:text-sm mapui:font-medium mapui:min-w-0">
+        <div className="mapui:flex mapui:items-center mapui:gap-2 mapui:text-slate-700 mapui:text-sm mapui:font-medium mapui:min-w-0" style={textStyle}>
           {header}
         </div>
       )}
@@ -219,8 +260,8 @@ function CategoricalLegend({
               key={`${entry.label}-${i}`}
               className="mapui:flex mapui:items-center mapui:gap-2 mapui:min-w-0"
             >
-              <Swatch color={entry.color} shape={entry.shape} />
-              <span className="mapui:text-slate-700 mapui:truncate mapui:text-xs">
+              <Swatch color={entry.color} shape={entry.shape} outlineColor={entry.outlineColor} outlineWidth={entry.outlineWidth} />
+              <span className="mapui:text-slate-700 mapui:truncate mapui:text-xs" style={textStyle}>
                 {entry.label}
               </span>
             </li>
@@ -237,12 +278,14 @@ function GradientLegend({
   expanded,
   onToggle,
   hasArrowColumn,
+  textStyle,
 }: {
   legend: LegendConfig;
   label: string;
   expanded: boolean;
   onToggle: () => void;
   hasArrowColumn?: boolean;
+  textStyle?: CSSProperties;
 }) {
   const { entries, gradientProperty } = legend;
   const showColorBar = legend.showColorBar !== false;
@@ -286,14 +329,14 @@ function GradientLegend({
           {header}
         </button>
       ) : (
-        <div className="mapui:flex mapui:items-center mapui:gap-2 mapui:text-slate-700 mapui:text-sm mapui:font-medium">
+        <div className="mapui:flex mapui:items-center mapui:gap-2 mapui:text-slate-700 mapui:text-sm mapui:font-medium" style={textStyle}>
           {header}
         </div>
       )}
       {expanded && (
         <>
         {gradientProperty && (
-          <div className={`mapui:mt-1 mapui:text-xs mapui:font-medium mapui:text-slate-600${showArrow ? ' mapui:ml-7' : ''}`}>
+          <div className={`mapui:mt-1 mapui:text-xs mapui:font-medium mapui:text-slate-600${showArrow ? ' mapui:ml-7' : ''}`} style={textStyle}>
             {gradientProperty}
           </div>
         )}
@@ -303,8 +346,8 @@ function GradientLegend({
               key={`${entry.label}-${i}`}
               className="mapui:flex mapui:items-center mapui:gap-2 mapui:min-w-0"
             >
-              <Swatch color={entry.color} shape={entry.shape} />
-              <span className="mapui:text-slate-700 mapui:truncate mapui:text-xs">
+              <Swatch color={entry.color} shape={entry.shape} outlineColor={entry.outlineColor} outlineWidth={entry.outlineWidth} />
+              <span className="mapui:text-slate-700 mapui:truncate mapui:text-xs" style={textStyle}>
                 {entry.label}
               </span>
             </li>
@@ -345,7 +388,7 @@ function OpacitySlider({
   );
 }
 
-export function Legend({ layers, visibleLayerIds, legendOrder, onOpacityChange, className }: LegendProps) {
+export function Legend({ layers, visibleLayerIds, legendOrder, display, onOpacityChange, className }: LegendProps) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState(false);
   const visibleLayers = layers.filter((l) => visibleLayerIds.includes(l.id));
@@ -397,12 +440,28 @@ export function Legend({ layers, visibleLayerIds, legendOrder, onOpacityChange, 
     return false;
   });
 
+  // Inline style overrides for the panel chrome. When `display.background` is
+  // omitted the bg-white class still applies; when set it overrides.
+  const panelStyle: CSSProperties = {};
+  if (display?.background) panelStyle.backgroundColor = display.background;
+  if (display?.borderColor) {
+    panelStyle.border = `1px solid ${display.borderColor}`;
+  }
+  if (display?.textColor) panelStyle.color = display.textColor;
+  // Inline text-color override applied to every text-bearing element so it
+  // beats the Tailwind `mapui:text-slate-*` classes that win over a parent
+  // inline `color`.
+  const textStyle: CSSProperties | undefined = display?.textColor
+    ? { color: display.textColor }
+    : undefined;
+
   return (
     <div
       className={`mapui:rounded-lg mapui:bg-white mapui:p-3 mapui:shadow-md mapui:text-sm${className ? ` ${className}` : ''}`}
+      style={panelStyle}
     >
       <div className="mapui:flex mapui:items-center mapui:justify-between mapui:mb-2">
-        <h3 className="mapui:m-0 mapui:text-xs mapui:font-semibold mapui:uppercase mapui:tracking-wide mapui:text-slate-500">
+        <h3 className="mapui:m-0 mapui:text-xs mapui:font-semibold mapui:uppercase mapui:tracking-wide mapui:text-slate-500" style={display?.textColor ? { color: display.textColor } : undefined}>
           Legend
         </h3>
         {onOpacityChange && (
@@ -431,6 +490,7 @@ export function Legend({ layers, visibleLayerIds, legendOrder, onOpacityChange, 
                   expanded={isEntryExpanded}
                   onToggle={() => toggleExpand(layer.id)}
                   hasArrowColumn={hasArrowColumn}
+                  textStyle={textStyle}
                 />
               ) : mode === 'gradient' ? (
                 <GradientLegend
@@ -439,9 +499,10 @@ export function Legend({ layers, visibleLayerIds, legendOrder, onOpacityChange, 
                   expanded={isEntryExpanded}
                   onToggle={() => toggleExpand(layer.id)}
                   hasArrowColumn={hasArrowColumn}
+                  textStyle={textStyle}
                 />
               ) : (
-                <SimpleLegend legend={legend} label={layer.label} hasArrowColumn={hasArrowColumn} />
+                <SimpleLegend legend={legend} label={layer.label} hasArrowColumn={hasArrowColumn} textStyle={textStyle} />
               )}
               {expanded && onOpacityChange && (
                 <OpacitySlider

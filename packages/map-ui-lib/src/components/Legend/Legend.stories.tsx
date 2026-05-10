@@ -338,3 +338,63 @@ export const Expanded: Story = {
     onOpacityChange: fn(),
   },
 };
+
+/** Legend with a dark background and light text — useful on satellite basemaps. */
+export const DarkBackground: Story = {
+  args: {
+    layers: [countriesLayer, riversLayer, placesLayer],
+    visibleLayerIds: ['countries', 'rivers', 'places'],
+    display: {
+      background: '#0f172a',
+      textColor: '#f1f5f9',
+      borderColor: '#334155',
+    },
+  },
+};
+
+/** Legend with outline-only swatches — for layers that style only the outline. */
+export const OutlineOnlySwatches: Story = {
+  args: {
+    layers: [
+      {
+        id: 'parcels-outline',
+        sourceId: 'demo',
+        collection: 'parcels',
+        label: 'Parcels',
+        visible: true,
+        dataMode: 'vector-tiles',
+        legend: {
+          entries: [
+            {
+              label: 'Residential parcel',
+              color: '#1f6527',
+              shape: 'outline-square',
+              outlineColor: '#1f6527',
+              outlineWidth: 2,
+            },
+          ],
+        },
+      },
+      {
+        id: 'fire-zones',
+        sourceId: 'demo',
+        collection: 'fire',
+        label: 'Fire zones',
+        visible: true,
+        dataMode: 'vector-tiles',
+        legend: {
+          entries: [
+            {
+              label: 'Restricted area',
+              color: '#dc2626',
+              shape: 'outline-circle',
+              outlineColor: '#dc2626',
+              outlineWidth: 2,
+            },
+          ],
+        },
+      },
+    ],
+    visibleLayerIds: ['parcels-outline', 'fire-zones'],
+  },
+};

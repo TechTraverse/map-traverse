@@ -3,6 +3,8 @@ import type { UIConfig, OrderableControlKey, LayerConfig, ControlCorner, Control
 import { ORDERABLE_CONTROLS, resolveControlOrder, resolveControlCorner, CONTROL_CORNERS, CONTROL_LAYOUTS, COORDINATE_FORMATS } from '../../schemas/config';
 import { CONTROL_ICON_MAP, CONTROL_ICON_NAMES } from '../shared/controlIcons';
 import { CollapsibleSection } from '../admin/CollapsibleSection';
+import { ColorPicker } from '../admin/ColorPicker';
+import { FormField } from '../admin/FormField';
 
 export interface UIConfigEditorProps {
   value: UIConfig;
@@ -496,6 +498,92 @@ export function UIConfigEditor({ value, onChange, autoEnabled, layers, infoEnabl
               </option>
             ))}
           </select>
+        </CollapsibleSection>
+      )}
+
+      {/* Legend display (background, text, border colors) */}
+      {value.showLegend && (
+        <CollapsibleSection title="Legend Display">
+          <p className="mapui:m-0 mapui:mb-2 mapui:text-xs mapui:text-slate-500">
+            Override the legend panel's background, text, and border colors. Leave blank to keep defaults (white background, slate text, no border).
+          </p>
+          <div className="mapui:flex mapui:flex-col mapui:gap-3">
+            <FormField label="Background color">
+              <div className="mapui:flex mapui:items-center mapui:gap-2">
+                <ColorPicker
+                  value={value.legendDisplay?.background ?? '#ffffff'}
+                  onChange={(background) =>
+                    onChange({ ...value, legendDisplay: { ...value.legendDisplay, background } })
+                  }
+                  label="Legend background"
+                />
+                {value.legendDisplay?.background && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = { ...value.legendDisplay };
+                      delete next.background;
+                      const cleared = Object.keys(next).length > 0 ? next : undefined;
+                      onChange({ ...value, legendDisplay: cleared });
+                    }}
+                    className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:px-1.5 mapui:py-0.5 mapui:text-[10px] mapui:text-slate-500 hover:mapui:bg-slate-50"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+            </FormField>
+            <FormField label="Text color">
+              <div className="mapui:flex mapui:items-center mapui:gap-2">
+                <ColorPicker
+                  value={value.legendDisplay?.textColor ?? '#334155'}
+                  onChange={(textColor) =>
+                    onChange({ ...value, legendDisplay: { ...value.legendDisplay, textColor } })
+                  }
+                  label="Legend text color"
+                />
+                {value.legendDisplay?.textColor && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = { ...value.legendDisplay };
+                      delete next.textColor;
+                      const cleared = Object.keys(next).length > 0 ? next : undefined;
+                      onChange({ ...value, legendDisplay: cleared });
+                    }}
+                    className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:px-1.5 mapui:py-0.5 mapui:text-[10px] mapui:text-slate-500 hover:mapui:bg-slate-50"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+            </FormField>
+            <FormField label="Border color">
+              <div className="mapui:flex mapui:items-center mapui:gap-2">
+                <ColorPicker
+                  value={value.legendDisplay?.borderColor ?? '#e2e8f0'}
+                  onChange={(borderColor) =>
+                    onChange({ ...value, legendDisplay: { ...value.legendDisplay, borderColor } })
+                  }
+                  label="Legend border color"
+                />
+                {value.legendDisplay?.borderColor && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = { ...value.legendDisplay };
+                      delete next.borderColor;
+                      const cleared = Object.keys(next).length > 0 ? next : undefined;
+                      onChange({ ...value, legendDisplay: cleared });
+                    }}
+                    className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white mapui:px-1.5 mapui:py-0.5 mapui:text-[10px] mapui:text-slate-500 hover:mapui:bg-slate-50"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+            </FormField>
+          </div>
         </CollapsibleSection>
       )}
 
