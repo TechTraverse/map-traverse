@@ -461,6 +461,7 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons,
               update({ search: fields.length > 0 ? { fields } : undefined })
             }
             availableProperties={availableProperties}
+            isLoadingProperties={queryablesLoading}
           />
         </CollapsibleSection>
       )}

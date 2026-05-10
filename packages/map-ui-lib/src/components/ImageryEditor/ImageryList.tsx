@@ -9,6 +9,21 @@ export interface ImageryListProps {
   availableSources?: OgcApiSource[];
 }
 
+/**
+ * A row is "incomplete" when none of the three fields needed to fetch tiles
+ * are populated — `sourceId`, `tileUrlTemplate`, and `collection`. Mirrors
+ * (but does not replace) `ImageryLayerConfigSchema.superRefine`.
+ *
+ * Exported so the wizard's pre-save guard can disable Save while any row is
+ * in this state.
+ */
+export function isImageryLayerIncomplete(layer: ImageryLayerConfig): boolean {
+  const noSource = !layer.sourceId || layer.sourceId.trim().length === 0;
+  const noTileUrl = !layer.tileUrlTemplate || layer.tileUrlTemplate.trim().length === 0;
+  const noCollection = !layer.collection || layer.collection.trim().length === 0;
+  return noSource && noTileUrl && noCollection;
+}
+
 const DEFAULT_IMAGERY_LAYER: ImageryLayerConfig = {
   id: '',
   sourceId: '',
@@ -53,10 +68,18 @@ export function ImageryList({
         </p>
       ) : (
         <ul className="mapui:m-0 mapui:list-none mapui:p-0 mapui:flex mapui:flex-col mapui:gap-2">
-          {imageryLayers.map((layer, index) => (
+          {imageryLayers.map((layer, index) => {
+            const incomplete = isImageryLayerIncomplete(layer);
+            return (
             <li
               key={index}
-              className="mapui:rounded mapui:border mapui:border-slate-200 mapui:bg-white"
+              data-testid={`imagery-row-${index}`}
+              data-incomplete={incomplete ? 'true' : undefined}
+              className={`mapui:rounded mapui:border mapui:bg-white ${
+                incomplete
+                  ? 'mapui:border-red-400 mapui:ring-1 mapui:ring-red-200'
+                  : 'mapui:border-slate-200'
+              }`}
             >
               <div className="mapui:flex mapui:items-center mapui:justify-between mapui:px-3 mapui:py-2">
                 <div className="mapui:flex mapui:items-center mapui:gap-2 mapui:min-w-0">
@@ -97,6 +120,24 @@ export function ImageryList({
                   </button>
                 </div>
               </div>
+              {incomplete && (
+                <div
+                  role="alert"
+                  data-testid={`imagery-row-warning-${index}`}
+                  className="mapui:border-t mapui:border-red-200 mapui:bg-red-50 mapui:px-3 mapui:py-2 mapui:flex mapui:items-center mapui:justify-between mapui:gap-2"
+                >
+                  <span className="mapui:text-xs mapui:text-red-700">
+                    This imagery row needs a Source + Collection or a custom Tile URL before the config can be saved.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onChange(imageryLayers.filter((_, i) => i !== index))}
+                    className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-red-300 mapui:bg-white mapui:px-2 mapui:py-0.5 mapui:text-xs mapui:text-red-700 hover:mapui:bg-red-100"
+                  >
+                    Remove row
+                  </button>
+                </div>
+              )}
               {editingIndex === index && (
                 <div className="mapui:border-t mapui:border-slate-200 mapui:px-3 mapui:py-3">
                   <ImageryEditor
@@ -109,7 +150,8 @@ export function ImageryList({
                 </div>
               )}
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
 
