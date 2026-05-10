@@ -10,6 +10,11 @@ export { useOgcQueryables, type UseOgcQueryablesResult } from './useOgcQueryable
 export { useOgcCollectionDetail, type UseOgcCollectionDetailResult } from './useOgcCollectionDetail';
 export { useMeasure, type UseMeasureResult } from './useMeasure';
 export { useSelection, type UseSelectionResult } from './useSelection';
+export {
+  useColorClipboard,
+  pushRecentColor,
+  type UseColorClipboardResult,
+} from './useColorClipboard';
 
 
 export type {

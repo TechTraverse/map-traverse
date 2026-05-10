@@ -279,6 +279,15 @@ Sort Key is most useful when toggled to **Data-driven**, which reads the value f
 
 For symbol layers, Sort Key also controls collision priority: higher-keyed labels win when two would overlap.
 
+### Color editor: copy/paste + recents
+
+Every color field in the admin UI — `StyleEditor` paint colors, `DataDrivenColorEditor` stops, `LegendEntryEditor` swatch + outline colors, `LegendEditor` panel background/text/border, basemap/branding colors — renders through a single `ColorPicker` primitive. That primitive ships with two productivity affordances driven by `useColorClipboard()`:
+
+- **Copy / Paste icon buttons** next to the swatch. Copy stores the hex in a session-scoped module-level clipboard shared across every `ColorPicker` on the page. Paste pulls from that buffer. This is the primary channel; the OS clipboard (`navigator.clipboard.writeText`) is attempted on a best-effort basis but ignored on failure, so copy/paste works on plain HTTP where the browser clipboard API is gated.
+- **Recent colors strip** under the picker. Every committed color is pushed onto a most-recent-first list, capped at 8, deduped, and persisted to `localStorage` under the key `mapui:recent-colors`. Clicking a swatch in the strip applies it. The list survives reload.
+
+Two clicks (copy on layer A, paste on layer B) move a color between any two color-editing surfaces without re-typing the hex.
+
 ### Data-Driven Color Expressions
 
 Color properties that accept `string | Expression` (marked above) support MapLibre expressions for data-driven styling. Expressions are passed as plain arrays validated by the schema.
