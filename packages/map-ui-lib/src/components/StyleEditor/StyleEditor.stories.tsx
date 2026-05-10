@@ -209,3 +209,51 @@ export const WithColorTheme: Story = {
     );
   },
 };
+
+export const LineDashByCategory: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Per-category dasharray on a line layer. MapLibre data-constants ' +
+          '`line-dasharray`, so the renderer expands one MapLibre `<Layer>` per ' +
+          'case at draw time. Use the auto-populate button to fill cases from ' +
+          'distinct values of the bound property.',
+      },
+    },
+  },
+  render: () => {
+    const [style, setStyle] = useState<StyleConfig>({
+      type: 'line',
+      paint: { 'line-color': '#1f6527', 'line-width': 2 },
+      dashByCategory: {
+        property: 'class',
+        cases: [
+          { value: 'interstate', dasharray: [1, 0] },
+          { value: 'primary', dasharray: [4, 2] },
+          { value: 'secondary', dasharray: [2, 2] },
+        ],
+        default: [1, 4],
+      },
+    });
+    return (
+      <div className="mapui:max-w-sm mapui:p-4">
+        <StyleEditor
+          value={style}
+          onChange={setStyle}
+          availableProperties={[
+            { name: 'class', type: 'string' },
+            { name: 'name', type: 'string' },
+          ]}
+          onFetchDistinctValues={async (property) => {
+            if (property === 'class') return ['interstate', 'primary', 'secondary', 'tertiary', 'residential'];
+            return [];
+          }}
+        />
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
+          {JSON.stringify(style, null, 2)}
+        </pre>
+      </div>
+    );
+  },
+};

@@ -43,6 +43,21 @@ export function LegendEditor({ value, onChange, styles, layerLabel }: LegendEdit
     for (const style of styles) {
       const raw = getPrimaryColor(style);
       const shape = getShapeForStyleType(style);
+
+      // Dash-by-category line styles produce one legend entry per case so
+      // the dasharray legend faithfully reflects the rendered sub-layers.
+      // The per-case `dasharray` lights up the dashed-line swatch in <Swatch>.
+      if (style.type === 'line' && style.dashByCategory && typeof raw === 'string') {
+        for (const c of style.dashByCategory.cases) {
+          allEntries.push({ label: String(c.value), color: raw, shape: 'line', dasharray: c.dasharray });
+        }
+        if (style.dashByCategory.default) {
+          allEntries.push({ label: 'Other', color: raw, shape: 'line', dasharray: style.dashByCategory.default });
+        }
+        if (mode === 'simple') mode = 'categorical';
+        continue;
+      }
+
       if (isExpression(raw)) {
         const type = expressionType(raw);
         if (!type) continue;
