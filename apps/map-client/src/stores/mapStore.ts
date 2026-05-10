@@ -15,6 +15,7 @@ import type {
   InfoConfig,
 } from '@ogc-maps/storybook-components/types';
 import type { CQL2Expression, BBox } from '@ogc-maps/storybook-components/utils';
+import { mergeBaseAndActiveCql2Filters } from '@ogc-maps/storybook-components/utils';
 import type { GlobalSearchGroupedResults } from '@ogc-maps/storybook-components';
 
 interface MapState {
@@ -282,4 +283,18 @@ export const useMapStore = create<MapState>((set) => ({
 export const useActiveLayerIds = () =>
   useMapStore(
     useShallow((s) => s.layers.filter((l) => l.visible).map((l) => l.id))
+  );
+
+/**
+ * Per-layer effective CQL2 filter map: AND-merge of each layer's saved
+ * `cql2Filter` (the permanent base filter from MapConfig) with the
+ * SearchPanel-derived `activeCql2Filters[layerId]`. Use this in place of
+ * `activeCql2Filters` at every consumer (vector tile URL, source key,
+ * fetchFeatures, useCsvExport, hasActiveFilter, etc.) so saved base filters
+ * apply on first render and across reloads, not just after the user touches
+ * a search field.
+ */
+export const useEffectiveCql2Filters = () =>
+  useMapStore(
+    useShallow((s) => mergeBaseAndActiveCql2Filters(s.layers, s.activeCql2Filters)),
   );

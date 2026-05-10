@@ -20,6 +20,7 @@ import {
   combineGeometries,
   propertyFiltersToCql2,
   and,
+  mergeBaseAndActiveCql2Filters,
 } from '@ogc-maps/storybook-components/utils';
 import type { CQL2Expression } from '@ogc-maps/storybook-components/utils';
 import type { PropertyFilter } from '@ogc-maps/storybook-components/utils';
@@ -246,7 +247,20 @@ export function MapPreview({
     basemaps[0]?.url ?? FALLBACK_BASEMAP_URL,
   );
   const [activeFilters, setActiveFilters] = useState<Record<string, SearchFilterValues>>({});
+  // Search-derived CQL2 (NOT including the saved layer.cql2Filter base). Set by SearchPanel/PropertyFilter callbacks.
   const [activeCql2Filters, setActiveCql2Filters] = useState<Record<string, CQL2Expression | undefined>>({});
+
+  // Effective per-layer filter = saved layer.cql2Filter (base) AND search-derived (active).
+  // Use this in place of activeCql2Filters at every consumer (vector tile URL,
+  // source key, fetchFeatures, hasActiveFilter, etc.) so saved base filters
+  // apply on first render and across reloads, not just after the user touches
+  // a search field. MapLibre re-fetches tiles only when both the React key AND
+  // the Source/Layer id change — including the merged filter in
+  // getVectorTileSourceKey ensures both flip together.
+  const effectiveCql2Filters = useMemo(
+    () => mergeBaseAndActiveCql2Filters(layers, activeCql2Filters),
+    [layers, activeCql2Filters],
+  );
   const [propertyFilters, setPropertyFilters] = useState<PropertyFilter[]>([]);
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [mouseCoords, setMouseCoords] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -408,10 +422,10 @@ export function MapPreview({
     const layer = layers.find((l) => l.id === selection.activeLayerId);
     if (!layer) return [];
     const sourceKey = layer.dataMode === 'vector-tiles'
-      ? getVectorTileSourceKey(layer.id, activeCql2Filters[layer.id])
+      ? getVectorTileSourceKey(layer.id, effectiveCql2Filters[layer.id])
       : layer.id;
     return (layer.styles ?? []).map((s, i) => `${sourceKey}--${s.type}--${i}`);
-  }, [selection.activeLayerId, layers, activeCql2Filters]);
+  }, [selection.activeLayerId, layers, effectiveCql2Filters]);
 
   const handleSpatialSelectionComplete = useCallback(
     (features: Array<{ id?: string | number; properties: Record<string, unknown>; geometry: Record<string, unknown> }>) => {
@@ -570,11 +584,11 @@ export function MapPreview({
     if (!featureInteractionEnabled) return undefined;
     return layers.filter(l => l.visible).flatMap(l => {
       const sourceKey = l.dataMode === 'vector-tiles'
-        ? getVectorTileSourceKey(l.id, activeCql2Filters[l.id])
+        ? getVectorTileSourceKey(l.id, effectiveCql2Filters[l.id])
         : l.id;
       return (l.styles ?? []).map((s, i) => `${sourceKey}--${s.type}--${i}`);
     });
-  }, [featureInteractionEnabled, layers, activeCql2Filters]);
+  }, [featureInteractionEnabled, layers, effectiveCql2Filters]);
 
   const { runExport, loading: exportLoading, progress: exportProgress, error: exportError } = useExport({
     converters: exportConverters,
@@ -589,14 +603,14 @@ export function MapPreview({
 
   const handleExportRequest = useCallback(
     (request: ExportRequest) => {
-      const cql2Filter = request.filtered ? (activeCql2Filters[request.layer.id] ?? undefined) : undefined;
+      const cql2Filter = request.filtered ? (effectiveCql2Filters[request.layer.id] ?? undefined) : undefined;
       const filename = `${request.layer.label}${request.format.extension}`;
       const layer = layers.find(l => l.id === request.layer.id);
       const source = sources.find(s => s.id === layer?.sourceId);
       const baseUrl = source?.url ?? '';
       runExport(request.layer.collection, request.format.id, filename, cql2Filter, baseUrl);
     },
-    [runExport, activeCql2Filters, layers, sources],
+    [runExport, effectiveCql2Filters, layers, sources],
   );
 
   const handleFilterChange = useCallback(
@@ -659,13 +673,13 @@ export function MapPreview({
   const findLayerForFeature = useCallback((featureLayerId: string) => {
     return layers.find(l => {
       const sourceKey = l.dataMode === 'vector-tiles'
-        ? getVectorTileSourceKey(l.id, activeCql2Filters[l.id])
+        ? getVectorTileSourceKey(l.id, effectiveCql2Filters[l.id])
         : l.id;
       // Match either the parent source key or any sub-layer ID (sourceKey--type--i)
       return featureLayerId === sourceKey ||
         featureLayerId.startsWith(`${sourceKey}--`);
     });
-  }, [layers, activeCql2Filters]);
+  }, [layers, effectiveCql2Filters]);
 
   const handleMapLoad = useCallback(() => {
     setMapInstance(mapRef.current?.getMap() ?? null);
@@ -689,7 +703,7 @@ export function MapPreview({
       if (!layer.styles?.length) continue;
       const sourceKey =
         layer.dataMode === 'vector-tiles'
-          ? getVectorTileSourceKey(layer.id, activeCql2Filters[layer.id])
+          ? getVectorTileSourceKey(layer.id, effectiveCql2Filters[layer.id])
           : layer.id;
       layer.styles.forEach((style, i) => {
         const subLayerId = `${sourceKey}--${style.type}--${i}`;
@@ -703,7 +717,7 @@ export function MapPreview({
         }
       });
     }
-  }, [mapInstance, layersWithDefaults, activeCql2Filters]);
+  }, [mapInstance, layersWithDefaults, effectiveCql2Filters]);
 
   // Reorder MapLibre layers to match the desired layersWithDefaults order
   useEffect(() => {
@@ -714,7 +728,7 @@ export function MapPreview({
         .filter(l => sourceUrlMap[l.sourceId] && l.styles?.length)
         .flatMap(l => {
           const sourceKey = l.dataMode === 'vector-tiles'
-            ? getVectorTileSourceKey(l.id, activeCql2Filters[l.id])
+            ? getVectorTileSourceKey(l.id, effectiveCql2Filters[l.id])
             : l.id;
           return (l.styles ?? []).map((s, i) => `${sourceKey}--${s.type}--${i}`);
         })
@@ -744,7 +758,7 @@ export function MapPreview({
     });
 
     return () => cancelAnimationFrame(frame);
-  }, [mapInstance, reversedLayers, sourceUrlMap, activeCql2Filters, imageryLayerIds]);
+  }, [mapInstance, reversedLayers, sourceUrlMap, effectiveCql2Filters, imageryLayerIds]);
 
   const handleMove = (evt: { viewState: { latitude: number; longitude: number; zoom: number; pitch: number; bearing: number } }) => {
     const next: ViewConfig = {
@@ -802,7 +816,7 @@ export function MapPreview({
             const allFeatures = evt.features ?? [];
             // Filter to only features from the active selection layer
             const sourceKey = selection.activeLayerId
-              ? getVectorTileSourceKey(selection.activeLayerId, activeCql2Filters[selection.activeLayerId])
+              ? getVectorTileSourceKey(selection.activeLayerId, effectiveCql2Filters[selection.activeLayerId])
               : null;
             const selFeatures = sourceKey
               ? allFeatures.filter((f) => f.layer.id.startsWith(`${sourceKey}--`))
@@ -948,7 +962,7 @@ export function MapPreview({
                 key={layer.id}
                 layer={layer}
                 sourceUrl={sourceInfo.url}
-                cql2Filter={activeCql2Filters[layer.id]}
+                cql2Filter={effectiveCql2Filters[layer.id]}
                 auth={sourceInfo.auth}
               />
             );
@@ -956,11 +970,11 @@ export function MapPreview({
 
           return (
             <PreviewVectorTileLayer
-              key={getVectorTileSourceKey(layer.id, activeCql2Filters[layer.id])}
+              key={getVectorTileSourceKey(layer.id, effectiveCql2Filters[layer.id])}
               layer={layer}
               sourceUrl={sourceInfo.url}
               tileMatrixSetId={sourceInfo.tileMatrixSetId}
-              cql2Filter={activeCql2Filters[layer.id]}
+              cql2Filter={effectiveCql2Filters[layer.id]}
               auth={sourceInfo.auth}
             />
           );
@@ -1494,7 +1508,7 @@ export function MapPreview({
               open={exportModalOpen}
               layers={exportableLayers}
               availableFormats={DEFAULT_EXPORT_FORMATS}
-              hasActiveFilter={(layerId) => activeCql2Filters[layerId] != null}
+              hasActiveFilter={(layerId) => effectiveCql2Filters[layerId] != null}
               loading={exportLoading}
               progress={exportProgress}
               error={exportError?.message}

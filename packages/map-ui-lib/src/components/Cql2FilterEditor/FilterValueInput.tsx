@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { FilterOperator, FilterRuleValue, SpatialConfig, DateRangeValue, ComputedRangeValue } from '../../types';
+import type { FilterOperator, FilterRuleValue, SpatialConfig, DateRangeValue, ComputedRangeValue, FetchDistinctValuesFn } from '../../types';
 import { isSpatialOperator } from './operatorOptions';
 import { inputClass, smallInputClass } from './styles';
 
@@ -97,6 +97,15 @@ export interface FilterValueInputProps {
   onSpatialChange?: (spatial: SpatialConfig) => void;
   propertyType?: string;
   propertyEnum?: string[];
+  /**
+   * The property name for the rule. Used to fetch distinct values lazily when
+   * `propertyEnum` is unavailable for a string property — surfaces a dropdown
+   * instead of free-form text so users pick the exact stored value
+   * (e.g. "NO" vs "No"), preventing zero-match filters from typos.
+   */
+  property?: string;
+  /** Optional callback to fetch distinct values for a string property. */
+  onFetchDistinctValues?: FetchDistinctValuesFn;
 }
 
 export function FilterValueInput({
@@ -107,6 +116,8 @@ export function FilterValueInput({
   onSpatialChange,
   propertyType,
   propertyEnum,
+  property,
+  onFetchDistinctValues,
 }: FilterValueInputProps) {
   // --- Spatial operators ---
   if (isSpatialOperator(operator)) {
@@ -134,7 +145,17 @@ export function FilterValueInput({
   }
 
   // --- All other operators: static / parameter / relativeDate toggle ---
-  return <GenericValueInput operator={operator} value={value} onChange={onChange} propertyType={propertyType} propertyEnum={propertyEnum} />;
+  return (
+    <GenericValueInput
+      operator={operator}
+      value={value}
+      onChange={onChange}
+      propertyType={propertyType}
+      propertyEnum={propertyEnum}
+      property={property}
+      onFetchDistinctValues={onFetchDistinctValues}
+    />
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -418,12 +439,16 @@ function GenericValueInput({
   onChange,
   propertyType,
   propertyEnum,
+  property,
+  onFetchDistinctValues,
 }: {
   operator: FilterOperator;
   value: FilterRuleValue;
   onChange: (v: FilterRuleValue) => void;
   propertyType?: string;
   propertyEnum?: string[];
+  property?: string;
+  onFetchDistinctValues?: FetchDistinctValuesFn;
 }) {
   const isParameter = value.kind === 'parameter';
 
@@ -455,6 +480,8 @@ function GenericValueInput({
           onChange={(v) => onChange({ kind: 'static', value: v })}
           propertyType={propertyType}
           propertyEnum={propertyEnum}
+          property={property}
+          onFetchDistinctValues={onFetchDistinctValues}
         />
       )}
     </div>
@@ -484,31 +511,114 @@ function ParameterInputs({
 
 type StaticValue = Extract<FilterRuleValue, { kind: 'static' }>['value'];
 
+// Cache distinct-values fetches across all FilterValueInput instances within
+// a session. Keyed by `${property}` (the editor scope is one collection at a
+// time, so property is sufficient). Values are deduped to avoid hammering
+// the OGC API when many rules reference the same column.
+const distinctValuesCache = new Map<string, string[]>();
+const distinctValuesInflight = new Map<string, Promise<string[]>>();
+
 function StaticGenericInput({
   operator,
   value,
   onChange,
   propertyType,
   propertyEnum,
+  property,
+  onFetchDistinctValues,
 }: {
   operator: FilterOperator;
   value: StaticValue;
   onChange: (value: StaticValue) => void;
   propertyType?: string;
   propertyEnum?: string[];
+  property?: string;
+  onFetchDistinctValues?: FetchDistinctValuesFn;
 }) {
+  const isEqualityOp = operator === '=' || operator === '<>';
+  const canAutoFetch =
+    isEqualityOp &&
+    !!property &&
+    !!onFetchDistinctValues &&
+    propertyType === 'string' &&
+    (!propertyEnum || propertyEnum.length === 0);
+
+  const initialFromCache = canAutoFetch && property ? distinctValuesCache.get(property) : undefined;
+  const [fetchedValues, setFetchedValues] = useState<string[] | null>(initialFromCache ?? null);
+  const [fetchFailed, setFetchFailed] = useState(false);
+
+  useEffect(() => {
+    if (!canAutoFetch || !property || !onFetchDistinctValues) return;
+    const cached = distinctValuesCache.get(property);
+    if (cached) {
+      setFetchedValues(cached);
+      return;
+    }
+    let cancelled = false;
+    let inflight = distinctValuesInflight.get(property);
+    if (!inflight) {
+      inflight = onFetchDistinctValues(property)
+        .then((vs) => {
+          distinctValuesCache.set(property, vs);
+          return vs;
+        })
+        .finally(() => {
+          distinctValuesInflight.delete(property);
+        });
+      distinctValuesInflight.set(property, inflight);
+    }
+    inflight
+      .then((vs) => { if (!cancelled) setFetchedValues(vs); })
+      .catch(() => { if (!cancelled) setFetchFailed(true); });
+    return () => { cancelled = true; };
+  }, [canAutoFetch, property, onFetchDistinctValues]);
+
   // in: comma-separated list
   if (operator === 'in') {
     return <CommaSeparatedInput values={(value as string[]) ?? []} onChange={onChange} placeholder="value1, value2, ..." />;
   }
 
-  // Enum property: select dropdown
-  if (propertyEnum && propertyEnum.length > 0 && (operator === '=' || operator === '<>')) {
+  // Server-declared enum: select dropdown
+  if (propertyEnum && propertyEnum.length > 0 && isEqualityOp) {
     return (
       <select value={(value as string) ?? ''} onChange={(e) => onChange(e.target.value)} className={inputClass}>
         <option value="">Select...</option>
         {propertyEnum.map((v) => (<option key={v} value={v}>{v}</option>))}
       </select>
+    );
+  }
+
+  // Auto-discovered distinct values: select dropdown with a "type custom" escape.
+  // Surfacing exact stored values prevents zero-match filters from case typos
+  // (e.g. saving `abandoned = "No"` against data with `"NO"` / `"YES"`).
+  if (canAutoFetch && fetchedValues && fetchedValues.length > 0 && !fetchFailed) {
+    const current = (value as string) ?? '';
+    const inList = fetchedValues.includes(current);
+    return (
+      <div className="mapui:flex mapui:items-center mapui:gap-1">
+        <select
+          value={inList ? current : ''}
+          onChange={(e) => onChange(e.target.value)}
+          className={inputClass}
+          title={`Distinct values for ${property}`}
+        >
+          <option value="">Select...</option>
+          {fetchedValues.map((v) => (<option key={v} value={v}>{v}</option>))}
+          {!inList && current !== '' && (
+            <option value="" disabled>
+              (typed: {current})
+            </option>
+          )}
+        </select>
+        {!inList && current !== '' && (
+          <span
+            className="mapui:text-xs mapui:text-amber-600"
+            title={`Current value "${current}" is not in the list of distinct values for ${property}.`}
+          >
+            ⚠
+          </span>
+        )}
+      </div>
     );
   }
 

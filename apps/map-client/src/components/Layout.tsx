@@ -19,7 +19,7 @@ import {
   combineGeometries,
 } from '@ogc-maps/storybook-components/utils';
 import type { Cql2FilterConfig } from '@ogc-maps/storybook-components/types';
-import { useMapStore } from '../stores/mapStore';
+import { useMapStore, useEffectiveCql2Filters } from '../stores/mapStore';
 import { MapContainer } from './MapContainer';
 import { MapOverlay } from './MapOverlay';
 import { GlobalSearchBarContainer } from './GlobalSearchBarContainer';
@@ -63,7 +63,8 @@ export function Layout({ uiConfig }: LayoutProps) {
   const [resultsOpen, setResultsOpen] = useState(false);
   const mapRefForBoxDraw = useRef<MapRef>(null);
 
-  const activeCql2Filters = useMapStore((s) => s.activeCql2Filters);
+  // Effective per-layer filter = base (layer.cql2Filter) AND search-derived.
+  const activeCql2Filters = useEffectiveCql2Filters();
   const sources = useMapStore((s) => s.sources);
 
   // Query state

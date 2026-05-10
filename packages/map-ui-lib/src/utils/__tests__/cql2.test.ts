@@ -20,6 +20,8 @@ import {
   fromStructuredFilters,
   fromFilterRuleGroup,
   buildCql2Query,
+  baseCql2FilterFromLayer,
+  mergeBaseAndActiveCql2Filters,
   resolveRelativeDate,
   serializeCql2,
   sIntersects,
@@ -1068,5 +1070,93 @@ describe('resolveRelativeDate', () => {
     expect(resultDate.getUTCFullYear()).toBe(2026);
     expect(resultDate.getUTCMonth()).toBe(2); // March = 2
     expect(resultDate.getUTCDate()).toBe(25);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// baseCql2FilterFromLayer + mergeBaseAndActiveCql2Filters
+// ---------------------------------------------------------------------------
+
+describe('baseCql2FilterFromLayer', () => {
+  it('returns null when layer has no cql2Filter', () => {
+    expect(baseCql2FilterFromLayer({})).toBe(null);
+  });
+
+  it('converts a single-rule FilterRuleGroup to a CQL2 expression', () => {
+    const filter: FilterRuleGroup = {
+      id: 'g1',
+      combinator: 'and',
+      rules: [
+        { id: 'r1', property: 'abandoned', operator: '=', value: { kind: 'static', value: 'NO' } },
+      ],
+    };
+    expect(baseCql2FilterFromLayer({ cql2Filter: filter })).toEqual(eq('abandoned', 'NO'));
+  });
+
+  it('combines multi-rule AND group correctly', () => {
+    const filter: FilterRuleGroup = {
+      id: 'g1',
+      combinator: 'and',
+      rules: [
+        { id: 'r1', property: 'abandoned', operator: '=', value: { kind: 'static', value: 'NO' } },
+        { id: 'r2', property: 'population', operator: '>', value: { kind: 'static', value: 1000 } },
+      ],
+    };
+    expect(baseCql2FilterFromLayer({ cql2Filter: filter })).toEqual(
+      and(eq('abandoned', 'NO'), gt('population', 1000)),
+    );
+  });
+});
+
+describe('mergeBaseAndActiveCql2Filters', () => {
+  const layerWithBase = {
+    id: 'towns',
+    cql2Filter: {
+      id: 'g1',
+      combinator: 'and',
+      rules: [
+        { id: 'r1', property: 'abandoned', operator: '=', value: { kind: 'static', value: 'NO' } },
+      ],
+    } as FilterRuleGroup,
+  };
+  const layerNoBase = { id: 'parcels' };
+
+  it('returns base filter when no active filter set', () => {
+    const merged = mergeBaseAndActiveCql2Filters([layerWithBase, layerNoBase], {});
+    expect(merged.towns).toEqual(eq('abandoned', 'NO'));
+    expect(merged.parcels).toBeUndefined();
+  });
+
+  it('AND-merges base and active filters when both present', () => {
+    const active = { towns: eq('legaldescr', 'main st') };
+    const merged = mergeBaseAndActiveCql2Filters([layerWithBase], active);
+    expect(merged.towns).toEqual(and(eq('abandoned', 'NO'), eq('legaldescr', 'main st')));
+  });
+
+  it('returns active-only filter when no base set', () => {
+    const active = { parcels: eq('owner', 'Smith') };
+    const merged = mergeBaseAndActiveCql2Filters([layerNoBase], active);
+    expect(merged.parcels).toEqual(eq('owner', 'Smith'));
+  });
+
+  it('omits layers with neither base nor active so getVectorTileUrl stays unfiltered', () => {
+    const merged = mergeBaseAndActiveCql2Filters([layerNoBase], {});
+    expect(merged.parcels).toBeUndefined();
+    expect(Object.keys(merged)).toHaveLength(0);
+  });
+
+  it('preserves active-only entries for layers not present in the layer array', () => {
+    const active = { ghost: eq('foo', 'bar') };
+    const merged = mergeBaseAndActiveCql2Filters([], active);
+    expect(merged.ghost).toEqual(eq('foo', 'bar'));
+  });
+
+  it('treats null/undefined active as no-op', () => {
+    const merged = mergeBaseAndActiveCql2Filters(
+      [layerWithBase],
+      { towns: null, parcels: undefined },
+    );
+    expect(merged.towns).toEqual(eq('abandoned', 'NO'));
+    expect(merged.parcels).toBeUndefined();
   });
 });

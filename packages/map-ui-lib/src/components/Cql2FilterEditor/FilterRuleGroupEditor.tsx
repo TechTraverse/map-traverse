@@ -1,4 +1,4 @@
-import type { FilterRule, FilterRuleGroup, AvailableProperty } from '../../types';
+import type { FilterRule, FilterRuleGroup, AvailableProperty, FetchDistinctValuesFn } from '../../types';
 import { isFilterRuleGroup } from '../../utils/cql2';
 import { generateId } from '../../utils/id';
 import { FilterRuleEditor } from './FilterRuleEditor';
@@ -9,6 +9,8 @@ export interface FilterRuleGroupEditorProps {
   onChange: (group: FilterRuleGroup) => void;
   onRemove?: () => void;
   availableProperties?: AvailableProperty[];
+  /** See `Cql2FilterEditor.onFetchDistinctValues`. */
+  onFetchDistinctValues?: FetchDistinctValuesFn;
   depth: number;
 }
 
@@ -42,6 +44,7 @@ export function FilterRuleGroupEditor({
   onChange,
   onRemove,
   availableProperties,
+  onFetchDistinctValues,
   depth,
 }: FilterRuleGroupEditorProps) {
   const borderColor = borderColors[depth % borderColors.length];
@@ -126,6 +129,7 @@ export function FilterRuleGroupEditor({
                 onChange={(updated) => updateRule(index, updated)}
                 onRemove={() => removeRule(index)}
                 availableProperties={availableProperties}
+                onFetchDistinctValues={onFetchDistinctValues}
                 depth={depth + 1}
               />
             ) : (
@@ -134,6 +138,7 @@ export function FilterRuleGroupEditor({
                 onChange={(updated) => updateRule(index, updated)}
                 onRemove={() => removeRule(index)}
                 availableProperties={availableProperties}
+                onFetchDistinctValues={onFetchDistinctValues}
               />
             )}
           </div>

@@ -495,6 +495,65 @@ export function fromFilterRuleGroup(
 }
 
 /**
+ * Resolves a layer's saved `cql2Filter` (a FilterRuleGroup) to a CQL2Expression
+ * suitable for use as a permanent base filter on every API request for that
+ * layer. Returns null if the layer has no filter or all rules are empty.
+ *
+ * The base filter is independent of any active SearchPanel/PropertyFilter
+ * state. Callers should AND-merge it with the active filter at every consumer
+ * (vector tile URL, source key, fetchFeatures, useCsvExport, etc.) — see
+ * `mergeBaseAndActiveCql2Filters` for the canonical merge.
+ */
+// Loose layer shape for the helpers below. Accepts the Zod-inferred
+// `Cql2FilterConfig` type (which can structurally widen `rules` to
+// `unknown[]` at recursion boundaries) without forcing every caller to
+// upcast. Internally we re-cast through unknown when invoking
+// `fromFilterRuleGroup`, since both shapes are runtime-compatible.
+type LayerWithCql2Filter = { id?: string; cql2Filter?: { combinator: 'and' | 'or'; rules: unknown[] } | FilterRuleGroup | null };
+
+export function baseCql2FilterFromLayer(
+  layer: LayerWithCql2Filter,
+  params?: Record<string, unknown>,
+): CQL2Expression | null {
+  if (!layer.cql2Filter) return null;
+  return fromFilterRuleGroup(layer.cql2Filter as FilterRuleGroup, params);
+}
+
+/**
+ * Computes the effective per-layer CQL2 filter map by AND-merging each
+ * layer's saved base filter (`layer.cql2Filter`) with the corresponding
+ * search-derived `activeCql2Filters[layer.id]`. The returned map can be
+ * dropped in as a replacement for `activeCql2Filters` at every consumer
+ * (`getCql2FilteredVectorTileUrl`, `getVectorTileSourceKey`, `fetchFeatures`,
+ * `useCsvExport`, etc.) so saved filters always apply, even before the user
+ * touches a SearchPanel.
+ *
+ * Layer ids with neither a base nor an active filter are omitted so callers
+ * that do `map[layerId]` continue to get `undefined` (which `getVectorTileUrl`
+ * treats as "no filter" — preserving the unfiltered tile URL).
+ */
+export function mergeBaseAndActiveCql2Filters(
+  layers: (LayerWithCql2Filter & { id: string })[],
+  activeCql2Filters: Record<string, CQL2Expression | null | undefined>,
+  params?: Record<string, unknown>,
+): Record<string, CQL2Expression | undefined> {
+  const out: Record<string, CQL2Expression | undefined> = {};
+  for (const layer of layers) {
+    const base = baseCql2FilterFromLayer(layer, params);
+    const active = activeCql2Filters[layer.id];
+    const merged = and(base, active);
+    if (merged) out[layer.id] = merged;
+  }
+  // Preserve any active-only filters for layer ids not in the layers array
+  // (defensive — should not normally happen).
+  for (const [id, expr] of Object.entries(activeCql2Filters)) {
+    if (out[id] !== undefined || !expr) continue;
+    if (!layers.find((l) => l.id === id)) out[id] = expr;
+  }
+  return out;
+}
+
+/**
  * Builds a full query shape from a FilterRuleGroup, including sort and limit metadata.
  * Use this when you need the complete query (filter + sort + limit) rather than just the CQL2 filter.
  */
