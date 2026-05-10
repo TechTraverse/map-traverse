@@ -245,6 +245,29 @@ A discriminated union on `type`. The `paint` properties follow MapLibre GL JS co
 | `text-transform` | `"none" \| "uppercase" \| "lowercase"` | Text transform |
 | `text-allow-overlap` | `boolean` | Allow overlapping text |
 
+#### Labeling lines and polygons
+
+Symbol styles aren't tied to point geometries. To label a line or polygon layer, add a second `StyleConfig` of `type: 'symbol'` to the same layer's `styles[]` (the LayerEditor exposes a **+ Add labels** button on line and polygon layers that have at least one string-typed queryable; it pre-fills `text-field` with the first string property).
+
+- For **lines** (e.g. roads, trails), use `'symbol-placement': 'line'` so labels follow the line. MapLibre repeats labels along long lines based on `symbol-spacing`.
+- For **polygons** (e.g. parcels, neighborhoods), use `'symbol-placement': 'point'` to place a single label near each polygon's centroid.
+
+When a layer has mixed geometry types (e.g. a layer that returns both lines and polygons), set `geometryFilter` on the symbol style to scope it to one family — for example `['LineString', 'MultiLineString']` for a line-following label, or `['Polygon', 'MultiPolygon']` for a centroid label. Existing layers without symbol styles continue to render exactly as before; labels are opt-in.
+
+```ts
+// Roads with following-the-line labels
+{
+  styles: [
+    { type: 'line', paint: { 'line-color': '#2980b9', 'line-width': 2 } },
+    {
+      type: 'symbol',
+      paint: { 'text-color': '#333', 'text-halo-color': '#fff', 'text-halo-width': 1 },
+      layout: { 'text-field': '{name}', 'text-size': 12, 'symbol-placement': 'line' },
+    },
+  ],
+}
+```
+
 ### Data-Driven Color Expressions
 
 Color properties that accept `string | Expression` (marked above) support MapLibre expressions for data-driven styling. Expressions are passed as plain arrays validated by the schema.
