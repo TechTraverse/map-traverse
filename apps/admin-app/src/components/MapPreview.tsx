@@ -1510,6 +1510,7 @@ export function MapPreview({
                 activeFormat={coordFormat}
                 formats={coordinateFormats}
                 onFormatChange={setCoordFormat}
+                onNavigate={(lat, lng) => mapInstance?.flyTo({ center: [lng, lat], zoom: 14 })}
               />
             </div>
           )}
