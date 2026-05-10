@@ -245,6 +245,17 @@ A discriminated union on `type`. The `paint` properties follow MapLibre GL JS co
 | `text-transform` | `"none" \| "uppercase" \| "lowercase"` | Text transform |
 | `text-allow-overlap` | `boolean` | Allow overlapping text |
 
+### Stacking order: layer order vs. Sort Key
+
+Two different mechanisms control draw order, and they're easy to confuse:
+
+- **Layer order (between layers).** The order of `layers[]` in the config — and the drag-reorder in the LayerPanel — controls which whole layer renders on top of which. To put roads above parcels, move the roads layer above parcels in the list.
+- **Sort Key (within one layer).** Each style type has a `*-sort-key` property (`fill-sort-key`, `line-sort-key`, `circle-sort-key`, `symbol-sort-key`) that controls draw order **between features within the same layer**. Higher values draw on top.
+
+Sort Key is most useful when toggled to **Data-driven**, which reads the value from a feature property (e.g. `["get", "priority"]`). That lets a single layer draw "priority 3" features above "priority 1" features without splitting into multiple layers. Setting Sort Key to a single static number applies that number to every feature, which only matters relative to other layers' sort keys when MapLibre interleaves them — usually not what you want.
+
+For symbol layers, Sort Key also controls collision priority: higher-keyed labels win when two would overlap.
+
 ### Data-Driven Color Expressions
 
 Color properties that accept `string | Expression` (marked above) support MapLibre expressions for data-driven styling. Expressions are passed as plain arrays validated by the schema.
