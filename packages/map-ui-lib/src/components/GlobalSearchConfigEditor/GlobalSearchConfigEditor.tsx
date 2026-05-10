@@ -270,11 +270,23 @@ export function GlobalSearchConfigEditor({
                 {entry.properties.map((p, idx) => {
                   const ac = p.autocomplete === true;
                   const pf = p.prefetch === true;
+                  // Warn on duplicate property within this layer entry — a
+                  // dupe with no label produces an unlabeled second
+                  // autocomplete row, which Mike1 hit in production.
+                  const firstIndex = p.property
+                    ? entry.properties.findIndex((x) => x.property === p.property)
+                    : -1;
+                  const isDuplicate = firstIndex !== -1 && firstIndex !== idx;
+                  const missingLabel = !!p.property && (!p.label || p.label.trim().length === 0);
                   return (
                     <div
                       key={idx}
                       data-testid={`gs-property-row-${entry.layerId}-${idx}`}
-                      className="mapui:flex mapui:flex-col mapui:gap-2 mapui:rounded mapui:border mapui:border-slate-100 mapui:p-2"
+                      className={`mapui:flex mapui:flex-col mapui:gap-2 mapui:rounded mapui:border mapui:p-2 ${
+                        isDuplicate || missingLabel
+                          ? 'mapui:border-amber-300 mapui:bg-amber-50'
+                          : 'mapui:border-slate-100'
+                      }`}
                     >
                       <div className="mapui:grid mapui:grid-cols-2 mapui:gap-2">
                         <FormField label="Property" required>
@@ -332,6 +344,22 @@ export function GlobalSearchConfigEditor({
                           />
                         </FormField>
                       </div>
+                      {(isDuplicate || missingLabel) && (
+                        <p
+                          role="status"
+                          data-testid={`gs-property-warning-${entry.layerId}-${idx}`}
+                          className="mapui:m-0 mapui:text-xs mapui:text-amber-800"
+                        >
+                          {isDuplicate && (
+                            <span>
+                              Property &ldquo;{p.property}&rdquo; is already configured at row #{firstIndex + 1}.{' '}
+                            </span>
+                          )}
+                          {missingLabel && (
+                            <span>Add a label so this autocomplete row is distinguishable in the UI.</span>
+                          )}
+                        </p>
+                      )}
                       <div className="mapui:flex mapui:items-center mapui:gap-4">
                         <label className="mapui:flex mapui:items-center mapui:gap-1 mapui:text-xs mapui:text-slate-700">
                           <input

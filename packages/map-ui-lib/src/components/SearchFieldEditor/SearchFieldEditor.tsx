@@ -8,6 +8,7 @@ import type {
   AvailableProperty,
 } from '../../types';
 import { FormField } from '../admin/FormField';
+import { validateSearchField } from '../../utils/searchFieldValidation';
 
 function CommaSeparatedInput({
   options,
@@ -51,7 +52,13 @@ export interface SearchFieldEditorProps {
   value: SearchField;
   onChange: (field: SearchField) => void;
   availableProperties?: AvailableProperty[];
+  /**
+   * Skip property/type validation while queryables are still loading. Prevents
+   * a flash of "property not found" warnings on first render.
+   */
+  isLoadingProperties?: boolean;
 }
+
 
 const inputClass =
   'mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
@@ -63,7 +70,7 @@ const defaultsByType: Record<SearchField['type'], SearchField> = {
   select: { type: 'select', property: '', label: '' },
 };
 
-export function SearchFieldEditor({ value, onChange, availableProperties }: SearchFieldEditorProps) {
+export function SearchFieldEditor({ value, onChange, availableProperties, isLoadingProperties }: SearchFieldEditorProps) {
   const handleTypeChange = (type: SearchField['type']) => {
     onChange({ ...defaultsByType[type], property: value.property, label: value.label });
   };
@@ -72,6 +79,12 @@ export function SearchFieldEditor({ value, onChange, availableProperties }: Sear
     onChange({ ...value, ...patch } as SearchField);
 
   const hasProperties = availableProperties && availableProperties.length > 0;
+  // Skip validation while queryables are loading — avoids a flash of "missing"
+  // errors on first paint.
+  const validationError = isLoadingProperties
+    ? null
+    : validateSearchField(value, availableProperties);
+  const isInvalid = validationError !== null;
 
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-3">
@@ -94,6 +107,7 @@ export function SearchFieldEditor({ value, onChange, availableProperties }: Sear
             value={value.property}
             onChange={(e) => updateBase({ property: e.target.value })}
             className={inputClass}
+            aria-invalid={isInvalid || undefined}
           >
             <option value="">Select a property…</option>
             {availableProperties.map((p) => (
@@ -109,9 +123,20 @@ export function SearchFieldEditor({ value, onChange, availableProperties }: Sear
             onChange={(e) => updateBase({ property: e.target.value })}
             placeholder="e.g. name"
             className={inputClass}
+            aria-invalid={isInvalid || undefined}
           />
         )}
       </FormField>
+
+      {validationError && (
+        <p
+          role="alert"
+          data-testid="search-field-validation-error"
+          className="mapui:m-0 mapui:rounded mapui:bg-red-50 mapui:border mapui:border-red-200 mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-red-700"
+        >
+          {validationError.message}
+        </p>
+      )}
 
       <FormField label="Label">
         <input
@@ -140,12 +165,14 @@ export function SearchFieldEditor({ value, onChange, availableProperties }: Sear
               type="checkbox"
               id="text-autocomplete"
               checked={(value as TextSearchField).autocomplete ?? false}
+              disabled={isInvalid}
               onChange={(e) =>
                 onChange({ ...value, autocomplete: e.target.checked } as TextSearchField)
               }
-              className="mapui:h-4 mapui:w-4 mapui:accent-blue-600"
+              className="mapui:h-4 mapui:w-4 mapui:accent-blue-600 disabled:mapui:cursor-not-allowed"
+              title={isInvalid ? 'Fix the property error above first.' : undefined}
             />
-            <label htmlFor="text-autocomplete" className="mapui:text-sm mapui:text-slate-700">
+            <label htmlFor="text-autocomplete" className={`mapui:text-sm ${isInvalid ? 'mapui:text-slate-400' : 'mapui:text-slate-700'}`}>
               Enable Autocomplete
             </label>
           </div>

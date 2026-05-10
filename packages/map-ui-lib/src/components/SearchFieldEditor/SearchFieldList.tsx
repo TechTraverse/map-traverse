@@ -6,6 +6,8 @@ export interface SearchFieldListProps {
   fields: SearchField[];
   onChange: (fields: SearchField[]) => void;
   availableProperties?: AvailableProperty[];
+  /** Suppress per-field validation while queryables are still loading. */
+  isLoadingProperties?: boolean;
 }
 
 const defaultField = (): SearchField => ({
@@ -15,7 +17,7 @@ const defaultField = (): SearchField => ({
   autocomplete: false,
 });
 
-export function SearchFieldList({ fields, onChange, availableProperties }: SearchFieldListProps) {
+export function SearchFieldList({ fields, onChange, availableProperties, isLoadingProperties }: SearchFieldListProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   const handleAdd = () => {
@@ -105,6 +107,7 @@ export function SearchFieldList({ fields, onChange, availableProperties }: Searc
                   value={field}
                   onChange={(updated) => handleUpdate(index, updated)}
                   availableProperties={availableProperties}
+                  isLoadingProperties={isLoadingProperties}
                 />
               </div>
             )}
