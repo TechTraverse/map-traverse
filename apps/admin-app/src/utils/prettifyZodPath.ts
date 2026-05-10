@@ -144,7 +144,9 @@ export function prettifyZodPath(path: ReadonlyArray<string | number>): string {
   if (path.length === 0) return 'Config';
 
   const out: string[] = [];
-  let cursor: SegmentLabels | undefined = undefined;
+  // Tracks the current label-tree node as we descend; explicitly widened so
+  // subsequent indexed reads (`cursor?.children?.[seg]`) typecheck.
+  let cursor: SegmentLabels | undefined;
   let i = 0;
 
   while (i < path.length) {
@@ -152,7 +154,7 @@ export function prettifyZodPath(path: ReadonlyArray<string | number>): string {
 
     if (typeof seg === 'string') {
       // Look up labels for this segment
-      const labels = i === 0 ? ROOT_LABELS[seg] : cursor?.children?.[seg];
+      const labels: SegmentLabels | undefined = i === 0 ? ROOT_LABELS[seg] : cursor?.children?.[seg];
       const fieldLabel = i === 0
         ? prettifyKey(seg)
         : cursor?.fieldLabels?.[seg] ?? prettifyKey(seg);
@@ -182,8 +184,13 @@ export function prettifyZodPath(path: ReadonlyArray<string | number>): string {
 }
 
 /** Combine a prettified path with an issue message for wizard display. */
-export function prettifyZodIssue(issue: { path: ReadonlyArray<string | number>; message: string }): string {
-  const head = prettifyZodPath(issue.path);
+export function prettifyZodIssue(issue: { path: ReadonlyArray<PropertyKey>; message: string }): string {
+  // Drop any symbol segments — Zod's path type technically allows them but
+  // in practice issue paths only contain string/number segments.
+  const path = issue.path.filter(
+    (s): s is string | number => typeof s === 'string' || typeof s === 'number',
+  );
+  const head = prettifyZodPath(path);
   if (!head || head === 'Config') return issue.message;
   return `${head}: ${issue.message}`;
 }

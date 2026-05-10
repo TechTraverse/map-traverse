@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   LayerList,
   ImageryList,
+  isImageryLayerIncomplete,
   CollectionBrowser,
   BasemapList,
   SpriteSourceList,
@@ -37,6 +38,8 @@ import { ImageUploadField } from '../components/ImageUploadField';
 import { MapPreview } from '../components/MapPreview';
 import { JsonConfigEditor } from '../components/JsonConfigEditor';
 import { useQueryablesByLayer } from '../hooks/useQueryablesByLayer';
+import { prettifyZodIssue } from '../utils/prettifyZodPath';
+import { lintMapConfig, type WizardLintIssue } from '../utils/lintMapConfig';
 
 const DEFAULT_GLOBAL_SEARCH: GlobalSearchConfig = {
   enabled: true,
@@ -282,10 +285,29 @@ export function ConfigWizardPage() {
     if (currentStep !== 'layers' && layerDraft !== null) setLayerDraft(null);
   }, [currentStep, layerDraft]);
 
+  // Pre-save lint pass — catches issues that pass schema validation (or
+  // aren't expressible in Zod) but should still block save with a clear,
+  // row-specific message + remediation.
+  const lintIssues: WizardLintIssue[] = useMemo(
+    () =>
+      lintMapConfig({
+        layers,
+        imageryLayers,
+        globalSearch,
+        queryablesByLayer,
+        queryablesLoading,
+      }),
+    [layers, imageryLayers, globalSearch, queryablesByLayer, queryablesLoading],
+  );
+
+  const lintErrorCount = lintIssues.filter((i) => i.severity === 'error').length;
+  const hasIncompleteImagery = imageryLayers.some(isImageryLayerIncomplete);
+
   const isConfigValid = useMemo(() => {
     if (!name) return false;
+    if (lintErrorCount > 0) return false;
     return safeValidateMapConfig(assembledConfig).success;
-  }, [name, assembledConfig]);
+  }, [name, assembledConfig, lintErrorCount]);
 
   // Clear "Saved" indicator when config changes
   useEffect(() => { setJustSaved(false); }, [assembledConfig, name, description]);
@@ -339,9 +361,19 @@ export function ConfigWizardPage() {
     setError(null);
     setValidationErrors([]);
 
+    if (lintErrorCount > 0) {
+      setValidationErrors(
+        lintIssues
+          .filter((i) => i.severity === 'error')
+          .map((i) => `${i.path}: ${i.message}`),
+      );
+      setSaving(false);
+      return;
+    }
+
     const validation = safeValidateMapConfig(assembledConfig);
     if (!validation.success) {
-      setValidationErrors(validation.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`));
+      setValidationErrors(validation.error.issues.map((issue) => prettifyZodIssue(issue)));
       setSaving(false);
       return;
     }
@@ -373,6 +405,46 @@ export function ConfigWizardPage() {
       setSaving(false);
     }
   };
+
+  // Apply a lint-issue remediation (one-click "remove offending row" buttons).
+  const applyLintRemediation = useCallback(
+    (remediation: WizardLintIssue['remediation']) => {
+      if (!remediation) return;
+      switch (remediation.kind) {
+        case 'remove-imagery-row':
+          setImageryLayers((prev) => prev.filter((_, i) => i !== remediation.index));
+          break;
+        case 'remove-search-field':
+          setLayers((prev) =>
+            prev.map((l) => {
+              if (l.id !== remediation.layerId) return l;
+              const fields = l.search?.fields ?? [];
+              const nextFields = fields.filter((_, i) => i !== remediation.index);
+              if (nextFields.length === 0) {
+                const { search: _omit, ...rest } = l;
+                return rest as LayerConfig;
+              }
+              return { ...l, search: { ...l.search!, fields: nextFields } };
+            }),
+          );
+          break;
+        case 'remove-global-search-property':
+          setGlobalSearch((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              layers: prev.layers.map((entry) =>
+                entry.layerId === remediation.layerId
+                  ? { ...entry, properties: entry.properties.filter((_, i) => i !== remediation.index) }
+                  : entry,
+              ),
+            };
+          });
+          break;
+      }
+    },
+    [],
+  );
 
   // Imagery collection select/deselect
   const handleImageryCollectionSelect = (collectionId: string, collectionTitle?: string) => {
@@ -1064,6 +1136,57 @@ export function ConfigWizardPage() {
               </p>
               <JsonConfigEditor value={assembledConfig} onApply={handleReplaceConfig} />
             </CollapsibleSection>
+            {lintIssues.length > 0 && (
+              <div
+                data-testid="wizard-lint-panel"
+                className={`mapui:rounded mapui:border mapui:p-4 mapui:space-y-2 ${
+                  lintErrorCount > 0
+                    ? 'mapui:bg-red-50 mapui:border-red-200'
+                    : 'mapui:bg-amber-50 mapui:border-amber-200'
+                }`}
+              >
+                <p
+                  className={`mapui:text-sm mapui:font-medium ${
+                    lintErrorCount > 0 ? 'mapui:text-red-800' : 'mapui:text-amber-800'
+                  }`}
+                >
+                  {lintErrorCount > 0
+                    ? `${lintErrorCount} issue${lintErrorCount === 1 ? '' : 's'} blocking save:`
+                    : `${lintIssues.length} warning${lintIssues.length === 1 ? '' : 's'}:`}
+                </p>
+                <ul className="mapui:list-none mapui:p-0 mapui:m-0 mapui:space-y-1">
+                  {lintIssues.map((issue, i) => (
+                    <li
+                      key={i}
+                      className={`mapui:flex mapui:items-start mapui:justify-between mapui:gap-2 mapui:text-sm ${
+                        issue.severity === 'error' ? 'mapui:text-red-700' : 'mapui:text-amber-700'
+                      }`}
+                    >
+                      <span>
+                        <strong>{issue.path}:</strong> {issue.message}
+                      </span>
+                      {issue.remediation && (
+                        <button
+                          type="button"
+                          onClick={() => applyLintRemediation(issue.remediation)}
+                          className={`mapui:shrink-0 mapui:cursor-pointer mapui:rounded mapui:border mapui:bg-white mapui:px-2 mapui:py-0.5 mapui:text-xs ${
+                            issue.severity === 'error'
+                              ? 'mapui:border-red-300 mapui:text-red-700 hover:mapui:bg-red-100'
+                              : 'mapui:border-amber-300 mapui:text-amber-800 hover:mapui:bg-amber-100'
+                          }`}
+                        >
+                          {issue.remediation.kind === 'remove-imagery-row'
+                            ? 'Remove imagery row'
+                            : issue.remediation.kind === 'remove-search-field'
+                            ? 'Remove field'
+                            : 'Remove property'}
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {validationErrors.length > 0 && (
               <div className="mapui:rounded mapui:bg-red-50 mapui:border mapui:border-red-200 mapui:p-4">
                 <p className="mapui:text-sm mapui:font-medium mapui:text-red-800 mapui:mb-2">Config validation failed:</p>
@@ -1133,6 +1256,10 @@ export function ConfigWizardPage() {
             title={
               !name
                 ? 'Enter a name in the Metadata step to save.'
+                : hasIncompleteImagery
+                ? 'One or more imagery rows are missing a Source/Collection or Tile URL — fix in the Imagery step.'
+                : lintErrorCount > 0
+                ? `${lintErrorCount} issue${lintErrorCount === 1 ? '' : 's'} blocking save — see the Review step.`
                 : !isConfigValid
                 ? 'Config has validation errors — see the Review step.'
                 : undefined
