@@ -13,7 +13,7 @@ const fillProperties: PropertyDefinition[] = [
   { key: 'fill-translate', label: 'Translate (X, Y)', widget: 'translate', group: 'Transform', category: 'paint', enableDefault: [0, 0], description: 'Offset the fill in pixels along X (right) and Y (down) axes.' },
   { key: 'fill-translate-anchor', label: 'Translate Anchor', widget: 'enum', group: 'Transform', category: 'paint', options: ['map', 'viewport'], enableDefault: 'map', description: '"map" moves the fill with the map when panning; "viewport" keeps the offset fixed on screen.' },
   // Sorting (layout)
-  { key: 'fill-sort-key', label: 'Sort Key', widget: 'number', group: 'Sorting', category: 'layout', step: 1, enableDefault: 0, description: 'Features with a higher sort key are drawn on top of features with a lower sort key within this layer.' },
+  { key: 'fill-sort-key', label: 'Sort Key', widget: 'number', group: 'Sorting', category: 'layout', step: 1, enableDefault: 0, dataDriven: true, description: 'Controls drawing order within this layer — features with a higher sort key are drawn on top. Toggle "Data-driven" to read the value from a feature property (e.g. ["get", "priority"]) so each feature uses its own value.' },
 ];
 
 // --- Line ---
@@ -38,7 +38,7 @@ const lineProperties: PropertyDefinition[] = [
   { key: 'line-miter-limit', label: 'Miter Limit', widget: 'number', group: 'Cap & Join', category: 'layout', step: 0.5, enableDefault: 2, description: 'When line-join is "miter", sharp corners are clipped to a bevel once the miter length exceeds this multiple of line-width.' },
   { key: 'line-round-limit', label: 'Round Limit', widget: 'number', group: 'Cap & Join', category: 'layout', step: 0.1, enableDefault: 1.05, description: 'When line-join is "round", angles sharper than this threshold (in radians) are bevelled instead of rounded.' },
   // Sorting (layout)
-  { key: 'line-sort-key', label: 'Sort Key', widget: 'number', group: 'Sorting', category: 'layout', step: 1, enableDefault: 0, description: 'Features with a higher sort key are drawn on top of features with a lower sort key within this layer.' },
+  { key: 'line-sort-key', label: 'Sort Key', widget: 'number', group: 'Sorting', category: 'layout', step: 1, enableDefault: 0, dataDriven: true, description: 'Controls drawing order within this layer — features with a higher sort key are drawn on top. Toggle "Data-driven" to read the value from a feature property (e.g. ["get", "priority"]) so each feature uses its own value.' },
 ];
 
 // --- Circle ---
@@ -60,7 +60,7 @@ const circleProperties: PropertyDefinition[] = [
   { key: 'circle-pitch-scale', label: 'Pitch Scale', widget: 'enum', group: 'Alignment', category: 'paint', options: ['map', 'viewport'], enableDefault: 'map', description: '"map" scales circles with map perspective (smaller when far away); "viewport" keeps circles the same size regardless of pitch.' },
   { key: 'circle-pitch-alignment', label: 'Pitch Alignment', widget: 'enum', group: 'Alignment', category: 'paint', options: ['map', 'viewport'], enableDefault: 'viewport', description: '"map" orients circles flat on the map surface; "viewport" keeps circles facing the screen (default).' },
   // Sorting (layout)
-  { key: 'circle-sort-key', label: 'Sort Key', widget: 'number', group: 'Sorting', category: 'layout', step: 1, enableDefault: 0, description: 'Features with a higher sort key are drawn on top of features with a lower sort key within this layer.' },
+  { key: 'circle-sort-key', label: 'Sort Key', widget: 'number', group: 'Sorting', category: 'layout', step: 1, enableDefault: 0, dataDriven: true, description: 'Controls drawing order within this layer — features with a higher sort key are drawn on top. Toggle "Data-driven" to read the value from a feature property (e.g. ["get", "priority"]) so each feature uses its own value.' },
 ];
 
 // --- Symbol ---
@@ -112,7 +112,7 @@ const symbolProperties: PropertyDefinition[] = [
   { key: 'symbol-placement', label: 'Symbol Placement', widget: 'enum', group: 'Placement', category: 'layout', options: ['point', 'line', 'line-center'], enableDefault: 'point', description: '"point" places one symbol per feature; "line" places symbols along the full line; "line-center" places one at the midpoint.' },
   { key: 'symbol-spacing', label: 'Symbol Spacing', widget: 'number', group: 'Placement', category: 'layout', min: 1, step: 1, enableDefault: 250, description: 'Minimum distance in pixels between symbols along a line (used when symbol-placement is "line").' },
   { key: 'symbol-avoid-edges', label: 'Avoid Edges', widget: 'boolean', group: 'Placement', category: 'layout', enableDefault: false, description: 'When enabled, symbols near tile edges are hidden to avoid being clipped or doubled at tile boundaries.' },
-  { key: 'symbol-sort-key', label: 'Sort Key', widget: 'number', group: 'Placement', category: 'layout', step: 1, enableDefault: 0, description: 'Features with a higher sort key are prioritised in collision detection and drawn on top within this layer.' },
+  { key: 'symbol-sort-key', label: 'Sort Key', widget: 'number', group: 'Placement', category: 'layout', step: 1, enableDefault: 0, dataDriven: true, description: 'Controls placement priority and drawing order within this layer — features with a higher sort key are prioritised in collision detection and drawn on top. Toggle "Data-driven" to read the value from a feature property (e.g. ["get", "priority"]) so each feature uses its own value.' },
   { key: 'symbol-z-order', label: 'Z-Order', widget: 'enum', group: 'Placement', category: 'layout', options: ['auto', 'viewport-y', 'source'], enableDefault: 'auto', description: '"viewport-y" renders symbols in top-to-bottom screen order (closer = higher); "source" preserves data source order; "auto" uses "viewport-y" when sort-key is unset.' },
 ];
 
