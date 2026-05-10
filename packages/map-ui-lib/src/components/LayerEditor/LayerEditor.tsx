@@ -484,6 +484,11 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons,
             onChange={(cql2Filter) => update({ cql2Filter } as Partial<LayerConfig>)}
             availableProperties={availableProperties}
             geometryProperties={geometryProperties}
+            onFetchDistinctValues={
+              baseUrl && collection
+                ? (property, opts) => fetchDistinctValues(baseUrl, collection, property, { fetchAll: true, ...opts })
+                : undefined
+            }
           />
         </CollapsibleSection>
       )}

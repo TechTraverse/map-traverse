@@ -1,4 +1,4 @@
-import type { FilterRule, AvailableProperty } from '../../types';
+import type { FilterRule, AvailableProperty, FetchDistinctValuesFn } from '../../types';
 import { getOperatorsForType, getDefaultValue, isSpatialOperator } from './operatorOptions';
 import { FilterValueInput } from './FilterValueInput';
 import { inputClass } from './styles';
@@ -8,9 +8,16 @@ export interface FilterRuleEditorProps {
   onChange: (rule: FilterRule) => void;
   onRemove: () => void;
   availableProperties?: AvailableProperty[];
+  /**
+   * Optional callback to fetch distinct values for a string property. When
+   * provided, the value editor surfaces a dropdown of actual stored values
+   * rather than free-form text — preventing zero-match filters from typos
+   * like `"No"` vs `"NO"`.
+   */
+  onFetchDistinctValues?: FetchDistinctValuesFn;
 }
 
-export function FilterRuleEditor({ value, onChange, onRemove, availableProperties }: FilterRuleEditorProps) {
+export function FilterRuleEditor({ value, onChange, onRemove, availableProperties, onFetchDistinctValues }: FilterRuleEditorProps) {
   const hasProperties = availableProperties && availableProperties.length > 0;
 
   const selectedProp = availableProperties?.find((p) => p.name === value.property);
@@ -93,6 +100,8 @@ export function FilterRuleEditor({ value, onChange, onRemove, availablePropertie
         onSpatialChange={(spatial) => onChange({ ...value, spatial })}
         propertyType={propType}
         propertyEnum={selectedProp?.enum}
+        property={value.property}
+        onFetchDistinctValues={onFetchDistinctValues}
       />
 
       {/* Remove button */}

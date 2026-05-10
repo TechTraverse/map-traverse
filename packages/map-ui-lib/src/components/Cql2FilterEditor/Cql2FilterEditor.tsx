@@ -1,4 +1,4 @@
-import type { Cql2FilterConfig, AvailableProperty, SortField, SpatialConstraint, Cql2DistanceUnit } from '../../types';
+import type { Cql2FilterConfig, AvailableProperty, SortField, SpatialConstraint, Cql2DistanceUnit, FetchDistinctValuesFn } from '../../types';
 import { generateId } from '../../utils/id';
 import { FilterRuleGroupEditor } from './FilterRuleGroupEditor';
 import { Cql2Preview } from './Cql2Preview';
@@ -10,6 +10,14 @@ export interface Cql2FilterEditorProps {
   onChange: (config: Cql2FilterConfig | undefined) => void;
   availableProperties?: AvailableProperty[];
   geometryProperties?: string[];
+  /**
+   * Optional callback to fetch distinct values for a string property. When
+   * provided, the value editor for `=` / `<>` rules on string properties
+   * surfaces a dropdown of actual stored values rather than free-form text —
+   * preventing zero-match filters from typos like `"No"` vs `"NO"`. Reuse
+   * the same fetcher used by SearchPanel and DataDrivenColorEditor.
+   */
+  onFetchDistinctValues?: FetchDistinctValuesFn;
 }
 
 function createDefaultConfig(): Cql2FilterConfig {
@@ -27,7 +35,7 @@ function createDefaultConfig(): Cql2FilterConfig {
   };
 }
 
-export function Cql2FilterEditor({ value, onChange, availableProperties, geometryProperties }: Cql2FilterEditorProps) {
+export function Cql2FilterEditor({ value, onChange, availableProperties, geometryProperties, onFetchDistinctValues }: Cql2FilterEditorProps) {
   if (!value) {
     return (
       <div className="mapui:flex mapui:flex-col mapui:items-start mapui:gap-2">
@@ -53,6 +61,7 @@ export function Cql2FilterEditor({ value, onChange, availableProperties, geometr
         value={value}
         onChange={(updated) => onChange(updated)}
         availableProperties={availableProperties}
+        onFetchDistinctValues={onFetchDistinctValues}
         depth={0}
       />
 

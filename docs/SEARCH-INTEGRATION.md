@@ -164,6 +164,22 @@ import { SearchPanel } from '@ogc-maps/storybook-components/components/SearchPan
 
 ---
 
+## Layer-level base filter (`layer.cql2Filter`)
+
+A layer's saved `cql2Filter` (configured in the admin's CQL2 Filter editor) is a **permanent base filter** applied to *every* request for that layer — vector tile fetches, GeoJSON `useOgcFeatures` calls, and CSV exports all carry it. It applies on first map render and across reloads, even before the user ever opens the SearchPanel.
+
+The SearchPanel's filter is then **AND-merged on top** of the base. So:
+
+- **Base only** (no search active): every request carries `filter=<layer.cql2Filter>`.
+- **Search active**: every request carries `filter=AND(<layer.cql2Filter>, <searchPanelDerived>)`.
+- **Clearing the SearchPanel** does NOT remove the base — base-filtered features stay hidden. To see the unfiltered layer, edit the layer's `cql2Filter` in the admin.
+
+Apps wire this via `mergeBaseAndActiveCql2Filters(layers, activeCql2Filters)` (exported from `@ogc-maps/storybook-components/utils`). The result is a `Record<layerId, CQL2Expression | undefined>` ready to drop into every consumer (`getCql2FilteredVectorTileUrl`, `getVectorTileSourceKey`, `fetchFeatures`, `useCsvExport`, etc.).
+
+> **Gotcha — distinct values matter.** A base filter that doesn't match any feature will hide the entire layer, which often looks like a bug. The CQL2 editor surfaces a distinct-values dropdown for string properties to prevent typos like `"No"` vs `"NO"`.
+
+---
+
 ## Step 4: Convert to CQL2
 
 ### Using `fromStructuredFilters` (recommended)

@@ -5,7 +5,7 @@ import { getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSou
 import type { CQL2Expression, SourceAuth } from '@ogc-maps/storybook-components/utils';
 import type { LayerConfig, ImageryLayerConfig } from '@ogc-maps/storybook-components/types';
 import type { MeasureMode, SelectionMode } from '@ogc-maps/storybook-components';
-import { useMapStore } from '../stores/mapStore';
+import { useMapStore, useEffectiveCql2Filters } from '../stores/mapStore';
 
 // Inline component for vector tile layers
 function VectorTileLayer({
@@ -170,7 +170,11 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
   const basemaps = useMapStore((s) => s.basemaps);
   const activeBasemapId = useMapStore((s) => s.activeBasemapId);
   const sprites = useMapStore((s) => s.sprites);
-  const activeCql2Filters = useMapStore((s) => s.activeCql2Filters);
+  // Per-layer effective filter = saved layer.cql2Filter (base) AND
+  // SearchPanel-derived filter (active). Use this everywhere instead of
+  // raw activeCql2Filters so saved base filters reach the wire on first
+  // render and across reloads, not just after the user touches a search field.
+  const activeCql2Filters = useEffectiveCql2Filters();
   const pendingFitBounds = useMapStore((s) => s.pendingFitBounds);
   const pendingFitBoundsOptions = useMapStore((s) => s.pendingFitBoundsOptions);
   const clearPendingFitBounds = useMapStore((s) => s.clearPendingFitBounds);

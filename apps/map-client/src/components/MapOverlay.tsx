@@ -37,7 +37,7 @@ import { DEFAULT_EXPORT_FORMATS, fromStructuredFilters, propertyFiltersToCql2, a
 import type { GeoJsonFeature } from '@ogc-maps/storybook-components/utils';
 import type { UIConfig, SearchFilterValue, SearchFilterValues, OrderableControlKey, InfoPosition, ControlCorner } from '@ogc-maps/storybook-components/types';
 import { groupControlsByCorner, resolveControlCorner } from '@ogc-maps/storybook-components';
-import { useMapStore, useActiveLayerIds } from '../stores/mapStore';
+import { useMapStore, useActiveLayerIds, useEffectiveCql2Filters } from '../stores/mapStore';
 import { useAutocompleteSuggestions } from '../hooks/useAutocompleteSuggestions';
 import { useLayerQueryables } from '../hooks/useLayerQueryables';
 import { LuDownload, LuLayers3, LuList, LuMap, LuMousePointer2, LuRuler, LuSatellite, LuSearch } from 'react-icons/lu';
@@ -136,7 +136,9 @@ export function MapOverlay({
   const sources = useMapStore((s) => s.sources);
   const activeBasemapId = useMapStore((s) => s.activeBasemapId);
   const activeFilters = useMapStore((s) => s.activeFilters);
-  const activeCql2Filters = useMapStore((s) => s.activeCql2Filters);
+  // Effective filter = saved layer.cql2Filter (base) AND search-derived filter.
+  // Drives CSV export's "respect filter" toggle and Export modal's hasActiveFilter.
+  const activeCql2Filters = useEffectiveCql2Filters();
   const toggleLayerVisibility = useMapStore((s) => s.toggleLayerVisibility);
   const reorderLayers = useMapStore((s) => s.reorderLayers);
   const setActiveBasemap = useMapStore((s) => s.setActiveBasemap);
