@@ -39,3 +39,21 @@ storybook-static
 .claude/settings.local.json
 .claude/worktrees/
 .claude/scheduled_tasks.lock
+
+# Project-specific GIS data and loaders (user-provided)
+/GISData/
+/docker/seed/load-shapefiles.sh
+
+# Local config / infra (not committed)
+/config.json
+/TODO.md
+/ansible/
+/terraform/
+/terraform-gcp/
+/scripts/
+
+# Local-only investigation artifacts (raw DB dumps, logs, screenshots
+# captured during feedback triage — may contain credentials)
+/INVESTIGATION.md
+/investigation/
+/git_hours.py
