@@ -17,6 +17,7 @@ import {
   CircleStyleSchema,
   SymbolStyleSchema,
   StyleConfigSchema,
+  DashByCategorySchema,
   LegendEntrySchema,
   LegendConfigSchema,
   LegendDisplayConfigSchema,
@@ -82,6 +83,7 @@ export type LineStyle = z.infer<typeof LineStyleSchema>;
 export type CircleStyle = z.infer<typeof CircleStyleSchema>;
 export type SymbolStyle = z.infer<typeof SymbolStyleSchema>;
 export type StyleConfig = z.infer<typeof StyleConfigSchema>;
+export type DashByCategory = z.infer<typeof DashByCategorySchema>;
 
 export type LegendEntry = z.infer<typeof LegendEntrySchema>;
 export type LegendConfig = z.infer<typeof LegendConfigSchema>;
@@ -200,6 +202,7 @@ export {
   CircleStyleSchema,
   SymbolStyleSchema,
   StyleConfigSchema,
+  DashByCategorySchema,
   LegendEntrySchema,
   LegendConfigSchema,
   LegendDisplayConfigSchema,

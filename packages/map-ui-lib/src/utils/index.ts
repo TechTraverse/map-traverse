@@ -18,3 +18,4 @@ export * from './queryParameters';
 export * from './exportConverters';
 export * from './id';
 export * from './slugify';
+export * from './dashByCategory';

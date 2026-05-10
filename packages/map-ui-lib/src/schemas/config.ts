@@ -203,11 +203,35 @@ export const FillStyleSchema = z.object({
   geometryFilter: z.array(GeometryTypeSchema).optional(),
 });
 
+/**
+ * Per-category dash array styling for line layers. MapLibre style spec
+ * data-constants `line-dasharray`, so this can't be expressed as a
+ * `["match", ...]` paint expression. The renderer expands a layer with
+ * `dashByCategory` set into N+1 MapLibre `<Layer>` configs (one per case
+ * plus a default-case layer with the negated filter), each with its own
+ * static `line-dasharray`. See `expandDashByCategoryLayer`.
+ */
+export const DashByCategorySchema = z.object({
+  property: z.string(),
+  cases: z.array(
+    z.object({
+      value: z.union([z.string(), z.number()]),
+      dasharray: z.array(z.number()),
+    }),
+  ),
+  default: z.array(z.number()).optional(),
+});
+
 export const LineStyleSchema = z.object({
   type: z.literal('line'),
   paint: LinePaintSchema,
   layout: LineLayoutSchema.optional(),
   geometryFilter: z.array(GeometryTypeSchema).optional(),
+  /**
+   * Optional per-category dash styling. Opt-in only — saved configs without
+   * this field render unchanged.
+   */
+  dashByCategory: DashByCategorySchema.optional(),
 });
 
 export const CircleStyleSchema = z.object({
@@ -241,6 +265,12 @@ export const LegendEntrySchema = z.object({
   outlineColor: z.string().optional(),
   /** Optional border width in pixels for outline shapes. Defaults to 1. */
   outlineWidth: z.number().min(0).optional(),
+  /**
+   * Optional dasharray for `line` shape entries (matches MapLibre's
+   * `line-dasharray`). When set, the legend swatch renders as a dashed
+   * line so per-category dash styles read correctly. Ignored for non-line shapes.
+   */
+  dasharray: z.array(z.number()).optional(),
 });
 
 export const LegendConfigSchema = z.object({

@@ -1,7 +1,7 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { Map, Source, Layer, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
 import { useOgcFeatures } from '@ogc-maps/storybook-components/hooks';
-import { getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSourceKey, buildGeometryFilter, getImageryTileUrl } from '@ogc-maps/storybook-components/utils';
+import { getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSourceKey, buildGeometryFilter, getImageryTileUrl, expandDashByCategory } from '@ogc-maps/storybook-components/utils';
 import type { CQL2Expression, SourceAuth } from '@ogc-maps/storybook-components/utils';
 import type { LayerConfig, ImageryLayerConfig } from '@ogc-maps/storybook-components/types';
 import type { MeasureMode, SelectionMode } from '@ogc-maps/storybook-components';
@@ -32,19 +32,7 @@ function VectorTileLayer({
 
   return (
     <Source id={sourceKey} key={sourceKey} type="vector" tiles={[tileUrl]}>
-      {layer.styles.map((style, i) => (
-        <Layer
-          key={`${style.type}--${i}`}
-          id={`${sourceKey}--${style.type}--${i}`}
-          type={style.type}
-          source-layer={sourceLayer}
-          paint={style.paint as any}
-          layout={{ ...(style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' } as any}
-          {...(layer.minZoom != null ? { minzoom: layer.minZoom } : {})}
-          {...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {})}
-          {...(style.geometryFilter ? { filter: buildGeometryFilter(style.geometryFilter) } : {})}
-        />
-      ))}
+      {layer.styles.flatMap((style, i) => renderStyleLayers(style, i, sourceKey, layer, sourceLayer))}
     </Source>
   );
 }
@@ -75,20 +63,68 @@ function GeoJsonLayer({ layer, sourceUrl, cql2Filter, auth }: { layer: LayerConf
 
   return (
     <Source id={layer.id} key={layer.id} type="geojson" data={featureCollection}>
-      {layer.styles.map((style, i) => (
-        <Layer
-          key={`${style.type}--${i}`}
-          id={`${layer.id}--${style.type}--${i}`}
-          type={style.type}
-          paint={style.paint as any}
-          layout={{ ...(style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' } as any}
-          {...(layer.minZoom != null ? { minzoom: layer.minZoom } : {})}
-          {...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {})}
-          {...(style.geometryFilter ? { filter: buildGeometryFilter(style.geometryFilter) } : {})}
-        />
-      ))}
+      {layer.styles.flatMap((style, i) => renderStyleLayers(style, i, layer.id, layer))}
     </Source>
   );
+}
+
+/**
+ * Render a single style as one or more `<Layer>` elements. Most styles map
+ * 1:1 to a Layer; a `line` style with `dashByCategory` expands to N+1
+ * Layers (one per case + a default-case) so each can carry a static
+ * `line-dasharray` — MapLibre data-constants this paint property, so a
+ * `["match", ...]` expression isn't an option.
+ */
+function renderStyleLayers(
+  style: LayerConfig['styles'] extends (infer S)[] | undefined ? S : never,
+  styleIndex: number,
+  baseId: string,
+  layer: LayerConfig,
+  sourceLayer?: string,
+) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const commonProps: Record<string, any> = {
+    type: style.type,
+    layout: { ...(style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' },
+    ...(layer.minZoom != null ? { minzoom: layer.minZoom } : {}),
+    ...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {}),
+    ...(sourceLayer ? { 'source-layer': sourceLayer } : {}),
+  };
+  const baseFilter = style.geometryFilter ? buildGeometryFilter(style.geometryFilter) : undefined;
+  const baseSubLayerId = `${baseId}--${style.type}--${styleIndex}`;
+
+  if (style.type === 'line' && style.dashByCategory) {
+    const expansions = expandDashByCategory(style);
+    if (expansions.length > 0) {
+      // Strip user-set line-dasharray from the shared paint — each sub-layer overrides per-case.
+      const sharedPaint = { ...style.paint } as Record<string, unknown>;
+      delete sharedPaint['line-dasharray'];
+      return expansions.map((sub) => {
+        const filter = baseFilter ? ['all', baseFilter, sub.filter] : sub.filter;
+        return (
+          <Layer
+            key={`${style.type}--${styleIndex}--${sub.idSuffix}`}
+            id={`${baseSubLayerId}--${sub.idSuffix}`}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            paint={{ ...sharedPaint, 'line-dasharray': sub.dasharray } as any}
+            filter={filter as any}
+            {...(commonProps as any)}
+          />
+        );
+      });
+    }
+  }
+
+  return [
+    <Layer
+      key={`${style.type}--${styleIndex}`}
+      id={baseSubLayerId}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      paint={style.paint as any}
+      {...(baseFilter ? { filter: baseFilter as any } : {})}
+      {...(commonProps as any)}
+    />,
+  ];
 }
 
 // Inline component for raster imagery layers

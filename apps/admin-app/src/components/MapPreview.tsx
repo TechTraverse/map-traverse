@@ -21,6 +21,7 @@ import {
   propertyFiltersToCql2,
   and,
   mergeBaseAndActiveCql2Filters,
+  expandDashByCategory,
 } from '@ogc-maps/storybook-components/utils';
 import type { CQL2Expression } from '@ogc-maps/storybook-components/utils';
 import type { PropertyFilter } from '@ogc-maps/storybook-components/utils';
@@ -98,6 +99,65 @@ const CORNER_CLASSES: Record<ControlCorner, string> = {
   'bottom-left': 'mapui:absolute mapui:bottom-4 mapui:left-4 mapui:flex mapui:flex-col mapui:gap-4 mapui:items-start',
 };
 
+/**
+ * Render a single style as one or more `<Layer>` elements. Most styles map
+ * 1:1 to a Layer; a `line` style with `dashByCategory` expands to N+1
+ * Layers (one per case + a default-case) so each can carry a static
+ * `line-dasharray` — MapLibre data-constants this paint property.
+ */
+function renderPreviewStyleLayers(
+  style: NonNullable<LayerConfig['styles']>[number],
+  styleIndex: number,
+  baseId: string,
+  layer: LayerConfig,
+  sourceLayer?: string,
+) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const commonProps: Record<string, any> = {
+    type: style.type,
+    layout: { ...(style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' },
+    ...(layer.minZoom != null ? { minzoom: layer.minZoom } : {}),
+    ...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {}),
+    ...(sourceLayer ? { 'source-layer': sourceLayer } : {}),
+  };
+  const baseFilter = style.geometryFilter ? buildGeometryFilter(style.geometryFilter) : undefined;
+  const baseSubLayerId = `${baseId}--${style.type}--${styleIndex}`;
+
+  if (style.type === 'line' && style.dashByCategory) {
+    const expansions = expandDashByCategory(style);
+    if (expansions.length > 0) {
+      const sharedPaint = { ...style.paint } as Record<string, unknown>;
+      delete sharedPaint['line-dasharray'];
+      return expansions.map((sub) => {
+        const filter = baseFilter ? ['all', baseFilter, sub.filter] : sub.filter;
+        return (
+          <Layer
+            key={`${style.type}--${styleIndex}--${sub.idSuffix}`}
+            id={`${baseSubLayerId}--${sub.idSuffix}`}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            paint={{ ...sharedPaint, 'line-dasharray': sub.dasharray } as any}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            filter={filter as any}
+            {...(commonProps as any)}
+          />
+        );
+      });
+    }
+  }
+
+  return [
+    <Layer
+      key={`${style.type}--${styleIndex}`}
+      id={baseSubLayerId}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      paint={style.paint as any}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      {...(baseFilter ? { filter: baseFilter as any } : {})}
+      {...(commonProps as any)}
+    />,
+  ];
+}
+
 function PreviewVectorTileLayer({
   layer,
   sourceUrl,
@@ -119,19 +179,7 @@ function PreviewVectorTileLayer({
 
   return (
     <Source id={sourceKey} key={sourceKey} type="vector" tiles={[tileUrl]}>
-      {layer.styles.map((style, i) => (
-        <Layer
-          key={`${style.type}--${i}`}
-          id={`${sourceKey}--${style.type}--${i}`}
-          type={style.type}
-          source-layer={sourceLayer}
-          paint={style.paint as any}
-          layout={{ ...(style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' } as any}
-          {...(layer.minZoom != null ? { minzoom: layer.minZoom } : {})}
-          {...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {})}
-          {...(style.geometryFilter ? { filter: buildGeometryFilter(style.geometryFilter) as any } : {})}
-        />
-      ))}
+      {layer.styles.flatMap((style, i) => renderPreviewStyleLayers(style, i, sourceKey, layer, sourceLayer))}
     </Source>
   );
 }
@@ -161,18 +209,7 @@ function PreviewGeoJsonLayer({
 
   return (
     <Source id={layer.id} key={layer.id} type="geojson" data={featureCollection}>
-      {layer.styles.map((style, i) => (
-        <Layer
-          key={`${style.type}--${i}`}
-          id={`${layer.id}--${style.type}--${i}`}
-          type={style.type}
-          paint={style.paint as any}
-          layout={{ ...(style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' } as any}
-          {...(layer.minZoom != null ? { minzoom: layer.minZoom } : {})}
-          {...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {})}
-          {...(style.geometryFilter ? { filter: buildGeometryFilter(style.geometryFilter) as any } : {})}
-        />
-      ))}
+      {layer.styles.flatMap((style, i) => renderPreviewStyleLayers(style, i, layer.id, layer))}
     </Source>
   );
 }

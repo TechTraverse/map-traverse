@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import type { StyleConfig, FillStyle, LineStyle, CircleStyle, SymbolStyle, AvailableProperty, FetchDistinctValuesFn } from '../../types';
+import type { StyleConfig, FillStyle, LineStyle, CircleStyle, SymbolStyle, AvailableProperty, FetchDistinctValuesFn, DashByCategory } from '../../types';
 import { FormField } from '../admin/FormField';
 import { PropertyGroup } from './PropertyGroup';
 import { StylePreview } from './StylePreview';
 import { getPropertyRegistry, groupProperties } from './propertyRegistry';
+import { DashByCategoryEditor } from './DashByCategoryEditor';
 import type { ColorThemeId } from '../../utils/colorThemes';
 
 export interface StyleEditorProps {
@@ -285,6 +286,20 @@ export function StyleEditor({ value, onChange, suggestedType, suggestedTypes, av
             />
           ))}
         </div>
+      )}
+
+      {/* Per-category dash array — only available for line styles. MapLibre
+          data-constants `line-dasharray`, so this is implemented via
+          sub-layer expansion at render time, not a paint expression. */}
+      {value.type === 'line' && (
+        <DashByCategoryEditor
+          value={(value as LineStyle).dashByCategory}
+          onChange={(dashByCategory: DashByCategory | undefined) =>
+            onChange({ ...(value as LineStyle), dashByCategory } as StyleConfig)
+          }
+          availableProperties={availableProperties}
+          onFetchDistinctValues={onFetchDistinctValues}
+        />
       )}
     </div>
   );

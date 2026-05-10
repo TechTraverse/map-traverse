@@ -154,6 +154,46 @@ A discriminated union on `type`. The `paint` properties follow MapLibre GL JS co
 | `line-miter-limit` | `number` | — | Miter limit for miter joins |
 | `line-round-limit` | `number` | — | Round limit for round joins |
 
+#### Per-category line styling (`line-width`, `dashByCategory`)
+
+Driving line *width* by a feature property is supported directly: `line-width`
+has `dataDriven: true` in the property registry, so the StyleEditor exposes
+its **categorical (`match`)** mode. Bind a property, list the cases, set a
+fallback width — the saved expression is a standard MapLibre `["match", ...]`.
+
+`line-dasharray` is the harder case. The MapLibre style spec **data-constants**
+`line-dasharray` (and `line-pattern`), so a `["match", ["get", prop], …]`
+expression is rejected at runtime. The project works around this with an
+opt-in `dashByCategory` field on line styles:
+
+```ts
+{
+  type: 'line',
+  paint: { 'line-color': '#000', 'line-width': 1 },
+  dashByCategory: {
+    property: 'roadclass',
+    cases: [
+      { value: 'interstate', dasharray: [1, 0] },   // solid
+      { value: 'primary',    dasharray: [4, 2] },
+      { value: 'secondary',  dasharray: [2, 2] },
+    ],
+    default: [1, 4], // optional — features that match no case
+  }
+}
+```
+
+At render time the renderer ([`MapContainer.tsx`](../apps/map-client/src/components/MapContainer.tsx),
+[`MapPreview.tsx`](../apps/admin-app/src/components/MapPreview.tsx)) calls
+`expandDashByCategory()` and emits one MapLibre `<Layer>` per case (each with
+a static `line-dasharray` and a filter `["==", ["get", property], value]`),
+plus an optional default-case layer with the negated filter. Stable derived
+ids (`${baseId}--line--${i}--dash--${slug}`) keep MapLibre layer reordering
+correct.
+
+The legend `Generate from styles` button picks up `dashByCategory` and
+produces one entry per case — each with a dashed-line swatch faithfully
+matching the rendered pattern.
+
 ### Circle Style
 
 ```ts

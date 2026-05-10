@@ -44,11 +44,14 @@ function Swatch({
   shape,
   outlineColor,
   outlineWidth,
+  dasharray,
 }: {
   color: string;
   shape?: string;
   outlineColor?: string;
   outlineWidth?: number;
+  /** Optional dasharray for `line` shape, mirrors MapLibre's `line-dasharray`. */
+  dasharray?: number[];
 }) {
   const resolvedShape = shape ?? 'square';
   let inner: React.ReactNode;
@@ -61,12 +64,36 @@ function Swatch({
       />
     );
   } else if (resolvedShape === 'line') {
-    inner = (
-      <span
-        className="mapui:inline-block mapui:h-0.5 mapui:w-4 mapui:rounded-full"
-        style={{ backgroundColor: color }}
-      />
-    );
+    if (dasharray && dasharray.length > 1) {
+      // SVG dasharray faithfully reproduces MapLibre's [dash, gap, dash, gap]
+      // pattern so per-category dash styles are legible at-a-glance.
+      inner = (
+        <svg
+          viewBox="0 0 16 4"
+          className="mapui:inline-block"
+          style={{ width: 16, height: 4 }}
+          aria-hidden
+        >
+          <line
+            x1={0}
+            y1={2}
+            x2={16}
+            y2={2}
+            stroke={color}
+            strokeWidth={2}
+            strokeDasharray={dasharray.join(',')}
+            strokeLinecap="butt"
+          />
+        </svg>
+      );
+    } else {
+      inner = (
+        <span
+          className="mapui:inline-block mapui:h-0.5 mapui:w-4 mapui:rounded-full"
+          style={{ backgroundColor: color }}
+        />
+      );
+    }
   } else if (resolvedShape === 'outline-square') {
     // Transparent fill with a solid border. Border color falls back to `color`.
     inner = (
@@ -160,7 +187,7 @@ function SimpleLegend({ legend, label, hasArrowColumn, textStyle }: { legend: Le
     return (
       <div className="mapui:flex mapui:items-center mapui:gap-2 mapui:min-w-0">
         {arrowSpacer}
-        <Swatch color={entries[0].color} shape={entries[0].shape} outlineColor={entries[0].outlineColor} outlineWidth={entries[0].outlineWidth} />
+        <Swatch color={entries[0].color} shape={entries[0].shape} outlineColor={entries[0].outlineColor} outlineWidth={entries[0].outlineWidth} dasharray={entries[0].dasharray} />
         <span className="mapui:text-slate-700 mapui:truncate" style={textStyle}>
           {entries[0].label || label}
         </span>
@@ -179,7 +206,7 @@ function SimpleLegend({ legend, label, hasArrowColumn, textStyle }: { legend: Le
             className="mapui:flex mapui:items-center mapui:gap-2 mapui:min-w-0"
           >
             {arrowSpacer}
-            <Swatch color={entry.color} shape={entry.shape} outlineColor={entry.outlineColor} outlineWidth={entry.outlineWidth} />
+            <Swatch color={entry.color} shape={entry.shape} outlineColor={entry.outlineColor} outlineWidth={entry.outlineWidth} dasharray={entry.dasharray} />
             <span className="mapui:text-slate-700 mapui:truncate" style={textStyle}>{entry.label}</span>
           </li>
         ))}
@@ -260,7 +287,7 @@ function CategoricalLegend({
               key={`${entry.label}-${i}`}
               className="mapui:flex mapui:items-center mapui:gap-2 mapui:min-w-0"
             >
-              <Swatch color={entry.color} shape={entry.shape} outlineColor={entry.outlineColor} outlineWidth={entry.outlineWidth} />
+              <Swatch color={entry.color} shape={entry.shape} outlineColor={entry.outlineColor} outlineWidth={entry.outlineWidth} dasharray={entry.dasharray} />
               <span className="mapui:text-slate-700 mapui:truncate mapui:text-xs" style={textStyle}>
                 {entry.label}
               </span>
@@ -346,7 +373,7 @@ function GradientLegend({
               key={`${entry.label}-${i}`}
               className="mapui:flex mapui:items-center mapui:gap-2 mapui:min-w-0"
             >
-              <Swatch color={entry.color} shape={entry.shape} outlineColor={entry.outlineColor} outlineWidth={entry.outlineWidth} />
+              <Swatch color={entry.color} shape={entry.shape} outlineColor={entry.outlineColor} outlineWidth={entry.outlineWidth} dasharray={entry.dasharray} />
               <span className="mapui:text-slate-700 mapui:truncate mapui:text-xs" style={textStyle}>
                 {entry.label}
               </span>
