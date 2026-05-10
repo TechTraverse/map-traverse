@@ -19,6 +19,7 @@ import {
   StyleConfigSchema,
   LegendEntrySchema,
   LegendConfigSchema,
+  LegendDisplayConfigSchema,
   TextSearchFieldSchema,
   NumberSearchFieldSchema,
   DatetimeSearchFieldSchema,
@@ -84,6 +85,7 @@ export type StyleConfig = z.infer<typeof StyleConfigSchema>;
 
 export type LegendEntry = z.infer<typeof LegendEntrySchema>;
 export type LegendConfig = z.infer<typeof LegendConfigSchema>;
+export type LegendDisplayConfig = z.infer<typeof LegendDisplayConfigSchema>;
 
 export type TextSearchField = z.infer<typeof TextSearchFieldSchema>;
 export type NumberSearchField = z.infer<typeof NumberSearchFieldSchema>;
@@ -200,6 +202,7 @@ export {
   StyleConfigSchema,
   LegendEntrySchema,
   LegendConfigSchema,
+  LegendDisplayConfigSchema,
   TextSearchFieldSchema,
   NumberSearchFieldSchema,
   DatetimeSearchFieldSchema,

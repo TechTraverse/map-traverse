@@ -236,7 +236,11 @@ export const StyleConfigSchema = z.discriminatedUnion('type', [
 export const LegendEntrySchema = z.object({
   label: z.string(),
   color: z.string(),
-  shape: z.enum(['circle', 'line', 'square']).optional(),
+  shape: z.enum(['circle', 'line', 'square', 'outline-square', 'outline-circle']).optional(),
+  /** Optional border color for outline shapes. Falls back to `color` when omitted. */
+  outlineColor: z.string().optional(),
+  /** Optional border width in pixels for outline shapes. Defaults to 1. */
+  outlineWidth: z.number().min(0).optional(),
 });
 
 export const LegendConfigSchema = z.object({
@@ -247,6 +251,21 @@ export const LegendConfigSchema = z.object({
   showDisclosureArrow: z.boolean().optional(),
   gradientProperty: z.string().optional(),
 });
+
+/**
+ * Global presentation options for the legend panel itself (not per-entry).
+ * Controls background, text, and border colors. All fields are optional and
+ * fall back to the existing white background / slate text styling when absent.
+ */
+export const LegendDisplayConfigSchema = z.object({
+  /** CSS color for the legend panel background. Defaults to white. */
+  background: z.string().optional(),
+  /** CSS color for legend text (labels and headings). Defaults to slate-700. */
+  textColor: z.string().optional(),
+  /** CSS color for the legend panel border. When omitted, no explicit border is drawn. */
+  borderColor: z.string().optional(),
+});
+export type LegendDisplayConfig = z.infer<typeof LegendDisplayConfigSchema>;
 
 // --- Search Config ---
 
@@ -614,6 +633,12 @@ export const UIConfigSchema = z.object({
    * IDs not in the list are appended in natural order; unknown IDs are ignored.
    */
   legendOrder: z.array(z.string()).optional(),
+  /**
+   * Optional global presentation overrides for the legend panel (background,
+   * text, border colors). Per-entry styling lives on `LegendConfig` /
+   * `LegendEntry`; this is for the panel chrome itself.
+   */
+  legendDisplay: LegendDisplayConfigSchema.optional(),
   coordinateFormat: z.enum(COORDINATE_FORMATS).default('decimal-degrees'),
 });
 

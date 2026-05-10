@@ -301,7 +301,32 @@ Explicit legend entries for a layer. If omitted and `style` is set, entries are 
 |---|---|---|---|
 | `label` | `string` | Yes | Display text |
 | `color` | `string` | Yes | Swatch color (CSS color or hex) |
-| `shape` | `"circle" \| "line" \| "square"` | No | Swatch shape; defaults to `"square"` |
+| `shape` | `"circle" \| "line" \| "square" \| "outline-square" \| "outline-circle"` | No | Swatch shape; defaults to `"square"`. The two `outline-*` shapes render with a transparent fill and a 1px border — useful for polygon styles configured with no fill (or full transparency) so the legend matches what you see on the map. |
+| `outlineColor` | `string` | No | Border color for `outline-*` shapes. Falls back to `color` when omitted. |
+| `outlineWidth` | `number` | No | Border width in pixels for `outline-*` shapes. Defaults to `1`. |
+
+### Legend display (panel chrome)
+
+The legend panel itself (background, text color, border) is configurable via `ui.legendDisplay`. All fields are optional; omit them to keep the default white background with slate text.
+
+```ts
+ui: {
+  showLegend: true,
+  legendDisplay: {
+    background: '#0f172a',     // dark navy panel
+    textColor: '#f1f5f9',      // light slate text
+    borderColor: '#334155',    // subtle border
+  },
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `background` | `string` | CSS color for the legend panel background. Defaults to white. |
+| `textColor` | `string` | CSS color for legend labels and headings. Defaults to slate-700. |
+| `borderColor` | `string` | CSS color for the legend panel border. Omit to draw no border. |
+
+The LegendEditor in the admin app exposes these fields under the **Legend Display** section of the **UI** wizard step.
 
 ---
 

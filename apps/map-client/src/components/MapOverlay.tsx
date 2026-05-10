@@ -373,6 +373,7 @@ export function MapOverlay({
             layers={layers}
             visibleLayerIds={activeLayerIds}
             legendOrder={uiConfig.legendOrder}
+            display={uiConfig.legendDisplay}
             onOpacityChange={uiConfig.showLegendOpacity ? setLayerOpacity : undefined}
           />
         ) : null;
