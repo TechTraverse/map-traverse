@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import type {
@@ -293,8 +294,20 @@ export const useActiveLayerIds = () =>
  * fetchFeatures, useCsvExport, hasActiveFilter, etc.) so saved base filters
  * apply on first render and across reloads, not just after the user touches
  * a search field.
+ *
+ * Implemented with `useMemo` rather than `useShallow` because
+ * `mergeBaseAndActiveCql2Filters` constructs fresh objects (e.g.
+ * `{ op: 'and', args: [...] }` from `and()`) every call. `useShallow`'s
+ * shallow comparison would see the per-layer values as new references on
+ * every read and report the snapshot as unstable — which trips React's
+ * `useSyncExternalStore` infinite-loop guard (#185) and white-screens the
+ * app. Selecting the two stable inputs and memoizing avoids that.
  */
-export const useEffectiveCql2Filters = () =>
-  useMapStore(
-    useShallow((s) => mergeBaseAndActiveCql2Filters(s.layers, s.activeCql2Filters)),
+export function useEffectiveCql2Filters() {
+  const layers = useMapStore((s) => s.layers);
+  const activeCql2Filters = useMapStore((s) => s.activeCql2Filters);
+  return useMemo(
+    () => mergeBaseAndActiveCql2Filters(layers, activeCql2Filters),
+    [layers, activeCql2Filters],
   );
+}
