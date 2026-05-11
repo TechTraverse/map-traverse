@@ -77,10 +77,40 @@ describe('expandDashByCategory', () => {
     expect(def.dasharray).toEqual([1, 4]);
     expect(def.value).toBeNull();
     expect(def.filter).toEqual([
-      'all',
-      ['!=', ['get', 'class'], 'A'],
-      ['!=', ['get', 'class'], 'B'],
+      'any',
+      ['!', ['has', 'class']],
+      ['==', ['get', 'class'], null],
+      ['all', ['!=', ['get', 'class'], 'A'], ['!=', ['get', 'class'], 'B']],
     ]);
+  });
+
+  it('default-case filter structurally catches missing/null values', () => {
+    const style: LineStyle = {
+      ...baseLineStyle,
+      dashByCategory: {
+        property: 'class',
+        cases: [
+          { value: 'highway', dasharray: [1, 0] },
+          { value: 'primary', dasharray: [3, 3] },
+        ],
+        default: [1, 4],
+      },
+    };
+    const result = expandDashByCategory(style);
+    const def = result.find((r) => r.idSuffix === 'dash--default');
+    expect(def).toBeDefined();
+    const filter = def!.filter as unknown[];
+    // Structural shape: an `any` head with branches covering
+    // missing, null, and the negated case-value list — not an `all`-of-`!=`s.
+    expect(filter[0]).toBe('any');
+    expect(filter).toContainEqual(['!', ['has', 'class']]);
+    expect(filter).toContainEqual(['==', ['get', 'class'], null]);
+    // One of the branches is an `all`-of-`!=` over the case values.
+    const allBranch = filter.find(
+      (b) => Array.isArray(b) && (b as unknown[])[0] === 'all',
+    ) as unknown[] | undefined;
+    expect(allBranch).toBeDefined();
+    expect(allBranch!.length).toBe(1 /* 'all' */ + 2 /* case values */);
   });
 
   it('omits default-case sub-layer when no default dasharray provided', () => {
@@ -111,9 +141,10 @@ describe('expandDashByCategory', () => {
     const result = expandDashByCategory(style);
     expect(result.map((r) => r.idSuffix)).toEqual(['dash--1', 'dash--2', 'dash--default']);
     expect(result[2].filter).toEqual([
-      'all',
-      ['!=', ['get', 'lanes'], 1],
-      ['!=', ['get', 'lanes'], 2],
+      'any',
+      ['!', ['has', 'lanes']],
+      ['==', ['get', 'lanes'], null],
+      ['all', ['!=', ['get', 'lanes'], 1], ['!=', ['get', 'lanes'], 2]],
     ]);
   });
 

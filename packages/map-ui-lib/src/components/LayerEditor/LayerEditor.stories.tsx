@@ -126,6 +126,47 @@ export const PolygonWithLabels: Story = {
   },
 };
 
+// Demonstrates a source backed by both LineString and Polygon geometries.
+// When the source is mixed, the editor exposes **two** "Add labels" buttons —
+// "+ Add line labels" (symbol-placement: 'line') and
+// "+ Add polygon labels" (symbol-placement: 'point' + centroid via geometryFilter) —
+// so each geometry family can be labeled independently. With a single-geometry
+// source only the matching button shows.
+export const MixedGeometryWithLabels: Story = {
+  render: () => {
+    const [layer, setLayer] = useState<LayerConfig>({
+      id: 'mixed-features',
+      sourceId: 'tipg',
+      // Pretend collection containing both line and polygon features
+      // (e.g. a single source with trails + park boundaries).
+      collection: 'ne_10m_parks_and_trails',
+      label: 'Parks & Trails (mixed)',
+      visible: true,
+      dataMode: 'vector-tiles',
+      styles: [
+        {
+          type: 'fill',
+          paint: { 'fill-color': '#7fc97f', 'fill-opacity': 0.5 },
+          geometryFilter: ['Polygon', 'MultiPolygon'],
+        },
+        {
+          type: 'line',
+          paint: { 'line-color': '#386cb0', 'line-width': 2 },
+          geometryFilter: ['LineString', 'MultiLineString'],
+        },
+      ],
+    });
+    return (
+      <div className="mapui:max-w-lg mapui:p-4">
+        <LayerEditor value={layer} onChange={setLayer} availableSources={sampleSources} />
+        <pre className="mapui:mt-4 mapui:rounded mapui:bg-slate-100 mapui:p-3 mapui:text-xs">
+          {JSON.stringify(layer, null, 2)}
+        </pre>
+      </div>
+    );
+  },
+};
+
 export const SymbolLayer: Story = {
   render: () => {
     const [layer, setLayer] = useState<LayerConfig>({
