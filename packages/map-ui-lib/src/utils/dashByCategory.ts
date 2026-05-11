@@ -61,11 +61,21 @@ export function expandDashByCategory(style: LineStyle): ExpandedDashSubLayer[] {
   // Default-case layer: features whose property doesn't match any case.
   // Only add when a default dasharray is provided — without one, default
   // features would have no rendering.
+  //
+  // The default filter intentionally catches features whose property is
+  // **missing or null** in addition to "set, but not one of the cases".
+  // MapLibre's `!=` against null/missing evaluates to `false`, so a naive
+  // `['all', ['!=', prop, v1], ['!=', prop, v2], …]` would leave null/missing
+  // features matching neither the case layers (each `==` is false) nor the
+  // default layer (each `!=` is also false), and they'd silently disappear.
+  // Hence the explicit `!has` + `== null` branches in the `any` head.
   if (cfg.default) {
     const caseValues = cfg.cases.map((c) => c.value);
     const negatedFilter = [
-      'all',
-      ...caseValues.map((v) => ['!=', ['get', cfg.property], v]),
+      'any',
+      ['!', ['has', cfg.property]],
+      ['==', ['get', cfg.property], null],
+      ['all', ...caseValues.map((v) => ['!=', ['get', cfg.property], v])],
     ];
     out.push({
       idSuffix: 'dash--default',
