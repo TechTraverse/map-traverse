@@ -398,44 +398,69 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons,
               // The geometry families backing this layer (derived from suitableStyleTypes).
               // 'fill' implies polygon, 'line' implies linestring, 'circle' implies point.
               const hasPolygon = suitableStyleTypes.includes('fill');
-              const showAddLabels = (hasLine || hasPolygon) && stringProps.length > 0;
-              if (!showAddLabels) return null;
+              if (stringProps.length === 0) return null;
+              if (!hasLine && !hasPolygon) return null;
+              // Mixed = the source has more than one non-symbol geometry family
+              // (e.g. both line and polygon). In that case we emit a geometryFilter
+              // on the label style so the symbol layer only renders for the
+              // matching subset of features. Single-geometry sources omit the
+              // filter — there's only one family, so it would be redundant.
               const isMixed = suitableStyleTypes.filter((t) => t !== 'symbol').length > 1;
-              const onAddLabels = () => {
-                const labelProp = stringProps[0]?.name ?? 'name';
-                // Prefer following the line for line layers; centroid placement for polygon-only.
-                const placement: 'line' | 'point' = hasLine ? 'line' : 'point';
-                const labelStyle: StyleConfig = {
-                  type: 'symbol',
-                  paint: {
-                    'text-color': '#333333',
-                    'text-halo-color': '#ffffff',
-                    'text-halo-width': 1,
-                  },
-                  layout: {
-                    'text-field': `{${labelProp}}`,
-                    'text-size': 12,
-                    'symbol-placement': placement,
-                  },
-                  ...(isMixed
-                    ? {
-                        geometryFilter: hasLine
-                          ? ['LineString', 'MultiLineString']
-                          : ['Polygon', 'MultiPolygon'],
-                      }
-                    : {}),
-                };
-                update({ styles: [...(value.styles ?? [defaultFill]), labelStyle] });
+              const labelProp = stringProps[0]?.name ?? 'name';
+              const baseLabelStyle = (
+                placement: 'line' | 'point',
+                geometryFilter?: ('LineString' | 'MultiLineString' | 'Polygon' | 'MultiPolygon')[],
+              ): StyleConfig => ({
+                type: 'symbol',
+                paint: {
+                  'text-color': '#333333',
+                  'text-halo-color': '#ffffff',
+                  'text-halo-width': 1,
+                },
+                layout: {
+                  'text-field': `{${labelProp}}`,
+                  'text-size': 12,
+                  'symbol-placement': placement,
+                },
+                ...(geometryFilter ? { geometryFilter } : {}),
+              });
+              const addLineLabels = () => {
+                const style = baseLabelStyle(
+                  'line',
+                  isMixed ? ['LineString', 'MultiLineString'] : undefined,
+                );
+                update({ styles: [...(value.styles ?? [defaultFill]), style] });
+              };
+              const addPolygonLabels = () => {
+                const style = baseLabelStyle(
+                  'point',
+                  isMixed ? ['Polygon', 'MultiPolygon'] : undefined,
+                );
+                update({ styles: [...(value.styles ?? [defaultFill]), style] });
               };
               return (
-                <button
-                  type="button"
-                  onClick={onAddLabels}
-                  className="mapui:cursor-pointer mapui:self-start mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-slate-700 hover:mapui:bg-slate-50"
-                  title={`Add a symbol label style using "${stringProps[0]?.name ?? 'name'}"`}
-                >
-                  + Add labels
-                </button>
+                <>
+                  {hasLine && (
+                    <button
+                      type="button"
+                      onClick={addLineLabels}
+                      className="mapui:cursor-pointer mapui:self-start mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-slate-700 hover:mapui:bg-slate-50"
+                      title={`Add a line-following symbol label using "${labelProp}"`}
+                    >
+                      + Add line labels
+                    </button>
+                  )}
+                  {hasPolygon && (
+                    <button
+                      type="button"
+                      onClick={addPolygonLabels}
+                      className="mapui:cursor-pointer mapui:self-start mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-slate-700 hover:mapui:bg-slate-50"
+                      title={`Add a centroid (point-placement) symbol label using "${labelProp}"`}
+                    >
+                      + Add polygon labels
+                    </button>
+                  )}
+                </>
               );
             })()}
           </div>
