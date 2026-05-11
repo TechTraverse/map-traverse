@@ -17,6 +17,7 @@
 - **Data Flow**: Config -> Zod -> Zustand -> App -> URL (nuqs).
 - **Config**: Defined in `MapConfig` (JSON), validated by Zod.
 - **State**: URL state (nuqs) syncs with Zustand; use `history: 'replace'` for viewport.
+- **CQL2 filtering**: `layer.cql2Filter` is a permanent base filter applied to every request; SearchPanel filters AND on top. Use `mergeBaseAndActiveCql2Filters` (lib) or `useEffectiveCql2Filters` (map-client) — never read `activeCql2Filters[id]` directly for rendering.
 
 ## Project Structure
 - `packages/map-ui-lib`: UI library (React, Zod, Hooks). Published as `@ogc-maps/storybook-components`.
@@ -27,25 +28,29 @@
 
 ## Workflow — Worktree Isolation (Mandatory)
 
-Every task — solo or team — MUST run in a git worktree. Never commit directly to `ralph/main`.
+AI work lives on `ai/main` and worktree branches off it. **Never commit
+directly to `main`** — that branch is human-reviewed integration.
 
 ### Solo tasks
-1. **Start**: Enter a worktree with a descriptive branch name (e.g., `ralph/fix-tooltip`).
+1. **Start**: Enter a worktree off `ai/main` with a descriptive branch name (e.g., `ai/fix-tooltip`).
 2. **Work**: Make changes, commit to the worktree branch. Run `pnpm verify` before declaring done.
 3. **Merge**: When the feature is complete and verify passes:
-   - `git checkout ralph/main`
+   - `git checkout ai/main`
    - `git merge <worktree-branch> --no-ff`
-4. **Cleanup**: Exit and remove the worktree.
+4. **Cleanup**: Exit and remove the worktree. Push `ai/main` to origin if running unattended.
 
 ### Team tasks
-Each teammate gets its own worktree. The lead merges all branches into `ralph/main` after teammates finish (per `.agent/prompts/ralph-loop.md`).
+Each teammate gets its own worktree off `ai/main`. The lead merges all branches into `ai/main` after teammates finish (per `.agent/prompts/ai-loop.md`).
+
+### Promoting `ai/main` → `main`
+The AI does not merge into `main` directly. To promote, open a PR `ai/main → main` for human review. CI (`ci.yml`, `codeql.yml`) runs on the PR. Once approved, the human squash-merges per the `main` ruleset.
 
 ### Rules
-- Base branch is always `ralph/main`. Create worktree branches from it.
-- Never push to or commit directly on `ralph/main`. All work goes through a worktree branch, then merges.
+- Base branch is always `ai/main`. Create worktree branches from it.
+- Never commit directly on `main`. AI can push to `ai/main` and to AI worktree branches freely.
 - **Commit messages**: Keep them short (one line, ~50 chars). No `Co-Authored-By` trailer — it's implied in this repo.
-- **Merge conflicts**: If merging into `ralph/main` produces a conflict, attempt to resolve it. Read both sides, understand the intent, and produce a correct merged result. Only STOP and report to the human if you're unsure which change to keep — i.e., the conflict is ambiguous or the two sides contradict each other. If running in a loop, exit the loop only if you cannot resolve it.
-- If `pnpm verify` fails after merge, fix on `ralph/main` and commit the fix there.
+- **Merge conflicts**: If merging into `ai/main` produces a conflict, attempt to resolve it. Read both sides, understand the intent, and produce a correct merged result. Only STOP and report to the human if you're unsure which change to keep — i.e., the conflict is ambiguous or the two sides contradict each other. If running in a loop, exit the loop only if you cannot resolve it.
+- If `pnpm verify` fails after merge, fix on `ai/main` and commit the fix there.
 
 For dev setup and Docker troubleshooting, see `.agent/workflows/development.md`.
 
@@ -53,12 +58,17 @@ For dev setup and Docker troubleshooting, see `.agent/workflows/development.md`.
 - `main` is guarded by a ruleset (1 approval + linear history), not branch protection — `gh api .../branches/main/protection` returns 404. Merge with: `gh pr review N --approve && gh pr merge N --squash --admin --delete-branch`.
 - The `claude-review` CI job is currently broken and fails on every PR — ignore it. Trust `test` / `analyze` / `CodeQL`.
 - Hold major bumps of build/runtime deps (`maplibre-gl`, `vite`, `@vitejs/plugin-react`, etc.) for manual review in a worktree.
-- Sync flow: merge dependabot PRs into `main`, then locally `git merge main --no-ff -m "merge: ..."` into `ralph/main`. This sync is allowed — the "never commit to ralph/main" rule means no direct edits, not no merges.
+- Sync flow: dependabot lands in `main` → locally `git checkout ai/main && git merge main --no-ff -m "sync: main into ai/main"`. This is the only legitimate path from `main` into `ai/main`.
 
 ## Gotchas
 - Widening a paint/layout field in `schemas/config.ts` to accept `Expression` (unknown[]) can break `<Layer>` typing in `apps/map-client/src/components/MapContainer.tsx`. Cast `layout` as `any` to match the existing `paint as any` pattern.
 - No `@testing-library/react` in map-ui-lib. Tests use `renderToStaticMarkup` for components; extract pure logic to `utils/` for direct vitest coverage.
 - After loading data into a new PostGIS schema (or changing `TIPG_DB_SCHEMAS`), `docker restart storybook-components-tipg` is required — tipg discovers schemas only at boot. Without this the new `/collections` entry won't appear.
+- Admin configs live in `map_admin.*` (search_path: `map_admin,public`). The `public.{map_configs,ogc_sources}` rows are stale seed leftovers — the running app does not read them.
+- Deployed containers on the EC2 host are `ogc-maps-*` (Caddy gateway). Repo's `docker-compose.yml` is for local dev only — `docker logs storybook-components-tipg` etc. only work locally.
+- `getVectorTileSourceKey` must be called with the **merged** base+active cql2 filter, not just the active one. MapLibre won't refetch vector tiles unless both the React key AND Source/Layer id change.
+- `packages/map-ui-lib`'s main bundle touches `document` at module load. Node-only vitest in `apps/admin-app/` cannot import lib helpers; mirror the helper locally or test it from inside `packages/map-ui-lib` instead.
+- `apps/admin-app/src/components/MapPreview.tsx` has multiple `<Legend>` and per-layer render call sites. When sweeping the file, grep for **all** hits of the relevant symbol — spot-fixes miss the rest.
 
 ## Claude Skills
 This repo ships task-specific skills under `.claude/skills/`. Read the relevant `SKILL.md` *before* starting any non-trivial change — they encode the project's architectural rules and the *why* behind them, so you don't have to rediscover them mid-task.

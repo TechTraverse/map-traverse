@@ -91,10 +91,10 @@ This creates two-way sync: moving a card applies the label which triggers the ag
 ### Implement with a custom base branch
 
 ```
-@claude implement --base ralph/main
+@claude implement --base ai/main
 ```
 
-This branches from `ralph/main` instead of `main` and targets the PR against it.
+This branches from `ai/main` instead of `main` and targets the PR against it.
 
 ### Freeform interaction
 

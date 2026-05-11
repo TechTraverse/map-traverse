@@ -43,8 +43,8 @@ Build order from `INVESTIGATION.md` cluster analysis:
    pre-save validation. Combine into one worktree; both are now scoped as
    guardrails rather than bug fixes.
 
-Branch naming: `ralph/fb-<n>-<slug>`. Wave A through D each merge into
-`ralph/main` per `CLAUDE.md → Worktree Isolation`. Run `pnpm verify` from
+Branch naming: `ai/fb-<n>-<slug>`. Wave A through D each merge into
+`ai/main` per `CLAUDE.md → Worktree Isolation`. Run `pnpm verify` from
 each worktree before the merge.
 
 ---
@@ -418,10 +418,10 @@ opportunistically when the relevant code is open.
 
 ## Loop runner notes (for the orchestrator)
 
-- Each wave is a worktree. Branch: `ralph/fb-<n>-<slug>` (or
-  `ralph/fb-8-9-legend` for the combined item).
+- Each wave is a worktree. Branch: `ai/fb-<n>-<slug>` (or
+  `ai/fb-8-9-legend` for the combined item).
 - For each item: run its **Steps**, run `pnpm verify` from the worktree
-  root, then merge into `ralph/main` per `CLAUDE.md`.
+  root, then merge into `ai/main` per `CLAUDE.md`.
 - After Wave A merges: pull the host bundle (manually, see `feedback.md`
   D) — that's the only way Mike sees the fixes. Until that's automated,
   every "verified locally" claim needs a parallel "deployed: not yet" or
