@@ -28,7 +28,7 @@ services:
       DATABASE_URL: "postgresql://postgres:postgres@postgis:5432/gis"
       TIPG_DB_MAX_CONN_SIZE: "10"
       TIPG_SET_MVT_LAYERNAME: "true"
-      TIPG_DB_SCHEMAS: '["example", "gunnison"]'
+      TIPG_DB_SCHEMAS: '${TIPG_DB_SCHEMAS:-["example"]}'
       TIPG_CORS_ORIGIN: '*'
       TIPG_ROOT_PATH: /ogc
     ports:
