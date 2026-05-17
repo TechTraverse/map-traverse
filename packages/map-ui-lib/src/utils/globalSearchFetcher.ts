@@ -5,22 +5,18 @@
  * and the CQL2 `like` / `or` builders to fan a single user query out across
  * multiple layers, one request per layer.
  */
-import {
-  fetchFeatures,
-  fetchDistinctValues,
-} from '@ogc-maps/storybook-components/utils';
-import type { CQL2Expression } from '@ogc-maps/storybook-components/utils';
-import { like, or, inList } from '@ogc-maps/storybook-components/utils';
+import { fetchFeatures, fetchDistinctValues } from './ogcApi';
+import { like, or, inList, type CQL2Expression } from './cql2';
 import type {
   GlobalSearchConfig,
   LayerConfig,
   OgcApiSource,
   SourceAuth,
-} from '@ogc-maps/storybook-components/types';
+} from '../types';
 import type {
-  GlobalSearchFeatureMatch,
-  GlobalSearchGroupedResults,
-} from '@ogc-maps/storybook-components';
+  FeatureMatch as GlobalSearchFeatureMatch,
+  GroupedResults as GlobalSearchGroupedResults,
+} from '../components/GlobalSearchBar/GlobalSearchBar';
 
 export interface GlobalSearchContext {
   config: GlobalSearchConfig;
@@ -129,7 +125,6 @@ function buildLayerExpression(
     if (prop.prefetch) {
       const cached = ctx.prefetchedValues[prefetchKey(layerId, prop.property)];
       if (cached === undefined) {
-        // Prefetch hasn't completed yet — fall back to server-side like.
         expressions.push(like(prop.property, likePattern));
         continue;
       }
@@ -243,7 +238,6 @@ export async function runGlobalSearch(
     const result = settled[i];
     if (result.status === 'rejected') {
       const err = result.reason as { name?: string } | undefined;
-      // Abort should bubble up so the caller can cancel cleanly.
       if (err?.name === 'AbortError') {
         throw result.reason;
       }

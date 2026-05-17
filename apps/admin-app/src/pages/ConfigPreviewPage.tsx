@@ -57,6 +57,8 @@ export function ConfigPreviewPage() {
           onImageryLayersChange={setImageryLayers}
           currentStep="preview"
           uiConfig={config.ui}
+          info={config.info}
+          globalSearch={config.globalSearch}
         />
       </div>
     </div>

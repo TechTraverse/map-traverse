@@ -19,3 +19,4 @@ export * from './exportConverters';
 export * from './id';
 export * from './slugify';
 export * from './dashByCategory';
+export * from './globalSearchFetcher';
