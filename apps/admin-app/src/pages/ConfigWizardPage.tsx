@@ -1292,6 +1292,7 @@ export function ConfigWizardPage() {
           currentStep={currentStep}
           uiConfig={effectiveUIConfig}
           info={info}
+          globalSearch={globalSearch}
         />
       </div>
     </div>

@@ -22,6 +22,10 @@ import {
   and,
   mergeBaseAndActiveCql2Filters,
   expandDashByCategory,
+  runGlobalSearch,
+  prefetchAllDistinctValues,
+  prefetchKey,
+  type GlobalSearchContext,
 } from '@ogc-maps/storybook-components/utils';
 import type { CQL2Expression } from '@ogc-maps/storybook-components/utils';
 import type { PropertyFilter } from '@ogc-maps/storybook-components/utils';
@@ -31,6 +35,7 @@ import {
   ImageryPanel,
   BasemapSwitcher,
   SearchPanel,
+  GlobalSearchBar,
   CollapsibleControl,
   CompassControl,
   CoordinateDisplay,
@@ -53,7 +58,13 @@ import {
   resolveControlCorner,
   type SideMenuPanelItem,
 } from '@ogc-maps/storybook-components';
-import type { CoordinateFormatOption, ExportRequest, ResultsDrawerTab } from '@ogc-maps/storybook-components';
+import type {
+  CoordinateFormatOption,
+  ExportRequest,
+  ResultsDrawerTab,
+  GlobalSearchFeatureMatch,
+  GlobalSearchGroupedResults,
+} from '@ogc-maps/storybook-components';
 import type {
   OgcApiSource,
   SourceAuth,
@@ -67,6 +78,7 @@ import type {
   OrderableControlKey,
   ControlCorner,
   InfoConfig,
+  GlobalSearchConfig,
 } from '@ogc-maps/storybook-components';
 import type { SearchFilterValue, SearchFilterValues, Cql2FilterConfig, InfoPosition } from '@ogc-maps/storybook-components/types';
 import { useMeasure, useSelection } from '@ogc-maps/storybook-components/hooks';
@@ -261,6 +273,7 @@ export interface MapPreviewProps {
   currentStep: string;
   uiConfig?: UIConfig;
   info?: InfoConfig;
+  globalSearch?: GlobalSearchConfig;
 }
 
 export function MapPreview({
@@ -276,6 +289,7 @@ export function MapPreview({
   currentStep,
   uiConfig,
   info,
+  globalSearch,
 }: MapPreviewProps) {
   const [infoModalOpen, setInfoModalOpen] = useState(false);
   const [internalViewState, setInternalViewState] = useState<ViewConfig>(viewState);
@@ -329,6 +343,22 @@ export function MapPreview({
     return () => mq.removeEventListener('change', handler);
   }, []);
   const effectiveLayout = resolveEffectiveLayout(uiConfig?.controlLayout, isNarrowViewport);
+
+  // Global search state — mirrors map-client's useGlobalSearch with local
+  // useState instead of a Zustand store, since the admin preview is a
+  // self-contained sandbox.
+  const globalSearchEnabled =
+    uiConfig?.showGlobalSearch === true && globalSearch?.enabled === true;
+  const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+  const [globalSearchResults, setGlobalSearchResults] =
+    useState<GlobalSearchGroupedResults>({});
+  const [globalSearchIsLoading, setGlobalSearchIsLoading] = useState(false);
+  const [prefetchedDistinctValues, setPrefetchedDistinctValues] = useState<
+    Record<string, string[]>
+  >({});
+  const globalSearchInFlightRef = useRef<AbortController | null>(null);
+  const globalSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [cursor, setCursor] = useState<string>('auto');
   const { queryablesByLayer } = useQueryablesByLayer(layers, sources);
   const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<Record<string, string[]>>({});
@@ -705,6 +735,135 @@ export function MapPreview({
       if (bbox) mapRef.current?.fitBounds(bbox, { padding: 50, maxZoom: 12 });
     },
     [layers, sourceUrlMap],
+  );
+
+  // ─── Global search: mount-time prefetch of distinct values ──────────────
+  // Stable dep key so the sweep only re-fires when the set of prefetched
+  // properties itself changes — not on every layer/style edit.
+  const globalSearchPrefetchDepKey = useMemo(() => {
+    if (!globalSearchEnabled || !globalSearch) return '';
+    const pairs: string[] = [];
+    for (const l of globalSearch.layers) {
+      for (const p of l.properties) {
+        if (p.prefetch) pairs.push(prefetchKey(l.layerId, p.property));
+      }
+    }
+    return pairs.sort().join('|');
+  }, [globalSearchEnabled, globalSearch]);
+
+  useEffect(() => {
+    if (!globalSearchEnabled || !globalSearch || globalSearchPrefetchDepKey === '') return;
+
+    const controller = new AbortController();
+    const ctx: GlobalSearchContext = {
+      config: globalSearch,
+      layers,
+      sources,
+      prefetchedValues: prefetchedDistinctValues,
+    };
+
+    prefetchAllDistinctValues(ctx, controller.signal)
+      .then((values) => {
+        if (controller.signal.aborted) return;
+        setPrefetchedDistinctValues((prev) => ({ ...prev, ...values }));
+      })
+      .catch((err: unknown) => {
+        if ((err as { name?: string })?.name === 'AbortError') return;
+        console.warn('[MapPreview] Global search prefetch failed:', err);
+      });
+
+    return () => controller.abort();
+    // layers/sources are stable post-hydration in the wizard; rerun only when
+    // the prefetch-marked property set itself changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [globalSearchEnabled, globalSearchPrefetchDepKey]);
+
+  // ─── Global search: debounced query → search ────────────────────────────
+  useEffect(() => {
+    if (!globalSearchEnabled || !globalSearch) return;
+
+    const minLen = globalSearch.minQueryLength;
+    const debounceMs = globalSearch.debounceMs;
+
+    if (globalSearchInFlightRef.current) {
+      globalSearchInFlightRef.current.abort();
+      globalSearchInFlightRef.current = null;
+    }
+    if (globalSearchDebounceRef.current != null) {
+      clearTimeout(globalSearchDebounceRef.current);
+      globalSearchDebounceRef.current = null;
+    }
+
+    if (globalSearchQuery.length < minLen) {
+      setGlobalSearchResults({});
+      setGlobalSearchIsLoading(false);
+      return;
+    }
+
+    globalSearchDebounceRef.current = setTimeout(() => {
+      const controller = new AbortController();
+      globalSearchInFlightRef.current = controller;
+      setGlobalSearchIsLoading(true);
+
+      const ctx: GlobalSearchContext = {
+        config: globalSearch,
+        layers,
+        sources,
+        prefetchedValues: prefetchedDistinctValues,
+      };
+
+      runGlobalSearch(ctx, globalSearchQuery, controller.signal)
+        .then((grouped) => {
+          if (controller.signal.aborted) return;
+          setGlobalSearchResults(grouped);
+        })
+        .catch((err: unknown) => {
+          if ((err as { name?: string })?.name === 'AbortError') return;
+          console.warn('[MapPreview] Global search query failed:', err);
+          setGlobalSearchResults({});
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setGlobalSearchIsLoading(false);
+          if (globalSearchInFlightRef.current === controller) {
+            globalSearchInFlightRef.current = null;
+          }
+        });
+    }, debounceMs);
+
+    return () => {
+      if (globalSearchDebounceRef.current != null) {
+        clearTimeout(globalSearchDebounceRef.current);
+        globalSearchDebounceRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [globalSearchEnabled, globalSearchQuery, globalSearch, prefetchedDistinctValues]);
+
+  useEffect(() => {
+    return () => {
+      if (globalSearchInFlightRef.current) {
+        globalSearchInFlightRef.current.abort();
+        globalSearchInFlightRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleGlobalSearchResultClick = useCallback(
+    (_layerId: string, match: GlobalSearchFeatureMatch) => {
+      let box: [number, number, number, number] | null = match.bbox ?? null;
+      if (!box && match.geometry) {
+        box = bboxFromGeometry(match.geometry as unknown as Record<string, unknown>);
+      }
+      if (!box) return;
+      if (box[0] === box[2] && box[1] === box[3]) {
+        const pad = 0.01;
+        box = [box[0] - pad, box[1] - pad, box[2] + pad, box[3] + pad];
+      }
+      mapRef.current?.fitBounds(box, { padding: 50, maxZoom: 16 });
+      setGlobalSearchQuery('');
+      setGlobalSearchResults({});
+    },
+    [],
   );
 
   const findLayerForFeature = useCallback((featureLayerId: string) => {
@@ -1619,6 +1778,25 @@ export function MapPreview({
         <div className="mapui:absolute mapui:top-2 mapui:left-1/2 mapui:-translate-x-1/2 mapui:pointer-events-none">
           <div className="mapui:bg-blue-600/90 mapui:text-white mapui:text-xs mapui:rounded-full mapui:px-3 mapui:py-1 mapui:shadow">
             Pan and zoom to set the initial viewport
+          </div>
+        </div>
+      )}
+
+      {globalSearchEnabled && globalSearch && (
+        <div
+          className="mapui:absolute mapui:top-3 mapui:left-1/2 mapui:-translate-x-1/2 mapui:w-full mapui:max-w-md mapui:px-4 mapui:pointer-events-none mapui:z-40"
+          data-testid="map-preview-global-search"
+        >
+          <div className="mapui:pointer-events-auto">
+            <GlobalSearchBar
+              config={globalSearch}
+              layers={layersWithDefaults}
+              value={globalSearchQuery}
+              onChange={setGlobalSearchQuery}
+              results={globalSearchResults}
+              onResultClick={handleGlobalSearchResultClick}
+              isLoading={globalSearchIsLoading}
+            />
           </div>
         </div>
       )}

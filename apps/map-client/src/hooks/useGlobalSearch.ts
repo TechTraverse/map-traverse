@@ -16,7 +16,7 @@ import {
   prefetchKey,
   runGlobalSearch,
   type GlobalSearchContext,
-} from '../utils/globalSearchFetcher';
+} from '@ogc-maps/storybook-components/utils';
 import type {
   GlobalSearchFeatureMatch,
   GlobalSearchGroupedResults,
