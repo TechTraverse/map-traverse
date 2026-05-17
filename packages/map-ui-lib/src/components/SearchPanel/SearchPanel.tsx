@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import type { LayerConfig, SearchFilterValues, SearchFilterValue, SearchField, NumberSearchField, DatetimeSearchField, TextSearchField, SelectSearchField, AvailableProperty } from '../../types';
 import type { PropertyFilter } from '../../utils/propertyFilters';
 import { AutocompleteInput } from './AutocompleteInput';
@@ -303,7 +304,11 @@ export function SearchPanel({
 }
 
 function ModalShell({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
-  return (
+  // Portal to <body> so the fixed-position backdrop escapes any ancestor
+  // with `transform`/`filter`/`perspective` (e.g. CollapsibleControl's
+  // scale animation), which would otherwise capture position:fixed and
+  // confine the modal to the parent's box.
+  const node = (
     <div
       className="mapui:fixed mapui:inset-0 mapui:z-50 mapui:flex mapui:items-center mapui:justify-center mapui:bg-black/40 mapui:p-4"
       onClick={(e) => {
@@ -315,4 +320,6 @@ function ModalShell({ onClose, children }: { onClose: () => void; children: Reac
       </div>
     </div>
   );
+  if (typeof document === 'undefined') return node;
+  return createPortal(node, document.body);
 }
