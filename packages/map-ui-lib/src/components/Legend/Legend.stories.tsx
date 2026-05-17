@@ -398,3 +398,56 @@ export const OutlineOnlySwatches: Story = {
     visibleLayerIds: ['parcels-outline', 'fire-zones'],
   },
 };
+
+/** Outline swatches with dashed strokes — drives the same dasharray field used by the `line` shape. */
+export const DashedOutlineSwatches: Story = {
+  args: {
+    layers: [
+      {
+        id: 'planning-zones',
+        sourceId: 'demo',
+        collection: 'planning',
+        label: 'Planning zones',
+        visible: true,
+        dataMode: 'vector-tiles',
+        legend: {
+          displayMode: 'categorical',
+          showColorBar: false,
+          entries: [
+            {
+              label: 'Proposed boundary',
+              color: '#1d4ed8',
+              shape: 'outline-square',
+              outlineColor: '#1d4ed8',
+              outlineWidth: 1.5,
+              dasharray: [3, 2],
+            },
+            {
+              label: 'Approved boundary',
+              color: '#1d4ed8',
+              shape: 'outline-square',
+              outlineColor: '#1d4ed8',
+              outlineWidth: 1.5,
+            },
+            {
+              label: 'Proposed buffer',
+              color: '#b45309',
+              shape: 'outline-circle',
+              outlineColor: '#b45309',
+              outlineWidth: 1.5,
+              dasharray: [2, 2],
+            },
+            {
+              label: 'Approved buffer',
+              color: '#b45309',
+              shape: 'outline-circle',
+              outlineColor: '#b45309',
+              outlineWidth: 1.5,
+            },
+          ],
+        },
+      },
+    ],
+    visibleLayerIds: ['planning-zones'],
+  },
+};

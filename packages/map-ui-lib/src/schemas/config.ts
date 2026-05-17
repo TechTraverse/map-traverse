@@ -266,9 +266,10 @@ export const LegendEntrySchema = z.object({
   /** Optional border width in pixels for outline shapes. Defaults to 1. */
   outlineWidth: z.number().min(0).optional(),
   /**
-   * Optional dasharray for `line` shape entries (matches MapLibre's
-   * `line-dasharray`). When set, the legend swatch renders as a dashed
-   * line so per-category dash styles read correctly. Ignored for non-line shapes.
+   * Optional dasharray (matches MapLibre's `line-dasharray`). When set, the
+   * legend swatch renders with a dashed stroke so per-category dash styles
+   * read correctly. Applied to `line`, `outline-square`, and `outline-circle`
+   * shapes; ignored for filled `square` / `circle`.
    */
   dasharray: z.array(z.number()).optional(),
 });
