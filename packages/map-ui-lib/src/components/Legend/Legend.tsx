@@ -50,7 +50,10 @@ function Swatch({
   shape?: string;
   outlineColor?: string;
   outlineWidth?: number;
-  /** Optional dasharray for `line` shape, mirrors MapLibre's `line-dasharray`. */
+  /**
+   * Optional dasharray. Mirrors MapLibre's `line-dasharray`. Applied to
+   * `line`, `outline-square`, and `outline-circle` shapes; ignored elsewhere.
+   */
   dasharray?: number[];
 }) {
   const resolvedShape = shape ?? 'square';
@@ -59,7 +62,7 @@ function Swatch({
   if (resolvedShape === 'circle') {
     inner = (
       <span
-        className="mapui:inline-block mapui:h-3 mapui:w-3 mapui:rounded-full"
+        className="mapui:inline-block mapui:h-3.5 mapui:w-3.5 mapui:rounded-full"
         style={{ backgroundColor: color }}
       />
     );
@@ -94,32 +97,54 @@ function Swatch({
         />
       );
     }
-  } else if (resolvedShape === 'outline-square') {
-    // Transparent fill with a solid border. Border color falls back to `color`.
+  } else if (resolvedShape === 'outline-square' || resolvedShape === 'outline-circle') {
+    // SVG rather than CSS border: CSS `border-style: dashed` doesn't expose
+    // dash/gap control, so the same per-entry `dasharray` field that drives
+    // the `line` shape can drive these outlines too. Sharp 90° corners on
+    // the square keep it visually distinct from the circle.
+    const sw = outlineWidth ?? 1;
+    const stroke = outlineColor ?? color;
+    const dash = dasharray && dasharray.length > 1 ? dasharray.join(',') : undefined;
+    // Inset by half the stroke width so the stroke doesn't get clipped by
+    // the viewBox edge.
+    const inset = sw / 2;
+    const size = 14;
     inner = (
-      <span
-        className="mapui:inline-block mapui:h-3 mapui:w-3 mapui:rounded-sm"
-        style={{
-          backgroundColor: 'transparent',
-          border: `${outlineWidth ?? 1}px solid ${outlineColor ?? color}`,
-        }}
-      />
-    );
-  } else if (resolvedShape === 'outline-circle') {
-    inner = (
-      <span
-        className="mapui:inline-block mapui:h-3 mapui:w-3 mapui:rounded-full"
-        style={{
-          backgroundColor: 'transparent',
-          border: `${outlineWidth ?? 1}px solid ${outlineColor ?? color}`,
-        }}
-      />
+      <svg
+        viewBox={`0 0 ${size} ${size}`}
+        className="mapui:inline-block"
+        style={{ width: size, height: size }}
+        aria-hidden
+      >
+        {resolvedShape === 'outline-square' ? (
+          <rect
+            x={inset}
+            y={inset}
+            width={size - sw}
+            height={size - sw}
+            fill="none"
+            stroke={stroke}
+            strokeWidth={sw}
+            strokeDasharray={dash}
+          />
+        ) : (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={size / 2 - inset}
+            fill="none"
+            stroke={stroke}
+            strokeWidth={sw}
+            strokeDasharray={dash}
+          />
+        )}
+      </svg>
     );
   } else {
     // square (default)
     inner = (
       <span
-        className="mapui:inline-block mapui:h-3 mapui:w-3 mapui:rounded-sm"
+        className="mapui:inline-block mapui:h-3.5 mapui:w-3.5 mapui:rounded-sm"
         style={{ backgroundColor: color }}
       />
     );
