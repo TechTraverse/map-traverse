@@ -22,7 +22,6 @@ import type { Cql2FilterConfig } from '@ogc-maps/storybook-components/types';
 import { useMapStore, useEffectiveCql2Filters } from '../stores/mapStore';
 import { MapContainer } from './MapContainer';
 import { MapOverlay } from './MapOverlay';
-import { GlobalSearchBarContainer } from './GlobalSearchBarContainer';
 import { useBoxDraw } from '../hooks/useBoxDraw';
 import { usePolygonDraw } from '../hooks/usePolygonDraw';
 
@@ -229,7 +228,6 @@ export function Layout({ uiConfig }: LayoutProps) {
           </h1>
         </div>
       </header>
-      <GlobalSearchBarContainer />
       <div className="relative flex-grow w-full">
         <MapContainer
           externalMapRef={mapRefForBoxDraw}

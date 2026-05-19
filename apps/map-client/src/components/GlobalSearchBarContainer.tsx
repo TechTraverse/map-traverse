@@ -4,10 +4,11 @@ import { useGlobalSearch } from '../hooks/useGlobalSearch';
 
 /**
  * Thin wrapper that wires the lib's GlobalSearchBar to the map-client store
- * via the useGlobalSearch hook. Renders nothing when global search is disabled
- * by either uiConfig.showGlobalSearch or globalSearchConfig.enabled.
+ * via the useGlobalSearch hook. Renders nothing when global search is disabled.
+ * Positioning + width come from the parent overlay; this component only owns
+ * wiring and the bar itself.
  */
-export function GlobalSearchBarContainer() {
+export function GlobalSearchBarContainer({ className = '' }: { className?: string }) {
   const layers = useMapStore((s) => s.layers);
   const globalSearchConfig = useMapStore((s) => s.globalSearchConfig);
   const uiConfig = useMapStore((s) => s.uiConfig);
@@ -19,16 +20,15 @@ export function GlobalSearchBarContainer() {
   }
 
   return (
-    <div className="w-full border-b border-slate-200 bg-white px-4 py-2">
-      <GlobalSearchBar
-        config={globalSearchConfig}
-        layers={layers}
-        value={query}
-        onChange={setQuery}
-        results={results}
-        onResultClick={onResultClick}
-        isLoading={isLoading}
-      />
-    </div>
+    <GlobalSearchBar
+      config={globalSearchConfig}
+      layers={layers}
+      value={query}
+      onChange={setQuery}
+      results={results}
+      onResultClick={onResultClick}
+      isLoading={isLoading}
+      className={`mapui:shadow-lg ${className}`.trim()}
+    />
   );
 }

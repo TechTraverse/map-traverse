@@ -43,6 +43,8 @@ const base: GlobalSearchConfig = {
   maxResultsPerLayer: 10,
   debounceMs: 250,
   minQueryLength: 2,
+  position: 'top-left',
+  width: 'md',
   layers: [],
 };
 

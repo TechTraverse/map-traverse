@@ -366,12 +366,31 @@ export const GlobalSearchLayerConfigSchema = z.object({
   properties: z.array(GlobalSearchPropertySchema).min(1),
 });
 
+/** Where the global search bar anchors when overlaid on the map. */
+export const GLOBAL_SEARCH_POSITIONS = [
+  'top-left',
+  'top-center',
+  'top-right',
+  'bottom-left',
+  'bottom-center',
+  'bottom-right',
+] as const;
+export type GlobalSearchPosition = (typeof GLOBAL_SEARCH_POSITIONS)[number];
+
+/** Preset widths for the floating global search bar. */
+export const GLOBAL_SEARCH_WIDTHS = ['sm', 'md', 'lg'] as const;
+export type GlobalSearchWidth = (typeof GLOBAL_SEARCH_WIDTHS)[number];
+
 export const GlobalSearchConfigSchema = z.object({
   enabled: z.boolean().default(true),
   placeholder: z.string().optional(),
   maxResultsPerLayer: z.number().int().min(1).max(50).default(10),
   debounceMs: z.number().int().min(0).default(250),
   minQueryLength: z.number().int().min(1).default(2),
+  /** Where the bar anchors over the map. Defaults to top-left. */
+  position: z.enum(GLOBAL_SEARCH_POSITIONS).default('top-left'),
+  /** Width preset for the floating bar. */
+  width: z.enum(GLOBAL_SEARCH_WIDTHS).default('md'),
   layers: z.array(GlobalSearchLayerConfigSchema).default([]),
 });
 

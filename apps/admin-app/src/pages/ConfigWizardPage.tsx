@@ -47,6 +47,8 @@ const DEFAULT_GLOBAL_SEARCH: GlobalSearchConfig = {
   maxResultsPerLayer: 10,
   debounceMs: 250,
   minQueryLength: 2,
+  position: 'top-left',
+  width: 'md',
 };
 
 const DEFAULT_INFO: InfoConfig = {
