@@ -712,7 +712,11 @@ export function MapOverlay({
             activeFormat={activeCoordFormat}
             formats={coordinateFormats}
             onFormatChange={onCoordFormatChange}
-            onNavigate={(lat, lng) => useMapStore.getState().flyTo([lng, lat], 14)}
+            onNavigate={(lat, lng) => {
+              const store = useMapStore.getState();
+              store.flyTo([lng, lat], 17);
+              store.setDroppedPin(lat, lng);
+            }}
           />
         </div>
       )}

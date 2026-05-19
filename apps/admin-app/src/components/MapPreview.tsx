@@ -1,6 +1,6 @@
 import { Fragment, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
-import { Map, Source, Layer, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
+import { Map, Source, Layer, Marker, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
 import { useOgcFeatures, useExport } from '@ogc-maps/storybook-components/hooks';
 import {
   getCql2FilteredVectorTileUrl,
@@ -368,6 +368,7 @@ export function MapPreview({
   useEffect(() => () => clearTimeout(hoverTimerRef.current), []);
   const [mapInstance, setMapInstance] = useState<maplibregl.Map | null>(null);
   const mapRef = useRef<MapRef>(null);
+  const [droppedPin, setDroppedPin] = useState<{ latitude: number; longitude: number } | null>(null);
   const [imageryVisibility, setImageryVisibility] = useState<Record<string, boolean>>({});
   const imageryLayers = useMemo(() =>
     (imageryLayersProp ?? []).map(l => ({
@@ -1256,6 +1257,18 @@ export function MapPreview({
               paint={{ 'circle-color': '#3b82f6', 'circle-radius': 5, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 }} />
           </Source>
         )}
+        {droppedPin && (
+          <Marker
+            longitude={droppedPin.longitude}
+            latitude={droppedPin.latitude}
+            anchor="bottom"
+            color="#3b82f6"
+            onClick={(e) => {
+              e.originalEvent.stopPropagation();
+              setDroppedPin(null);
+            }}
+          />
+        )}
       </Map>
 
       <ResultsDrawer
@@ -1722,7 +1735,10 @@ export function MapPreview({
                 activeFormat={coordFormat}
                 formats={coordinateFormats}
                 onFormatChange={setCoordFormat}
-                onNavigate={(lat, lng) => mapInstance?.flyTo({ center: [lng, lat], zoom: 14 })}
+                onNavigate={(lat, lng) => {
+                  mapInstance?.flyTo({ center: [lng, lat], zoom: 17 });
+                  setDroppedPin({ latitude: lat, longitude: lng });
+                }}
               />
             </div>
           )}
