@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { LuMapPin } from 'react-icons/lu';
 
 export interface CoordinateFormatOption {
   id: string;
@@ -22,6 +23,14 @@ export interface CoordinateDisplayProps {
   isExpanded?: boolean;
   /** Called when the user clicks the expand toggle. */
   onToggleExpand?: (next: boolean) => void;
+  /**
+   * When provided, renders a pin button inside the navigate form as an
+   * alternative to typing coordinates. The consumer is expected to put the
+   * map into a one-shot "next click drops a pin" mode in response.
+   */
+  onPinDropRequest?: () => void;
+  /** Whether pin-drop mode is currently active — drives the button's pressed style. */
+  pinDropActive?: boolean;
 }
 
 /**
@@ -148,6 +157,8 @@ export function CoordinateDisplay({
   onNavigate,
   isExpanded: isExpandedProp,
   onToggleExpand,
+  onPinDropRequest,
+  pinDropActive = false,
 }: CoordinateDisplayProps) {
   const activeFormatOption = formats.find((f) => f.id === activeFormat);
 
@@ -262,6 +273,25 @@ export function CoordinateDisplay({
             >
               Go
             </button>
+            {onPinDropRequest && (
+              <button
+                type="button"
+                onClick={() => {
+                  setExpanded(false);
+                  onPinDropRequest();
+                }}
+                title={pinDropActive ? 'Cancel pin drop' : 'Click on the map to drop a pin'}
+                aria-label={pinDropActive ? 'Cancel pin drop' : 'Drop pin on map'}
+                aria-pressed={pinDropActive}
+                className={`mapui:rounded mapui:px-2 mapui:py-0.5 mapui:ml-1 mapui:cursor-pointer mapui:border-none mapui:text-white mapui:flex mapui:items-center ${
+                  pinDropActive
+                    ? 'mapui:bg-blue-400'
+                    : 'mapui:bg-white/20 hover:mapui:bg-white/30'
+                }`}
+              >
+                <LuMapPin size={14} />
+              </button>
+            )}
           </div>
           {error && <div className="mapui:text-red-300 mapui:text-[10px]">{error}</div>}
         </form>

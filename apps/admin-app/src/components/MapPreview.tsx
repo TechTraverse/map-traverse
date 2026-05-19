@@ -369,6 +369,11 @@ export function MapPreview({
   const [mapInstance, setMapInstance] = useState<maplibregl.Map | null>(null);
   const mapRef = useRef<MapRef>(null);
   const [droppedPin, setDroppedPin] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [pinDropActive, setPinDropActive] = useState(false);
+  const goToCoordinate = useCallback((lat: number, lng: number) => {
+    mapInstance?.flyTo({ center: [lng, lat], zoom: 17 });
+    setDroppedPin({ latitude: lat, longitude: lng });
+  }, [mapInstance]);
   const [imageryVisibility, setImageryVisibility] = useState<Record<string, boolean>>({});
   const imageryLayers = useMemo(() =>
     (imageryLayersProp ?? []).map(l => ({
@@ -995,12 +1000,17 @@ export function MapPreview({
         style={{ width: '100%', height: '100%' }}
         mapStyle={resolvedStyle as any}
         transformRequest={transformRequest}
-        cursor={measure.mode || selection.mode ? 'crosshair' : cursor}
-        interactiveLayerIds={measure.mode || selection.mode === 'box' || selection.mode === 'polygon' ? undefined : interactiveLayerIds}
-        doubleClickZoom={!measure.mode && !selection.mode}
+        cursor={pinDropActive || measure.mode || selection.mode ? 'crosshair' : cursor}
+        interactiveLayerIds={pinDropActive || measure.mode || selection.mode === 'box' || selection.mode === 'polygon' ? undefined : interactiveLayerIds}
+        doubleClickZoom={!pinDropActive && !measure.mode && !selection.mode}
         onLoad={handleMapLoad}
         onMove={handleMove}
         onClick={(evt) => {
+          if (pinDropActive) {
+            goToCoordinate(evt.lngLat.lat, evt.lngLat.lng);
+            setPinDropActive(false);
+            return;
+          }
           if (measure.mode) {
             measure.addPoint([evt.lngLat.lng, evt.lngLat.lat]);
             return;
@@ -1735,10 +1745,9 @@ export function MapPreview({
                 activeFormat={coordFormat}
                 formats={coordinateFormats}
                 onFormatChange={setCoordFormat}
-                onNavigate={(lat, lng) => {
-                  mapInstance?.flyTo({ center: [lng, lat], zoom: 17 });
-                  setDroppedPin({ latitude: lat, longitude: lng });
-                }}
+                onNavigate={goToCoordinate}
+                onPinDropRequest={() => setPinDropActive((v) => !v)}
+                pinDropActive={pinDropActive}
               />
             </div>
           )}

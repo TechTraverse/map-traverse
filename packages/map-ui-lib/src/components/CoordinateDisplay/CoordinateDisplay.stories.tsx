@@ -137,6 +137,36 @@ export const CustomStyling: Story = {
 };
 
 /**
+ * Pin-drop: click the readout to expand, then either type coordinates or hit
+ * the pin button to enter pin-drop mode. In an app, the pin button puts the
+ * map into a one-shot mode where the next click drops a pin at that location.
+ */
+export const WithPinDrop: Story = {
+  render: () => {
+    const [activeFormat, setActiveFormat] = useState('decimal');
+    const [pinDropActive, setPinDropActive] = useState(false);
+    return (
+      <div className="mapui:space-y-2">
+        <CoordinateDisplay
+          latitude={40.7128}
+          longitude={-74.006}
+          activeFormat={activeFormat}
+          formats={defaultFormats}
+          onFormatChange={setActiveFormat}
+          onNavigate={(lat, lng) => console.log('navigate', lat, lng)}
+          onPinDropRequest={() => setPinDropActive((v) => !v)}
+          pinDropActive={pinDropActive}
+        />
+        <p className="mapui:text-sm mapui:text-slate-600">
+          Pin button toggles a parent-owned <code>pinDropActive</code> flag.
+          Active state: <strong>{pinDropActive ? 'on' : 'off'}</strong>.
+        </p>
+      </div>
+    );
+  },
+};
+
+/**
  * Go-to lat/long: click the readout to expand the input form. Submit routes
  * through the `onNavigate` callback — in an app, wire this to `map.flyTo`.
  */
