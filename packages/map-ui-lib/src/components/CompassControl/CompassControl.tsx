@@ -1,4 +1,4 @@
-import { LuNavigation2 } from 'react-icons/lu';
+import { LuCompass } from 'react-icons/lu';
 
 export interface CompassControlProps {
   /** Current map bearing in degrees. Positive values rotate the map clockwise. */
@@ -46,7 +46,7 @@ export function CompassControl({
           transition: 'transform 200ms ease-out',
         }}
       >
-        <LuNavigation2 size={20} />
+        <LuCompass size={20} />
       </span>
     </button>
   );
