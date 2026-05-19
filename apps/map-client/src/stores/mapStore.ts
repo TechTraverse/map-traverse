@@ -39,6 +39,8 @@ interface MapState {
   pendingFitBoundsOptions: { padding?: number; maxZoom?: number } | null;
   pendingFlyTo: { center: [number, number]; zoom?: number } | null;
   pendingBearing: number | null;
+  /** A user-dropped pin (e.g. from the coordinate go-to input). Persists until cleared or replaced. */
+  droppedPin: { latitude: number; longitude: number } | null;
 
   /** Top-level global search config (from MapConfig.globalSearch). */
   globalSearchConfig: GlobalSearchConfig | undefined;
@@ -68,6 +70,8 @@ interface MapState {
   clearPendingFlyTo: () => void;
   requestBearing: (bearing: number) => void;
   clearPendingBearing: () => void;
+  setDroppedPin: (latitude: number, longitude: number) => void;
+  clearDroppedPin: () => void;
 
   setGlobalSearchQuery: (q: string) => void;
   setGlobalSearchResults: (r: GlobalSearchGroupedResults) => void;
@@ -121,6 +125,7 @@ export const useMapStore = create<MapState>((set) => ({
   pendingFitBoundsOptions: null,
   pendingFlyTo: null,
   pendingBearing: null,
+  droppedPin: null,
 
   globalSearchConfig: undefined,
   globalSearchQuery: '',
@@ -233,6 +238,9 @@ export const useMapStore = create<MapState>((set) => ({
   requestBearing: (bearing) => set({ pendingBearing: bearing }),
   clearPendingBearing: () => set({ pendingBearing: null }),
 
+  setDroppedPin: (latitude, longitude) => set({ droppedPin: { latitude, longitude } }),
+  clearDroppedPin: () => set({ droppedPin: null }),
+
   setGlobalSearchQuery: (q) =>
     set((s) => (s.globalSearchQuery === q ? s : { globalSearchQuery: q })),
   setGlobalSearchResults: (r) =>
@@ -277,6 +285,7 @@ export const useMapStore = create<MapState>((set) => ({
       globalSearchResults: {},
       globalSearchIsLoading: false,
       prefetchedDistinctValues: {},
+      droppedPin: null,
     }),
 }));
 

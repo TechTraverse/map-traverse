@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
-import { Map, Source, Layer, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
+import { Map, Source, Layer, Marker, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
 import { useOgcFeatures } from '@ogc-maps/storybook-components/hooks';
 import { getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSourceKey, buildGeometryFilter, getImageryTileUrl, expandDashByCategory } from '@ogc-maps/storybook-components/utils';
 import type { CQL2Expression, SourceAuth } from '@ogc-maps/storybook-components/utils';
@@ -218,6 +218,8 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
   const clearPendingFlyTo = useMapStore((s) => s.clearPendingFlyTo);
   const pendingBearing = useMapStore((s) => s.pendingBearing);
   const clearPendingBearing = useMapStore((s) => s.clearPendingBearing);
+  const droppedPin = useMapStore((s) => s.droppedPin);
+  const clearDroppedPin = useMapStore((s) => s.clearDroppedPin);
   const setViewState = useMapStore((s) => s.setViewState);
 
   const [mapInstance, setMapInstance] = useState<ReturnType<MapRef['getMap']> | null>(null);
@@ -678,6 +680,18 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
             }}
           />
         </Source>
+      )}
+      {droppedPin && (
+        <Marker
+          longitude={droppedPin.longitude}
+          latitude={droppedPin.latitude}
+          anchor="bottom"
+          color="#3b82f6"
+          onClick={(e) => {
+            e.originalEvent.stopPropagation();
+            clearDroppedPin();
+          }}
+        />
       )}
     </Map>
   );
