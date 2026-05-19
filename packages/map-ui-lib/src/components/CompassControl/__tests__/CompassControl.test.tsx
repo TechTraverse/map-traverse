@@ -3,19 +3,20 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { CompassControl } from '../CompassControl';
 
 describe('CompassControl', () => {
-  it('rotates the needle by the negative of the bearing', () => {
+  it('rotates the needle by the negative of the bearing (plus a -45° icon offset)', () => {
     const html = renderToStaticMarkup(
       <CompassControl bearing={45} onReset={() => {}} />,
     );
-    // Bearing 45° → needle should counter-rotate -45° to keep pointing north.
-    expect(html).toContain('rotate(-45deg)');
+    // Bearing 45° → -45° counter-rotation, plus -45° to correct LuCompass's
+    // NE-tilted needle back to north → -90° total.
+    expect(html).toContain('rotate(-90deg)');
   });
 
-  it('renders rotate(0deg) at bearing 0', () => {
+  it('renders rotate(-45deg) at bearing 0 (LuCompass north-correction offset)', () => {
     const html = renderToStaticMarkup(
       <CompassControl bearing={0} onReset={() => {}} />,
     );
-    expect(html).toContain('rotate(0deg)');
+    expect(html).toContain('rotate(-45deg)');
   });
 
   it('exposes an accessible label', () => {

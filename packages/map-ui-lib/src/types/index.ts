@@ -30,6 +30,8 @@ import {
   GlobalSearchPropertySchema,
   GlobalSearchLayerConfigSchema,
   GlobalSearchConfigSchema,
+  GLOBAL_SEARCH_POSITIONS,
+  GLOBAL_SEARCH_WIDTHS,
   FilterConfigSchema,
   PropertyDisplaySchema,
   PropertyDisplayConfigSchema,
@@ -99,6 +101,7 @@ export type SearchConfig = z.infer<typeof SearchConfigSchema>;
 export type GlobalSearchProperty = z.infer<typeof GlobalSearchPropertySchema>;
 export type GlobalSearchLayerConfig = z.infer<typeof GlobalSearchLayerConfigSchema>;
 export type GlobalSearchConfig = z.infer<typeof GlobalSearchConfigSchema>;
+export type { GlobalSearchPosition, GlobalSearchWidth } from '../schemas/config';
 
 export type SearchFilterValue =
   | string
@@ -215,6 +218,8 @@ export {
   GlobalSearchPropertySchema,
   GlobalSearchLayerConfigSchema,
   GlobalSearchConfigSchema,
+  GLOBAL_SEARCH_POSITIONS,
+  GLOBAL_SEARCH_WIDTHS,
   FilterConfigSchema,
   PropertyDisplaySchema,
   PropertyDisplayConfigSchema,

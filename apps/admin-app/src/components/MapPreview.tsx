@@ -80,7 +80,7 @@ import type {
   InfoConfig,
   GlobalSearchConfig,
 } from '@ogc-maps/storybook-components';
-import type { SearchFilterValue, SearchFilterValues, Cql2FilterConfig, InfoPosition } from '@ogc-maps/storybook-components/types';
+import type { SearchFilterValue, SearchFilterValues, Cql2FilterConfig, InfoPosition, GlobalSearchPosition, GlobalSearchWidth } from '@ogc-maps/storybook-components/types';
 import { useMeasure, useSelection } from '@ogc-maps/storybook-components/hooks';
 
 import { LuDownload, LuLayers3, LuList, LuMap, LuMousePointer2, LuRuler, LuSatellite, LuSearch } from 'react-icons/lu';
@@ -110,6 +110,28 @@ const CORNER_CLASSES: Record<ControlCorner, string> = {
   'bottom-right': 'mapui:absolute mapui:bottom-4 mapui:right-4 mapui:flex mapui:flex-col mapui:gap-4 mapui:items-end',
   'bottom-left': 'mapui:absolute mapui:bottom-4 mapui:left-4 mapui:flex mapui:flex-col mapui:gap-4 mapui:items-start',
 };
+
+const SEARCH_POSITION_CLASSES: Record<GlobalSearchPosition, string> = {
+  'top-left':      'mapui:absolute mapui:top-4 mapui:left-4',
+  'top-right':     'mapui:absolute mapui:top-4 mapui:right-4',
+  'bottom-left':   'mapui:absolute mapui:bottom-4 mapui:left-4',
+  'bottom-right':  'mapui:absolute mapui:bottom-4 mapui:right-4',
+  'top-center':    'mapui:absolute mapui:top-4 mapui:left-1/2 mapui:-translate-x-1/2',
+  'bottom-center': 'mapui:absolute mapui:bottom-6 mapui:left-1/2 mapui:-translate-x-1/2',
+};
+
+const SEARCH_WIDTH_CLASSES: Record<GlobalSearchWidth, string> = {
+  sm: 'mapui:w-72 mapui:max-w-[calc(100%-2rem)]',
+  md: 'mapui:w-[28rem] mapui:max-w-[calc(100%-2rem)]',
+  lg: 'mapui:w-[40rem] mapui:max-w-[calc(100%-2rem)]',
+};
+
+const SEARCH_CORNER_POSITIONS = new Set<GlobalSearchPosition>([
+  'top-left',
+  'top-right',
+  'bottom-left',
+  'bottom-right',
+]);
 
 /**
  * Render a single style as one or more `<Layer>` elements. Most styles map
@@ -1704,14 +1726,38 @@ export function MapPreview({
               };
 
               const grouped = groupControlsByCorner(uiConfig);
+              const searchPos: GlobalSearchPosition = globalSearch?.position ?? 'top-left';
+              const searchWidth: GlobalSearchWidth = globalSearch?.width ?? 'md';
+              const searchAtCorner =
+                globalSearchEnabled && globalSearch && SEARCH_CORNER_POSITIONS.has(searchPos)
+                  ? (searchPos as ControlCorner)
+                  : null;
               return (Object.keys(CORNER_CLASSES) as ControlCorner[]).map((corner) => {
                 const keys = grouped[corner];
                 const rendered = keys
                   .map((key) => controlNodes[key])
                   .filter((node): node is React.ReactNode => node != null);
-                if (rendered.length === 0) return null;
+                const includeSearch = searchAtCorner === corner;
+                if (rendered.length === 0 && !includeSearch) return null;
                 return (
                   <div key={corner} className={CORNER_CLASSES[corner]}>
+                    {includeSearch && globalSearch && (
+                      <div
+                        className={`mapui:pointer-events-auto ${SEARCH_WIDTH_CLASSES[searchWidth]}`}
+                        data-testid="map-preview-global-search"
+                      >
+                        <GlobalSearchBar
+                          config={globalSearch}
+                          layers={layersWithDefaults}
+                          value={globalSearchQuery}
+                          onChange={setGlobalSearchQuery}
+                          results={globalSearchResults}
+                          onResultClick={handleGlobalSearchResultClick}
+                          isLoading={globalSearchIsLoading}
+                          className="mapui:shadow-lg"
+                        />
+                      </div>
+                    )}
                     {keys.map((key) => {
                       const node = controlNodes[key];
                       return node ? <Fragment key={key}>{node}</Fragment> : null;
@@ -1807,24 +1853,39 @@ export function MapPreview({
         </div>
       )}
 
-      {globalSearchEnabled && globalSearch && (
-        <div
-          className="mapui:absolute mapui:top-3 mapui:left-1/2 mapui:-translate-x-1/2 mapui:w-full mapui:max-w-md mapui:px-4 mapui:pointer-events-none mapui:z-40"
-          data-testid="map-preview-global-search"
-        >
-          <div className="mapui:pointer-events-auto">
-            <GlobalSearchBar
-              config={globalSearch}
-              layers={layersWithDefaults}
-              value={globalSearchQuery}
-              onChange={setGlobalSearchQuery}
-              results={globalSearchResults}
-              onResultClick={handleGlobalSearchResultClick}
-              isLoading={globalSearchIsLoading}
-            />
+      {/* Global search.
+          - effectiveLayout 'individual' + corner position: injected into the
+            corner-stack flex column above (so it stacks with other controls).
+          - All other cases (center positions, side-menu layout, no uiConfig):
+            standalone absolute wrapper. */}
+      {(() => {
+        if (!globalSearchEnabled || !globalSearch) return null;
+        const pos: GlobalSearchPosition = globalSearch.position ?? 'top-left';
+        const width: GlobalSearchWidth = globalSearch.width ?? 'md';
+        const isCorner = SEARCH_CORNER_POSITIONS.has(pos);
+        // When uiConfig + individual layout + corner position, the corner
+        // stack above already rendered the bar — skip here to avoid a duplicate.
+        if (uiConfig && effectiveLayout === 'individual' && isCorner) return null;
+        return (
+          <div
+            className={`${SEARCH_POSITION_CLASSES[pos]} mapui:z-40 mapui:pointer-events-none`}
+            data-testid="map-preview-global-search"
+          >
+            <div className={`mapui:pointer-events-auto ${SEARCH_WIDTH_CLASSES[width]}`}>
+              <GlobalSearchBar
+                config={globalSearch}
+                layers={layersWithDefaults}
+                value={globalSearchQuery}
+                onChange={setGlobalSearchQuery}
+                results={globalSearchResults}
+                onResultClick={handleGlobalSearchResultClick}
+                isLoading={globalSearchIsLoading}
+                className="mapui:shadow-lg"
+              />
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

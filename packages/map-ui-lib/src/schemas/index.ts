@@ -16,6 +16,8 @@ export {
   GlobalSearchPropertySchema,
   GlobalSearchLayerConfigSchema,
   GlobalSearchConfigSchema,
+  GLOBAL_SEARCH_POSITIONS,
+  GLOBAL_SEARCH_WIDTHS,
   FilterConfigSchema,
   LayerConfigSchema,
   ImageryLayerConfigSchema,
