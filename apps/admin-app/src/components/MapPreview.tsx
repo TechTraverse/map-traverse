@@ -1703,9 +1703,11 @@ export function MapPreview({
               };
 
               const grouped = groupControlsByCorner(uiConfig);
+              const searchPos: GlobalSearchPosition = globalSearch?.position ?? 'top-left';
+              const searchWidth: GlobalSearchWidth = globalSearch?.width ?? 'md';
               const searchAtCorner =
-                globalSearchEnabled && globalSearch && SEARCH_CORNER_POSITIONS.has(globalSearch.position)
-                  ? (globalSearch.position as ControlCorner)
+                globalSearchEnabled && globalSearch && SEARCH_CORNER_POSITIONS.has(searchPos)
+                  ? (searchPos as ControlCorner)
                   : null;
               return (Object.keys(CORNER_CLASSES) as ControlCorner[]).map((corner) => {
                 const keys = grouped[corner];
@@ -1718,7 +1720,7 @@ export function MapPreview({
                   <div key={corner} className={CORNER_CLASSES[corner]}>
                     {includeSearch && globalSearch && (
                       <div
-                        className={`mapui:pointer-events-auto ${SEARCH_WIDTH_CLASSES[globalSearch.width]}`}
+                        className={`mapui:pointer-events-auto ${SEARCH_WIDTH_CLASSES[searchWidth]}`}
                         data-testid="map-preview-global-search"
                       >
                         <GlobalSearchBar
@@ -1829,28 +1831,36 @@ export function MapPreview({
       {/* Global search.
           - effectiveLayout 'individual' + corner position: injected into the
             corner-stack flex column above (so it stacks with other controls).
-          - All other cases (center positions, side-menu layout): standalone
-            absolute wrapper. */}
-      {globalSearchEnabled && globalSearch &&
-        (effectiveLayout === 'side-menu' || !SEARCH_CORNER_POSITIONS.has(globalSearch.position)) && (
-        <div
-          className={`${SEARCH_POSITION_CLASSES[globalSearch.position]} mapui:z-40 mapui:pointer-events-none`}
-          data-testid="map-preview-global-search"
-        >
-          <div className={`mapui:pointer-events-auto ${SEARCH_WIDTH_CLASSES[globalSearch.width]}`}>
-            <GlobalSearchBar
-              config={globalSearch}
-              layers={layersWithDefaults}
-              value={globalSearchQuery}
-              onChange={setGlobalSearchQuery}
-              results={globalSearchResults}
-              onResultClick={handleGlobalSearchResultClick}
-              isLoading={globalSearchIsLoading}
-              className="mapui:shadow-lg"
-            />
+          - All other cases (center positions, side-menu layout, no uiConfig):
+            standalone absolute wrapper. */}
+      {(() => {
+        if (!globalSearchEnabled || !globalSearch) return null;
+        const pos: GlobalSearchPosition = globalSearch.position ?? 'top-left';
+        const width: GlobalSearchWidth = globalSearch.width ?? 'md';
+        const isCorner = SEARCH_CORNER_POSITIONS.has(pos);
+        // When uiConfig + individual layout + corner position, the corner
+        // stack above already rendered the bar — skip here to avoid a duplicate.
+        if (uiConfig && effectiveLayout === 'individual' && isCorner) return null;
+        return (
+          <div
+            className={`${SEARCH_POSITION_CLASSES[pos]} mapui:z-40 mapui:pointer-events-none`}
+            data-testid="map-preview-global-search"
+          >
+            <div className={`mapui:pointer-events-auto ${SEARCH_WIDTH_CLASSES[width]}`}>
+              <GlobalSearchBar
+                config={globalSearch}
+                layers={layersWithDefaults}
+                value={globalSearchQuery}
+                onChange={setGlobalSearchQuery}
+                results={globalSearchResults}
+                onResultClick={handleGlobalSearchResultClick}
+                isLoading={globalSearchIsLoading}
+                className="mapui:shadow-lg"
+              />
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
