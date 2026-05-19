@@ -993,7 +993,7 @@ export function MapPreview({
     internalViewState.minZoom <= internalViewState.maxZoom;
 
   return (
-    <div className="mapui:relative mapui:w-full mapui:h-full">
+    <div className="mapui:relative mapui:w-full mapui:h-full mapui:overflow-hidden mapui:overscroll-contain">
       <Map
         ref={mapRef}
         latitude={internalViewState.latitude}
