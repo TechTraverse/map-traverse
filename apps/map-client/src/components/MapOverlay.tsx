@@ -726,12 +726,14 @@ export function MapOverlay({
       )}
 
       {info?.enabled && (
-        <InfoModal
-          open={infoModalOpen}
-          title={info.title}
-          markdown={info.markdown ?? ''}
-          onClose={() => setInfoModalOpen(false)}
-        />
+        <div className="pointer-events-auto">
+          <InfoModal
+            open={infoModalOpen}
+            title={info.title}
+            markdown={info.markdown ?? ''}
+            onClose={() => setInfoModalOpen(false)}
+          />
+        </div>
       )}
 
       {/* Bottom-left: Scale Bar (raised above MapLibre attribution line) */}
