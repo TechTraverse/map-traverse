@@ -41,6 +41,8 @@ interface MapState {
   pendingBearing: number | null;
   /** A user-dropped pin (e.g. from the coordinate go-to input). Persists until cleared or replaced. */
   droppedPin: { latitude: number; longitude: number } | null;
+  /** True while the user is in one-shot pin-drop mode — the next map click drops a pin and exits the mode. */
+  pinDropActive: boolean;
 
   /** Top-level global search config (from MapConfig.globalSearch). */
   globalSearchConfig: GlobalSearchConfig | undefined;
@@ -72,6 +74,10 @@ interface MapState {
   clearPendingBearing: () => void;
   setDroppedPin: (latitude: number, longitude: number) => void;
   clearDroppedPin: () => void;
+  setPinDropActive: (active: boolean) => void;
+  togglePinDropActive: () => void;
+  /** One-shot "go to and pin" action: flies to (lat, lng), drops a pin, and exits pin-drop mode. */
+  dropPinAt: (latitude: number, longitude: number) => void;
 
   setGlobalSearchQuery: (q: string) => void;
   setGlobalSearchResults: (r: GlobalSearchGroupedResults) => void;
@@ -126,6 +132,7 @@ export const useMapStore = create<MapState>((set) => ({
   pendingFlyTo: null,
   pendingBearing: null,
   droppedPin: null,
+  pinDropActive: false,
 
   globalSearchConfig: undefined,
   globalSearchQuery: '',
@@ -240,6 +247,14 @@ export const useMapStore = create<MapState>((set) => ({
 
   setDroppedPin: (latitude, longitude) => set({ droppedPin: { latitude, longitude } }),
   clearDroppedPin: () => set({ droppedPin: null }),
+  setPinDropActive: (active) => set({ pinDropActive: active }),
+  togglePinDropActive: () => set((s) => ({ pinDropActive: !s.pinDropActive })),
+  dropPinAt: (latitude, longitude) =>
+    set({
+      droppedPin: { latitude, longitude },
+      pendingFlyTo: { center: [longitude, latitude], zoom: 17 },
+      pinDropActive: false,
+    }),
 
   setGlobalSearchQuery: (q) =>
     set((s) => (s.globalSearchQuery === q ? s : { globalSearchQuery: q })),
@@ -286,6 +301,7 @@ export const useMapStore = create<MapState>((set) => ({
       globalSearchIsLoading: false,
       prefetchedDistinctValues: {},
       droppedPin: null,
+      pinDropActive: false,
     }),
 }));
 

@@ -163,6 +163,7 @@ export function MapOverlay({
   const clearLayerFilters = useMapStore((s) => s.clearLayerFilters);
   const imageryLayers = useMapStore((s) => s.imageryLayers);
   const info = useMapStore((s) => s.info);
+  const pinDropActive = useMapStore((s) => s.pinDropActive);
   const toggleImageryLayerVisibility = useMapStore((s) => s.toggleImageryLayerVisibility);
   const setImageryLayerOpacity = useMapStore((s) => s.setImageryLayerOpacity);
   const activeLayerIds = useActiveLayerIds();
@@ -749,11 +750,9 @@ export function MapOverlay({
             activeFormat={activeCoordFormat}
             formats={coordinateFormats}
             onFormatChange={onCoordFormatChange}
-            onNavigate={(lat, lng) => {
-              const store = useMapStore.getState();
-              store.flyTo([lng, lat], 17);
-              store.setDroppedPin(lat, lng);
-            }}
+            onNavigate={(lat, lng) => useMapStore.getState().dropPinAt(lat, lng)}
+            onPinDropRequest={() => useMapStore.getState().togglePinDropActive()}
+            pinDropActive={pinDropActive}
           />
         </div>
       )}
