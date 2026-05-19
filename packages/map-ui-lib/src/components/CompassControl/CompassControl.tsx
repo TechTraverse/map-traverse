@@ -25,8 +25,9 @@ export function CompassControl({
   className = '',
 }: CompassControlProps) {
   // Negate bearing: when the map rotates clockwise, the needle must rotate
-  // counter-clockwise to keep pointing at true north.
-  const needleRotation = -bearing;
+  // counter-clockwise to keep pointing at true north. The -45° offset
+  // compensates for LuCompass's needle, which is drawn pointing NE.
+  const needleRotation = -bearing - 45;
 
   return (
     <button
