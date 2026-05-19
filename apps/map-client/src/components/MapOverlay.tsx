@@ -35,8 +35,9 @@ import type { PropertyFilter } from '@ogc-maps/storybook-components/utils';
 import { useExport } from '@ogc-maps/storybook-components/hooks';
 import { DEFAULT_EXPORT_FORMATS, fromStructuredFilters, propertyFiltersToCql2, and, fetchFeatures, eq, exportConverters, zoomToFeature } from '@ogc-maps/storybook-components/utils';
 import type { GeoJsonFeature } from '@ogc-maps/storybook-components/utils';
-import type { UIConfig, SearchFilterValue, SearchFilterValues, OrderableControlKey, InfoPosition, ControlCorner } from '@ogc-maps/storybook-components/types';
+import type { UIConfig, SearchFilterValue, SearchFilterValues, OrderableControlKey, InfoPosition, ControlCorner, GlobalSearchPosition, GlobalSearchWidth } from '@ogc-maps/storybook-components/types';
 import { groupControlsByCorner, resolveControlCorner } from '@ogc-maps/storybook-components';
+import { GlobalSearchBarContainer } from './GlobalSearchBarContainer';
 import { useMapStore, useActiveLayerIds, useEffectiveCql2Filters } from '../stores/mapStore';
 import { useAutocompleteSuggestions } from '../hooks/useAutocompleteSuggestions';
 import { useLayerQueryables } from '../hooks/useLayerQueryables';
@@ -55,6 +56,31 @@ const CORNER_CLASSES: Record<ControlCorner, string> = {
   'bottom-right': 'absolute bottom-4 right-4 flex flex-col gap-4 items-end',
   'bottom-left': 'absolute bottom-4 left-4 flex flex-col gap-4 items-start',
 };
+
+// Wrapper positioning for the floating GlobalSearchBar. Corner values match
+// CORNER_CLASSES so the bar can sit inside the same flex column as other
+// orderable controls; center values are standalone.
+const SEARCH_POSITION_CLASSES: Record<GlobalSearchPosition, string> = {
+  'top-left':      'absolute top-4 left-4',
+  'top-right':     'absolute top-4 right-4',
+  'bottom-left':   'absolute bottom-4 left-4',
+  'bottom-right':  'absolute bottom-4 right-4',
+  'top-center':    'absolute top-4 left-1/2 -translate-x-1/2',
+  'bottom-center': 'absolute bottom-6 left-1/2 -translate-x-1/2',
+};
+
+const SEARCH_WIDTH_CLASSES: Record<GlobalSearchWidth, string> = {
+  sm: 'w-72 max-w-[calc(100vw-2rem)]',
+  md: 'w-[28rem] max-w-[calc(100vw-2rem)]',
+  lg: 'w-[40rem] max-w-[calc(100vw-2rem)]',
+};
+
+const CORNER_POSITIONS = new Set<GlobalSearchPosition>([
+  'top-left',
+  'top-right',
+  'bottom-left',
+  'bottom-right',
+]);
 
 interface MapOverlayProps {
   uiConfig: UIConfig;
@@ -134,6 +160,7 @@ export function MapOverlay({
   const layers = useMapStore((s) => s.layers);
   const basemaps = useMapStore((s) => s.basemaps);
   const sources = useMapStore((s) => s.sources);
+  const globalSearchConfig = useMapStore((s) => s.globalSearchConfig);
   const activeBasemapId = useMapStore((s) => s.activeBasemapId);
   const activeFilters = useMapStore((s) => s.activeFilters);
   // Effective filter = saved layer.cql2Filter (base) AND search-derived filter.
@@ -335,6 +362,17 @@ export function MapOverlay({
     },
     [setLayerCql2Filter, propertyFilters, computeMergedCql2],
   );
+
+  const globalSearchEnabled =
+    uiConfig.showGlobalSearch === true && globalSearchConfig?.enabled === true;
+  const globalSearchPosition = globalSearchConfig?.position ?? 'top-left';
+  const globalSearchWidth = globalSearchConfig?.width ?? 'md';
+
+  const globalSearchNode = globalSearchEnabled ? (
+    <div className={`pointer-events-auto ${SEARCH_WIDTH_CLASSES[globalSearchWidth]}`}>
+      <GlobalSearchBarContainer />
+    </div>
+  ) : null;
 
   return (
     <div className="absolute inset-0 pointer-events-none">
@@ -642,19 +680,45 @@ export function MapOverlay({
         };
 
         const grouped = groupControlsByCorner(uiConfig);
+        const searchAtCorner =
+          globalSearchNode && CORNER_POSITIONS.has(globalSearchPosition)
+            ? (globalSearchPosition as ControlCorner)
+            : null;
         return (Object.keys(CORNER_CLASSES) as ControlCorner[]).map((corner) => {
           const keys = grouped[corner];
           const rendered = keys
             .map((key) => controlNodes[key])
             .filter((node): node is React.ReactNode => node != null);
-          if (rendered.length === 0) return null;
+          const includeSearch = searchAtCorner === corner;
+          if (rendered.length === 0 && !includeSearch) return null;
           return (
             <div key={corner} className={CORNER_CLASSES[corner]}>
+              {includeSearch && globalSearchNode}
               {rendered}
             </div>
           );
         });
       })()}
+
+      {/* Global search overlay.
+          - Individual layout + corner position: already injected into the
+            corner-stack flex column above (so it stacks with other controls).
+          - Individual layout + center position: render as its own absolute wrapper.
+          - Side-menu layout: render as its own absolute wrapper for ALL positions
+            (the corner stacks aren't built in side-menu mode). */}
+      {globalSearchNode && (
+        effectiveLayout === 'side-menu'
+          ? (
+            <div className={`${SEARCH_POSITION_CLASSES[globalSearchPosition]} z-40`}>
+              {globalSearchNode}
+            </div>
+          )
+          : !CORNER_POSITIONS.has(globalSearchPosition) && (
+            <div className={`${SEARCH_POSITION_CLASSES[globalSearchPosition]} z-40`}>
+              {globalSearchNode}
+            </div>
+          )
+      )}
 
       {/* Export modal */}
       <div className="pointer-events-auto">

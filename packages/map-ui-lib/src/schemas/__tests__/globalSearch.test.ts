@@ -44,7 +44,29 @@ describe('GlobalSearchConfigSchema', () => {
     expect(result.maxResultsPerLayer).toBe(10);
     expect(result.debounceMs).toBe(250);
     expect(result.minQueryLength).toBe(2);
+    expect(result.position).toBe('top-left');
+    expect(result.width).toBe('md');
     expect(result.layers).toEqual([]);
+  });
+
+  it('accepts every position and width preset', () => {
+    for (const position of [
+      'top-left',
+      'top-center',
+      'top-right',
+      'bottom-left',
+      'bottom-center',
+      'bottom-right',
+    ] as const) {
+      expect(GlobalSearchConfigSchema.parse({ position }).position).toBe(position);
+    }
+    for (const width of ['sm', 'md', 'lg'] as const) {
+      expect(GlobalSearchConfigSchema.parse({ width }).width).toBe(width);
+    }
+  });
+
+  it('rejects an unknown position value', () => {
+    expect(() => GlobalSearchConfigSchema.parse({ position: 'middle' })).toThrow();
   });
 
   it('accepts a fully populated config', () => {
