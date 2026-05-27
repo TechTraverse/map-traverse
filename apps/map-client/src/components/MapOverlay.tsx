@@ -163,6 +163,7 @@ export function MapOverlay({
   const clearLayerFilters = useMapStore((s) => s.clearLayerFilters);
   const imageryLayers = useMapStore((s) => s.imageryLayers);
   const info = useMapStore((s) => s.info);
+  const pinDropActive = useMapStore((s) => s.pinDropActive);
   const toggleImageryLayerVisibility = useMapStore((s) => s.toggleImageryLayerVisibility);
   const setImageryLayerOpacity = useMapStore((s) => s.setImageryLayerOpacity);
   const activeLayerIds = useActiveLayerIds();
@@ -725,12 +726,14 @@ export function MapOverlay({
       )}
 
       {info?.enabled && (
-        <InfoModal
-          open={infoModalOpen}
-          title={info.title}
-          markdown={info.markdown ?? ''}
-          onClose={() => setInfoModalOpen(false)}
-        />
+        <div className="pointer-events-auto">
+          <InfoModal
+            open={infoModalOpen}
+            title={info.title}
+            markdown={info.markdown ?? ''}
+            onClose={() => setInfoModalOpen(false)}
+          />
+        </div>
       )}
 
       {/* Bottom-left: Scale Bar (raised above MapLibre attribution line) */}
@@ -749,7 +752,9 @@ export function MapOverlay({
             activeFormat={activeCoordFormat}
             formats={coordinateFormats}
             onFormatChange={onCoordFormatChange}
-            onNavigate={(lat, lng) => useMapStore.getState().flyTo([lng, lat], 14)}
+            onNavigate={(lat, lng) => useMapStore.getState().dropPinAt(lat, lng)}
+            onPinDropRequest={() => useMapStore.getState().togglePinDropActive()}
+            pinDropActive={pinDropActive}
           />
         </div>
       )}

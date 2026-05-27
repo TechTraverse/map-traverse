@@ -1,6 +1,6 @@
 import { Fragment, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
-import { Map, Source, Layer, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
+import { Map, Source, Layer, Marker, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
 import { useOgcFeatures, useExport } from '@ogc-maps/storybook-components/hooks';
 import {
   getCql2FilteredVectorTileUrl,
@@ -374,6 +374,12 @@ export function MapPreview({
   useEffect(() => () => clearTimeout(hoverTimerRef.current), []);
   const [mapInstance, setMapInstance] = useState<maplibregl.Map | null>(null);
   const mapRef = useRef<MapRef>(null);
+  const [droppedPin, setDroppedPin] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [pinDropActive, setPinDropActive] = useState(false);
+  const goToCoordinate = useCallback((lat: number, lng: number) => {
+    mapInstance?.flyTo({ center: [lng, lat], zoom: 17 });
+    setDroppedPin({ latitude: lat, longitude: lng });
+  }, [mapInstance]);
   const [imageryVisibility, setImageryVisibility] = useState<Record<string, boolean>>({});
   const imageryLayers = useMemo(() =>
     (imageryLayersProp ?? []).map(l => ({
@@ -987,7 +993,7 @@ export function MapPreview({
     internalViewState.minZoom <= internalViewState.maxZoom;
 
   return (
-    <div className="mapui:relative mapui:w-full mapui:h-full">
+    <div className="mapui:relative mapui:w-full mapui:h-full mapui:overflow-hidden mapui:overscroll-contain">
       <Map
         ref={mapRef}
         latitude={internalViewState.latitude}
@@ -1000,12 +1006,17 @@ export function MapPreview({
         style={{ width: '100%', height: '100%' }}
         mapStyle={resolvedStyle as any}
         transformRequest={transformRequest}
-        cursor={measure.mode || selection.mode ? 'crosshair' : cursor}
-        interactiveLayerIds={measure.mode || selection.mode === 'box' || selection.mode === 'polygon' ? undefined : interactiveLayerIds}
-        doubleClickZoom={!measure.mode && !selection.mode}
+        cursor={pinDropActive || measure.mode || selection.mode ? 'crosshair' : cursor}
+        interactiveLayerIds={pinDropActive || measure.mode || selection.mode === 'box' || selection.mode === 'polygon' ? undefined : interactiveLayerIds}
+        doubleClickZoom={!pinDropActive && !measure.mode && !selection.mode}
         onLoad={handleMapLoad}
         onMove={handleMove}
         onClick={(evt) => {
+          if (pinDropActive) {
+            goToCoordinate(evt.lngLat.lat, evt.lngLat.lng);
+            setPinDropActive(false);
+            return;
+          }
           if (measure.mode) {
             measure.addPoint([evt.lngLat.lng, evt.lngLat.lat]);
             return;
@@ -1261,6 +1272,18 @@ export function MapPreview({
             <Layer id="polygon-draw-points-layer" type="circle"
               paint={{ 'circle-color': '#3b82f6', 'circle-radius': 5, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 }} />
           </Source>
+        )}
+        {droppedPin && (
+          <Marker
+            longitude={droppedPin.longitude}
+            latitude={droppedPin.latitude}
+            anchor="bottom"
+            color="#3b82f6"
+            onClick={(e) => {
+              e.originalEvent.stopPropagation();
+              setDroppedPin(null);
+            }}
+          />
         )}
       </Map>
 
@@ -1752,7 +1775,9 @@ export function MapPreview({
                 activeFormat={coordFormat}
                 formats={coordinateFormats}
                 onFormatChange={setCoordFormat}
-                onNavigate={(lat, lng) => mapInstance?.flyTo({ center: [lng, lat], zoom: 14 })}
+                onNavigate={goToCoordinate}
+                onPinDropRequest={() => setPinDropActive((v) => !v)}
+                pinDropActive={pinDropActive}
               />
             </div>
           )}

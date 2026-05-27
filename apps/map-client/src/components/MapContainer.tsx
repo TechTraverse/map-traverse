@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
-import { Map, Source, Layer, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
+import { Map, Source, Layer, Marker, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
 import { useOgcFeatures } from '@ogc-maps/storybook-components/hooks';
 import { getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSourceKey, buildGeometryFilter, getImageryTileUrl, expandDashByCategory } from '@ogc-maps/storybook-components/utils';
 import type { CQL2Expression, SourceAuth } from '@ogc-maps/storybook-components/utils';
@@ -218,6 +218,10 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
   const clearPendingFlyTo = useMapStore((s) => s.clearPendingFlyTo);
   const pendingBearing = useMapStore((s) => s.pendingBearing);
   const clearPendingBearing = useMapStore((s) => s.clearPendingBearing);
+  const droppedPin = useMapStore((s) => s.droppedPin);
+  const clearDroppedPin = useMapStore((s) => s.clearDroppedPin);
+  const pinDropActive = useMapStore((s) => s.pinDropActive);
+  const dropPinAt = useMapStore((s) => s.dropPinAt);
   const setViewState = useMapStore((s) => s.setViewState);
 
   const [mapInstance, setMapInstance] = useState<ReturnType<MapRef['getMap']> | null>(null);
@@ -419,12 +423,16 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
       style={{ width: '100%', height: '100%' }}
       mapStyle={resolvedStyle as any}
       transformRequest={transformRequest}
-      cursor={measureMode ? 'crosshair' : selectionMode ? 'crosshair' : cursor}
-      interactiveLayerIds={measureMode ? undefined : (selectionMode === 'box' || selectionMode === 'polygon') ? undefined : interactiveLayerIds}
-      doubleClickZoom={!measureMode && !selectionMode}
+      cursor={pinDropActive || measureMode || selectionMode ? 'crosshair' : cursor}
+      interactiveLayerIds={pinDropActive || measureMode || selectionMode === 'box' || selectionMode === 'polygon' ? undefined : interactiveLayerIds}
+      doubleClickZoom={!pinDropActive && !measureMode && !selectionMode}
       onLoad={handleMapLoad}
       onMove={(evt) => setViewState(evt.viewState)}
       onClick={(evt) => {
+        if (pinDropActive) {
+          dropPinAt(evt.lngLat.lat, evt.lngLat.lng);
+          return;
+        }
         if (measureMode && onMeasureClick) {
           onMeasureClick([evt.lngLat.lng, evt.lngLat.lat]);
           return;
@@ -678,6 +686,18 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
             }}
           />
         </Source>
+      )}
+      {droppedPin && (
+        <Marker
+          longitude={droppedPin.longitude}
+          latitude={droppedPin.latitude}
+          anchor="bottom"
+          color="#3b82f6"
+          onClick={(e) => {
+            e.originalEvent.stopPropagation();
+            clearDroppedPin();
+          }}
+        />
       )}
     </Map>
   );

@@ -620,23 +620,30 @@ export function SourcesPage() {
   const handleRefreshMetadata = async (source: SavedSource) => {
     setRefreshingIds(prev => new Set(prev).add(source.id));
     try {
-      // Try client-side inspection first
+      // If the source has a known refresh endpoint (e.g. tipg /refresh), skip the
+      // client-side path — only the server can trigger refresh before inspecting,
+      // and any client-inspected metadata would be stale against the un-refreshed catalog.
+      const hasRefreshEndpoint = Boolean(source.metadata?.refreshUrl);
+
+      // Try client-side inspection first (unless a refresh is required)
       let succeeded = false;
-      try {
-        const metadata = await inspectSourceClientSide(source.url, source.auth ?? undefined);
-        const res = await fetch(`/api/sources/${source.id}/metadata`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ metadata }),
-        });
-        if (res.ok) {
-          const updated = await res.json() as SavedSource;
-          setSources(prev => prev.map(s => s.id === source.id ? updated : s));
-          succeeded = true;
+      if (!hasRefreshEndpoint) {
+        try {
+          const metadata = await inspectSourceClientSide(source.url, source.auth ?? undefined);
+          const res = await fetch(`/api/sources/${source.id}/metadata`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ metadata }),
+          });
+          if (res.ok) {
+            const updated = await res.json() as SavedSource;
+            setSources(prev => prev.map(s => s.id === source.id ? updated : s));
+            succeeded = true;
+          }
+        } catch {
+          // Client-side failed — fall through to server-side
         }
-      } catch {
-        // Client-side failed — fall through to server-side
       }
 
       if (!succeeded) {

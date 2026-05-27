@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { parseCoordinate } from './CoordinateDisplay';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { createElement } from 'react';
+import {
+  CoordinateDisplay,
+  formatDecimal,
+  parseCoordinate,
+} from './CoordinateDisplay';
 
 describe('parseCoordinate', () => {
   it('parses plain decimal degrees', () => {
@@ -38,5 +44,43 @@ describe('parseCoordinate', () => {
 
   it('handles negative degrees in multi-token forms', () => {
     expect(parseCoordinate('-40 42.768')).toBeCloseTo(-40.7128, 4);
+  });
+});
+
+describe('CoordinateDisplay pin-drop button', () => {
+  const baseProps = {
+    latitude: 40.7128,
+    longitude: -74.006,
+    activeFormat: 'decimal',
+    formats: [{ id: 'decimal', label: 'Decimal', format: formatDecimal }],
+    onFormatChange: () => {},
+    onNavigate: () => {},
+    isExpanded: true,
+  };
+
+  it('omits the pin button when onPinDropRequest is not provided', () => {
+    const html = renderToStaticMarkup(createElement(CoordinateDisplay, baseProps));
+    expect(html).not.toContain('Drop pin on map');
+    expect(html).not.toContain('Cancel pin drop');
+  });
+
+  it('renders the pin button when onPinDropRequest is provided', () => {
+    const html = renderToStaticMarkup(
+      createElement(CoordinateDisplay, { ...baseProps, onPinDropRequest: () => {} }),
+    );
+    expect(html).toContain('Drop pin on map');
+    expect(html).toContain('aria-pressed="false"');
+  });
+
+  it('reflects pinDropActive in aria-pressed and the cancel label', () => {
+    const html = renderToStaticMarkup(
+      createElement(CoordinateDisplay, {
+        ...baseProps,
+        onPinDropRequest: () => {},
+        pinDropActive: true,
+      }),
+    );
+    expect(html).toContain('aria-pressed="true"');
+    expect(html).toContain('Cancel pin drop');
   });
 });
