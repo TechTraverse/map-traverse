@@ -1,11 +1,11 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { Map, Source, Layer, Marker, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
 import { useOgcFeatures } from '@ogc-maps/storybook-components/hooks';
-import { getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSourceKey, buildGeometryFilter, getImageryTileUrl, expandDashByCategory, buildWmtsTileUrlTemplate } from '@ogc-maps/storybook-components/utils';
+import { getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSourceKey, buildGeometryFilter, getImageryTileUrl, expandDashByCategory, buildSourceUrlMap, buildHeaderAuthTransformRequest } from '@ogc-maps/storybook-components/utils';
 import type { CQL2Expression, SourceAuth } from '@ogc-maps/storybook-components/utils';
 import type { LayerConfig, ImageryLayerConfig } from '@ogc-maps/storybook-components/types';
 import type { MeasureMode, SelectionMode } from '@ogc-maps/storybook-components';
-import { useMapStore, useEffectiveCql2Filters, isOgcApiSource } from '../stores/mapStore';
+import { useMapStore, useEffectiveCql2Filters } from '../stores/mapStore';
 
 // Inline component for vector tile layers
 function VectorTileLayer({
@@ -295,72 +295,8 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
     clearPendingBearing();
   }, [pendingBearing, clearPendingBearing]);
 
-  // Build source URL lookup map with tileMatrixSetId, auth, and (for WMTS) a precomputed tile URL template.
-  const sourceUrlMap = useMemo(() => {
-    const urlMap: Record<
-      string,
-      {
-        url: string;
-        tileMatrixSetId?: string;
-        auth?: SourceAuth;
-        tileUrlTemplate?: string;
-        isWmts?: boolean;
-      }
-    > = {};
-    sources.forEach((source) => {
-      if (isOgcApiSource(source)) {
-        urlMap[source.id] = {
-          url: source.url,
-          tileMatrixSetId: source.tileMatrixSetId,
-          auth: source.auth,
-        };
-      } else {
-        urlMap[source.id] = {
-          url: '',
-          auth: source.auth,
-          isWmts: true,
-          tileUrlTemplate:
-            source.tileUrlTemplate ??
-            buildWmtsTileUrlTemplate(
-              source.capabilitiesUrl,
-              source.layer,
-              source.style,
-              source.tileMatrixSet,
-              source.format,
-              source.auth,
-            ),
-        };
-      }
-    });
-    return urlMap;
-  }, [sources]);
-
-  // Inject auth headers for tile requests when sources use header auth.
-  // WMTS sources are matched by URL origin (their tile path differs from the capabilities URL),
-  // OGC API sources by URL prefix.
-  const transformRequest = useMemo(() => {
-    const headerSources = sources
-      .filter((s) => s.auth?.type === 'header')
-      .map((s) => {
-        if (isOgcApiSource(s)) {
-          return { match: 'prefix' as const, value: s.url.replace(/\/$/, ''), auth: s.auth! };
-        }
-        try {
-          return { match: 'origin' as const, value: new URL(s.capabilitiesUrl).origin, auth: s.auth! };
-        } catch {
-          return null;
-        }
-      })
-      .filter((x): x is { match: 'origin' | 'prefix'; value: string; auth: SourceAuth } => x !== null);
-    if (headerSources.length === 0) return undefined;
-    return (url: string) => {
-      const match = headerSources.find((s) =>
-        s.match === 'origin' ? url.startsWith(s.value) : url.startsWith(s.value),
-      );
-      if (!match) return { url };
-      return { url, headers: { [match.auth.name]: match.auth.value } };
-    };
-  }, [sources]);
+  const sourceUrlMap = useMemo(() => buildSourceUrlMap(sources), [sources]);
+  const transformRequest = useMemo(() => buildHeaderAuthTransformRequest(sources), [sources]);
 
   // Get active basemap URL
   const activeBasemap = basemaps.find((b) => b.id === activeBasemapId);

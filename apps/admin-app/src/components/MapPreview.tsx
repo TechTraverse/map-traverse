@@ -26,7 +26,8 @@ import {
   prefetchAllDistinctValues,
   prefetchKey,
   type GlobalSearchContext,
-  buildWmtsTileUrlTemplate,
+  buildSourceUrlMap,
+  buildHeaderAuthTransformRequest,
   isOgcApiSource,
 } from '@ogc-maps/storybook-components/utils';
 import type { CQL2Expression } from '@ogc-maps/storybook-components/utils';
@@ -550,56 +551,8 @@ export function MapPreview({
     });
   }, [basemaps]);
 
-  const sourceUrlMap = useMemo(() => {
-    const map: Record<
-      string,
-      { url: string; tileMatrixSetId?: string; auth?: SourceAuth; tileUrlTemplate?: string; isWmts?: boolean }
-    > = {};
-    sources.forEach((source) => {
-      if (isOgcApiSource(source)) {
-        map[source.id] = { url: source.url, tileMatrixSetId: source.tileMatrixSetId, auth: source.auth };
-      } else {
-        map[source.id] = {
-          url: '',
-          auth: source.auth,
-          isWmts: true,
-          tileUrlTemplate:
-            source.tileUrlTemplate ??
-            buildWmtsTileUrlTemplate(
-              source.capabilitiesUrl,
-              source.layer,
-              source.style,
-              source.tileMatrixSet,
-              source.format,
-              source.auth,
-            ),
-        };
-      }
-    });
-    return map;
-  }, [sources]);
-
-  const transformRequest = useMemo(() => {
-    const headerSources = sources
-      .filter(s => s.auth?.type === 'header')
-      .map(s => {
-        if (isOgcApiSource(s)) {
-          return { value: s.url.replace(/\/$/, ''), auth: s.auth! };
-        }
-        try {
-          return { value: new URL(s.capabilitiesUrl).origin, auth: s.auth! };
-        } catch {
-          return null;
-        }
-      })
-      .filter((x): x is { value: string; auth: SourceAuth } => x !== null);
-    if (headerSources.length === 0) return undefined;
-    return (url: string) => {
-      const match = headerSources.find(s => url.startsWith(s.value));
-      if (!match) return { url };
-      return { url, headers: { [match.auth.name]: match.auth.value } };
-    };
-  }, [sources]);
+  const sourceUrlMap = useMemo(() => buildSourceUrlMap(sources), [sources]);
+  const transformRequest = useMemo(() => buildHeaderAuthTransformRequest(sources), [sources]);
 
   // Cleanup debounce timers on unmount
   useEffect(() => {

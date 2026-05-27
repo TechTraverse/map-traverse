@@ -14,7 +14,6 @@ const inputClass =
 export function WmtsSourceEditor({ value, onChange }: WmtsSourceEditorProps) {
   const update = (patch: Partial<WmtsSource>) => onChange({ ...value, ...patch });
   const authType = value.auth?.type ?? 'none';
-  const [capUrlInput, setCapUrlInput] = useState(value.capabilitiesUrl);
   const [fetchUrl, setFetchUrl] = useState<string | null>(null);
 
   const { capabilities, loading: capLoading, error: capError } = useWmtsCapabilities(
@@ -69,18 +68,15 @@ export function WmtsSourceEditor({ value, onChange }: WmtsSourceEditorProps) {
         <div className="mapui:flex mapui:gap-2">
           <input
             type="url"
-            value={capUrlInput}
-            onChange={(e) => {
-              setCapUrlInput(e.target.value);
-              update({ capabilitiesUrl: e.target.value });
-            }}
+            value={value.capabilitiesUrl}
+            onChange={(e) => update({ capabilitiesUrl: e.target.value })}
             placeholder="https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/1.0.0/WMTSCapabilities.xml"
             className={`${inputClass} mapui:flex-1`}
           />
           <button
             type="button"
-            onClick={() => setFetchUrl(capUrlInput)}
-            disabled={capLoading || !capUrlInput}
+            onClick={() => setFetchUrl(value.capabilitiesUrl)}
+            disabled={capLoading || !value.capabilitiesUrl}
             className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-blue-500 mapui:bg-white mapui:px-3 mapui:py-1 mapui:text-sm mapui:text-blue-600 hover:mapui:bg-blue-50 disabled:mapui:cursor-not-allowed disabled:mapui:opacity-50"
           >
             {capLoading ? 'Loading…' : 'Fetch Layers'}

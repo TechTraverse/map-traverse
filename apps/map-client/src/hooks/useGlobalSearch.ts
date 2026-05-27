@@ -10,7 +10,8 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import bbox from '@turf/bbox';
 import type { AllGeoJSON } from '@turf/helpers';
 import { useShallow } from 'zustand/react/shallow';
-import { useMapStore, isOgcApiSource } from '../stores/mapStore';
+import { useMapStore } from '../stores/mapStore';
+import { isOgcApiSource } from '@ogc-maps/storybook-components/utils';
 import {
   prefetchAllDistinctValues,
   prefetchKey,
