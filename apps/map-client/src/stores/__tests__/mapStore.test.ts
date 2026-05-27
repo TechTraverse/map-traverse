@@ -221,7 +221,8 @@ describe('mapStore — hydrate', () => {
       initialView: { latitude: 1, longitude: 2, zoom: 3, pitch: 0, bearing: 0 } as any,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       layers: [makeLayer({ id: 'hl1' })] as any,
-      basemaps: [{ id: 'bm', label: 'BM', type: 'raster' as const, tiles: [''], attribution: '' }],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      basemaps: [{ id: 'bm', label: 'BM', url: '' } as any],
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       sources: [] as any,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

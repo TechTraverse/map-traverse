@@ -48,7 +48,7 @@ describe('useMapUrlState — viewport', () => {
       await result.current.setViewportState({ lng: 1, lat: 2, zoom: 3 });
     });
     await waitFor(() => expect(onUrlUpdate).toHaveBeenCalled());
-    const event = onUrlUpdate.mock.calls.at(-1)![0];
+    const event = onUrlUpdate.mock.calls[onUrlUpdate.mock.calls.length - 1][0];
     expect(event.searchParams.get('lng')).toBe('1');
     expect(event.searchParams.get('lat')).toBe('2');
     expect(event.searchParams.get('zoom')).toBe('3');
@@ -63,7 +63,7 @@ describe('useMapUrlState — viewport', () => {
       await result.current.setViewportState({ lng: 9 });
     });
     await waitFor(() => expect(onUrlUpdate).toHaveBeenCalled());
-    const event = onUrlUpdate.mock.calls.at(-1)![0];
+    const event = onUrlUpdate.mock.calls[onUrlUpdate.mock.calls.length - 1][0];
     expect(event.options.history).toBe('replace');
   });
 });
@@ -105,7 +105,7 @@ describe('useMapUrlState — layers / basemap / filters', () => {
       await result.current.setLayerState({ layers: ['x', 'y'], basemap: 'sat' });
     });
     await waitFor(() => expect(onUrlUpdate).toHaveBeenCalled());
-    const event = onUrlUpdate.mock.calls.at(-1)![0];
+    const event = onUrlUpdate.mock.calls[onUrlUpdate.mock.calls.length - 1][0];
     expect(event.searchParams.get('layers')).toBe('x,y');
     expect(event.searchParams.get('basemap')).toBe('sat');
     expect(event.options.history).toBe('push');
@@ -122,7 +122,7 @@ describe('useMapUrlState — layers / basemap / filters', () => {
       });
     });
     await waitFor(() => expect(onUrlUpdate).toHaveBeenCalled());
-    const event = onUrlUpdate.mock.calls.at(-1)![0];
+    const event = onUrlUpdate.mock.calls[onUrlUpdate.mock.calls.length - 1][0];
     const raw = event.searchParams.get('filters');
     expect(raw).toBeTruthy();
     expect(JSON.parse(raw!)).toEqual({ layerA: { name: 'foo' } });
