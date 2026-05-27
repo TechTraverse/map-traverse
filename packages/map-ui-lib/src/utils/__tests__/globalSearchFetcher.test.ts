@@ -108,8 +108,6 @@ describe('prefetchAllDistinctValues', () => {
   });
 
   it('makes one batched paginated walk per layer, populating every prefetch:true property', async () => {
-    // Previously did one walk per (layer, property) — paginating the same features
-    // once per column. Now: one walk per layer with all configured property columns.
     const ctx = buildCtx({
       config: buildConfig({
         layers: [

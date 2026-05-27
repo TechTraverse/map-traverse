@@ -333,6 +333,43 @@ export function getFilteredVectorTileUrl(
  * Optionally filters by a substring query using a CQL2 `like` filter.
  * @throws {Error} If the request fails or the response status is not OK.
  */
+async function paginateFeatures(
+  baseUrl: string,
+  collection: string,
+  options: {
+    properties?: string[];
+    cql2Filter?: CQL2Expression;
+    pageSize: number;
+    maxFeatures: number;
+  },
+  onPage: (features: GeoJsonFeature[]) => void,
+  auth?: SourceAuth,
+  signal?: AbortSignal,
+): Promise<void> {
+  let offset = 0;
+  let fetched = 0;
+  while (fetched < options.maxFeatures) {
+    const batchSize = Math.min(options.pageSize, options.maxFeatures - fetched);
+    const page = await fetchFeatures(
+      baseUrl,
+      collection,
+      {
+        properties: options.properties,
+        cql2Filter: options.cql2Filter,
+        limit: batchSize,
+        offset,
+      },
+      auth,
+      signal,
+    );
+    onPage(page.features);
+    fetched += page.features.length;
+    offset += page.features.length;
+    if (page.features.length < batchSize) return;
+    if (page.numberMatched != null && offset >= page.numberMatched) return;
+  }
+}
+
 export async function fetchDistinctValues(
   baseUrl: string,
   collection: string,
@@ -347,7 +384,6 @@ export async function fetchDistinctValues(
       : undefined;
 
   const seen = new Set<string>();
-
   const collectValues = (features: GeoJsonFeature[]) => {
     for (const feature of features) {
       const val = feature.properties?.[property];
@@ -356,29 +392,19 @@ export async function fetchDistinctValues(
   };
 
   if (options?.fetchAll) {
-    const maxFeatures = options.maxFeatures ?? 10_000;
-    const pageSize = options.limit ?? 500;
-    let offset = 0;
-    let fetched = 0;
-
-    while (fetched < maxFeatures) {
-      const batchSize = Math.min(pageSize, maxFeatures - fetched);
-      const page = await fetchFeatures(baseUrl, collection, {
+    await paginateFeatures(
+      baseUrl,
+      collection,
+      {
         properties: [property],
-        limit: batchSize,
-        offset,
         cql2Filter,
-      }, auth, signal);
-
-      collectValues(page.features);
-      fetched += page.features.length;
-      offset += page.features.length;
-
-      const done =
-        page.features.length < batchSize ||
-        (page.numberMatched != null && offset >= page.numberMatched);
-      if (done) break;
-    }
+        pageSize: options.limit ?? 500,
+        maxFeatures: options.maxFeatures ?? 10_000,
+      },
+      collectValues,
+      auth,
+      signal,
+    );
   } else {
     const data = await fetchFeatures(baseUrl, collection, {
       properties: [property],
@@ -410,46 +436,35 @@ export async function fetchDistinctValuesMulti(
   auth?: SourceAuth,
   signal?: AbortSignal,
 ): Promise<Record<string, string[]>> {
-  const out: Record<string, Set<string>> = {};
-  for (const p of properties) out[p] = new Set<string>();
-
   if (properties.length === 0) return {};
 
-  const pageSize = options?.pageSize ?? 500;
-  const maxFeatures = options?.maxFeatures ?? 5000;
-  let offset = 0;
-  let fetched = 0;
+  const sets: Record<string, Set<string>> = {};
+  for (const p of properties) sets[p] = new Set<string>();
 
-  while (fetched < maxFeatures) {
-    const batchSize = Math.min(pageSize, maxFeatures - fetched);
-    const page = await fetchFeatures(
-      baseUrl,
-      collection,
-      { properties, limit: batchSize, offset },
-      auth,
-      signal,
-    );
-
-    for (const feature of page.features) {
-      const props = feature.properties;
-      if (!props) continue;
-      for (const property of properties) {
-        const v = props[property];
-        if (v != null && typeof v === 'string') out[property].add(v);
+  await paginateFeatures(
+    baseUrl,
+    collection,
+    {
+      properties,
+      pageSize: options?.pageSize ?? 500,
+      maxFeatures: options?.maxFeatures ?? 5000,
+    },
+    (features) => {
+      for (const feature of features) {
+        const props = feature.properties;
+        if (!props) continue;
+        for (const property of properties) {
+          const v = props[property];
+          if (v != null && typeof v === 'string') sets[property].add(v);
+        }
       }
-    }
-
-    fetched += page.features.length;
-    offset += page.features.length;
-
-    const done =
-      page.features.length < batchSize ||
-      (page.numberMatched != null && offset >= page.numberMatched);
-    if (done) break;
-  }
+    },
+    auth,
+    signal,
+  );
 
   const result: Record<string, string[]> = {};
-  for (const p of properties) result[p] = Array.from(out[p]).sort();
+  for (const p of properties) result[p] = Array.from(sets[p]).sort();
   return result;
 }
 

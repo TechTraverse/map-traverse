@@ -50,17 +50,15 @@ function resolveLayerSource(
 
 /**
  * Per-layer cap on features walked to populate the distinct-value cache. The cache
- * is now an *acceleration*, not a gate: when a user's substring is absent from the
- * cache, `buildLayerExpression` falls back to a server-side `like` (see Bug 2 fix),
- * so a modest cap is safe and keeps mount-time bandwidth bounded.
+ * is an *acceleration*, not a gate: when a user's substring is absent from the
+ * cache, `buildLayerExpression` falls back to a server-side multi-case `like`, so a
+ * modest cap is safe and keeps mount-time bandwidth bounded.
  */
 const PREFETCH_MAX_FEATURES_PER_LAYER = 2000;
 
 /**
  * At mount time, fetch distinct values for every property with `prefetch: true`.
- * Batches by layer (one paginated walk per layer, all configured properties pulled
- * at once via `fetchDistinctValuesMulti`) — fixes the previous N-properties-per-layer
- * fan-out which paginated the same features once per property.
+ * One paginated walk per layer (all configured properties pulled in the same pages).
  * Uses `Promise.allSettled` so a single failure never aborts the full sweep.
  * Results are keyed by `${layerId}:${property}`.
  */
