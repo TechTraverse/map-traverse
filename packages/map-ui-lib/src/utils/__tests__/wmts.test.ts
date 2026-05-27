@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import {
   buildWmtsTileUrlTemplate,
   adaptResourceUrlTemplate,
   parseWmtsCapabilities,
+  fetchWmtsCapabilities,
 } from '../wmts';
 
 describe('buildWmtsTileUrlTemplate', () => {
@@ -101,5 +102,91 @@ describe('parseWmtsCapabilities', () => {
 
   it('throws a clear error on invalid XML', () => {
     expect(() => parseWmtsCapabilities('not xml at all <<<')).toThrow(/not valid XML/);
+  });
+});
+
+describe('fetchWmtsCapabilities', () => {
+  const minimalXml = `<?xml version="1.0"?>
+<Capabilities xmlns="http://www.opengis.net/wmts/1.0">
+  <Contents>
+    <Layer>
+      <Identifier>L1</Identifier>
+      <Style><Identifier>default</Identifier></Style>
+      <Format>image/png</Format>
+      <TileMatrixSetLink><TileMatrixSet>WebMercatorQuad</TileMatrixSet></TileMatrixSetLink>
+    </Layer>
+  </Contents>
+</Capabilities>`;
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('fetches and parses a capabilities document', async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+      new Response(minimalXml, { status: 200 }),
+    );
+    const caps = await fetchWmtsCapabilities('https://example.com/wmts/GetCapabilities.xml');
+    expect(caps.layers).toHaveLength(1);
+    expect(caps.layers[0].id).toBe('L1');
+  });
+
+  it('throws on non-ok response with status code in message', async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+      new Response('not found', { status: 404, statusText: 'Not Found' }),
+    );
+    await expect(
+      fetchWmtsCapabilities('https://example.com/wmts/GetCapabilities.xml'),
+    ).rejects.toThrow(/404.*Not Found/);
+  });
+
+  it('sends header auth via Headers', async () => {
+    const mock = fetch as ReturnType<typeof vi.fn>;
+    mock.mockResolvedValue(new Response(minimalXml, { status: 200 }));
+    await fetchWmtsCapabilities('https://example.com/wmts/GetCapabilities.xml', {
+      type: 'header',
+      name: 'Authorization',
+      value: 'Bearer xyz',
+    });
+    const [, init] = mock.mock.calls[0];
+    expect(init.headers).toEqual({ Authorization: 'Bearer xyz' });
+  });
+
+  it('appends query-param auth to the fetched URL', async () => {
+    const mock = fetch as ReturnType<typeof vi.fn>;
+    mock.mockResolvedValue(new Response(minimalXml, { status: 200 }));
+    await fetchWmtsCapabilities('https://example.com/wmts/GetCapabilities.xml', {
+      type: 'query_param',
+      name: 'apikey',
+      value: 'secret',
+    });
+    const [fetchedUrl] = mock.mock.calls[0];
+    expect(fetchedUrl).toContain('apikey=secret');
+  });
+
+  it('forwards an AbortSignal to fetch so an aborted controller cancels the request', async () => {
+    const controller = new AbortController();
+    const mock = fetch as ReturnType<typeof vi.fn>;
+    mock.mockImplementation(
+      (_url: string, init: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init.signal?.addEventListener('abort', () => {
+            reject(new DOMException('aborted', 'AbortError'));
+          });
+        }),
+    );
+    const pending = fetchWmtsCapabilities(
+      'https://example.com/wmts/GetCapabilities.xml',
+      undefined,
+      controller.signal,
+    );
+    controller.abort();
+    await expect(pending).rejects.toThrow(/aborted/i);
+    const [, init] = mock.mock.calls[0];
+    expect(init.signal).toBe(controller.signal);
   });
 });

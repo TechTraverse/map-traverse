@@ -156,6 +156,30 @@ describe('detectTileSourceType', () => {
   it('detects style URL with fragment', () => {
     expect(detectTileSourceType('https://example.com/style.json#layer-a')).toBe('style');
   });
+
+  it('detects WMTS via service=WMTS query parameter', () => {
+    expect(
+      detectTileSourceType('https://example.com/ows?service=WMTS&request=GetCapabilities'),
+    ).toBe('wmts');
+  });
+
+  it('detects WMTS via WMTSCapabilities.xml path (NASA GIBS style)', () => {
+    expect(
+      detectTileSourceType(
+        'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/1.0.0/WMTSCapabilities.xml',
+      ),
+    ).toBe('wmts');
+  });
+
+  it('detects WMTS via /wmts/ path with GetCapabilities.xml', () => {
+    expect(
+      detectTileSourceType('https://example.com/wmts/epsg4326/best/GetCapabilities.xml'),
+    ).toBe('wmts');
+  });
+
+  it('does not misclassify an OGC API URL as WMTS', () => {
+    expect(detectTileSourceType('https://example.com/collections/parcels')).toBe('ogc-api');
+  });
 });
 
 describe('buildGeometryFilter', () => {
