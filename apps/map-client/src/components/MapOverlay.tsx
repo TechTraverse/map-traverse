@@ -47,7 +47,7 @@ import {
   globalSearchWidthClass,
 } from '@ogc-maps/storybook-components';
 import { GlobalSearchBarContainer } from './GlobalSearchBarContainer';
-import { useMapStore, useActiveLayerIds, useEffectiveCql2Filters } from '../stores/mapStore';
+import { useMapStore, useActiveLayerIds, useEffectiveCql2Filters, isOgcApiSource } from '../stores/mapStore';
 import { useAutocompleteSuggestions } from '../hooks/useAutocompleteSuggestions';
 import { useLayerQueryables } from '../hooks/useLayerQueryables';
 import { LuDownload, LuLayers3, LuList, LuMap, LuMousePointer2, LuRuler, LuSatellite, LuSearch } from 'react-icons/lu';
@@ -241,7 +241,7 @@ export function MapOverlay({
       const cql2Filter = request.filtered ? (activeCql2Filters[request.layer.id] ?? undefined) : undefined;
       const layer = useMapStore.getState().layers.find((l) => l.id === request.layer.id);
       const source = sources.find((s) => s.id === layer?.sourceId);
-      const baseUrl = source?.url ?? '';
+      const baseUrl = source && isOgcApiSource(source) ? source.url : '';
       runExport(request.layer.collection, request.format.id, filename, cql2Filter, baseUrl);
     },
     [runExport, runExportFromFeatures, activeCql2Filters, sources, selectionFeatures],
@@ -253,7 +253,7 @@ export function MapOverlay({
       const layer = state.layers.find((l) => l.id === layerId);
       if (!layer) return;
       const source = state.sources.find((s) => s.id === layer.sourceId);
-      if (!source) return;
+      if (!source || !isOgcApiSource(source)) return;
 
       const cql2Filter = eq(property, value);
       const data = await fetchFeatures(source.url, layer.collection, { cql2Filter, limit: 1 });

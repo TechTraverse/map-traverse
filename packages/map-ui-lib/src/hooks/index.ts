@@ -8,6 +8,7 @@ export { downloadBlob } from '../utils/download';
 export { DEFAULT_EXPORT_FORMATS } from '../utils/exportFormats';
 export { useOgcQueryables, type UseOgcQueryablesResult } from './useOgcQueryables';
 export { useOgcCollectionDetail, type UseOgcCollectionDetailResult } from './useOgcCollectionDetail';
+export { useWmtsCapabilities, type UseWmtsCapabilitiesResult } from './useWmtsCapabilities';
 export { useMeasure, type UseMeasureResult } from './useMeasure';
 export { useSelection, type UseSelectionResult } from './useSelection';
 export {
@@ -19,6 +20,8 @@ export {
 
 export type {
   OgcApiSource,
+  WmtsSource,
+  MapSource,
   LayerConfig,
   MapConfig,
   UIConfig,

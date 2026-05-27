@@ -10,7 +10,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import bbox from '@turf/bbox';
 import type { AllGeoJSON } from '@turf/helpers';
 import { useShallow } from 'zustand/react/shallow';
-import { useMapStore } from '../stores/mapStore';
+import { useMapStore, isOgcApiSource } from '../stores/mapStore';
 import {
   prefetchAllDistinctValues,
   prefetchKey,
@@ -122,7 +122,7 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
     const ctx: GlobalSearchContext = {
       config: globalSearchConfig,
       layers,
-      sources,
+      sources: sources.filter(isOgcApiSource),
       prefetchedValues: prefetchedDistinctValues,
     };
 
@@ -178,7 +178,7 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
       const ctx: GlobalSearchContext = {
         config: globalSearchConfig,
         layers,
-        sources,
+        sources: sources.filter(isOgcApiSource),
         prefetchedValues: prefetchedDistinctValues,
       };
 

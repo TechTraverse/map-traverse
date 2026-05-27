@@ -26,6 +26,8 @@ import {
   prefetchAllDistinctValues,
   prefetchKey,
   type GlobalSearchContext,
+  buildWmtsTileUrlTemplate,
+  isOgcApiSource,
 } from '@ogc-maps/storybook-components/utils';
 import type { CQL2Expression } from '@ogc-maps/storybook-components/utils';
 import type { PropertyFilter } from '@ogc-maps/storybook-components/utils';
@@ -72,7 +74,7 @@ import type {
   GlobalSearchGroupedResults,
 } from '@ogc-maps/storybook-components';
 import type {
-  OgcApiSource,
+  MapSource,
   SourceAuth,
   LayerConfig,
   ImageryLayerConfig,
@@ -237,13 +239,16 @@ function PreviewRasterImageryLayer({
   sourceUrl,
   tileMatrixSetId,
   auth,
+  sourceTileUrlTemplate,
 }: {
   layer: ImageryLayerConfig;
   sourceUrl: string;
   tileMatrixSetId?: string;
   auth?: SourceAuth;
+  sourceTileUrlTemplate?: string;
 }) {
-  const tileUrl = getImageryTileUrl(sourceUrl, layer.collection, tileMatrixSetId, layer.tileUrlTemplate, auth);
+  const template = sourceTileUrlTemplate ?? layer.tileUrlTemplate;
+  const tileUrl = getImageryTileUrl(sourceUrl, layer.collection, tileMatrixSetId, template, auth);
   return (
     <Source
       id={`imagery-${layer.id}`}
@@ -267,7 +272,7 @@ function PreviewRasterImageryLayer({
 }
 
 export interface MapPreviewProps {
-  sources: OgcApiSource[];
+  sources: MapSource[];
   layers: LayerConfig[];
   imageryLayers?: ImageryLayerConfig[];
   basemaps: BasemapConfig[];
@@ -439,7 +444,7 @@ export function MapPreview({
   const handleRunQuery = useCallback(async (params: Record<string, unknown>) => {
     if (!activeLayer?.cql2Filter) return;
     const source = sources.find((s) => s.id === activeLayer.sourceId);
-    if (!source) return;
+    if (!source || !isOgcApiSource(source)) return;
 
     const selectionGeometry = combineGeometries(selection.features.map((f) => f.geometry));
     setQueryLoading(true);
@@ -546,9 +551,30 @@ export function MapPreview({
   }, [basemaps]);
 
   const sourceUrlMap = useMemo(() => {
-    const map: Record<string, { url: string; tileMatrixSetId?: string; auth?: SourceAuth }> = {};
+    const map: Record<
+      string,
+      { url: string; tileMatrixSetId?: string; auth?: SourceAuth; tileUrlTemplate?: string; isWmts?: boolean }
+    > = {};
     sources.forEach((source) => {
-      map[source.id] = { url: source.url, tileMatrixSetId: source.tileMatrixSetId, auth: source.auth };
+      if (isOgcApiSource(source)) {
+        map[source.id] = { url: source.url, tileMatrixSetId: source.tileMatrixSetId, auth: source.auth };
+      } else {
+        map[source.id] = {
+          url: '',
+          auth: source.auth,
+          isWmts: true,
+          tileUrlTemplate:
+            source.tileUrlTemplate ??
+            buildWmtsTileUrlTemplate(
+              source.capabilitiesUrl,
+              source.layer,
+              source.style,
+              source.tileMatrixSet,
+              source.format,
+              source.auth,
+            ),
+        };
+      }
     });
     return map;
   }, [sources]);
@@ -556,10 +582,20 @@ export function MapPreview({
   const transformRequest = useMemo(() => {
     const headerSources = sources
       .filter(s => s.auth?.type === 'header')
-      .map(s => ({ prefix: s.url.replace(/\/$/, ''), auth: s.auth! }));
+      .map(s => {
+        if (isOgcApiSource(s)) {
+          return { value: s.url.replace(/\/$/, ''), auth: s.auth! };
+        }
+        try {
+          return { value: new URL(s.capabilitiesUrl).origin, auth: s.auth! };
+        } catch {
+          return null;
+        }
+      })
+      .filter((x): x is { value: string; auth: SourceAuth } => x !== null);
     if (headerSources.length === 0) return undefined;
     return (url: string) => {
-      const match = headerSources.find(s => url.startsWith(s.prefix));
+      const match = headerSources.find(s => url.startsWith(s.value));
       if (!match) return { url };
       return { url, headers: { [match.auth.name]: match.auth.value } };
     };
@@ -581,7 +617,7 @@ export function MapPreview({
       const layer = layers.find(l => l.id === layerId);
       if (!layer) return;
       const sourceInfo = sourceUrlMap[layer.sourceId];
-      if (!sourceInfo) return;
+      if (!sourceInfo || sourceInfo.isWmts) return;
 
       const key = `${layerId}:${property}`;
 
@@ -686,7 +722,7 @@ export function MapPreview({
       const filename = `${request.layer.label}${request.format.extension}`;
       const layer = layers.find(l => l.id === request.layer.id);
       const source = sources.find(s => s.id === layer?.sourceId);
-      const baseUrl = source?.url ?? '';
+      const baseUrl = source && isOgcApiSource(source) ? source.url : '';
       runExport(request.layer.collection, request.format.id, filename, cql2Filter, baseUrl);
     },
     [runExport, effectiveCql2Filters, layers, sources],
@@ -737,7 +773,7 @@ export function MapPreview({
       const layer = layers.find(l => l.id === layerId);
       if (!layer) return;
       const sourceInfo = sourceUrlMap[layer.sourceId];
-      if (!sourceInfo) return;
+      if (!sourceInfo || sourceInfo.isWmts) return;
 
       const cql2Filter = eq(property, value);
       const data = await fetchFeatures(sourceInfo.url, layer.collection, { cql2Filter, limit: 1 }, sourceInfo.auth);
@@ -770,7 +806,7 @@ export function MapPreview({
     const ctx: GlobalSearchContext = {
       config: globalSearch,
       layers,
-      sources,
+      sources: sources.filter(isOgcApiSource),
       prefetchedValues: prefetchedDistinctValues,
     };
 
@@ -820,7 +856,7 @@ export function MapPreview({
       const ctx: GlobalSearchContext = {
         config: globalSearch,
         layers,
-        sources,
+        sources: sources.filter(isOgcApiSource),
         prefetchedValues: prefetchedDistinctValues,
       };
 
@@ -1161,6 +1197,7 @@ export function MapPreview({
               sourceUrl={sourceInfo?.url ?? ''}
               tileMatrixSetId={sourceInfo?.tileMatrixSetId}
               auth={sourceInfo?.auth}
+              sourceTileUrlTemplate={sourceInfo?.tileUrlTemplate}
             />
           );
         })}
@@ -1168,6 +1205,7 @@ export function MapPreview({
         {!showEmptyState && reversedLayers.map((layer) => {
           const sourceInfo = sourceUrlMap[layer.sourceId];
           if (!sourceInfo || !layer.styles?.length) return null;
+          if (sourceInfo.isWmts) return null;
 
           if (layer.dataMode === 'geojson') {
             return (
