@@ -10,7 +10,7 @@ import {
   UIConfigEditor,
   GlobalSearchConfigEditor,
   ViewEditor,
-  ConfigPreview,
+  ConfigReview,
   CollapsibleSection,
   FormField,
   ColorPicker,
@@ -1107,22 +1107,12 @@ export function ConfigWizardPage() {
         {currentStep === 'review' && (
           <div className="mapui:space-y-4">
             <h2 className="mapui:text-lg mapui:font-semibold mapui:text-slate-800">Review & Save</h2>
-            <div className="mapui:bg-slate-50 mapui:rounded mapui:p-4 mapui:text-sm mapui:text-slate-600">
-              <p><strong>Name:</strong> {name || '(not set)'}</p>
-              <p><strong>Description:</strong> {description || '(not set)'}</p>
-              <p>
-                <strong>Info control:</strong>{' '}
-                {info?.enabled ? `enabled (${info.position})` : 'disabled'}
-              </p>
-              {info?.enabled && info.markdown && (
-                <p className="mapui:mt-1 mapui:text-slate-500 mapui:whitespace-pre-wrap">
-                  <strong>Info preview:</strong>{' '}
-                  {info.markdown.slice(0, 200)}
-                  {info.markdown.length > 200 ? '…' : ''}
-                </p>
-              )}
-            </div>
-            <ConfigPreview config={assembledConfig} />
+            <ConfigReview
+              config={assembledConfig}
+              name={name}
+              description={description}
+              onEditSection={(step) => setCurrentStep(step as WizardStep)}
+            />
             {!name && (
               <div className="mapui:rounded mapui:bg-amber-50 mapui:border mapui:border-amber-200 mapui:p-4 mapui:text-sm mapui:text-amber-800 mapui:flex mapui:items-center mapui:justify-between mapui:gap-3">
                 <span>Enter a name in the <strong>Metadata</strong> step to save this map.</span>
