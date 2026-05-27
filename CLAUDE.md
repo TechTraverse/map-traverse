@@ -6,7 +6,8 @@
 - **Build**: `pnpm build` (All), `pnpm build:lib`, `pnpm build:app`
 - **Test**: `pnpm test`
 - **Test (single)**: `cd packages/map-ui-lib && pnpm exec vitest run path/to/file.test.ts`
-- **Verify**: `pnpm verify` (runs build + test — **must pass before declaring any task done**)
+- **Verify**: `pnpm verify` (runs build + lib test — **must pass before declaring any task done**). NOTE: `pnpm verify` only runs the lib suite. For full pre-merge coverage also run `cd apps/admin-app && pnpm exec vitest run` and `cd apps/map-client && pnpm exec vitest run`.
+- **Coverage**: `pnpm test:coverage` (lib only); per-app: `cd apps/<app> && pnpm exec vitest run --coverage`.
 - **Docker**: `docker compose up -d` (Start all services), `docker restart storybook-components-tipg` (Refresh tipg)
 - **Dev URLs**: gateway `:80`, map-client `:3000`, admin-app `:3001`, tipg `:8000`, postgis `:5432`
 
@@ -40,7 +41,12 @@ directly to `main`** — that branch is human-reviewed integration.
 4. **Cleanup**: Exit and remove the worktree. Push `ai/main` to origin if running unattended.
 
 ### Team tasks
-Each teammate gets its own worktree off `ai/main`. The lead merges all branches into `ai/main` after teammates finish (per `.agent/prompts/ai-loop.md`).
+Each teammate gets its own worktree off `ai/main`. The lead merges all branches into `ai/main` after teammates finish (per `.agent/prompts/ai-loop.md`). Coordination mechanism:
+- `TeamCreate` once → shared task list at `~/.claude/tasks/<team>/`.
+- `TaskCreate` one task per workstream; create a final lead-integration task and set `addBlockedBy` to the workstream task IDs.
+- Spawn each teammate via `Agent` with `team_name` + `name` + a self-contained prompt pointing at one plan section. Use `run_in_background: true` so the lead's context stays free.
+- Teammates report via `SendMessage` to the lead. Don't poll — messages arrive as turns.
+- After lead's integration task: `TeamDelete` cleans up the task list and team config.
 
 ### Promoting `ai/main` → `main`
 The AI does not merge into `main` directly. To promote, open a PR `ai/main → main` for human review. CI (`ci.yml`, `codeql.yml`) runs on the PR. Once approved, the human squash-merges per the `main` ruleset.
@@ -50,6 +56,7 @@ The AI does not merge into `main` directly. To promote, open a PR `ai/main → m
 - Never commit directly on `main`. AI can push to `ai/main` and to AI worktree branches freely.
 - **Commit messages**: Keep them short (one line, ~50 chars). No `Co-Authored-By` trailer — it's implied in this repo.
 - **Merge conflicts**: If merging into `ai/main` produces a conflict, attempt to resolve it. Read both sides, understand the intent, and produce a correct merged result. Only STOP and report to the human if you're unsure which change to keep — i.e., the conflict is ambiguous or the two sides contradict each other. If running in a loop, exit the loop only if you cannot resolve it.
+- **`pnpm-lock.yaml` conflicts** (common with parallel teammates adding deps): `git checkout --theirs pnpm-lock.yaml && pnpm install --no-frozen-lockfile && git add pnpm-lock.yaml`. Regenerating from the merged `package.json` files is the correct fix — do not hand-edit the lockfile.
 - If `pnpm verify` fails after merge, fix on `ai/main` and commit the fix there.
 
 For dev setup and Docker troubleshooting, see `.agent/workflows/development.md`.
@@ -69,6 +76,8 @@ For dev setup and Docker troubleshooting, see `.agent/workflows/development.md`.
 - `getVectorTileSourceKey` must be called with the **merged** base+active cql2 filter, not just the active one. MapLibre won't refetch vector tiles unless both the React key AND Source/Layer id change.
 - `packages/map-ui-lib`'s main bundle touches `document` at module load. Node-only vitest in `apps/admin-app/` cannot import lib helpers; mirror the helper locally or test it from inside `packages/map-ui-lib` instead.
 - `apps/admin-app/src/components/MapPreview.tsx` has multiple `<Legend>` and per-layer render call sites. When sweeping the file, grep for **all** hits of the relevant symbol — spot-fixes miss the rest.
+- App-level vitest must be run from the app's cwd, not via `pnpm --filter` from monorepo root: vitest's config auto-discovery walks up and picks up the lib's config, sweeping the wrong tree. Use `cd apps/admin-app && pnpm exec vitest run` (same for map-client).
+- Admin-app server tests use `pg-mem` to back the Postgres pool, and bypass `connect-pg-simple` when `NODE_ENV=test` (PgSession's SQL doesn't round-trip cleanly through pg-mem). Server tests `import { app }` from `server/index.ts` — `app.listen` is gated behind a main-module check. See `apps/admin-app/server/__tests__/testDb.ts`.
 
 ## Claude Skills
 This repo ships task-specific skills under `.claude/skills/`. Read the relevant `SKILL.md` *before* starting any non-trivial change — they encode the project's architectural rules and the *why* behind them, so you don't have to rediscover them mid-task.
