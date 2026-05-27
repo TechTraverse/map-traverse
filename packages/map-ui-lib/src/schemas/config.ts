@@ -381,16 +381,17 @@ export type GlobalSearchPosition = (typeof GLOBAL_SEARCH_POSITIONS)[number];
 export const GLOBAL_SEARCH_WIDTHS = ['sm', 'md', 'lg'] as const;
 export type GlobalSearchWidth = (typeof GLOBAL_SEARCH_WIDTHS)[number];
 
+export const DEFAULT_GLOBAL_SEARCH_POSITION: GlobalSearchPosition = 'top-left';
+export const DEFAULT_GLOBAL_SEARCH_WIDTH: GlobalSearchWidth = 'md';
+
 export const GlobalSearchConfigSchema = z.object({
   enabled: z.boolean().default(true),
   placeholder: z.string().optional(),
   maxResultsPerLayer: z.number().int().min(1).max(50).default(10),
   debounceMs: z.number().int().min(0).default(250),
   minQueryLength: z.number().int().min(1).default(2),
-  /** Where the bar anchors over the map. Defaults to top-left. */
-  position: z.enum(GLOBAL_SEARCH_POSITIONS).default('top-left'),
-  /** Width preset for the floating bar. */
-  width: z.enum(GLOBAL_SEARCH_WIDTHS).default('md'),
+  position: z.enum(GLOBAL_SEARCH_POSITIONS).default(DEFAULT_GLOBAL_SEARCH_POSITION),
+  width: z.enum(GLOBAL_SEARCH_WIDTHS).default(DEFAULT_GLOBAL_SEARCH_WIDTH),
   layers: z.array(GlobalSearchLayerConfigSchema).default([]),
 });
 
@@ -730,6 +731,46 @@ export function groupControlsByCorner(
     groups[resolveControlCorner(config, key)].push(key);
   }
   return groups;
+}
+
+/** True when a global-search position lives in a corner (vs. top/bottom-center). */
+export function isGlobalSearchCorner(pos: GlobalSearchPosition): pos is ControlCorner {
+  return (CONTROL_CORNERS as readonly string[]).includes(pos);
+}
+
+/**
+ * Tailwind class for anchoring the floating GlobalSearchBar at a given position.
+ * Pass `prefix: 'mapui:'` when consuming from inside a `mapui:`-scoped tree
+ * (the lib's scoped Tailwind), `''` from an app's own Tailwind context.
+ */
+export function globalSearchPositionClass(
+  pos: GlobalSearchPosition,
+  prefix: '' | 'mapui:' = '',
+): string {
+  const p = prefix;
+  switch (pos) {
+    case 'top-left':      return `${p}absolute ${p}top-4 ${p}left-4`;
+    case 'top-right':     return `${p}absolute ${p}top-4 ${p}right-4`;
+    case 'bottom-left':   return `${p}absolute ${p}bottom-4 ${p}left-4`;
+    case 'bottom-right':  return `${p}absolute ${p}bottom-4 ${p}right-4`;
+    case 'top-center':    return `${p}absolute ${p}top-4 ${p}left-1/2 ${p}-translate-x-1/2`;
+    case 'bottom-center': return `${p}absolute ${p}bottom-6 ${p}left-1/2 ${p}-translate-x-1/2`;
+  }
+}
+
+/** Tailwind classes for the floating GlobalSearchBar width preset. */
+export function globalSearchWidthClass(
+  width: GlobalSearchWidth,
+  prefix: '' | 'mapui:' = '',
+): string {
+  const p = prefix;
+  // Cap with calc(100%-2rem) so the bar always leaves room inside its parent,
+  // working for both viewport-sized map and the smaller admin preview pane.
+  switch (width) {
+    case 'sm': return `${p}w-72 ${p}max-w-[calc(100%-2rem)]`;
+    case 'md': return `${p}w-[28rem] ${p}max-w-[calc(100%-2rem)]`;
+    case 'lg': return `${p}w-[40rem] ${p}max-w-[calc(100%-2rem)]`;
+  }
 }
 
 // --- Branding Config ---

@@ -56,6 +56,12 @@ import {
   formatDMS,
   groupControlsByCorner,
   resolveControlCorner,
+  CONTROL_CORNERS,
+  DEFAULT_GLOBAL_SEARCH_POSITION,
+  DEFAULT_GLOBAL_SEARCH_WIDTH,
+  isGlobalSearchCorner,
+  globalSearchPositionClass,
+  globalSearchWidthClass,
   type SideMenuPanelItem,
 } from '@ogc-maps/storybook-components';
 import type {
@@ -80,7 +86,7 @@ import type {
   InfoConfig,
   GlobalSearchConfig,
 } from '@ogc-maps/storybook-components';
-import type { SearchFilterValue, SearchFilterValues, Cql2FilterConfig, InfoPosition, GlobalSearchPosition, GlobalSearchWidth } from '@ogc-maps/storybook-components/types';
+import type { SearchFilterValue, SearchFilterValues, Cql2FilterConfig, InfoPosition } from '@ogc-maps/storybook-components/types';
 import { useMeasure, useSelection } from '@ogc-maps/storybook-components/hooks';
 
 import { LuDownload, LuLayers3, LuList, LuMap, LuMousePointer2, LuRuler, LuSatellite, LuSearch } from 'react-icons/lu';
@@ -110,28 +116,6 @@ const CORNER_CLASSES: Record<ControlCorner, string> = {
   'bottom-right': 'mapui:absolute mapui:bottom-4 mapui:right-4 mapui:flex mapui:flex-col mapui:gap-4 mapui:items-end',
   'bottom-left': 'mapui:absolute mapui:bottom-4 mapui:left-4 mapui:flex mapui:flex-col mapui:gap-4 mapui:items-start',
 };
-
-const SEARCH_POSITION_CLASSES: Record<GlobalSearchPosition, string> = {
-  'top-left':      'mapui:absolute mapui:top-4 mapui:left-4',
-  'top-right':     'mapui:absolute mapui:top-4 mapui:right-4',
-  'bottom-left':   'mapui:absolute mapui:bottom-4 mapui:left-4',
-  'bottom-right':  'mapui:absolute mapui:bottom-4 mapui:right-4',
-  'top-center':    'mapui:absolute mapui:top-4 mapui:left-1/2 mapui:-translate-x-1/2',
-  'bottom-center': 'mapui:absolute mapui:bottom-6 mapui:left-1/2 mapui:-translate-x-1/2',
-};
-
-const SEARCH_WIDTH_CLASSES: Record<GlobalSearchWidth, string> = {
-  sm: 'mapui:w-72 mapui:max-w-[calc(100%-2rem)]',
-  md: 'mapui:w-[28rem] mapui:max-w-[calc(100%-2rem)]',
-  lg: 'mapui:w-[40rem] mapui:max-w-[calc(100%-2rem)]',
-};
-
-const SEARCH_CORNER_POSITIONS = new Set<GlobalSearchPosition>([
-  'top-left',
-  'top-right',
-  'bottom-left',
-  'bottom-right',
-]);
 
 /**
  * Render a single style as one or more `<Layer>` elements. Most styles map
@@ -1726,13 +1710,13 @@ export function MapPreview({
               };
 
               const grouped = groupControlsByCorner(uiConfig);
-              const searchPos: GlobalSearchPosition = globalSearch?.position ?? 'top-left';
-              const searchWidth: GlobalSearchWidth = globalSearch?.width ?? 'md';
+              const searchPos = globalSearch?.position ?? DEFAULT_GLOBAL_SEARCH_POSITION;
+              const searchWidth = globalSearch?.width ?? DEFAULT_GLOBAL_SEARCH_WIDTH;
               const searchAtCorner =
-                globalSearchEnabled && globalSearch && SEARCH_CORNER_POSITIONS.has(searchPos)
-                  ? (searchPos as ControlCorner)
+                globalSearchEnabled && globalSearch && isGlobalSearchCorner(searchPos)
+                  ? searchPos
                   : null;
-              return (Object.keys(CORNER_CLASSES) as ControlCorner[]).map((corner) => {
+              return CONTROL_CORNERS.map((corner) => {
                 const keys = grouped[corner];
                 const rendered = keys
                   .map((key) => controlNodes[key])
@@ -1743,7 +1727,7 @@ export function MapPreview({
                   <div key={corner} className={CORNER_CLASSES[corner]}>
                     {includeSearch && globalSearch && (
                       <div
-                        className={`mapui:pointer-events-auto ${SEARCH_WIDTH_CLASSES[searchWidth]}`}
+                        className={`mapui:pointer-events-auto ${globalSearchWidthClass(searchWidth, 'mapui:')}`}
                         data-testid="map-preview-global-search"
                       >
                         <GlobalSearchBar
@@ -1860,18 +1844,17 @@ export function MapPreview({
             standalone absolute wrapper. */}
       {(() => {
         if (!globalSearchEnabled || !globalSearch) return null;
-        const pos: GlobalSearchPosition = globalSearch.position ?? 'top-left';
-        const width: GlobalSearchWidth = globalSearch.width ?? 'md';
-        const isCorner = SEARCH_CORNER_POSITIONS.has(pos);
+        const pos = globalSearch.position ?? DEFAULT_GLOBAL_SEARCH_POSITION;
+        const width = globalSearch.width ?? DEFAULT_GLOBAL_SEARCH_WIDTH;
         // When uiConfig + individual layout + corner position, the corner
         // stack above already rendered the bar — skip here to avoid a duplicate.
-        if (uiConfig && effectiveLayout === 'individual' && isCorner) return null;
+        if (uiConfig && effectiveLayout === 'individual' && isGlobalSearchCorner(pos)) return null;
         return (
           <div
-            className={`${SEARCH_POSITION_CLASSES[pos]} mapui:z-40 mapui:pointer-events-none`}
+            className={`${globalSearchPositionClass(pos, 'mapui:')} mapui:z-40 mapui:pointer-events-none`}
             data-testid="map-preview-global-search"
           >
-            <div className={`mapui:pointer-events-auto ${SEARCH_WIDTH_CLASSES[width]}`}>
+            <div className={`mapui:pointer-events-auto ${globalSearchWidthClass(width, 'mapui:')}`}>
               <GlobalSearchBar
                 config={globalSearch}
                 layers={layersWithDefaults}
