@@ -66,7 +66,7 @@ describe('POST /api/sources/:id/inspect — refresh pre-step', () => {
 
     const spy = installFetchSpy((url) => {
       if (url.endsWith('/refresh')) return jsonResponse({ refreshed: true });
-      if (url.includes('/openapi.json')) return jsonResponse({ paths: { '/refresh': {} } });
+      if (url.includes('/api?f=json') || url.includes('/openapi.json')) return jsonResponse({ paths: { '/refresh': {} } });
       if (url.endsWith('/collections?f=json')) return jsonResponse({ collections: [] });
       if (url.endsWith('?f=json')) return jsonResponse({});
       if (url.includes('/conformance')) return jsonResponse({ conformsTo: [] });
@@ -89,7 +89,7 @@ describe('POST /api/sources/:id/inspect — refresh pre-step', () => {
 
     installFetchSpy((url) => {
       if (url.endsWith('/refresh')) return new Response('boom', { status: 500 });
-      if (url.includes('/openapi.json')) return jsonResponse({ paths: {} });
+      if (url.includes('/api?f=json') || url.includes('/openapi.json')) return jsonResponse({ paths: {} });
       if (url.endsWith('/collections?f=json')) return jsonResponse({ collections: [] });
       if (url.endsWith('?f=json')) return jsonResponse({});
       if (url.includes('/conformance')) return jsonResponse({ conformsTo: [] });
@@ -106,7 +106,7 @@ describe('POST /api/sources/:id/inspect — refresh pre-step', () => {
     const id = await insertSource(null);
 
     const spy = installFetchSpy((url) => {
-      if (url.includes('/openapi.json')) return jsonResponse({ paths: {} });
+      if (url.includes('/api?f=json') || url.includes('/openapi.json')) return jsonResponse({ paths: {} });
       if (url.endsWith('/collections?f=json')) return jsonResponse({ collections: [] });
       if (url.endsWith('?f=json')) return jsonResponse({});
       if (url.includes('/conformance')) return jsonResponse({ conformsTo: [] });
@@ -118,6 +118,6 @@ describe('POST /api/sources/:id/inspect — refresh pre-step', () => {
     expect(res.status).toBe(200);
 
     const calls = spy.mock.calls.map((c) => String(c[0]));
-    expect(calls.some((u) => u.endsWith('/refresh') && !u.includes('openapi'))).toBe(false);
+    expect(calls.some((u) => u.endsWith('/refresh') && !u.includes('openapi') && !u.includes('/api?'))).toBe(false);
   });
 });
