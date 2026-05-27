@@ -188,6 +188,7 @@ export async function seedAdminUser(username = 'admin', password = 'admin'): Pro
   const hash = await bcrypt.hash(password, 4); // low cost for tests
   process.env.ADMIN_USERNAME = username;
   process.env.ADMIN_PASSWORD_HASH = hash;
-  // Avoid noisy session DDL warnings in tests
   process.env.SESSION_SECRET = 'test-secret';
+  // Tell server/index.ts to skip the PgSession store (pg-mem can't run its DDL).
+  process.env.NODE_ENV = 'test';
 }
