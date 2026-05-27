@@ -19,9 +19,10 @@ import {
   INFO_POSITIONS,
 } from '@ogc-maps/storybook-components';
 import { safeValidateMapConfig, DEFAULT_HEADER_COLOR } from '@ogc-maps/storybook-components/schemas';
-import { detectTileSourceType } from '@ogc-maps/storybook-components/utils';
+import { detectTileSourceType, isOgcApiSource } from '@ogc-maps/storybook-components/utils';
 import type {
   OgcApiSource,
+  MapSource,
   LayerConfig,
   ImageryLayerConfig,
   BasemapConfig,
@@ -171,7 +172,7 @@ export function ConfigWizardPage() {
   const updateBranding = (patch: Partial<BrandingConfig>) => setBranding(prev => ({ ...prev, ...patch }));
 
   // Config state
-  const [sources, setSources] = useState<OgcApiSource[]>([]);
+  const [sources, setSources] = useState<MapSource[]>([]);
   const [layers, setLayers] = useState<LayerConfig[]>([]);
   // In-progress new-layer draft, lifted out of LayerList so the MapPreview can render it live before "Save Layer" is clicked.
   const [layerDraft, setLayerDraft] = useState<LayerConfig | null>(null);
@@ -487,7 +488,10 @@ export function ConfigWizardPage() {
   };
 
   const imageryBrowseSource = sources.find(s => s.id === imageryBrowseSourceId);
-  const imageryBrowseSourceType = imageryBrowseSource ? detectTileSourceType(imageryBrowseSource.url) : null;
+  const imageryBrowseSourceType =
+    imageryBrowseSource && isOgcApiSource(imageryBrowseSource)
+      ? detectTileSourceType(imageryBrowseSource.url)
+      : null;
   const imagerySelectedCollectionIds = imageryLayers
     .filter(l => l.sourceId === imageryBrowseSourceId)
     .map(l => l.collection);
@@ -496,7 +500,7 @@ export function ConfigWizardPage() {
   const savedFeatureSources = savedSources.filter(s => (s.source_type ?? 'features') === 'features');
   const savedImagerySources = savedSources.filter(s => s.source_type === 'imagery');
   const savedBasemapSources = savedSources.filter(s => s.source_type === 'basemap');
-  const imageryOgcSources = sources.filter(s => s.type === 'imagery' && detectTileSourceType(s.url) === 'ogc-api');
+  const imageryOgcSources = sources.filter(isOgcApiSource).filter(s => s.type === 'imagery' && detectTileSourceType(s.url) === 'ogc-api');
 
   // All feature sources available for the layer dropdown: config-embedded + saved catalog (deduped)
   const allFeatureSourcesForDropdown = useMemo<OgcApiSource[]>(() => {
@@ -510,7 +514,7 @@ export function ConfigWizardPage() {
     }));
     const existingIds = new Set(sources.map(s => s.id));
     return [
-      ...sources.filter(s => (s.type ?? 'features') === 'features'),
+      ...sources.filter(isOgcApiSource).filter(s => (s.type ?? 'features') === 'features'),
       ...catalogSources.filter(cs => !existingIds.has(cs.id)),
     ];
   }, [sources, savedFeatureSources]);
@@ -933,7 +937,7 @@ export function ConfigWizardPage() {
                           ))}
                         </select>
                       </div>
-                      {imageryBrowseSource && imageryBrowseSourceType === 'ogc-api' && (
+                      {imageryBrowseSource && isOgcApiSource(imageryBrowseSource) && imageryBrowseSourceType === 'ogc-api' && (
                         <CollectionBrowser
                           sourceUrl={imageryBrowseSource.url}
                           sourceAuth={imageryBrowseSource.auth}
@@ -966,7 +970,7 @@ export function ConfigWizardPage() {
                       <ImageryList
                         imageryLayers={imageryLayers}
                         onChange={setImageryLayers}
-                        availableSources={sources}
+                        availableSources={sources.filter(isOgcApiSource)}
                       />
                     </div>
                   )}

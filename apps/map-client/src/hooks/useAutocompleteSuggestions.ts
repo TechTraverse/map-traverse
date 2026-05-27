@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchDistinctValues } from '@ogc-maps/storybook-components/utils';
-import { useMapStore } from '../stores/mapStore';
+import { useMapStore, isOgcApiSource } from '../stores/mapStore';
 
 const CACHE_MAX = 200;
 
@@ -38,7 +38,7 @@ export function useAutocompleteSuggestions(): {
         const layer = layers.find((l) => l.id === layerId);
         if (!layer) return;
         const source = sources.find((s) => s.id === layer.sourceId);
-        if (!source) return;
+        if (!source || !isOgcApiSource(source)) return;
 
         fetchDistinctValues(source.url, layer.collection, property, { fetchAll: true })
           .then((results) => {
@@ -76,7 +76,7 @@ export function useAutocompleteSuggestions(): {
         if (!layer) return;
 
         const source = sources.find((s) => s.id === layer.sourceId);
-        if (!source) return;
+        if (!source || !isOgcApiSource(source)) return;
 
         const cacheKey = `${layer.collection}:${property}:${query}`;
 

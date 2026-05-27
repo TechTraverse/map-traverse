@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { LayerConfig, AvailableProperty } from '@ogc-maps/storybook-components/types';
 import { fetchQueryables, toAvailableProperties } from '@ogc-maps/storybook-components/utils';
-import { useMapStore } from '../stores/mapStore';
+import { useMapStore, isOgcApiSource } from '../stores/mapStore';
 
 export function useLayerQueryables(layers: LayerConfig[]): Record<string, AvailableProperty[]> {
   const sources = useMapStore((s) => s.sources);
@@ -12,7 +12,7 @@ export function useLayerQueryables(layers: LayerConfig[]): Record<string, Availa
     for (const layer of layers) {
       if (cache[layer.id]) continue;
       const source = sources.find((s) => s.id === layer.sourceId);
-      if (!source?.url) continue;
+      if (!source || !isOgcApiSource(source) || !source.url) continue;
       fetchQueryables(source.url, layer.collection, source.auth)
         .then((q) => {
           if (cancelled) return;

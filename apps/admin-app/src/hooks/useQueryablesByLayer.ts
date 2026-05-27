@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import type { LayerConfig, OgcApiSource, AvailableProperty } from '@ogc-maps/storybook-components';
-import { fetchQueryables, toAvailableProperties } from '@ogc-maps/storybook-components/utils';
+import type { LayerConfig, MapSource, AvailableProperty } from '@ogc-maps/storybook-components';
+import { fetchQueryables, toAvailableProperties, isOgcApiSource } from '@ogc-maps/storybook-components/utils';
 
 export interface UseQueryablesByLayerResult {
   queryablesByLayer: Record<string, AvailableProperty[]>;
@@ -14,7 +14,7 @@ export interface UseQueryablesByLayerResult {
  */
 export function useQueryablesByLayer(
   layers: LayerConfig[],
-  sources: OgcApiSource[],
+  sources: MapSource[],
 ): UseQueryablesByLayerResult {
   const [queryablesByLayer, setQueryablesByLayer] = useState<Record<string, AvailableProperty[]>>({});
   const [queryablesLoading, setQueryablesLoading] = useState<Record<string, boolean>>({});
@@ -38,7 +38,7 @@ export function useQueryablesByLayer(
       layers.map(async (layer) => {
         if (!layer.sourceId || !layer.collection) return null;
         const source = sources.find((s) => s.id === layer.sourceId);
-        if (!source) return null;
+        if (!source || !isOgcApiSource(source)) return null;
         const cacheKey = `${layer.sourceId}:${layer.collection}`;
         let pending = cache.get(cacheKey);
         if (!pending) {

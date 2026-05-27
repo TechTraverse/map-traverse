@@ -19,7 +19,7 @@ import {
   combineGeometries,
 } from '@ogc-maps/storybook-components/utils';
 import type { Cql2FilterConfig } from '@ogc-maps/storybook-components/types';
-import { useMapStore, useEffectiveCql2Filters } from '../stores/mapStore';
+import { useMapStore, useEffectiveCql2Filters, isOgcApiSource } from '../stores/mapStore';
 import { MapContainer } from './MapContainer';
 import { MapOverlay } from './MapOverlay';
 import { useBoxDraw } from '../hooks/useBoxDraw';
@@ -84,7 +84,7 @@ export function Layout({ uiConfig }: LayoutProps) {
   const handleRunQuery = useCallback(async (params: Record<string, unknown>) => {
     if (!activeLayer?.cql2Filter) return;
     const source = sources.find((s) => s.id === activeLayer.sourceId);
-    if (!source) return;
+    if (!source || !isOgcApiSource(source)) return;
 
     const selectionGeometry = combineGeometries(selection.features.map((f) => f.geometry));
     setQueryLoading(true);
@@ -249,7 +249,7 @@ export function Layout({ uiConfig }: LayoutProps) {
             if (!selection.activeLayerId) return;
             const layer = layers.find((l) => l.id === selection.activeLayerId);
             const source = layer ? useMapStore.getState().sources.find((s) => s.id === layer.sourceId) : null;
-            if (layer && source && layer.dataMode === 'vector-tiles') {
+            if (layer && source && isOgcApiSource(source) && layer.dataMode === 'vector-tiles') {
               // Fetch full geometry from OGC API for vector tile features
               const tileFeatures = features.map((f) => ({
                 id: f.id,

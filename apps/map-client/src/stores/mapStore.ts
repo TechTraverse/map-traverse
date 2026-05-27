@@ -8,7 +8,7 @@ import type {
   BasemapConfig,
   SpriteSource,
   ViewConfig,
-  OgcApiSource,
+  MapSource,
   UIConfig,
   BrandingConfig,
   SearchFilterValues,
@@ -24,7 +24,7 @@ interface MapState {
   layers: LayerConfig[];
   basemaps: BasemapConfig[];
   activeBasemapId: string;
-  sources: OgcApiSource[];
+  sources: MapSource[];
   sprites: SpriteSource[];
   uiConfig: UIConfig;
   branding: BrandingConfig | undefined;
@@ -304,6 +304,8 @@ export const useMapStore = create<MapState>((set) => ({
       pinDropActive: false,
     }),
 }));
+
+export { isOgcApiSource } from '@ogc-maps/storybook-components/utils';
 
 // Selector helper for active layer IDs
 export const useActiveLayerIds = () =>
