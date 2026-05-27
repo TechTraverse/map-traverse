@@ -30,7 +30,7 @@ describe('inspectOgcSource — refreshUrl discovery', () => {
 
   it('sets refreshUrl when /refresh appears in the OpenAPI spec paths', async () => {
     installFetchHandler((url) => {
-      if (url.includes('/openapi.json')) {
+      if (url.includes('/api?f=json') || url.includes('/openapi.json')) {
         return jsonResponse({ paths: { '/collections': {}, '/refresh': {} } });
       }
       if (url.endsWith('/collections?f=json')) {
@@ -51,7 +51,7 @@ describe('inspectOgcSource — refreshUrl discovery', () => {
 
   it('tolerates trailing-slash form (/refresh/)', async () => {
     installFetchHandler((url) => {
-      if (url.includes('/openapi.json')) {
+      if (url.includes('/api?f=json') || url.includes('/openapi.json')) {
         return jsonResponse({ paths: { '/refresh/': {} } });
       }
       if (url.endsWith('/collections?f=json')) return jsonResponse({ collections: [] });
@@ -66,7 +66,7 @@ describe('inspectOgcSource — refreshUrl discovery', () => {
 
   it('leaves refreshUrl undefined when /refresh is absent from the spec', async () => {
     installFetchHandler((url) => {
-      if (url.includes('/openapi.json')) {
+      if (url.includes('/api?f=json') || url.includes('/openapi.json')) {
         return jsonResponse({ paths: { '/collections': {}, '/conformance': {} } });
       }
       if (url.endsWith('/collections?f=json')) return jsonResponse({ collections: [] });
@@ -79,9 +79,9 @@ describe('inspectOgcSource — refreshUrl discovery', () => {
     expect(result.refreshUrl).toBeUndefined();
   });
 
-  it('leaves refreshUrl undefined when openapi.json is unreachable', async () => {
+  it('leaves refreshUrl undefined when the OpenAPI spec is unreachable', async () => {
     installFetchHandler((url) => {
-      if (url.includes('/openapi.json')) {
+      if (url.includes('/api?f=json') || url.includes('/openapi.json')) {
         return new Response('not found', { status: 404 });
       }
       if (url.endsWith('/collections?f=json')) return jsonResponse({ collections: [] });
@@ -96,7 +96,7 @@ describe('inspectOgcSource — refreshUrl discovery', () => {
 
   it('does not crash when the OpenAPI body is not the expected shape', async () => {
     installFetchHandler((url) => {
-      if (url.includes('/openapi.json')) {
+      if (url.includes('/api?f=json') || url.includes('/openapi.json')) {
         return jsonResponse({ not: 'an openapi doc' });
       }
       if (url.endsWith('/collections?f=json')) return jsonResponse({ collections: [] });
@@ -107,5 +107,23 @@ describe('inspectOgcSource — refreshUrl discovery', () => {
 
     const result = await inspectOgcSource('http://malformed.local/ogc');
     expect(result.refreshUrl).toBeUndefined();
+  });
+
+  it('discovers refreshUrl from the tipg /api?f=json spec when /openapi.json is 404', async () => {
+    // Mirrors real tipg behavior: FastAPI's default /openapi.json is disabled,
+    // and the spec lives at /api with content negotiation via ?f=json.
+    installFetchHandler((url) => {
+      if (url.endsWith('/api?f=json')) {
+        return jsonResponse({ paths: { '/collections': {}, '/refresh': {}, '/rawcatalog': {} } });
+      }
+      if (url.includes('/openapi.json')) return new Response('not found', { status: 404 });
+      if (url.endsWith('/collections?f=json')) return jsonResponse({ collections: [] });
+      if (url.endsWith('?f=json')) return jsonResponse({});
+      if (url.includes('/conformance')) return jsonResponse({ conformsTo: [] });
+      return new Response('not found', { status: 404 });
+    });
+
+    const result = await inspectOgcSource('http://tipg.local/ogc');
+    expect(result.refreshUrl).toBe('http://tipg.local/ogc/refresh');
   });
 });

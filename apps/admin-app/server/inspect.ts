@@ -197,14 +197,18 @@ async function fetchQueryables(baseUrl: string, collectionId: string): Promise<{
 }
 
 async function discoverRefreshUrl(baseUrl: string): Promise<string | undefined> {
-  try {
-    const spec = await fetchJson(`${baseUrl}/openapi.json`) as { paths?: Record<string, unknown> };
-    const paths = spec.paths;
-    if (paths && typeof paths === 'object' && ('/refresh' in paths || '/refresh/' in paths)) {
-      return `${baseUrl}/refresh`;
+  // tipg serves its OpenAPI spec at /api (FastAPI's default /openapi.json route is disabled).
+  // Try /api first, then fall back to /openapi.json for stock FastAPI deployments.
+  for (const specPath of ['/api?f=json', '/openapi.json']) {
+    try {
+      const spec = await fetchJson(`${baseUrl}${specPath}`) as { paths?: Record<string, unknown> };
+      const paths = spec.paths;
+      if (paths && typeof paths === 'object' && ('/refresh' in paths || '/refresh/' in paths)) {
+        return `${baseUrl}/refresh`;
+      }
+    } catch {
+      // try the next candidate
     }
-  } catch {
-    // OpenAPI spec unavailable or unparseable — no refresh endpoint
   }
   return undefined;
 }
