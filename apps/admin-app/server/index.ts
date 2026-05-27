@@ -1091,12 +1091,30 @@ app.delete('/api/sources/:id', requireAuth, async (req, res) => {
 // POST /api/sources/:id/inspect — refresh metadata for a source (protected)
 app.post('/api/sources/:id/inspect', requireAuth, async (req, res) => {
   try {
-    const sourceResult = await pool.query('SELECT url FROM map_admin.ogc_sources WHERE id = $1', [req.params.id]);
+    const sourceResult = await pool.query(
+      'SELECT url, metadata FROM map_admin.ogc_sources WHERE id = $1',
+      [req.params.id],
+    );
     if (sourceResult.rows.length === 0) {
       res.status(404).json({ error: 'Source not found' });
       return;
     }
-    const { url } = sourceResult.rows[0] as { url: string };
+    const { url, metadata: storedMetadata } = sourceResult.rows[0] as {
+      url: string;
+      metadata: { refreshUrl?: string } | null;
+    };
+
+    // Best-effort: hit the source's refresh endpoint (e.g. tipg /refresh) before
+    // re-inspecting so newly-created collections show up. Failures are tolerated —
+    // refresh may be down or disabled and we still want to re-inspect.
+    const refreshUrl = storedMetadata?.refreshUrl;
+    if (refreshUrl) {
+      try {
+        await fetch(refreshUrl, { signal: AbortSignal.timeout(15_000) });
+      } catch {
+        // ignore — proceed with inspection regardless
+      }
+    }
 
     const metadata = await inspectSource(url);
     const result = await pool.query(
