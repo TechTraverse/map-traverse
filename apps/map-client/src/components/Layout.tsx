@@ -17,9 +17,10 @@ import {
   buildCql2Query,
   fetchFeatures,
   combineGeometries,
+  isOgcApiSource,
 } from '@ogc-maps/storybook-components/utils';
 import type { Cql2FilterConfig } from '@ogc-maps/storybook-components/types';
-import { useMapStore, useEffectiveCql2Filters, isOgcApiSource } from '../stores/mapStore';
+import { useMapStore, useEffectiveCql2Filters } from '../stores/mapStore';
 import { MapContainer } from './MapContainer';
 import { MapOverlay } from './MapOverlay';
 import { useBoxDraw } from '../hooks/useBoxDraw';

@@ -46,18 +46,6 @@ export function buildWmtsTileUrlTemplate(
   return appendAuth(template, auth);
 }
 
-/**
- * Convert a raw ResourceURL template from WMTS GetCapabilities to a MapLibre tile URL.
- * Replaces {TileMatrix}, {TileRow}, {TileCol} with MapLibre's {z}, {y}, {x}.
- */
-export function adaptResourceUrlTemplate(template: string, auth?: SourceAuth): string {
-  const adapted = template
-    .replace(/\{TileMatrix\}/gi, '{z}')
-    .replace(/\{TileRow\}/gi, '{y}')
-    .replace(/\{TileCol\}/gi, '{x}');
-  return appendAuth(adapted, auth);
-}
-
 function formatToExtension(format: string): string {
   const map: Record<string, string> = {
     'image/png': 'png',

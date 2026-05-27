@@ -47,7 +47,8 @@ import {
   globalSearchWidthClass,
 } from '@ogc-maps/storybook-components';
 import { GlobalSearchBarContainer } from './GlobalSearchBarContainer';
-import { useMapStore, useActiveLayerIds, useEffectiveCql2Filters, isOgcApiSource } from '../stores/mapStore';
+import { useMapStore, useActiveLayerIds, useEffectiveCql2Filters } from '../stores/mapStore';
+import { isOgcApiSource } from '@ogc-maps/storybook-components/utils';
 import { useAutocompleteSuggestions } from '../hooks/useAutocompleteSuggestions';
 import { useLayerQueryables } from '../hooks/useLayerQueryables';
 import { LuDownload, LuLayers3, LuList, LuMap, LuMousePointer2, LuRuler, LuSatellite, LuSearch } from 'react-icons/lu';

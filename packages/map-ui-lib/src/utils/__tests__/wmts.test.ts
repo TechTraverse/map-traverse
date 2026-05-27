@@ -2,7 +2,6 @@
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import {
   buildWmtsTileUrlTemplate,
-  adaptResourceUrlTemplate,
   parseWmtsCapabilities,
   fetchWmtsCapabilities,
 } from '../wmts';
@@ -51,22 +50,6 @@ describe('buildWmtsTileUrlTemplate', () => {
       { type: 'query_param', name: 'key', value: 'secret' },
     );
     expect(url).toMatch(/\?key=secret$/);
-  });
-});
-
-describe('adaptResourceUrlTemplate', () => {
-  it('replaces WMTS placeholders with MapLibre placeholders', () => {
-    const out = adaptResourceUrlTemplate(
-      'https://e.com/L/default/WMQ/{TileMatrix}/{TileRow}/{TileCol}.png',
-    );
-    expect(out).toBe('https://e.com/L/default/WMQ/{z}/{y}/{x}.png');
-  });
-
-  it('is case-insensitive', () => {
-    const out = adaptResourceUrlTemplate(
-      'https://e.com/{tilematrix}/{tilerow}/{tilecol}.png',
-    );
-    expect(out).toBe('https://e.com/{z}/{y}/{x}.png');
   });
 });
 

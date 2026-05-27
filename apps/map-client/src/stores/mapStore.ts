@@ -305,8 +305,6 @@ export const useMapStore = create<MapState>((set) => ({
     }),
 }));
 
-export { isOgcApiSource } from '@ogc-maps/storybook-components/utils';
-
 // Selector helper for active layer IDs
 export const useActiveLayerIds = () =>
   useMapStore(

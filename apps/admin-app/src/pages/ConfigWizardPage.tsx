@@ -500,7 +500,10 @@ export function ConfigWizardPage() {
   const savedFeatureSources = savedSources.filter(s => (s.source_type ?? 'features') === 'features');
   const savedImagerySources = savedSources.filter(s => s.source_type === 'imagery');
   const savedBasemapSources = savedSources.filter(s => s.source_type === 'basemap');
-  const imageryOgcSources = sources.filter(isOgcApiSource).filter(s => s.type === 'imagery' && detectTileSourceType(s.url) === 'ogc-api');
+  const imageryOgcSources = sources.filter(
+    (s): s is OgcApiSource =>
+      isOgcApiSource(s) && s.type === 'imagery' && detectTileSourceType(s.url) === 'ogc-api',
+  );
 
   // All feature sources available for the layer dropdown: config-embedded + saved catalog (deduped)
   const allFeatureSourcesForDropdown = useMemo<OgcApiSource[]>(() => {
@@ -514,7 +517,9 @@ export function ConfigWizardPage() {
     }));
     const existingIds = new Set(sources.map(s => s.id));
     return [
-      ...sources.filter(isOgcApiSource).filter(s => (s.type ?? 'features') === 'features'),
+      ...sources.filter(
+        (s): s is OgcApiSource => isOgcApiSource(s) && (s.type ?? 'features') === 'features',
+      ),
       ...catalogSources.filter(cs => !existingIds.has(cs.id)),
     ];
   }, [sources, savedFeatureSources]);
