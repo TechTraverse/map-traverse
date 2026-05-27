@@ -30,17 +30,19 @@ AS $$
   SELECT regexp_replace(lower(raw), '\s+', '_', 'g')
 $$;
 
--- Out-of-band sweep. Returns the number of renames performed (table or column)
--- so a caller can decide whether to refresh tipg. Logs each action via NOTICE.
+-- Out-of-band sweep. Returns the number of renames actually performed (table or
+-- column) so a caller can decide whether to refresh tipg. Logs each action via
+-- NOTICE.
 CREATE OR REPLACE FUNCTION public.normalize_public_tables()
 RETURNS integer
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  tbl        record;
-  col        record;
-  new_ident  text;
-  renamed    integer := 0;
+  tbl         record;
+  col         record;
+  new_ident   text;
+  renamed     integer := 0;
+  tbl_renamed integer;
 BEGIN
   FOR tbl IN
     SELECT c.oid, c.relname
@@ -71,6 +73,7 @@ BEGIN
     -- never aborting the rest of the sweep.
     BEGIN
       SET LOCAL lock_timeout = '2s';
+      tbl_renamed := 0;
 
       -- Normalize columns.
       FOR col IN
@@ -93,7 +96,7 @@ BEGIN
         END IF;
         EXECUTE format('ALTER TABLE public.%I RENAME COLUMN %I TO %I',
                        tbl.relname, col.attname, new_ident);
-        renamed := renamed + 1;
+        tbl_renamed := tbl_renamed + 1;
         RAISE NOTICE 'normalize: renamed column %.% -> %',
           tbl.relname, col.attname, new_ident;
       END LOOP;
@@ -110,10 +113,14 @@ BEGIN
         ELSE
           EXECUTE format('ALTER TABLE public.%I RENAME TO %I',
                          tbl.relname, new_ident);
-          renamed := renamed + 1;
+          tbl_renamed := tbl_renamed + 1;
           RAISE NOTICE 'normalize: renamed table % -> %', tbl.relname, new_ident;
         END IF;
       END IF;
+
+      -- Only reached when no exception fired; a rolled-back subtransaction
+      -- contributes 0 to the total.
+      renamed := renamed + tbl_renamed;
 
     EXCEPTION
       WHEN lock_not_available THEN

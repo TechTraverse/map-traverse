@@ -12,10 +12,16 @@ cleanup
 
 "${PSQL[@]}" -c 'CREATE TABLE public."Zz Busy" (id int);' >/dev/null
 
+# ROW EXCLUSIVE conflicts with the ACCESS EXCLUSIVE lock that RENAME requires
 docker exec -i storybook-components-postgis psql -U postgres -d gis -c \
   'BEGIN; LOCK TABLE public."Zz Busy" IN ROW EXCLUSIVE MODE; SELECT pg_sleep(6); COMMIT;' >/dev/null &
 LOCK_PID=$!
-sleep 1
+# Wait until the background session actually holds its lock before sweeping.
+for _ in $(seq 1 50); do
+  HELD=$("${PSQL[@]}" -c "SELECT count(*) FROM pg_locks l JOIN pg_class c ON c.oid = l.relation WHERE c.relname = 'Zz Busy' AND l.mode = 'RowExclusiveLock';")
+  [ "$HELD" -ge 1 ] && break
+  sleep 0.2
+done
 
 "${PSQL[@]}" -c 'SELECT public.normalize_public_tables();' >/dev/null
 STILL_BAD=$("${PSQL[@]}" -c "SELECT count(*) FROM pg_tables WHERE schemaname='public' AND tablename='Zz Busy';")
