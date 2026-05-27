@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { detectLocalOgcApi, normalizeUrl } from '../detectLocalOgcApi';
 
-// inspectSourceClientSide makes a chain of fetch() calls itself; rather than
-// stubbing all of them through the shared fetch mock, replace the module export.
 vi.mock('../inspectSource', () => ({
   inspectSourceClientSide: vi.fn(async () => ({
     landing: { title: 'tipg' },
