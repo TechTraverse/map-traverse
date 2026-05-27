@@ -1678,14 +1678,24 @@ app.get(spaBase === '/' ? '*' : `${spaBase}/*`, (_req, res) => {
   res.sendFile(indexHtml);
 });
 
-// Start server
-initDb()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`Admin API server running on http://localhost:${PORT}`);
+// Start server only when invoked as the entry-point (not during tests)
+const isMainModule =
+  typeof process !== 'undefined' &&
+  Array.isArray(process.argv) &&
+  process.argv[1] !== undefined &&
+  import.meta.url === `file://${process.argv[1]}`;
+
+if (isMainModule) {
+  initDb()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`Admin API server running on http://localhost:${PORT}`);
+      });
+    })
+    .catch((err: unknown) => {
+      console.error('Failed to initialize database:', err);
+      process.exit(1);
     });
-  })
-  .catch((err: unknown) => {
-    console.error('Failed to initialize database:', err);
-    process.exit(1);
-  });
+}
+
+export { app };
