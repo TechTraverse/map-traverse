@@ -13,6 +13,7 @@
     "release": "pnpm build && changeset publish",
     "changeset": "changeset",
     "test": "pnpm --filter @ogc-maps/storybook-components test",
+    "test:coverage": "pnpm --filter @ogc-maps/storybook-components test:coverage",
     "verify": "pnpm build && pnpm test"
   },
   "devDependencies": {
