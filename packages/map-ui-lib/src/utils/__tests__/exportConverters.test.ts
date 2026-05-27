@@ -21,15 +21,32 @@ vi.mock('flatgeobuf/lib/mjs/geojson.js', () => ({
   serialize: () => new Uint8Array([1, 2, 3]),
 }));
 
+const gpkgCreateFeatureTable = vi.fn();
+const gpkgAddFeatures = vi.fn();
+const gpkgExport = vi.fn().mockResolvedValue(new Uint8Array([83, 81, 76, 105])); // "SQLi"
+const gpkgClose = vi.fn();
+const setSqljsWasmLocateFile = vi.fn();
+
 vi.mock('@ngageoint/geopackage', () => ({
-  GeoPackageAPI: { create: async () => ({ close: () => {} }) },
-  setSqljsWasmLocateFile: () => {},
+  GeoPackageAPI: {
+    create: async () => ({
+      createFeatureTableFromProperties: (...args: unknown[]) => gpkgCreateFeatureTable(...args),
+      addGeoJSONFeaturesToGeoPackage: (...args: unknown[]) => gpkgAddFeatures(...args),
+      export: () => gpkgExport(),
+      close: () => gpkgClose(),
+    }),
+  },
+  setSqljsWasmLocateFile: (fn: unknown) => setSqljsWasmLocateFile(fn),
 }));
 
 import {
   shapefileConverter,
   geojsonConverter,
   csvConverter,
+  kmlConverter,
+  flatgeobufConverter,
+  geopackageConverter,
+  exportConverters,
 } from '../exportConverters';
 
 function pointFeature(id: string, lon: number, lat: number): GeoJsonFeature {
@@ -163,3 +180,64 @@ describe('sanity: other converters still work', () => {
     expect(result.blob.type).toContain('text/csv');
   });
 });
+
+describe('kmlConverter', () => {
+  it('produces a KML blob with the expected mime/filename', async () => {
+    const result = await kmlConverter([pointFeature('a', 1, 2)], 'cities');
+    expect(result.filename).toBe('cities.kml');
+    expect(result.blob.type).toBe('application/vnd.google-earth.kml+xml');
+    expect(result.blob.size).toBeGreaterThan(0);
+  });
+});
+
+describe('flatgeobufConverter', () => {
+  it('produces a FGB blob with the expected mime/filename', async () => {
+    const result = await flatgeobufConverter([pointFeature('a', 1, 2)], 'parcels');
+    expect(result.filename).toBe('parcels.fgb');
+    expect(result.blob.type).toBe('application/flatgeobuf');
+    expect(result.blob.size).toBeGreaterThan(0);
+  });
+});
+
+describe('geopackageConverter', () => {
+  it('produces a GPKG blob and threads the collection id into the table', async () => {
+    gpkgCreateFeatureTable.mockClear();
+    gpkgAddFeatures.mockClear();
+    gpkgExport.mockClear();
+    gpkgClose.mockClear();
+    setSqljsWasmLocateFile.mockClear();
+
+    const features = [
+      pointFeature('a', 1, 2),
+      { ...pointFeature('b', 3, 4), properties: { id: 'b', extra: 'x' } },
+    ];
+
+    const result = await geopackageConverter(features, 'mylayer');
+
+    expect(setSqljsWasmLocateFile).toHaveBeenCalledTimes(1);
+    expect(gpkgCreateFeatureTable).toHaveBeenCalledTimes(1);
+    const [tableName, props] = gpkgCreateFeatureTable.mock.calls[0];
+    expect(tableName).toBe('mylayer');
+    // Property union across features (id, name, extra) — order may vary; just check membership.
+    const names = (props as Array<{ name: string; dataType: string }>).map((p) => p.name).sort();
+    expect(names).toEqual(['extra', 'id', 'name']);
+    expect(gpkgAddFeatures).toHaveBeenCalledTimes(1);
+    expect(gpkgExport).toHaveBeenCalledTimes(1);
+    expect(gpkgClose).toHaveBeenCalledTimes(1);
+    expect(result.filename).toBe('mylayer.gpkg');
+    expect(result.blob).toBeInstanceOf(Blob);
+    expect(result.blob.type).toBe('application/geopackage+sqlite3');
+  });
+});
+
+describe('exportConverters registry', () => {
+  it('exposes every format under its key', () => {
+    expect(exportConverters.csv).toBe(csvConverter);
+    expect(exportConverters.geojson).toBe(geojsonConverter);
+    expect(exportConverters.kml).toBe(kmlConverter);
+    expect(exportConverters.shapefile).toBe(shapefileConverter);
+    expect(exportConverters.flatgeobuf).toBe(flatgeobufConverter);
+    expect(exportConverters.geopackage).toBe(geopackageConverter);
+  });
+});
+
