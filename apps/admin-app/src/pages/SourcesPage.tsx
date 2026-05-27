@@ -620,15 +620,20 @@ export function SourcesPage() {
   const handleRefreshMetadata = async (source: SavedSource) => {
     setRefreshingIds(prev => new Set(prev).add(source.id));
     try {
-      // If the source has a known refresh endpoint (e.g. tipg /refresh), skip the
-      // client-side path — only the server can trigger refresh before inspecting,
-      // and any client-inspected metadata would be stale against the un-refreshed catalog.
-      const hasRefreshEndpoint = Boolean(source.metadata?.refreshUrl);
-
-      // Try client-side inspection first (unless a refresh is required)
+      // Refresh-trigger routing follows the source's `proxy` flag:
+      // - proxy=true  → server-side path; the admin server hits refreshUrl, then re-inspects
+      // - proxy=false → browser-side path; the browser hits refreshUrl, then client-side inspects
+      // This matches the network reachability already implied by the proxy flag
+      // (proxied sources may not be browser-reachable; unproxied sources may not be server-reachable, e.g. localhost).
       let succeeded = false;
-      if (!hasRefreshEndpoint) {
+
+      if (!source.proxy) {
         try {
+          const refreshUrl = source.metadata?.refreshUrl;
+          if (refreshUrl) {
+            // Best-effort browser-side refresh; failures don't block inspection.
+            await fetch(refreshUrl, { method: 'GET' }).catch(() => undefined);
+          }
           const metadata = await inspectSourceClientSide(source.url, source.auth ?? undefined);
           const res = await fetch(`/api/sources/${source.id}/metadata`, {
             method: 'PUT',
@@ -647,7 +652,7 @@ export function SourcesPage() {
       }
 
       if (!succeeded) {
-        // Server-side fallback
+        // Server-side path (always used for proxied sources; fallback for unproxied)
         const res = await fetch(`/api/sources/${source.id}/inspect`, {
           method: 'POST',
           credentials: 'include',
