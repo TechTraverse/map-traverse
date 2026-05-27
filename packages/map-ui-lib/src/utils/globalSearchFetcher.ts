@@ -1,11 +1,11 @@
 /**
  * Pure orchestration helpers for the global search feature.
  *
- * No React, no Zustand. Consumes the lib's `fetchFeatures` / `fetchDistinctValues`
+ * No React, no Zustand. Consumes the lib's `fetchFeatures` / `fetchDistinctValuesMulti`
  * and the CQL2 `like` / `or` builders to fan a single user query out across
  * multiple layers, one request per layer.
  */
-import { fetchFeatures, fetchDistinctValues } from './ogcApi';
+import { fetchFeatures, fetchDistinctValuesMulti } from './ogcApi';
 import { like, or, inList, type CQL2Expression } from './cql2';
 import type {
   GlobalSearchConfig,
@@ -49,7 +49,18 @@ function resolveLayerSource(
 }
 
 /**
+ * Per-layer cap on features walked to populate the distinct-value cache. The cache
+ * is now an *acceleration*, not a gate: when a user's substring is absent from the
+ * cache, `buildLayerExpression` falls back to a server-side `like` (see Bug 2 fix),
+ * so a modest cap is safe and keeps mount-time bandwidth bounded.
+ */
+const PREFETCH_MAX_FEATURES_PER_LAYER = 2000;
+
+/**
  * At mount time, fetch distinct values for every property with `prefetch: true`.
+ * Batches by layer (one paginated walk per layer, all configured properties pulled
+ * at once via `fetchDistinctValuesMulti`) — fixes the previous N-properties-per-layer
+ * fan-out which paginated the same features once per property.
  * Uses `Promise.allSettled` so a single failure never aborts the full sweep.
  * Results are keyed by `${layerId}:${property}`.
  */
@@ -63,29 +74,32 @@ export async function prefetchAllDistinctValues(
   for (const layerCfg of ctx.config.layers) {
     const resolved = resolveLayerSource(ctx, layerCfg.layerId);
     if (!resolved) continue;
-    for (const prop of layerCfg.properties) {
-      if (!prop.prefetch) continue;
-      const key = prefetchKey(layerCfg.layerId, prop.property);
-      const task = fetchDistinctValues(
-        resolved.source.url,
-        resolved.layer.collection,
-        prop.property,
-        { fetchAll: true, maxFeatures: 5000 },
-        resolved.auth,
-        signal,
-      )
-        .then((values) => {
-          out[key] = values;
-        })
-        .catch((err: unknown) => {
-          if ((err as { name?: string })?.name === 'AbortError') return;
-          console.warn(
-            `[globalSearchFetcher] Prefetch failed for ${key}:`,
-            err,
-          );
-        });
-      tasks.push(task);
-    }
+    const properties = layerCfg.properties
+      .filter((p) => p.prefetch)
+      .map((p) => p.property);
+    if (properties.length === 0) continue;
+
+    const task = fetchDistinctValuesMulti(
+      resolved.source.url,
+      resolved.layer.collection,
+      properties,
+      { maxFeatures: PREFETCH_MAX_FEATURES_PER_LAYER },
+      resolved.auth,
+      signal,
+    )
+      .then((perProperty) => {
+        for (const property of properties) {
+          out[prefetchKey(layerCfg.layerId, property)] = perProperty[property] ?? [];
+        }
+      })
+      .catch((err: unknown) => {
+        if ((err as { name?: string })?.name === 'AbortError') return;
+        console.warn(
+          `[globalSearchFetcher] Prefetch failed for layer "${layerCfg.layerId}":`,
+          err,
+        );
+      });
+    tasks.push(task);
   }
 
   await Promise.allSettled(tasks);
@@ -93,21 +107,39 @@ export async function prefetchAllDistinctValues(
 }
 
 /**
+ * Build a case-insensitive substring filter as an OR of `like` patterns covering
+ * common casings (original, UPPER, lower, Title). tipg/pygeofilter `LIKE` is
+ * case-sensitive and the CQL2 `casei()` function is not supported there, so we
+ * emit multiple casings server-side instead. Duplicates are deduped.
+ */
+function caseInsensitiveLikeFallback(property: string, query: string): CQL2Expression {
+  const variants = Array.from(
+    new Set([
+      query,
+      query.toUpperCase(),
+      query.toLowerCase(),
+      query.charAt(0).toUpperCase() + query.slice(1).toLowerCase(),
+    ]),
+  );
+  const exprs = variants.map((v) => like(property, `%${v}%`));
+  if (exprs.length === 1) return exprs[0];
+  return or(...exprs)!;
+}
+
+/**
  * Build a single CQL2 expression for a layer by OR-ing per-property matchers.
  *
  * `autocomplete` is the master switch: properties without it are skipped.
  * For autocomplete properties:
- * - `prefetch` true + cache loaded: case-insensitive substring filter against
- *   the cached distinct values, emitted as `IN (...)`. The whole point of
- *   prefetching is to make matching case-insensitive on servers (tipg/pygeofilter)
- *   that only support case-sensitive `like`.
- * - `prefetch` true + cache not yet loaded: graceful fallback to `like` so the
- *   bar still works during the brief window before the prefetch sweep finishes.
- * - `prefetch` true + cache loaded but no substring matches: skip the property
- *   (definitive "no" answer — don't waste a request).
- * - `prefetch` false: server-side `like` (case-sensitive on tipg).
+ * - `prefetch` true + cache loaded with substring matches: emit `IN (...)` against
+ *   the cached distinct values (the IN list is computed case-insensitively client-side).
+ * - `prefetch` true + cache not yet loaded OR no substring matches in cache: fall back
+ *   to a multi-case `like` OR. The cache is an *acceleration*, not a gate — an
+ *   empty match against the (potentially truncated) cache must never short-circuit
+ *   the server query, or genuinely-present features become unreachable.
+ * - `prefetch` false: multi-case `like` OR (server-side, no cache).
  *
- * Returns `null` when no properties remain to search.
+ * Returns `null` only when every property is gated by `autocomplete: false`.
  */
 function buildLayerExpression(
   ctx: GlobalSearchContext,
@@ -116,7 +148,6 @@ function buildLayerExpression(
   query: string,
 ): CQL2Expression | null {
   const q = query.toLowerCase();
-  const likePattern = `%${query}%`;
   const expressions: CQL2Expression[] = [];
 
   for (const prop of properties) {
@@ -124,19 +155,18 @@ function buildLayerExpression(
 
     if (prop.prefetch) {
       const cached = ctx.prefetchedValues[prefetchKey(layerId, prop.property)];
-      if (cached === undefined) {
-        expressions.push(like(prop.property, likePattern));
+      const matched = cached?.filter((v) => v.toLowerCase().includes(q));
+      if (matched && matched.length > 0) {
+        expressions.push(
+          inList(prop.property, matched.slice(0, MAX_PREFETCH_MATCHES)),
+        );
         continue;
       }
-      const matched = cached.filter((v) => v.toLowerCase().includes(q));
-      if (matched.length === 0) continue;
-      expressions.push(
-        inList(prop.property, matched.slice(0, MAX_PREFETCH_MATCHES)),
-      );
+      expressions.push(caseInsensitiveLikeFallback(prop.property, query));
       continue;
     }
 
-    expressions.push(like(prop.property, likePattern));
+    expressions.push(caseInsensitiveLikeFallback(prop.property, query));
   }
 
   if (expressions.length === 0) return null;

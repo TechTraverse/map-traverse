@@ -107,7 +107,9 @@ describe('prefetchAllDistinctValues', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it('fetches distinct values for each prefetch:true property', async () => {
+  it('makes one batched paginated walk per layer, populating every prefetch:true property', async () => {
+    // Previously did one walk per (layer, property) — paginating the same features
+    // once per column. Now: one walk per layer with all configured property columns.
     const ctx = buildCtx({
       config: buildConfig({
         layers: [
@@ -125,17 +127,19 @@ describe('prefetchAllDistinctValues', () => {
     const page = {
       type: 'FeatureCollection',
       features: [
-        { type: 'Feature', geometry: {}, properties: { name: 'Main' } },
-        { type: 'Feature', geometry: {}, properties: { name: 'Oak' } },
+        { type: 'Feature', geometry: {}, properties: { name: 'Main', class: 'arterial' } },
+        { type: 'Feature', geometry: {}, properties: { name: 'Oak', class: 'local' } },
       ],
     };
-    const fetchMock = mockFetchSequence({ body: page }, { body: page });
+    const fetchMock = mockFetchSequence({ body: page });
     vi.stubGlobal('fetch', fetchMock);
 
     const result = await prefetchAllDistinctValues(ctx, PASS_SIGNAL);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(result['roads:name']).toBeDefined();
-    expect(result['roads:class']).toBeDefined();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toContain('properties=name%2Cclass');
+    expect(result['roads:name']).toEqual(['Main', 'Oak']);
+    expect(result['roads:class']).toEqual(['arterial', 'local']);
   });
 
   it('skips layers whose source or layer cannot be resolved', async () => {
@@ -299,7 +303,11 @@ describe('runGlobalSearch', () => {
     expect(decoded).toContain('Main St');
   });
 
-  it('skips the layer entirely when prefetched cache yields no substring matches', async () => {
+  it('falls back to multi-case like() when prefetched cache yields no substring matches', async () => {
+    // The prefetch cache is potentially truncated (only the first N rows of the
+    // collection were walked at mount). A no-match against the cache must NEVER
+    // short-circuit the server query — otherwise owners alphabetically late in
+    // the table become unreachable. Verifies the cache is acceleration, not a gate.
     const ctx = buildCtx({
       config: buildConfig({
         layers: [
@@ -311,13 +319,22 @@ describe('runGlobalSearch', () => {
       }),
       prefetchedValues: { 'roads:name': ['Broadway'] },
     });
-    vi.stubGlobal('fetch', vi.fn());
-    const result = await runGlobalSearch(ctx, 'main', PASS_SIGNAL);
-    expect(result).toEqual({});
-    expect(fetch).not.toHaveBeenCalled();
+    const fc = {
+      type: 'FeatureCollection',
+      features: [{ type: 'Feature', id: 'r1', geometry: {}, properties: { name: 'Main' } }],
+    };
+    const fetchMock = mockFetchSequence({ body: fc });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await runGlobalSearch(ctx, 'main', PASS_SIGNAL);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const decoded = decodeURIComponent(fetchMock.mock.calls[0][0] as string);
+    expect(decoded).toContain('like');
+    expect(decoded).toContain('%MAIN%');
+    expect(decoded).toContain('%main%');
   });
 
-  it('falls back to like() when prefetch:true but cache not yet loaded', async () => {
+  it('falls back to multi-case like() when prefetch:true but cache not yet loaded', async () => {
     const ctx = buildCtx({
       config: buildConfig({
         layers: [
@@ -337,7 +354,35 @@ describe('runGlobalSearch', () => {
     vi.stubGlobal('fetch', fetchMock);
     await runGlobalSearch(ctx, 'main', PASS_SIGNAL);
     const decoded = decodeURIComponent(fetchMock.mock.calls[0][0] as string);
-    expect(decoded).toContain('like');
+    // tipg LIKE is case-sensitive — must emit upper, lower, and title-case variants.
+    expect(decoded).toContain('%MAIN%');
+    expect(decoded).toContain('%main%');
+    expect(decoded).toContain('%Main%');
+    // And those variants are wrapped in an OR.
+    expect(decoded).toContain('"or"');
+  });
+
+  it('emits a single like() (no OR) when query casing collapses to one variant', async () => {
+    // All-uppercase query: query === query.toUpperCase() === query.toLowerCase() differs,
+    // but `query.charAt(0).toUpperCase() + query.slice(1).toLowerCase()` === original for
+    // a single-letter query. A query like "X" (length 1, uppercase letter) should produce
+    // exactly two variants: "X" and "x".
+    const ctx = buildCtx({
+      config: buildConfig({
+        layers: [
+          {
+            layerId: 'roads',
+            properties: [{ property: 'name', autocomplete: true, prefetch: true }],
+          },
+        ],
+      }),
+      prefetchedValues: {},
+    });
+    vi.stubGlobal('fetch', mockFetchSequence({ body: { type: 'FeatureCollection', features: [] } }));
+    await runGlobalSearch(ctx, 'X', PASS_SIGNAL);
+    const decoded = decodeURIComponent((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string);
+    expect(decoded).toContain('%X%');
+    expect(decoded).toContain('%x%');
   });
 
   it('ORs multiple property expressions for a single layer', async () => {

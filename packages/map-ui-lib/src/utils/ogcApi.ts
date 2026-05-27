@@ -392,6 +392,68 @@ export async function fetchDistinctValues(
 }
 
 /**
+ * Fetch distinct non-null string values for multiple properties of a collection in a
+ * single paginated walk. The per-property distinct sets are computed client-side; one
+ * `fetchFeatures` page per request, with all requested properties returned together.
+ *
+ * Use this when prefetching several columns of the same collection (e.g. global search
+ * configuring `ownername`, `parcelnumb`, `subdivisio` for a parcels layer) — it avoids
+ * paginating the same features once per property.
+ *
+ * @throws {Error} If the request fails or the response status is not OK.
+ */
+export async function fetchDistinctValuesMulti(
+  baseUrl: string,
+  collection: string,
+  properties: string[],
+  options?: { pageSize?: number; maxFeatures?: number },
+  auth?: SourceAuth,
+  signal?: AbortSignal,
+): Promise<Record<string, string[]>> {
+  const out: Record<string, Set<string>> = {};
+  for (const p of properties) out[p] = new Set<string>();
+
+  if (properties.length === 0) return {};
+
+  const pageSize = options?.pageSize ?? 500;
+  const maxFeatures = options?.maxFeatures ?? 5000;
+  let offset = 0;
+  let fetched = 0;
+
+  while (fetched < maxFeatures) {
+    const batchSize = Math.min(pageSize, maxFeatures - fetched);
+    const page = await fetchFeatures(
+      baseUrl,
+      collection,
+      { properties, limit: batchSize, offset },
+      auth,
+      signal,
+    );
+
+    for (const feature of page.features) {
+      const props = feature.properties;
+      if (!props) continue;
+      for (const property of properties) {
+        const v = props[property];
+        if (v != null && typeof v === 'string') out[property].add(v);
+      }
+    }
+
+    fetched += page.features.length;
+    offset += page.features.length;
+
+    const done =
+      page.features.length < batchSize ||
+      (page.numberMatched != null && offset >= page.numberMatched);
+    if (done) break;
+  }
+
+  const result: Record<string, string[]> = {};
+  for (const p of properties) result[p] = Array.from(out[p]).sort();
+  return result;
+}
+
+/**
  * Build a vector tile URL template with a CQL2 JSON filter applied.
  * Returns a URL with `{z}/{x}/{y}` placeholders suitable for MapLibre.
  */

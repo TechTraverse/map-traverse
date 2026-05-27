@@ -21,6 +21,7 @@ import {
   fetchTileJson,
   fetchFeatureCount,
   fetchDistinctValues,
+  fetchDistinctValuesMulti,
   fetchGenericTileJson,
 } from '../ogcApi';
 import type { TileJson, SourceAuth } from '../ogcApi';
@@ -614,6 +615,86 @@ describe('fetchDistinctValues', () => {
     // Should stop after first page since fetched (3) >= maxFeatures (3)
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(values).toEqual(['a', 'b', 'c']);
+  });
+});
+
+describe('fetchDistinctValuesMulti', () => {
+
+  it('returns an empty object when no properties are requested', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const result = await fetchDistinctValuesMulti(BASE, 'roads', []);
+    expect(result).toEqual({});
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('requests all properties in one URL and dedupes per-property', async () => {
+    vi.stubGlobal('fetch', mockFetchResponse({
+      type: 'FeatureCollection',
+      features: [
+        { type: 'Feature', geometry: {}, properties: { name: 'Main', class: 'arterial' } },
+        { type: 'Feature', geometry: {}, properties: { name: 'Oak', class: 'arterial' } },
+        { type: 'Feature', geometry: {}, properties: { name: 'Main', class: 'local' } },
+      ],
+    }));
+    const result = await fetchDistinctValuesMulti(BASE, 'roads', ['name', 'class']);
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(url).toContain('properties=name%2Cclass');
+    expect(result.name).toEqual(['Main', 'Oak']);
+    expect(result.class).toEqual(['arterial', 'local']);
+  });
+
+  it('ignores null and non-string property values', async () => {
+    vi.stubGlobal('fetch', mockFetchResponse({
+      type: 'FeatureCollection',
+      features: [
+        { type: 'Feature', geometry: {}, properties: { name: 'Main', class: null } },
+        { type: 'Feature', geometry: {}, properties: { name: null, class: 42 } },
+      ],
+    }));
+    const result = await fetchDistinctValuesMulti(BASE, 'roads', ['name', 'class']);
+    expect(result.name).toEqual(['Main']);
+    expect(result.class).toEqual([]);
+  });
+
+  it('paginates until maxFeatures is reached and stops', async () => {
+    const page = {
+      type: 'FeatureCollection',
+      features: [
+        { type: 'Feature', geometry: {}, properties: { name: 'a' } },
+        { type: 'Feature', geometry: {}, properties: { name: 'b' } },
+      ],
+      numberMatched: 10,
+    };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(page) } as Response)
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(page) } as Response);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await fetchDistinctValuesMulti(BASE, 'roads', ['name'], {
+      pageSize: 2,
+      maxFeatures: 4,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(result.name).toEqual(['a', 'b']);
+  });
+
+  it('short-circuits when a page returns fewer features than requested', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({
+        type: 'FeatureCollection',
+        features: [{ type: 'Feature', geometry: {}, properties: { name: 'only' } }],
+      }),
+    } as Response);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await fetchDistinctValuesMulti(BASE, 'roads', ['name'], {
+      pageSize: 500,
+      maxFeatures: 5000,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(result.name).toEqual(['only']);
   });
 });
 
