@@ -590,4 +590,36 @@ describe('MapConfigSchema with WMTS sources', () => {
     const result = MapConfigSchema.parse(config);
     expect(result.sources).toHaveLength(2);
   });
+
+  it('accepts a WMTS-backed imagery layer without a collection', () => {
+    const config = {
+      ...baseConfig,
+      sources: [
+        {
+          id: 'gibs',
+          sourceType: 'wmts',
+          capabilitiesUrl:
+            'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/1.0.0/WMTSCapabilities.xml',
+          layer: 'MODIS_Terra_CorrectedReflectance_TrueColor',
+        },
+      ],
+      imageryLayers: [
+        {
+          id: 'modis',
+          sourceId: 'gibs',
+          label: 'MODIS',
+        },
+      ],
+    };
+    expect(() => MapConfigSchema.parse(config)).not.toThrow();
+  });
+
+  it('still requires a collection for OGC-API-backed imagery layers', () => {
+    const config = {
+      ...baseConfig,
+      sources: [{ id: 'ogc', url: 'https://example.com/ogc', type: 'imagery' }],
+      imageryLayers: [{ id: 'no-collection', sourceId: 'ogc', label: 'Bad' }],
+    };
+    expect(() => MapConfigSchema.parse(config)).toThrow(/collection/i);
+  });
 });

@@ -824,13 +824,11 @@ export const ImageryLayerConfigSchema = z.object({
   /** Optional thumbnail image URL rendered beside the layer in ImageryPanel. */
   thumbnailUrl: z.string().optional(),
 }).superRefine((data, ctx) => {
-  if (!data.tileUrlTemplate) {
-    if (!data.sourceId) {
-      ctx.addIssue({ code: 'custom', path: ['sourceId'], message: 'Source is required when not using a custom tile URL' });
-    }
-    if (!data.collection) {
-      ctx.addIssue({ code: 'custom', path: ['collection'], message: 'Collection is required when not using a custom tile URL' });
-    }
+  // sourceId is required unless a custom tile URL is provided. The collection
+  // requirement is OGC-API-specific and is enforced at MapConfig level where
+  // we can see which source the layer references.
+  if (!data.tileUrlTemplate && !data.sourceId) {
+    ctx.addIssue({ code: 'custom', path: ['sourceId'], message: 'Source is required when not using a custom tile URL' });
   }
 });
 
@@ -880,6 +878,21 @@ export const MapConfigSchema = z.object({
   branding: BrandingConfigSchema.optional(),
   globalSearch: GlobalSearchConfigSchema.optional(),
   info: InfoConfigSchema.optional(),
+}).superRefine((data, ctx) => {
+  // Imagery layers backed by an OGC API source need a `collection`; layers
+  // backed by a WMTS source don't (the source already specifies the layer).
+  for (const [i, layer] of (data.imageryLayers ?? []).entries()) {
+    if (layer.tileUrlTemplate || !layer.sourceId) continue;
+    const source = data.sources.find((s) => s.id === layer.sourceId);
+    const isWmts = source && 'sourceType' in source && source.sourceType === 'wmts';
+    if (!isWmts && !layer.collection) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['imageryLayers', i, 'collection'],
+        message: 'Collection is required when not using a custom tile URL',
+      });
+    }
+  }
 });
 
 // --- Validation Utilities ---

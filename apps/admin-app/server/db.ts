@@ -114,13 +114,14 @@ export async function initDb(): Promise<void> {
     ALTER TABLE map_admin.ogc_sources ADD COLUMN IF NOT EXISTS source_type TEXT NOT NULL DEFAULT 'features'
   `);
 
-  // Constrain source_type to valid values
+  // Constrain source_type to valid values. Re-applied unconditionally so the
+  // value list stays in sync when new source types are added (e.g. 'wmts').
   await pool.query(`
-    DO $$ BEGIN
-      ALTER TABLE map_admin.ogc_sources ADD CONSTRAINT ogc_sources_source_type_check
-        CHECK (source_type IN ('features', 'imagery', 'basemap'));
-    EXCEPTION WHEN duplicate_object THEN NULL;
-    END $$
+    ALTER TABLE map_admin.ogc_sources DROP CONSTRAINT IF EXISTS ogc_sources_source_type_check
+  `);
+  await pool.query(`
+    ALTER TABLE map_admin.ogc_sources ADD CONSTRAINT ogc_sources_source_type_check
+      CHECK (source_type IN ('features', 'imagery', 'basemap', 'wmts'))
   `);
 
   // Authentication config (JSONB: { type, name, value })
