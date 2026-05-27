@@ -185,6 +185,24 @@ async function fetchQueryables(
   }
 }
 
+async function discoverRefreshUrl(
+  baseUrl: string,
+  auth?: SourceAuth,
+): Promise<string | undefined> {
+  try {
+    const spec = (await fetchJson(`${baseUrl}/openapi.json`, auth)) as {
+      paths?: Record<string, unknown>;
+    };
+    const paths = spec.paths;
+    if (paths && typeof paths === 'object' && ('/refresh' in paths || '/refresh/' in paths)) {
+      return `${baseUrl}/refresh`;
+    }
+  } catch {
+    // OpenAPI spec unavailable or unparseable — no refresh endpoint
+  }
+  return undefined;
+}
+
 // --- Main client-side inspection ---
 
 async function inspectOgcSourceClientSide(
@@ -194,10 +212,11 @@ async function inspectOgcSourceClientSide(
   const baseUrl = stripTrailingSlash(normalizeUrl(url));
   const errors: string[] = [];
 
-  const [landing, conformanceResult, collectionsResult] = await Promise.all([
+  const [landing, conformanceResult, collectionsResult, refreshUrl] = await Promise.all([
     fetchLanding(baseUrl, auth),
     fetchConformance(baseUrl, auth),
     fetchCollectionsList(baseUrl, auth),
+    discoverRefreshUrl(baseUrl, auth),
   ]);
 
   if (collectionsResult.error) {
@@ -247,6 +266,7 @@ async function inspectOgcSourceClientSide(
     collections,
     inspectedAt: new Date().toISOString(),
     errors,
+    refreshUrl,
   };
 }
 

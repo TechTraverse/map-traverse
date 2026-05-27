@@ -69,13 +69,19 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '1mb' }));
 
-// Session middleware
+// Session middleware. Tests opt out of PgSession via NODE_ENV=test —
+// connect-pg-simple's queries don't round-trip cleanly under pg-mem.
+const sessionStore =
+  process.env.NODE_ENV === 'test'
+    ? undefined
+    : new PgSession({
+        pool,
+        createTableIfMissing: true,
+      });
+
 app.use(
   session({
-    store: new PgSession({
-      pool,
-      createTableIfMissing: true,
-    }),
+    store: sessionStore,
     secret: process.env.SESSION_SECRET ?? 'dev-secret-change-me',
     resave: false,
     saveUninitialized: false,
@@ -1085,12 +1091,30 @@ app.delete('/api/sources/:id', requireAuth, async (req, res) => {
 // POST /api/sources/:id/inspect — refresh metadata for a source (protected)
 app.post('/api/sources/:id/inspect', requireAuth, async (req, res) => {
   try {
-    const sourceResult = await pool.query('SELECT url FROM map_admin.ogc_sources WHERE id = $1', [req.params.id]);
+    const sourceResult = await pool.query(
+      'SELECT url, metadata FROM map_admin.ogc_sources WHERE id = $1',
+      [req.params.id],
+    );
     if (sourceResult.rows.length === 0) {
       res.status(404).json({ error: 'Source not found' });
       return;
     }
-    const { url } = sourceResult.rows[0] as { url: string };
+    const { url, metadata: storedMetadata } = sourceResult.rows[0] as {
+      url: string;
+      metadata: { refreshUrl?: string } | null;
+    };
+
+    // Best-effort: hit the source's refresh endpoint (e.g. tipg /refresh) before
+    // re-inspecting so newly-created collections show up. Failures are tolerated —
+    // refresh may be down or disabled and we still want to re-inspect.
+    const refreshUrl = storedMetadata?.refreshUrl;
+    if (refreshUrl) {
+      try {
+        await fetch(refreshUrl, { signal: AbortSignal.timeout(15_000) });
+      } catch {
+        // ignore — proceed with inspection regardless
+      }
+    }
 
     const metadata = await inspectSource(url);
     const result = await pool.query(
@@ -1678,14 +1702,24 @@ app.get(spaBase === '/' ? '*' : `${spaBase}/*`, (_req, res) => {
   res.sendFile(indexHtml);
 });
 
-// Start server
-initDb()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`Admin API server running on http://localhost:${PORT}`);
+// Start server only when invoked as the entry-point (not during tests)
+const isMainModule =
+  typeof process !== 'undefined' &&
+  Array.isArray(process.argv) &&
+  process.argv[1] !== undefined &&
+  import.meta.url === `file://${process.argv[1]}`;
+
+if (isMainModule) {
+  initDb()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`Admin API server running on http://localhost:${PORT}`);
+      });
+    })
+    .catch((err: unknown) => {
+      console.error('Failed to initialize database:', err);
+      process.exit(1);
     });
-  })
-  .catch((err: unknown) => {
-    console.error('Failed to initialize database:', err);
-    process.exit(1);
-  });
+}
+
+export { app };

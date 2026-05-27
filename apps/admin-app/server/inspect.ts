@@ -55,6 +55,7 @@ export interface InspectionResult {
   inspectedAt: string;
   errors: string[];
   tileJson?: TileJsonMeta;
+  refreshUrl?: string;
 }
 
 // --- Helpers ---
@@ -195,17 +196,31 @@ async function fetchQueryables(baseUrl: string, collectionId: string): Promise<{
   }
 }
 
+async function discoverRefreshUrl(baseUrl: string): Promise<string | undefined> {
+  try {
+    const spec = await fetchJson(`${baseUrl}/openapi.json`) as { paths?: Record<string, unknown> };
+    const paths = spec.paths;
+    if (paths && typeof paths === 'object' && ('/refresh' in paths || '/refresh/' in paths)) {
+      return `${baseUrl}/refresh`;
+    }
+  } catch {
+    // OpenAPI spec unavailable or unparseable — no refresh endpoint
+  }
+  return undefined;
+}
+
 // --- Main inspection function ---
 
 export async function inspectOgcSource(url: string): Promise<InspectionResult> {
   const baseUrl = stripTrailingSlash(normalizeUrl(url));
   const errors: string[] = [];
 
-  // Fetch landing + conformance + collections in parallel
-  const [landing, conformanceResult, collectionsResult] = await Promise.all([
+  // Fetch landing + conformance + collections + refresh-url discovery in parallel
+  const [landing, conformanceResult, collectionsResult, refreshUrl] = await Promise.all([
     fetchLanding(baseUrl),
     fetchConformance(baseUrl),
     fetchCollectionsList(baseUrl),
+    discoverRefreshUrl(baseUrl),
   ]);
 
   if (collectionsResult.error) {
@@ -255,6 +270,7 @@ export async function inspectOgcSource(url: string): Promise<InspectionResult> {
     collections,
     inspectedAt: new Date().toISOString(),
     errors,
+    refreshUrl,
   };
 }
 
