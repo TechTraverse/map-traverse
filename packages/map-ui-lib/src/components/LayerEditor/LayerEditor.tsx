@@ -4,6 +4,8 @@ import { slugify } from '../../utils/slugify';
 import { FormField } from '../admin/FormField';
 import { CollapsibleSection } from '../admin/CollapsibleSection';
 import { StyleEditor, defaultFill, defaultCircle } from '../StyleEditor/StyleEditor';
+import { StylePresetPicker } from '../StylePresetPicker/StylePresetPicker';
+import type { StylePresetGeometry } from '../../utils/stylePresets';
 import { LegendEditor } from '../LegendEditor/LegendEditor';
 import { SearchFieldList } from '../SearchFieldEditor/SearchFieldList';
 import { PropertyDisplayEditor } from '../PropertyDisplayEditor/PropertyDisplayEditor';
@@ -347,6 +349,61 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons,
 
       {showSection('style') && <CollapsibleSection title="Style">
         <div className="mapui:flex mapui:flex-col mapui:gap-4">
+          {(() => {
+            const presetGeometries: StylePresetGeometry[] = [];
+            if (suitableStyleTypes.includes('fill')) presetGeometries.push('polygon');
+            if (suitableStyleTypes.includes('line')) presetGeometries.push('line');
+            if (suitableStyleTypes.includes('circle')) presetGeometries.push('point');
+            // Symbol-only layers (rare — points labelled but not drawn as circles)
+            // still benefit from point presets.
+            if (presetGeometries.length === 0 && suitableStyleTypes.includes('symbol')) {
+              presetGeometries.push('point');
+            }
+            const nonSymbolFamilies = suitableStyleTypes.filter((t) => t !== 'symbol');
+            const isMixed = nonSymbolFamilies.length > 1;
+            const styles = value.styles ?? [];
+            const hasPolygonFill = styles.some(
+              (s) =>
+                s.type === 'fill' &&
+                (!s.geometryFilter ||
+                  s.geometryFilter.some((g) => g === 'Polygon' || g === 'MultiPolygon')),
+            );
+            const showFillWarning = presetGeometries.includes('polygon') && !hasPolygonFill;
+            const addClickTarget = () => {
+              const clickTarget: StyleConfig = {
+                type: 'fill',
+                paint: { 'fill-color': '#000000', 'fill-opacity': 0, 'fill-antialias': false },
+                ...(isMixed ? { geometryFilter: ['Polygon', 'MultiPolygon'] as const } : {}),
+              } as StyleConfig;
+              update({ styles: [clickTarget, ...(value.styles ?? [])] });
+            };
+            return (
+              <>
+                {presetGeometries.length > 0 && (
+                  <StylePresetPicker
+                    geometries={presetGeometries}
+                    value={value.styles}
+                    onChange={(s) => update({ styles: s })}
+                  />
+                )}
+                {showFillWarning && (
+                  <div className="mapui:flex mapui:items-center mapui:justify-between mapui:gap-2 mapui:rounded mapui:border mapui:border-amber-300 mapui:bg-amber-50 mapui:px-3 mapui:py-2 mapui:text-xs mapui:text-amber-900">
+                    <span>
+                      <strong>No polygon fill.</strong> Clicks inside the shape won't trigger
+                      detail panels or tooltips. Add a transparent fill to keep the interior clickable.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={addClickTarget}
+                      className="mapui:shrink-0 mapui:cursor-pointer mapui:rounded mapui:border mapui:border-amber-600 mapui:bg-amber-600 mapui:px-2 mapui:py-0.5 mapui:font-medium mapui:text-white hover:mapui:bg-amber-700"
+                    >
+                      Add transparent click target
+                    </button>
+                  </div>
+                )}
+              </>
+            );
+          })()}
           {(value.styles ?? [defaultFill]).map((style, i) => (
             <div key={i} className="mapui:flex mapui:flex-col mapui:gap-2">
               {style.geometryFilter && style.geometryFilter.length > 0 && (
