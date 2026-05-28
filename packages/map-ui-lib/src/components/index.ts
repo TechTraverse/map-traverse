@@ -121,3 +121,5 @@ export type { QueryPanelProps } from './QueryPanel';
 export { UserMenu } from './UserMenu';
 export type { UserMenuProps, UserMenuItem } from './UserMenu';
 export { CONTROL_ICON_MAP, CONTROL_ICON_NAMES, getControlIcon } from './shared/controlIcons';
+export { StylePresetPicker } from './StylePresetPicker';
+export type { StylePresetPickerProps } from './StylePresetPicker';
