@@ -14,8 +14,6 @@ export interface StylePresetPickerProps {
   /** Current layer styles. Used to highlight the active preset card. */
   value: StyleConfig[] | undefined;
   onChange: (styles: StyleConfig[]) => void;
-  /** Primary color passed to each preset's build(). Defaults vary by geometry. */
-  themeColor?: string;
 }
 
 const cardBase =
@@ -23,18 +21,22 @@ const cardBase =
 const cardInactive = 'mapui:border-slate-200 hover:mapui:border-blue-300 hover:mapui:bg-blue-50';
 const cardActive = 'mapui:border-blue-500 mapui:ring-2 mapui:ring-blue-200 mapui:bg-blue-50';
 
+const DEFAULT_COLOR: Record<StylePresetGeometry, string> = {
+  polygon: '#4a90d9',
+  line: '#2980b9',
+  point: '#e74c3c',
+};
+
 function PresetCard({
   preset,
   active,
-  themeColor,
   onSelect,
 }: {
   preset: StylePreset;
   active: boolean;
-  themeColor?: string;
   onSelect: () => void;
 }) {
-  const previewStyles = preset.build(themeColor ?? defaultColorFor(preset.geometry));
+  const previewStyles = preset.build(DEFAULT_COLOR[preset.geometry]);
   const extra = previewStyles.length - 1;
   return (
     <button
@@ -60,13 +62,7 @@ function PresetCard({
   );
 }
 
-function defaultColorFor(geometry: StylePresetGeometry): string {
-  if (geometry === 'polygon') return '#4a90d9';
-  if (geometry === 'line') return '#2980b9';
-  return '#e74c3c';
-}
-
-export function StylePresetPicker({ geometries, value, onChange, themeColor }: StylePresetPickerProps) {
+export function StylePresetPicker({ geometries, value, onChange }: StylePresetPickerProps) {
   const presets = getPresetsForGeometries(geometries);
   const activeId = inferActivePresetId(value);
   const hasCustomStyles = (value?.length ?? 0) > 0 && activeId === null;
@@ -75,7 +71,7 @@ export function StylePresetPicker({ geometries, value, onChange, themeColor }: S
   if (presets.length === 0) return null;
 
   const applyPreset = (preset: StylePreset) => {
-    onChange(preset.build(themeColor ?? defaultColorFor(preset.geometry)));
+    onChange(preset.build(DEFAULT_COLOR[preset.geometry]));
     setPendingPreset(null);
   };
 
@@ -100,13 +96,7 @@ export function StylePresetPicker({ geometries, value, onChange, themeColor }: S
       </div>
       <div className="mapui:flex mapui:gap-2 mapui:overflow-x-auto mapui:pb-1">
         {presets.map((p) => (
-          <PresetCard
-            key={p.id}
-            preset={p}
-            active={p.id === activeId}
-            themeColor={themeColor}
-            onSelect={() => handleSelect(p)}
-          />
+          <PresetCard key={p.id} preset={p} active={p.id === activeId} onSelect={() => handleSelect(p)} />
         ))}
       </div>
       {pendingPreset && (
