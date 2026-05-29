@@ -5,6 +5,7 @@ import { FormField } from '../admin/FormField';
 import { CollapsibleSection } from '../admin/CollapsibleSection';
 import { StyleEditor, defaultFill, defaultCircle } from '../StyleEditor/StyleEditor';
 import { StylePresetSection } from './StylePresetSection';
+import { StyleCard } from './StyleCard';
 import { LegendEditor } from '../LegendEditor/LegendEditor';
 import { SearchFieldList } from '../SearchFieldEditor/SearchFieldList';
 import { PropertyDisplayEditor } from '../PropertyDisplayEditor/PropertyDisplayEditor';
@@ -354,19 +355,16 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons,
             onChange={(styles) => update({ styles })}
           />
           {(value.styles ?? [defaultFill]).map((style, i) => (
-            <div key={i} className="mapui:flex mapui:flex-col mapui:gap-2">
-              {style.geometryFilter && style.geometryFilter.length > 0 && (
-                <div className="mapui:flex mapui:flex-wrap mapui:gap-1">
-                  {style.geometryFilter.map((g) => (
-                    <span
-                      key={g}
-                      className="mapui:rounded mapui:bg-indigo-100 mapui:px-1.5 mapui:py-0.5 mapui:text-[10px] mapui:font-medium mapui:text-indigo-700"
-                    >
-                      {g}
-                    </span>
-                  ))}
-                </div>
-              )}
+            <StyleCard
+              key={i}
+              index={i}
+              style={style}
+              onRemove={
+                (value.styles?.length ?? 0) > 0
+                  ? () => update({ styles: removeAt(value.styles, i) })
+                  : undefined
+              }
+            >
               <StyleEditor
                 value={style}
                 onChange={(s) => update({ styles: replaceAt(value.styles, i, s) })}
@@ -379,16 +377,7 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons,
                     : undefined
                 }
               />
-              {(value.styles?.length ?? 0) > 0 && (
-                <button
-                  type="button"
-                  onClick={() => update({ styles: removeAt(value.styles, i) })}
-                  className="mapui:cursor-pointer mapui:self-start mapui:rounded mapui:border mapui:border-red-200 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-red-600 hover:mapui:bg-red-50"
-                >
-                  Remove style
-                </button>
-              )}
-            </div>
+            </StyleCard>
           ))}
           <div className="mapui:flex mapui:flex-wrap mapui:items-center mapui:gap-2">
             <button
