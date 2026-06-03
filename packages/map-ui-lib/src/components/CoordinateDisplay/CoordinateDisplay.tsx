@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react';
-import { LuMapPin } from 'react-icons/lu';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { LuMapPin, LuX } from 'react-icons/lu';
 
 export interface CoordinateFormatOption {
   id: string;
@@ -165,6 +165,7 @@ export function CoordinateDisplay({
   const [internalExpanded, setInternalExpanded] = useState(false);
   const expanded = isExpandedProp ?? internalExpanded;
   const canNavigate = !!onNavigate;
+  const rootRef = useRef<HTMLDivElement>(null);
 
   const [latInput, setLatInput] = useState('');
   const [lngInput, setLngInput] = useState('');
@@ -187,6 +188,27 @@ export function CoordinateDisplay({
     setExpanded(!expanded);
   };
 
+  // Close the navigate form on outside click or Escape.
+  useEffect(() => {
+    if (!expanded) return;
+    const handleMouseDown = (e: MouseEvent) => {
+      const node = rootRef.current;
+      if (node && e.target instanceof Node && !node.contains(e.target)) {
+        setExpanded(false);
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setExpanded(false);
+    };
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('keydown', handleKey);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expanded]);
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!onNavigate) return;
@@ -207,6 +229,7 @@ export function CoordinateDisplay({
 
   return (
     <div
+      ref={rootRef}
       className={`mapui:bg-black/60 mapui:text-white mapui:text-xs mapui:px-3 mapui:py-1 mapui:flex mapui:flex-col mapui:gap-1 mapui:rounded ${className}`}
     >
       <div className="mapui:flex mapui:items-center mapui:gap-2">
@@ -292,6 +315,15 @@ export function CoordinateDisplay({
                 <LuMapPin size={14} />
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => setExpanded(false)}
+              title="Close"
+              aria-label="Close coordinate input"
+              className="mapui:rounded mapui:px-2 mapui:py-0.5 mapui:ml-1 mapui:cursor-pointer mapui:border-none mapui:bg-white/20 hover:mapui:bg-white/30 mapui:text-white mapui:flex mapui:items-center"
+            >
+              <LuX size={14} />
+            </button>
           </div>
           {error && <div className="mapui:text-red-300 mapui:text-[10px]">{error}</div>}
         </form>
