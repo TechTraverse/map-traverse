@@ -55,6 +55,13 @@ interface MapState {
   /** Cached distinct values for properties with `prefetch: true`. Key: `${layerId}:${property}`. */
   prefetchedDistinctValues: Record<string, string[]>;
 
+  /**
+   * GeoJSON FeatureCollection of features matched by the most recent search
+   * (global search or SearchPanel zoom-to). Rendered as the `search-highlight`
+   * map source. Persists until the next search or a manual clear.
+   */
+  searchHighlightData: GeoJSON.FeatureCollection | null;
+
   toggleImageryLayerVisibility: (layerId: string) => void;
   setImageryLayerOpacity: (layerId: string, opacity: number) => void;
   setViewState: (vs: Partial<ViewConfig>) => void;
@@ -84,6 +91,11 @@ interface MapState {
   setGlobalSearchIsLoading: (loading: boolean) => void;
   cacheDistinctValues: (key: string, values: string[]) => void;
   clearGlobalSearch: () => void;
+
+  /** Replace the search-match highlight. Pass `null` to clear. */
+  setSearchHighlight: (data: GeoJSON.FeatureCollection | null) => void;
+  /** Clear the search-match highlight. */
+  clearSearchHighlight: () => void;
 
   hydrate: (config: MapConfig) => void;
 }
@@ -139,6 +151,7 @@ export const useMapStore = create<MapState>((set) => ({
   globalSearchResults: {},
   globalSearchIsLoading: false,
   prefetchedDistinctValues: {},
+  searchHighlightData: null,
 
   toggleImageryLayerVisibility: (layerId) =>
     set((state) => {
@@ -280,6 +293,9 @@ export const useMapStore = create<MapState>((set) => ({
       globalSearchResults: {},
       globalSearchIsLoading: false,
     }),
+
+  setSearchHighlight: (data) => set({ searchHighlightData: data }),
+  clearSearchHighlight: () => set({ searchHighlightData: null }),
 
   hydrate: (config) =>
     set({
