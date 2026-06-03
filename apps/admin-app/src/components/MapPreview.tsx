@@ -13,7 +13,9 @@ import {
   fetchFeatures,
   fetchFeatureById,
   eq,
-  bboxFromGeometry,
+  zoomToFeature,
+  featureCollectionFromGeometries,
+  baseCql2FilterFromLayer,
   getVectorTileSourceKey,
   buildGeometryFilter,
   buildCql2Query,
@@ -370,6 +372,10 @@ export function MapPreview({
   >({});
   const globalSearchInFlightRef = useRef<AbortController | null>(null);
   const globalSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Features matched by the most recent search (global search or SearchPanel
+  // zoom-to), rendered as the `search-highlight` source. Persists until the
+  // next search or a manual clear.
+  const [searchHighlightData, setSearchHighlightData] = useState<GeoJSON.FeatureCollection | null>(null);
 
   const [cursor, setCursor] = useState<string>('auto');
   const { queryablesByLayer } = useQueryablesByLayer(layers, sources);
@@ -719,6 +725,7 @@ export function MapPreview({
     setActiveFilters(prev => { const next = { ...prev }; delete next[layerId]; return next; });
     setPropertyFilters(prev => prev.filter(f => f.layerId !== layerId));
     setActiveCql2Filters(prev => { const next = { ...prev }; delete next[layerId]; return next; });
+    setSearchHighlightData(null);
   }, []);
 
   const handleZoomToFeature = useCallback(
@@ -728,12 +735,31 @@ export function MapPreview({
       const sourceInfo = sourceUrlMap[layer.sourceId];
       if (!sourceInfo || sourceInfo.isWmts) return;
 
-      const cql2Filter = eq(property, value);
-      const data = await fetchFeatures(sourceInfo.url, layer.collection, { cql2Filter, limit: 1 }, sourceInfo.auth);
+      // Respect the layer's permanent base filter, then constrain to the
+      // triggering field's value. Fetch up to `limit` matches so we can fit
+      // them all and highlight the full set.
+      const cql2Filter = and(baseCql2FilterFromLayer(layer), eq(property, value)) ?? undefined;
+      const data = await fetchFeatures(sourceInfo.url, layer.collection, { cql2Filter, limit: 500 }, sourceInfo.auth);
       if (!data.features.length) return;
 
-      const bbox = bboxFromGeometry(data.features[0].geometry as Record<string, unknown>);
-      if (bbox) mapRef.current?.fitBounds(bbox, { padding: 50, maxZoom: 12 });
+      const geometries = data.features
+        .map((f) => f.geometry as unknown as Record<string, unknown> | null | undefined)
+        .filter((g): g is Record<string, unknown> => g != null);
+
+      const instruction = zoomToFeature(combineGeometries(geometries), {
+        layerMinZoom: layer.minZoom,
+        layerMaxZoom: layer.maxZoom,
+        pointZoom: layer.zoomToLevel,
+      });
+      if (instruction) {
+        if (instruction.type === 'flyTo') {
+          mapRef.current?.flyTo({ center: instruction.center, zoom: instruction.zoom });
+        } else {
+          mapRef.current?.fitBounds(instruction.bbox, { padding: instruction.padding, maxZoom: instruction.maxZoom });
+        }
+      }
+
+      setSearchHighlightData(featureCollectionFromGeometries(geometries));
     },
     [layers, sourceUrlMap],
   );
@@ -798,6 +824,8 @@ export function MapPreview({
     if (globalSearchQuery.length < minLen) {
       setGlobalSearchResults({});
       setGlobalSearchIsLoading(false);
+      // Emptying / clearing the search box is a manual clear — drop the highlight.
+      setSearchHighlightData(null);
       return;
     }
 
@@ -850,21 +878,41 @@ export function MapPreview({
   }, []);
 
   const handleGlobalSearchResultClick = useCallback(
-    (_layerId: string, match: GlobalSearchFeatureMatch) => {
-      let box: [number, number, number, number] | null = match.bbox ?? null;
-      if (!box && match.geometry) {
-        box = bboxFromGeometry(match.geometry as unknown as Record<string, unknown>);
+    (layerId: string, match: GlobalSearchFeatureMatch) => {
+      const layer = layers.find((l) => l.id === layerId);
+
+      // Zoom to the clicked feature at an appropriate level: points fly to a
+      // sensible zoom (layer `zoomToLevel` or the util default), polygons/lines
+      // fit their extent. Shared with the SearchPanel path so both match the
+      // live map client.
+      const instruction = zoomToFeature(
+        match.geometry as unknown as Record<string, unknown> | undefined,
+        {
+          layerMinZoom: layer?.minZoom,
+          layerMaxZoom: layer?.maxZoom,
+          pointZoom: layer?.zoomToLevel,
+        },
+      );
+      if (instruction) {
+        if (instruction.type === 'flyTo') {
+          mapRef.current?.flyTo({ center: instruction.center, zoom: instruction.zoom });
+        } else {
+          mapRef.current?.fitBounds(instruction.bbox, { padding: instruction.padding, maxZoom: instruction.maxZoom });
+        }
+      } else if (match.bbox) {
+        mapRef.current?.fitBounds(match.bbox, { padding: 50, maxZoom: 16 });
       }
-      if (!box) return;
-      if (box[0] === box[2] && box[1] === box[3]) {
-        const pad = 0.01;
-        box = [box[0] - pad, box[1] - pad, box[2] + pad, box[3] + pad];
-      }
-      mapRef.current?.fitBounds(box, { padding: 50, maxZoom: 16 });
-      setGlobalSearchQuery('');
-      setGlobalSearchResults({});
+
+      // Highlight every current match (across all groups), not just the clicked
+      // one. Persists until the next search or a manual clear.
+      const geometries = Object.values(globalSearchResults).flatMap((group) =>
+        group.matches.map(
+          (m) => m.geometry as unknown as Record<string, unknown> | undefined,
+        ),
+      );
+      setSearchHighlightData(featureCollectionFromGeometries(geometries));
     },
-    [],
+    [layers, globalSearchResults],
   );
 
   const findLayerForFeature = useCallback((featureLayerId: string) => {
@@ -1235,6 +1283,20 @@ export function MapPreview({
               paint={{ 'line-color': '#3b82f6', 'line-width': 2 }} />
             <Layer id="query-highlight-circle" type="circle"
               paint={{ 'circle-color': '#3b82f6', 'circle-radius': 5, 'circle-stroke-color': '#2563eb', 'circle-stroke-width': 2 }}
+              filter={['==', ['geometry-type'], 'Point'] as any} />
+          </Source>
+        )}
+
+        {/* Search match highlight — rendered on top of the other highlights */}
+        {searchHighlightData && (
+          <Source id="search-highlight" type="geojson" data={searchHighlightData}>
+            <Layer id="search-highlight-fill" type="fill"
+              paint={{ 'fill-color': '#f0abfc', 'fill-opacity': 0.35 }}
+              filter={['in', ['geometry-type'], ['literal', ['Polygon', 'MultiPolygon']]] as any} />
+            <Layer id="search-highlight-line" type="line"
+              paint={{ 'line-color': '#d946ef', 'line-width': 3 }} />
+            <Layer id="search-highlight-circle" type="circle"
+              paint={{ 'circle-color': '#f0abfc', 'circle-radius': 7, 'circle-stroke-color': '#d946ef', 'circle-stroke-width': 2.5 }}
               filter={['==', ['geometry-type'], 'Point'] as any} />
           </Source>
         )}
