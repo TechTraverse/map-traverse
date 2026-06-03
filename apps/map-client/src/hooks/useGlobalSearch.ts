@@ -13,6 +13,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useMapStore } from '../stores/mapStore';
 import { isOgcApiSource } from '@ogc-maps/storybook-components/utils';
 import {
+  applyZoomInstruction,
   featureCollectionFromGeometries,
   prefetchAllDistinctValues,
   prefetchKey,
@@ -221,16 +222,8 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
           pointZoom: layer?.zoomToLevel,
         },
       );
-      if (instruction) {
-        if (instruction.type === 'flyTo') {
-          flyTo(instruction.center, instruction.zoom);
-        } else {
-          fitBounds(instruction.bbox, {
-            padding: instruction.padding,
-            maxZoom: instruction.maxZoom,
-          });
-        }
-      } else if (match.bbox) {
+      applyZoomInstruction(instruction, { flyTo, fitBounds });
+      if (!instruction && match.bbox) {
         // No usable geometry but a precomputed bbox — fall back to fitting it.
         fitBounds(match.bbox);
       }

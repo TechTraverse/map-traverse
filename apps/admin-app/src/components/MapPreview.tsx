@@ -14,6 +14,7 @@ import {
   fetchFeatureById,
   eq,
   zoomToFeature,
+  applyZoomInstruction,
   featureCollectionFromGeometries,
   baseCql2FilterFromLayer,
   getVectorTileSourceKey,
@@ -728,6 +729,18 @@ export function MapPreview({
     setSearchHighlightData(null);
   }, []);
 
+  // Adapts zoom instructions to the preview's MapLibre ref (vs the map-client
+  // store's flyTo/fitBounds actions).
+  const zoomDispatch = useMemo(
+    () => ({
+      flyTo: (center: [number, number], zoom: number) =>
+        mapRef.current?.flyTo({ center, zoom }),
+      fitBounds: (bbox: [number, number, number, number], options: { padding: number; maxZoom: number }) =>
+        mapRef.current?.fitBounds(bbox, options),
+    }),
+    [],
+  );
+
   const handleZoomToFeature = useCallback(
     async (layerId: string, property: string, value: string) => {
       const layer = layers.find(l => l.id === layerId);
@@ -742,26 +755,20 @@ export function MapPreview({
       const data = await fetchFeatures(sourceInfo.url, layer.collection, { cql2Filter, limit: 500 }, sourceInfo.auth);
       if (!data.features.length) return;
 
-      const geometries = data.features
-        .map((f) => f.geometry as unknown as Record<string, unknown> | null | undefined)
-        .filter((g): g is Record<string, unknown> => g != null);
+      const geometries = data.features.map(
+        (f) => f.geometry as unknown as Record<string, unknown> | null | undefined,
+      );
 
       const instruction = zoomToFeature(combineGeometries(geometries), {
         layerMinZoom: layer.minZoom,
         layerMaxZoom: layer.maxZoom,
         pointZoom: layer.zoomToLevel,
       });
-      if (instruction) {
-        if (instruction.type === 'flyTo') {
-          mapRef.current?.flyTo({ center: instruction.center, zoom: instruction.zoom });
-        } else {
-          mapRef.current?.fitBounds(instruction.bbox, { padding: instruction.padding, maxZoom: instruction.maxZoom });
-        }
-      }
+      applyZoomInstruction(instruction, zoomDispatch);
 
       setSearchHighlightData(featureCollectionFromGeometries(geometries));
     },
-    [layers, sourceUrlMap],
+    [layers, sourceUrlMap, zoomDispatch],
   );
 
   // ─── Global search: mount-time prefetch of distinct values ──────────────
@@ -893,13 +900,8 @@ export function MapPreview({
           pointZoom: layer?.zoomToLevel,
         },
       );
-      if (instruction) {
-        if (instruction.type === 'flyTo') {
-          mapRef.current?.flyTo({ center: instruction.center, zoom: instruction.zoom });
-        } else {
-          mapRef.current?.fitBounds(instruction.bbox, { padding: instruction.padding, maxZoom: instruction.maxZoom });
-        }
-      } else if (match.bbox) {
+      applyZoomInstruction(instruction, zoomDispatch);
+      if (!instruction && match.bbox) {
         mapRef.current?.fitBounds(match.bbox, { padding: 50, maxZoom: 16 });
       }
 
@@ -912,7 +914,7 @@ export function MapPreview({
       );
       setSearchHighlightData(featureCollectionFromGeometries(geometries));
     },
-    [layers, globalSearchResults],
+    [layers, globalSearchResults, zoomDispatch],
   );
 
   const findLayerForFeature = useCallback((featureLayerId: string) => {
