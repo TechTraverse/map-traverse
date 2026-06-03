@@ -84,3 +84,28 @@ describe('CoordinateDisplay pin-drop button', () => {
     expect(html).toContain('Cancel pin drop');
   });
 });
+
+describe('CoordinateDisplay close button', () => {
+  const baseProps = {
+    latitude: 40.7128,
+    longitude: -74.006,
+    activeFormat: 'decimal',
+    formats: [{ id: 'decimal', label: 'Decimal', format: formatDecimal }],
+    onFormatChange: () => {},
+    onNavigate: () => {},
+  };
+
+  it('renders the close button when the form is expanded', () => {
+    const html = renderToStaticMarkup(
+      createElement(CoordinateDisplay, { ...baseProps, isExpanded: true }),
+    );
+    expect(html).toContain('Close coordinate input');
+  });
+
+  it('omits the close button when the form is collapsed', () => {
+    const html = renderToStaticMarkup(
+      createElement(CoordinateDisplay, { ...baseProps, isExpanded: false }),
+    );
+    expect(html).not.toContain('Close coordinate input');
+  });
+});
