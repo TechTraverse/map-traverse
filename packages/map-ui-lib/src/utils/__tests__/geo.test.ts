@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  applyZoomInstruction,
   bboxFromGeometry,
   combineGeometries,
   featureCollectionFromGeometries,
@@ -46,6 +47,41 @@ describe('combineGeometries', () => {
       type: 'GeometryCollection',
       geometries: [a, b],
     });
+  });
+
+  it('skips null/undefined entries', () => {
+    const a = { type: 'Point', coordinates: [0, 0] };
+    expect(combineGeometries([null, a, undefined])).toBe(a);
+    expect(combineGeometries([null, undefined])).toBeNull();
+  });
+});
+
+describe('applyZoomInstruction', () => {
+  it('is a no-op for a null instruction', () => {
+    let calls = 0;
+    applyZoomInstruction(null, {
+      flyTo: () => { calls++; },
+      fitBounds: () => { calls++; },
+    });
+    expect(calls).toBe(0);
+  });
+
+  it('dispatches flyTo with center + zoom', () => {
+    const seen: unknown[] = [];
+    applyZoomInstruction(
+      { type: 'flyTo', center: [1, 2], zoom: 14 },
+      { flyTo: (center, zoom) => seen.push([center, zoom]), fitBounds: () => {} },
+    );
+    expect(seen).toEqual([[[1, 2], 14]]);
+  });
+
+  it('dispatches fitBounds with bbox + options', () => {
+    const seen: unknown[] = [];
+    applyZoomInstruction(
+      { type: 'fitBounds', bbox: [0, 0, 1, 1], padding: 50, maxZoom: 18 },
+      { flyTo: () => {}, fitBounds: (bbox, options) => seen.push([bbox, options]) },
+    );
+    expect(seen).toEqual([[[0, 0, 1, 1], { padding: 50, maxZoom: 18 }]]);
   });
 });
 

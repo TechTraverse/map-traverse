@@ -33,7 +33,7 @@ import type { MeasureMode, MeasureUnit, Measurement, SelectedFeature, SelectionM
 import type { FilterRuleGroup } from '@ogc-maps/storybook-components/types';
 import type { PropertyFilter } from '@ogc-maps/storybook-components/utils';
 import { useExport } from '@ogc-maps/storybook-components/hooks';
-import { DEFAULT_EXPORT_FORMATS, fromStructuredFilters, propertyFiltersToCql2, and, fetchFeatures, eq, exportConverters, zoomToFeature, featureCollectionFromGeometries, combineGeometries, baseCql2FilterFromLayer } from '@ogc-maps/storybook-components/utils';
+import { DEFAULT_EXPORT_FORMATS, fromStructuredFilters, propertyFiltersToCql2, and, fetchFeatures, eq, exportConverters, zoomToFeature, applyZoomInstruction, featureCollectionFromGeometries, combineGeometries, baseCql2FilterFromLayer } from '@ogc-maps/storybook-components/utils';
 import type { GeoJsonFeature } from '@ogc-maps/storybook-components/utils';
 import type { UIConfig, SearchFilterValue, SearchFilterValues, OrderableControlKey, InfoPosition, ControlCorner } from '@ogc-maps/storybook-components/types';
 import {
@@ -266,25 +266,16 @@ export function MapOverlay({
       // Collect every matching geometry, then zoom to fit them all (combining
       // them into one extent) and highlight the full set. A single match — or
       // many matches collapsed to one point — still flies to point zoom.
-      const geometries = data.features
-        .map((f) => f.geometry as unknown as Record<string, unknown> | null | undefined)
-        .filter((g): g is Record<string, unknown> => g != null);
+      const geometries = data.features.map(
+        (f) => f.geometry as unknown as Record<string, unknown> | null | undefined,
+      );
 
       const instruction = zoomToFeature(combineGeometries(geometries), {
         layerMinZoom: layer.minZoom,
         layerMaxZoom: layer.maxZoom,
         pointZoom: layer.zoomToLevel,
       });
-      if (instruction) {
-        if (instruction.type === 'flyTo') {
-          state.flyTo(instruction.center, instruction.zoom);
-        } else {
-          state.fitBounds(instruction.bbox, {
-            padding: instruction.padding,
-            maxZoom: instruction.maxZoom,
-          });
-        }
-      }
+      applyZoomInstruction(instruction, { flyTo: state.flyTo, fitBounds: state.fitBounds });
 
       state.setSearchHighlight(featureCollectionFromGeometries(geometries));
     },

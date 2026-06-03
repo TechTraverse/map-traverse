@@ -17,14 +17,17 @@ function extractCoords(geometry: Record<string, unknown>): number[][] {
 const POINT_PADDING = 0.01; // ~1km at equator
 
 /**
- * Combines multiple geometries into a single geometry.
- * Returns the geometry directly if only one, or a GeometryCollection if multiple.
- * Returns null if the array is empty.
+ * Combines multiple geometries into a single geometry. Null/undefined entries
+ * are skipped. Returns the geometry directly if only one remains, a
+ * GeometryCollection if several, or `null` if none.
  */
-export function combineGeometries(geometries: Record<string, unknown>[]): Record<string, unknown> | null {
-  if (geometries.length === 0) return null;
-  if (geometries.length === 1) return geometries[0];
-  return { type: 'GeometryCollection', geometries };
+export function combineGeometries(
+  geometries: Array<Record<string, unknown> | null | undefined>,
+): Record<string, unknown> | null {
+  const valid = geometries.filter((g): g is Record<string, unknown> => g != null);
+  if (valid.length === 0) return null;
+  if (valid.length === 1) return valid[0];
+  return { type: 'GeometryCollection', geometries: valid };
 }
 
 /**
@@ -199,4 +202,29 @@ export function zoomToFeature(
     padding,
     maxZoom: effectiveMaxZoom,
   };
+}
+
+/**
+ * Dispatches a {@link ZoomToFeatureInstruction} to a map. The `dispatch` object
+ * adapts the instruction to the host's navigation API — a Zustand store's
+ * `flyTo`/`fitBounds` actions, a MapLibre `map.flyTo`/`map.fitBounds`, etc. —
+ * so the flyTo-vs-fitBounds decision lives in exactly one place. A `null`
+ * instruction is a no-op.
+ */
+export function applyZoomInstruction(
+  instruction: ZoomToFeatureInstruction | null,
+  dispatch: {
+    flyTo: (center: [number, number], zoom: number) => void;
+    fitBounds: (bbox: BBox, options: { padding: number; maxZoom: number }) => void;
+  },
+): void {
+  if (!instruction) return;
+  if (instruction.type === 'flyTo') {
+    dispatch.flyTo(instruction.center, instruction.zoom);
+  } else {
+    dispatch.fitBounds(instruction.bbox, {
+      padding: instruction.padding,
+      maxZoom: instruction.maxZoom,
+    });
+  }
 }
