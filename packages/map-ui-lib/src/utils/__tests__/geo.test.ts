@@ -116,6 +116,15 @@ describe('zoomToFeature', () => {
     });
     expect(result).toMatchObject({ type: 'flyTo', center: [5, 5] });
   });
+
+  it('fits the combined extent of multiple geometries (fit-all matches)', () => {
+    const combined = combineGeometries([
+      { type: 'Point', coordinates: [0, 0] },
+      { type: 'Point', coordinates: [10, 8] },
+    ]);
+    const result = zoomToFeature(combined);
+    expect(result).toMatchObject({ type: 'fitBounds', bbox: [0, 0, 10, 8] });
+  });
 });
 
 describe('featureCollectionFromGeometries', () => {
