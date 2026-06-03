@@ -313,6 +313,21 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons,
                 className={inputClass}
               />
             </FormField>
+            <FormField
+              label="Zoom-to Level"
+              description="Zoom level used when a search zooms to a point feature in this layer. Leave blank to use the default (16)."
+            >
+              <input
+                type="number"
+                min={0}
+                max={24}
+                step={1}
+                value={value.zoomToLevel ?? ''}
+                onChange={(e) => { const v = e.target.valueAsNumber; update({ zoomToLevel: isNaN(v) ? undefined : v }); }}
+                placeholder="16"
+                className={inputClass}
+              />
+            </FormField>
           </div>
 
           {editingId ? (

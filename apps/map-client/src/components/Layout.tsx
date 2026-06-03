@@ -40,6 +40,7 @@ interface FeatureInfo {
 export function Layout({ uiConfig }: LayoutProps) {
   const layers = useMapStore((s) => s.layers);
   const branding = useMapStore((s) => s.branding);
+  const searchHighlightData = useMapStore((s) => s.searchHighlightData);
 
   const [mouseCoords, setMouseCoords] = useState<{
     latitude: number;
@@ -241,6 +242,7 @@ export function Layout({ uiConfig }: LayoutProps) {
           selectionLayerId={selection.activeLayerId}
           selectionHighlightData={selection.highlightData}
           queryHighlightData={queryHighlightData as unknown as GeoJSON.FeatureCollection | null}
+          searchHighlightData={searchHighlightData}
           boxDrawData={boxDrawData}
           polygonDrawData={polygonDraw.polygonDrawData}
           polygonDrawPointsData={polygonDraw.polygonDrawPointsData}

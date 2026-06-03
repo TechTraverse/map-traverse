@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   bboxFromGeometry,
   combineGeometries,
+  featureCollectionFromGeometries,
   zoomToFeature,
   DEFAULT_POINT_ZOOM,
   DEFAULT_POLYGON_MAX_ZOOM,
@@ -114,5 +115,23 @@ describe('zoomToFeature', () => {
       coordinates: [[[5, 5], [5, 5], [5, 5], [5, 5]]],
     });
     expect(result).toMatchObject({ type: 'flyTo', center: [5, 5] });
+  });
+});
+
+describe('featureCollectionFromGeometries', () => {
+  it('returns null when given no usable geometries', () => {
+    expect(featureCollectionFromGeometries([])).toBeNull();
+    expect(featureCollectionFromGeometries([null, undefined])).toBeNull();
+  });
+
+  it('wraps each geometry in a Feature and skips null/undefined', () => {
+    const a = { type: 'Point', coordinates: [0, 0] };
+    const b = { type: 'Point', coordinates: [1, 1] };
+    const fc = featureCollectionFromGeometries([a, null, b, undefined]);
+    expect(fc).not.toBeNull();
+    expect(fc!.type).toBe('FeatureCollection');
+    expect(fc!.features).toHaveLength(2);
+    expect(fc!.features[0]).toMatchObject({ type: 'Feature', geometry: a });
+    expect(fc!.features[1]).toMatchObject({ type: 'Feature', geometry: b });
   });
 });

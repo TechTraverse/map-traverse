@@ -33,7 +33,7 @@ import type { MeasureMode, MeasureUnit, Measurement, SelectedFeature, SelectionM
 import type { FilterRuleGroup } from '@ogc-maps/storybook-components/types';
 import type { PropertyFilter } from '@ogc-maps/storybook-components/utils';
 import { useExport } from '@ogc-maps/storybook-components/hooks';
-import { DEFAULT_EXPORT_FORMATS, fromStructuredFilters, propertyFiltersToCql2, and, fetchFeatures, eq, exportConverters, zoomToFeature } from '@ogc-maps/storybook-components/utils';
+import { DEFAULT_EXPORT_FORMATS, fromStructuredFilters, propertyFiltersToCql2, and, fetchFeatures, eq, exportConverters, zoomToFeature, featureCollectionFromGeometries, baseCql2FilterFromLayer } from '@ogc-maps/storybook-components/utils';
 import type { GeoJsonFeature } from '@ogc-maps/storybook-components/utils';
 import type { UIConfig, SearchFilterValue, SearchFilterValues, OrderableControlKey, InfoPosition, ControlCorner } from '@ogc-maps/storybook-components/types';
 import {
@@ -256,8 +256,11 @@ export function MapOverlay({
       const source = state.sources.find((s) => s.id === layer.sourceId);
       if (!source || !isOgcApiSource(source)) return;
 
-      const cql2Filter = eq(property, value);
-      const data = await fetchFeatures(source.url, layer.collection, { cql2Filter, limit: 1 });
+      // Respect the layer's permanent base filter, then constrain to the
+      // triggering field's value. Fetch up to `limit` matches so we can zoom to
+      // the first and highlight the full set.
+      const cql2Filter = and(baseCql2FilterFromLayer(layer), eq(property, value)) ?? undefined;
+      const data = await fetchFeatures(source.url, layer.collection, { cql2Filter, limit: 500 });
       if (!data.features.length) return;
 
       const instruction = zoomToFeature(
@@ -268,18 +271,33 @@ export function MapOverlay({
           pointZoom: layer.zoomToLevel,
         },
       );
-      if (!instruction) return;
-
-      if (instruction.type === 'flyTo') {
-        useMapStore.getState().flyTo(instruction.center, instruction.zoom);
-      } else {
-        useMapStore.getState().fitBounds(instruction.bbox, {
-          padding: instruction.padding,
-          maxZoom: instruction.maxZoom,
-        });
+      if (instruction) {
+        if (instruction.type === 'flyTo') {
+          state.flyTo(instruction.center, instruction.zoom);
+        } else {
+          state.fitBounds(instruction.bbox, {
+            padding: instruction.padding,
+            maxZoom: instruction.maxZoom,
+          });
+        }
       }
+
+      // Highlight every matching feature, not just the one we zoomed to.
+      state.setSearchHighlight(
+        featureCollectionFromGeometries(
+          data.features.map((f) => f.geometry as unknown as Record<string, unknown>),
+        ),
+      );
     },
     [],
+  );
+
+  const handleClearFilters = useCallback(
+    (layerId: string) => {
+      clearLayerFilters(layerId);
+      useMapStore.getState().clearSearchHighlight();
+    },
+    [clearLayerFilters],
   );
 
   // Accordion state: track which control is currently open
@@ -414,7 +432,7 @@ export function MapOverlay({
             layers={layers}
             activeFilters={activeFilters}
             onFilterChange={handleFilterChange}
-            onClearFilters={clearLayerFilters}
+            onClearFilters={handleClearFilters}
             autocompleteSuggestions={autocompleteSuggestions}
             onFetchSuggestions={fetchSuggestions}
             onZoomToFeature={handleZoomToFeature}

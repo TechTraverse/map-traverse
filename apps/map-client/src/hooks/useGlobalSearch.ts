@@ -3,26 +3,27 @@
  *
  * Reads global-search config + data from `mapStore`, debounces the query,
  * fans fetches out via `globalSearchFetcher`, and exposes an `onResultClick`
- * handler that zooms the map by pushing a pending bounding box through the
- * existing `fitBounds` store action (which `MapContainer` observes).
+ * handler that zooms the map to the clicked feature (via the shared
+ * `zoomToFeature` utility) and highlights every current match by pushing a
+ * `searchHighlight` FeatureCollection into the store (which `MapContainer`
+ * observes).
  */
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import bbox from '@turf/bbox';
-import type { AllGeoJSON } from '@turf/helpers';
 import { useShallow } from 'zustand/react/shallow';
 import { useMapStore } from '../stores/mapStore';
 import { isOgcApiSource } from '@ogc-maps/storybook-components/utils';
 import {
+  featureCollectionFromGeometries,
   prefetchAllDistinctValues,
   prefetchKey,
   runGlobalSearch,
+  zoomToFeature,
   type GlobalSearchContext,
 } from '@ogc-maps/storybook-components/utils';
 import type {
   GlobalSearchFeatureMatch,
   GlobalSearchGroupedResults,
 } from '@ogc-maps/storybook-components';
-import type { BBox } from '@ogc-maps/storybook-components/utils';
 
 export interface UseGlobalSearchReturn {
   query: string;
@@ -30,39 +31,6 @@ export interface UseGlobalSearchReturn {
   results: GlobalSearchGroupedResults;
   isLoading: boolean;
   onResultClick: (layerId: string, match: GlobalSearchFeatureMatch) => void;
-}
-
-/** Minimal inline bbox fallback for Point/LineString/Polygon in case @turf/bbox ever fails. */
-function fallbackBbox(geometry: GeoJSON.Geometry | undefined): BBox | null {
-  if (!geometry) return null;
-  try {
-    if (geometry.type === 'Point') {
-      const [lng, lat] = geometry.coordinates as [number, number];
-      return [lng, lat, lng, lat];
-    }
-    // Everything else: flatten coordinates.
-    const coords: number[][] = [];
-    const walk = (c: unknown): void => {
-      if (!Array.isArray(c)) return;
-      if (typeof c[0] === 'number') {
-        coords.push(c as number[]);
-        return;
-      }
-      for (const inner of c) walk(inner);
-    };
-    walk((geometry as { coordinates: unknown }).coordinates);
-    if (coords.length === 0) return null;
-    let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
-    for (const [lng, lat] of coords) {
-      if (lng < minLng) minLng = lng;
-      if (lat < minLat) minLat = lat;
-      if (lng > maxLng) maxLng = lng;
-      if (lat > maxLat) maxLat = lat;
-    }
-    return [minLng, minLat, maxLng, maxLat];
-  } catch {
-    return null;
-  }
 }
 
 export function useGlobalSearch(): UseGlobalSearchReturn {
@@ -79,8 +47,10 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
     setGlobalSearchResults,
     setGlobalSearchIsLoading,
     cacheDistinctValues,
-    clearGlobalSearch,
     fitBounds,
+    flyTo,
+    setSearchHighlight,
+    clearSearchHighlight,
   } = useMapStore(
     useShallow((s) => ({
       globalSearchConfig: s.globalSearchConfig,
@@ -95,8 +65,10 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
       setGlobalSearchResults: s.setGlobalSearchResults,
       setGlobalSearchIsLoading: s.setGlobalSearchIsLoading,
       cacheDistinctValues: s.cacheDistinctValues,
-      clearGlobalSearch: s.clearGlobalSearch,
       fitBounds: s.fitBounds,
+      flyTo: s.flyTo,
+      setSearchHighlight: s.setSearchHighlight,
+      clearSearchHighlight: s.clearSearchHighlight,
     })),
   );
 
@@ -168,6 +140,8 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
     if (query.length < minLen) {
       setGlobalSearchResults({});
       setGlobalSearchIsLoading(false);
+      // Emptying / clearing the search box is a manual clear — drop the highlight.
+      clearSearchHighlight();
       return;
     }
 
@@ -232,33 +206,45 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
   );
 
   const onResultClick = useCallback(
-    (_layerId: string, match: GlobalSearchFeatureMatch) => {
-      let box: BBox | null = match.bbox ?? null;
-      if (!box && match.geometry) {
-        try {
-          const computed = bbox(match.geometry as unknown as AllGeoJSON);
-          // @turf/bbox returns [minX, minY, maxX, maxY] (may include z — take first 4).
-          if (computed && computed.length >= 4) {
-            box = [computed[0], computed[1], computed[2], computed[3]] as BBox;
-          }
-        } catch {
-          box = fallbackBbox(match.geometry);
+    (layerId: string, match: GlobalSearchFeatureMatch) => {
+      const layer = layers.find((l) => l.id === layerId);
+
+      // Zoom to the clicked feature at an appropriate level: points fly to a
+      // sensible zoom (layer `zoomToLevel` or the util default), polygons/lines
+      // fit their extent capped at the layer's maxZoom. Shared with the
+      // SearchPanel path so both behave identically.
+      const instruction = zoomToFeature(
+        match.geometry as unknown as Record<string, unknown> | undefined,
+        {
+          layerMinZoom: layer?.minZoom,
+          layerMaxZoom: layer?.maxZoom,
+          pointZoom: layer?.zoomToLevel,
+        },
+      );
+      if (instruction) {
+        if (instruction.type === 'flyTo') {
+          flyTo(instruction.center, instruction.zoom);
+        } else {
+          fitBounds(instruction.bbox, {
+            padding: instruction.padding,
+            maxZoom: instruction.maxZoom,
+          });
         }
-      }
-      if (!box) return;
-
-      // For zero-area bboxes (points), expand a tiny window so fitBounds zooms in
-      // rather than snapping to the maxZoom-1 floor when min == max.
-      if (box[0] === box[2] && box[1] === box[3]) {
-        const pad = 0.01;
-        box = [box[0] - pad, box[1] - pad, box[2] + pad, box[3] + pad];
+      } else if (match.bbox) {
+        // No usable geometry but a precomputed bbox — fall back to fitting it.
+        fitBounds(match.bbox);
       }
 
-      fitBounds(box);
-      // Clear the dropdown after a successful click.
-      clearGlobalSearch();
+      // Highlight every match across all groups so the user sees the full set of
+      // matches, not just the one we zoomed to. Persists until the next search.
+      const geometries = Object.values(results).flatMap((group) =>
+        group.matches.map(
+          (m) => m.geometry as unknown as Record<string, unknown> | undefined,
+        ),
+      );
+      setSearchHighlight(featureCollectionFromGeometries(geometries));
     },
-    [fitBounds, clearGlobalSearch],
+    [layers, results, flyTo, fitBounds, setSearchHighlight],
   );
 
   if (!enabled) {

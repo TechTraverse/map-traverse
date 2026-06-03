@@ -27,6 +27,27 @@ export function combineGeometries(geometries: Record<string, unknown>[]): Record
   return { type: 'GeometryCollection', geometries };
 }
 
+/**
+ * Wraps a list of geometries into a GeoJSON FeatureCollection suitable for a
+ * map highlight source. Null/undefined geometries are skipped. Returns `null`
+ * if no usable geometries remain (so callers can clear the highlight).
+ */
+export function featureCollectionFromGeometries(
+  geometries: Array<Record<string, unknown> | null | undefined>,
+): GeoJSON.FeatureCollection | null {
+  const features: GeoJSON.Feature[] = [];
+  for (const geometry of geometries) {
+    if (!geometry) continue;
+    features.push({
+      type: 'Feature',
+      properties: {},
+      geometry: geometry as unknown as GeoJSON.Geometry,
+    });
+  }
+  if (features.length === 0) return null;
+  return { type: 'FeatureCollection', features };
+}
+
 export function bboxFromGeometry(geometry: Record<string, unknown>): BBox | null {
   const coords = extractCoords(geometry);
   if (coords.length === 0) return null;

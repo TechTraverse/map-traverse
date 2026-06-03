@@ -192,6 +192,7 @@ interface MapContainerProps {
   selectionLayerId?: string | null;
   selectionHighlightData?: GeoJSON.FeatureCollection | null;
   queryHighlightData?: GeoJSON.FeatureCollection | null;
+  searchHighlightData?: GeoJSON.FeatureCollection | null;
   boxDrawData?: GeoJSON.Feature | null;
   onSelectionClick?: (features: Array<{ id?: string | number; properties: Record<string, unknown>; geometry: Record<string, unknown> }>) => void;
   polygonDrawData?: GeoJSON.Feature | null;
@@ -202,7 +203,7 @@ interface MapContainerProps {
   onMapRef?: (ref: MapRef | null) => void;
 }
 
-export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeatureHover, measureMode, measurePoints = [], measureGeometryData, measurePointsData, onMeasureClick, selectionMode, selectionLayerId, selectionHighlightData, queryHighlightData, boxDrawData, onSelectionClick, polygonDrawData, polygonDrawPointsData, onPolygonDrawClick, onPolygonDrawComplete, externalMapRef, onMapRef }: MapContainerProps = {}) {
+export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeatureHover, measureMode, measurePoints = [], measureGeometryData, measurePointsData, onMeasureClick, selectionMode, selectionLayerId, selectionHighlightData, queryHighlightData, searchHighlightData, boxDrawData, onSelectionClick, polygonDrawData, polygonDrawPointsData, onPolygonDrawClick, onPolygonDrawComplete, externalMapRef, onMapRef }: MapContainerProps = {}) {
   const viewState = useMapStore((s) => s.viewState);
   const layers = useMapStore((s) => s.layers);
   const imageryLayers = useMapStore((s) => s.imageryLayers);
@@ -623,6 +624,29 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
             id="query-results-circle"
             type="circle"
             paint={{ 'circle-color': '#3b82f6', 'circle-radius': 5, 'circle-stroke-color': '#2563eb', 'circle-stroke-width': 1.5 }}
+            filter={['==', ['geometry-type'], 'Point']}
+          />
+        </Source>
+      )}
+
+      {/* Search match highlight — rendered on top of the other highlights */}
+      {searchHighlightData && (
+        <Source id="search-highlight" type="geojson" data={searchHighlightData}>
+          <Layer
+            id="search-highlight-fill"
+            type="fill"
+            paint={{ 'fill-color': '#f0abfc', 'fill-opacity': 0.35 }}
+            filter={['in', ['geometry-type'], ['literal', ['Polygon', 'MultiPolygon']]]}
+          />
+          <Layer
+            id="search-highlight-line"
+            type="line"
+            paint={{ 'line-color': '#d946ef', 'line-width': 3 }}
+          />
+          <Layer
+            id="search-highlight-circle"
+            type="circle"
+            paint={{ 'circle-color': '#f0abfc', 'circle-radius': 7, 'circle-stroke-color': '#d946ef', 'circle-stroke-width': 2.5 }}
             filter={['==', ['geometry-type'], 'Point']}
           />
         </Source>
