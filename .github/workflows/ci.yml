@@ -25,3 +25,41 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm test
+      # App + sidecar suites aren't part of `pnpm test` (lib only) — run them here.
+      - name: admin-app tests
+        run: cd apps/admin-app && pnpm exec vitest run
+      - name: ingest-service unit tests
+        run: pnpm --filter ingest-service test
+
+  ingest-integration:
+    runs-on: ubuntu-latest
+    services:
+      postgis:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_DB: gis
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - uses: pnpm/action-setup@v4
+      - name: Install GDAL (ogr2ogr/ogrinfo)
+        run: sudo apt-get update && sudo apt-get install -y gdal-bin
+      - run: pnpm install --frozen-lockfile
+      - name: ingest-service integration (real ogr2ogr + PostGIS)
+        run: cd apps/ingest-service && pnpm exec vitest run src/ingest.integration.test.ts
+        env:
+          INGEST_INTEGRATION: "1"
+          INGEST_DB_HOST: localhost
+          INGEST_DB_PORT: "5432"
+          INGEST_DB_NAME: gis
+          INGEST_DB_USER: postgres
+          INGEST_DB_PASSWORD: postgres
