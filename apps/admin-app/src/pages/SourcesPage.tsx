@@ -823,7 +823,7 @@ export function SourcesPage() {
   return (
     <div className="mapui:p-8">
       <div className="mapui:flex mapui:items-center mapui:justify-between mapui:mb-6">
-        <h1 className="mapui:text-2xl mapui:font-bold mapui:text-slate-900">Sources</h1>
+        <h1 className="mapui:text-2xl mapui:font-bold mapui:text-slate-900">External Sources</h1>
         <div className="mapui:flex mapui:gap-2">
           <button
             onClick={handleImport}

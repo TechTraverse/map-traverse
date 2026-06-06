@@ -4,6 +4,7 @@ import { ConfigWizardPage } from './pages/ConfigWizardPage';
 import { ConfigPreviewPage } from './pages/ConfigPreviewPage';
 import { VersionHistoryPage } from './pages/VersionHistoryPage';
 import { SourcesPage } from './pages/SourcesPage';
+import { MyDataPage } from './pages/MyDataPage';
 import { CustomizePage } from './pages/CustomizePage';
 import { LoginPage } from './pages/LoginPage';
 import { RequireAuth } from './components/RequireAuth';
@@ -37,17 +38,17 @@ function Header() {
         </Link>
         <div className="mapui:flex mapui:items-center mapui:gap-6">
           <nav className="mapui:flex mapui:gap-4 mapui:text-sm">
-          <Link
-              to="/customize"
-              className={`mapui:hover:text-slate-300 ${location.pathname === '/customize' ? 'mapui:text-white mapui:font-medium' : 'mapui:text-slate-400'}`}
+            <Link
+              to="/my-data"
+              className={`mapui:hover:text-slate-300 ${location.pathname.startsWith('/my-data') ? 'mapui:text-white mapui:font-medium' : 'mapui:text-slate-400'}`}
             >
-              Customize
+              My Data
             </Link>
             <Link
               to="/sources"
               className={`mapui:hover:text-slate-300 ${location.pathname === '/sources' ? 'mapui:text-white mapui:font-medium' : 'mapui:text-slate-400'}`}
             >
-              Sources
+              External Sources
             </Link>
             <Link
               to="/configs"
@@ -55,7 +56,12 @@ function Header() {
             >
               Maps
             </Link>
-
+            <Link
+              to="/customize"
+              className={`mapui:hover:text-slate-300 ${location.pathname === '/customize' ? 'mapui:text-white mapui:font-medium' : 'mapui:text-slate-400'}`}
+            >
+              Customize
+            </Link>
           </nav>
           {showLogout && (
             <UserMenu username={username ?? undefined} onLogout={() => logout()} />
@@ -81,6 +87,7 @@ export default function App() {
                   <Routes>
                     <Route path="/" element={<Navigate to="/configs" replace />} />
                     <Route path="/configs" element={<ConfigListPage />} />
+                    <Route path="/my-data" element={<MyDataPage />} />
                     <Route path="/sources" element={<SourcesPage />} />
                     <Route path="/customize" element={<CustomizePage />} />
                     <Route path="/configs/new" element={<ConfigWizardPage />} />
