@@ -173,6 +173,7 @@ export async function ingestFile(opts: IngestOptions): Promise<IngestResponse> {
     return {
       table: opts.table,
       schema: SCHEMA,
+      format: opts.format,
       geometryType: stats.geometryType,
       srid: stats.srid,
       featureCount: stats.featureCount,

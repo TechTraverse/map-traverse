@@ -46,6 +46,8 @@ export interface IngestRequestFields {
 export interface IngestResponse {
   table: string;
   schema: string;
+  /** The resolved format that was ingested (never `auto`). */
+  format: FormatId;
   geometryType: string | null;
   srid: number;
   featureCount: number;

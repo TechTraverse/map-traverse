@@ -92,6 +92,7 @@ describe.runIf(RUN)('ingest integration (real ogr2ogr + PostGIS)', () => {
       assertIngestResponse(res.body);
       expect(res.body.featureCount).toBe(3);
       expect(res.body.srid).toBe(4326);
+      expect(res.body.format).toBe(fields.format);
 
       const { rows } = await pool.query(`SELECT ST_SRID(geom) AS srid, count(*)::int AS n FROM uploads."${table}" GROUP BY 1`);
       expect(rows[0].srid).toBe(4326);

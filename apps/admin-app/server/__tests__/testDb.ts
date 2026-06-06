@@ -136,6 +136,24 @@ export async function mockDbModule(): Promise<TestPool> {
         ('carto-voyager', 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json', 'Voyager (Streets)', 'basemap')
       ON CONFLICT (source_id) DO NOTHING`,
 
+    `CREATE SCHEMA IF NOT EXISTS uploads`,
+
+    `CREATE TABLE IF NOT EXISTS map_admin.uploaded_datasets (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      table_name TEXT NOT NULL UNIQUE,
+      label TEXT,
+      original_filename TEXT NOT NULL,
+      format TEXT NOT NULL,
+      geometry_type TEXT,
+      srid INTEGER DEFAULT 4326,
+      feature_count INTEGER,
+      bbox JSONB,
+      crs_assumed BOOLEAN NOT NULL DEFAULT false,
+      created_by TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )`,
+
     // Session table — connect-pg-simple needs this. Note: production uses
     // createTableIfMissing which fires its own DDL; we pre-create here so
     // pg-mem doesn't have to parse it.

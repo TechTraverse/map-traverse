@@ -5,6 +5,7 @@ import type { IngestResponse, NeedsLayerResponse } from './types.js';
 const valid: IngestResponse = {
   table: 'parcels',
   schema: 'uploads',
+  format: 'shp-zip',
   geometryType: 'MULTIPOLYGON',
   srid: 4326,
   featureCount: 42,

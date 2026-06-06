@@ -12,6 +12,7 @@ export function isIngestResponse(v: unknown): v is IngestResponse {
   return (
     typeof o.table === 'string' &&
     o.schema === 'uploads' &&
+    typeof o.format === 'string' &&
     (typeof o.geometryType === 'string' || o.geometryType === null) &&
     typeof o.srid === 'number' &&
     typeof o.featureCount === 'number' &&
