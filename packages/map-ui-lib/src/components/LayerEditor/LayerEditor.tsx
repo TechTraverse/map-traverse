@@ -11,6 +11,8 @@ import { SearchFieldList } from '../SearchFieldEditor/SearchFieldList';
 import { PropertyDisplayEditor } from '../PropertyDisplayEditor/PropertyDisplayEditor';
 import { Cql2FilterEditor } from '../Cql2FilterEditor/Cql2FilterEditor';
 
+import { buildSourceOptionGroups } from './buildSourceOptionGroups';
+import type { SourceGroup } from './buildSourceOptionGroups';
 import { useOgcCollections } from '../../hooks/useOgcCollections';
 import { useOgcQueryables } from '../../hooks/useOgcQueryables';
 import { fetchFeatures, fetchDistinctValues } from '../../utils/ogcApi';
@@ -44,13 +46,25 @@ export interface LayerEditorProps {
   sections?: LayerEditorSection[];
   /** Whether to show basic config fields (ID, source, collection, etc.). Default true. */
   showBasicFields?: boolean;
+  /**
+   * Optional grouping for the source dropdown (e.g. "My Data" vs "External
+   * Sources"). When omitted, sources render as a flat list (backward-compatible).
+   */
+  availableSourceGroups?: SourceGroup[];
+  /**
+   * Optional predicate to filter the collection dropdown for the selected
+   * source — e.g. show only `uploads.*` collections when the My-Data source is
+   * picked. Receives the collection id and the currently selected source id.
+   */
+  collectionFilter?: (collectionId: string, sourceId: string) => boolean;
 }
 
 const inputClass =
   'mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
-export function LayerEditor({ value, onChange, availableSources, availableIcons, sections, showBasicFields = true }: LayerEditorProps) {
+export function LayerEditor({ value, onChange, availableSources, availableIcons, sections, showBasicFields = true, availableSourceGroups, collectionFilter }: LayerEditorProps) {
   const showSection = (s: LayerEditorSection) => !sections || sections.includes(s);
+  const sourceOptionGroups = buildSourceOptionGroups(availableSources, availableSourceGroups);
 
   // useRef (not state) so flipping it doesn't trigger a re-render
   const idManuallySet = useRef(value.id.length > 0);
@@ -81,6 +95,12 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons,
 
   // Fetch collections for the dropdown
   const { collections, loading: collectionsLoading } = useOgcCollections(baseUrl);
+
+  // Optionally narrow the collection list for the selected source (e.g. only
+  // uploads.* for the My-Data source). Pure UI filter; output is unchanged.
+  const visibleCollections = collectionFilter
+    ? collections.filter((c) => collectionFilter(c.id, value.sourceId))
+    : collections;
 
   // Fetch queryables when a collection is selected
   const { queryables, loading: queryablesLoading } = useOgcQueryables(baseUrl, collection);
@@ -183,23 +203,35 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons,
               className={inputClass}
             >
               <option value="">Select a source…</option>
-              {availableSources.map((src) => (
-                <option key={src.id} value={src.id}>
-                  {src.label ?? src.id}
-                </option>
-              ))}
+              {sourceOptionGroups.map((group, gi) =>
+                group.label === null ? (
+                  group.sources.map((src) => (
+                    <option key={src.id} value={src.id}>
+                      {src.label ?? src.id}
+                    </option>
+                  ))
+                ) : (
+                  <optgroup key={`${group.label}-${gi}`} label={group.label}>
+                    {group.sources.map((src) => (
+                      <option key={src.id} value={src.id}>
+                        {src.label ?? src.id}
+                      </option>
+                    ))}
+                  </optgroup>
+                ),
+              )}
             </select>
           </FormField>
 
           <FormField label="Collection" required>
-            {collections.length > 0 ? (
+            {visibleCollections.length > 0 ? (
               <select
                 value={value.collection}
                 onChange={(e) => update({ collection: e.target.value })}
                 className={inputClass}
               >
                 <option value="">Select a collection…</option>
-                {collections.map((c) => (
+                {visibleCollections.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.title ?? c.id}
                   </option>
