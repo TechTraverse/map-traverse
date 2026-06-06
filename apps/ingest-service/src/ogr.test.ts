@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildOgr2OgrArgs, buildPgConn, buildOgrInfoArgs, type OgrBuildOptions } from './ogr.js';
+import { buildOgr2OgrArgs, buildPgConn, buildOgrInfoArgs, isValidSrs, isValidGeomField, type OgrBuildOptions } from './ogr.js';
 
 const base: OgrBuildOptions = {
   schema: 'uploads',
@@ -91,6 +91,42 @@ describe('buildOgr2OgrArgs — layer selection', () => {
   it('omits the positional layer when none given', () => {
     const args = buildOgr2OgrArgs({ ...base, format: 'gpkg', srcPath: '/tmp/x.gpkg' });
     expect(args[args.indexOf('/tmp/x.gpkg') + 1]).toBe('-nln');
+  });
+});
+
+describe('isValidSrs (SSRF guard for -s_srs)', () => {
+  it('accepts authority-coded CRS', () => {
+    for (const s of ['EPSG:4326', 'EPSG:2232', 'ESRI:102008', 'OGC:CRS84', 'CRS84']) {
+      expect(isValidSrs(s)).toBe(true);
+    }
+  });
+
+  it('rejects virtual-filesystem paths and junk', () => {
+    for (const s of [
+      '/vsicurl/http://attacker/evil.prj',
+      '/vsizip/x.zip',
+      'http://attacker/evil.prj',
+      '+proj=longlat',
+      'EPSG:4326 /vsicurl/x',
+      '../../etc/passwd',
+    ]) {
+      expect(isValidSrs(s)).toBe(false);
+    }
+  });
+});
+
+describe('isValidGeomField', () => {
+  it('accepts column names and comma lists', () => {
+    expect(isValidGeomField('geom')).toBe(true);
+    expect(isValidGeomField('the_geom')).toBe(true);
+    expect(isValidGeomField('geom,wkt,the_geom,geometry')).toBe(true);
+  });
+
+  it('rejects injection-ish values', () => {
+    expect(isValidGeomField('geom; DROP')).toBe(false);
+    expect(isValidGeomField('1geom')).toBe(false);
+    expect(isValidGeomField('geom=x')).toBe(false);
+    expect(isValidGeomField('')).toBe(false);
   });
 });
 

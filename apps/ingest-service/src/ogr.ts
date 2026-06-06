@@ -79,6 +79,23 @@ export function buildOgrInfoArgs(srcPath: string): string[] {
   return ['-json', '-ro', '-so', srcPath];
 }
 
+/**
+ * Validate a caller-supplied source SRS before it reaches `-s_srs`. GDAL would
+ * otherwise happily treat an arbitrary string as a virtual-filesystem path
+ * (e.g. `/vsicurl/http://attacker/evil.prj`) — an SSRF vector. Restrict to
+ * authority-coded CRS forms.
+ */
+const SRS_RE = /^(?:(?:EPSG|ESRI|IAU|IGNF|SR-ORG):[0-9A-Za-z]+|OGC:CRS84|CRS84)$/i;
+export function isValidSrs(srs: string): boolean {
+  return SRS_RE.test(srs.trim());
+}
+
+/** Validate a CSV WKT geometry column name (or comma-separated candidates). */
+const GEOM_FIELD_RE = /^[A-Za-z_][A-Za-z0-9_]*(?:\s*,\s*[A-Za-z_][A-Za-z0-9_]*)*$/;
+export function isValidGeomField(name: string): boolean {
+  return GEOM_FIELD_RE.test(name.trim());
+}
+
 /** Compose the PG connection string ogr2ogr understands from discrete fields. */
 export function buildPgConn(cfg: {
   host: string;

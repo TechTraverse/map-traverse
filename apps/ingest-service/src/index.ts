@@ -10,6 +10,7 @@ import { execFile } from 'child_process';
 import { createPool } from './db.js';
 import { resolveFormat } from './formats.js';
 import { isValidIdentifier } from './identifiers.js';
+import { isValidSrs, isValidGeomField } from './ogr.js';
 import { Semaphore, SemaphoreBusyError } from './semaphore.js';
 import {
   ingestFile,
@@ -102,6 +103,17 @@ app.post('/ingest', upload.single('file'), async (req, res) => {
       return;
     }
 
+    const srs = field(req, 'srs');
+    if (srs && !isValidSrs(srs)) {
+      res.status(400).json({ error: 'invalid srs (expected an authority code like EPSG:2232)' });
+      return;
+    }
+    const geomField = field(req, 'geomField');
+    if (geomField && !isValidGeomField(geomField)) {
+      res.status(400).json({ error: 'invalid geomField (expected a column name)' });
+      return;
+    }
+
     const head = await readHead(filePath);
     const format = resolveFormat(requested, req.file.originalname, head);
 
@@ -111,8 +123,8 @@ app.post('/ingest', upload.single('file'), async (req, res) => {
         filePath,
         format,
         table,
-        srs: field(req, 'srs'),
-        geomField: field(req, 'geomField'),
+        srs,
+        geomField,
         layer: field(req, 'layer'),
       }),
     );

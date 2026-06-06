@@ -52,38 +52,44 @@ export interface DataRouteDeps {
  * collections list reflects the change. Returns whether the refresh succeeded.
  */
 async function refreshTipg(pool: Pool): Promise<boolean> {
-  const result = await pool.query(
-    'SELECT id, url, metadata FROM map_admin.ogc_sources WHERE source_id = $1',
-    [TIPG_SOURCE_ID],
-  );
-  if (result.rows.length === 0) return false;
-  const { id, url, metadata } = result.rows[0] as {
-    id: string;
-    url: string;
-    metadata: { refreshUrl?: string } | null;
-  };
-
-  let refreshed = false;
-  const refreshUrl = metadata?.refreshUrl;
-  if (refreshUrl) {
-    try {
-      await fetch(refreshUrl, { signal: AbortSignal.timeout(15_000) });
-      refreshed = true;
-    } catch {
-      // tipg refresh may be down — fall through and still try to re-inspect.
-    }
-  }
-  // Re-inspect so the cached collection list (used by the layer editor) updates.
+  // Entirely best-effort: the data is already loaded/dropped by the time we get
+  // here, so a failure (incl. the initial DB lookup) must never fail the request.
   try {
-    const inspected = await inspectSource(url);
-    await pool.query(
-      'UPDATE map_admin.ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2',
-      [JSON.stringify(inspected), id],
+    const result = await pool.query(
+      'SELECT id, url, metadata FROM map_admin.ogc_sources WHERE source_id = $1',
+      [TIPG_SOURCE_ID],
     );
+    if (result.rows.length === 0) return false;
+    const { id, url, metadata } = result.rows[0] as {
+      id: string;
+      url: string;
+      metadata: { refreshUrl?: string } | null;
+    };
+
+    let refreshed = false;
+    const refreshUrl = metadata?.refreshUrl;
+    if (refreshUrl) {
+      try {
+        await fetch(refreshUrl, { signal: AbortSignal.timeout(15_000) });
+        refreshed = true;
+      } catch {
+        // tipg refresh may be down — fall through and still try to re-inspect.
+      }
+    }
+    // Re-inspect so the cached collection list (used by the layer editor) updates.
+    try {
+      const inspected = await inspectSource(url);
+      await pool.query(
+        'UPDATE map_admin.ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2',
+        [JSON.stringify(inspected), id],
+      );
+    } catch {
+      // non-fatal — the data is already loaded
+    }
+    return refreshed;
   } catch {
-    // non-fatal — the data is already loaded
+    return false;
   }
-  return refreshed;
 }
 
 /** Derive the tipg items preview URL for an uploaded collection, if known. */
@@ -227,8 +233,16 @@ export function registerDataRoutes({ app, pool, requireAuth }: DataRouteDeps): v
 
       const ingest = payload as unknown as IngestResult;
       const bbox = ingest.bbox ? JSON.stringify(ingest.bbox) : null;
-      const isReplace = existing.rows.length > 0;
-      const saved = isReplace
+      // Re-check existence on fresh data: the ingest above can take minutes, so
+      // the earlier `existing` snapshot may be stale. Decide INSERT vs UPDATE now.
+      const current = await pool.query(
+        'SELECT id FROM map_admin.uploaded_datasets WHERE table_name = $1',
+        [table],
+      );
+      const isReplace = current.rows.length > 0;
+      let saved;
+      try {
+        saved = isReplace
         ? await pool.query(
             `UPDATE map_admin.uploaded_datasets SET
                label = $2, original_filename = $3, format = $4, geometry_type = $5,
@@ -250,6 +264,14 @@ export function registerDataRoutes({ app, pool, requireAuth }: DataRouteDeps): v
               req.session.username ?? null,
             ],
           );
+      } catch (dbErr) {
+        // Lost a race with a concurrent upload of the same name (UNIQUE table_name).
+        if ((dbErr as { code?: string }).code === '23505') {
+          res.status(409).json({ error: `A dataset named "${table}" already exists`, table, conflict: true });
+          return;
+        }
+        throw dbErr;
+      }
 
       const tipgRefreshed = await refreshTipg(pool);
       res.status(201).json({
