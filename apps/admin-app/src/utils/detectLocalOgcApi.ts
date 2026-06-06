@@ -6,6 +6,9 @@
 
 import { inspectSourceClientSide } from './inspectSource';
 
+/** Source id of the auto-detected local tipg instance that backs "My Data". */
+export const TIPG_LOCAL_SOURCE_ID = 'tipg-local';
+
 export type DetectResult =
   | 'added'
   | 'skipped-existing-url'
@@ -71,7 +74,7 @@ export async function detectLocalOgcApi({ fetch, origin }: Deps): Promise<Detect
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        source_id: 'tipg-local',
+        source_id: TIPG_LOCAL_SOURCE_ID,
         url: candidateUrl,
         label: 'Local OGC API',
         source_type: 'features',

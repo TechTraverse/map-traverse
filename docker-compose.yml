@@ -28,7 +28,7 @@ services:
       DATABASE_URL: "postgresql://postgres:postgres@postgis:5432/gis"
       TIPG_DB_MAX_CONN_SIZE: "10"
       TIPG_SET_MVT_LAYERNAME: "true"
-      TIPG_DB_SCHEMAS: '${TIPG_DB_SCHEMAS:-["example"]}'
+      TIPG_DB_SCHEMAS: '${TIPG_DB_SCHEMAS:-["example","uploads"]}'
       TIPG_CORS_ORIGIN: '*'
       TIPG_ROOT_PATH: /ogc
       TIPG_DEBUG: 'TRUE'
@@ -55,6 +55,28 @@ services:
       - ./GISData:/GISData:ro
     command: sh /scripts/seed.sh
 
+  ingest:
+    build:
+      context: .
+      dockerfile: apps/ingest-service/Dockerfile
+    container_name: storybook-components-ingest
+    depends_on:
+      postgis:
+        condition: service_healthy
+    environment:
+      INGEST_DB_HOST: postgis
+      INGEST_DB_PORT: 5432
+      INGEST_DB_NAME: gis
+      INGEST_DB_USER: postgres
+      INGEST_DB_PASSWORD: postgres
+      INGEST_MAX_MB: "100"
+      INGEST_MAX_CONCURRENCY: "2"
+      PORT: 8081
+    # Internal-only service (not exposed through the gateway). Expose the port
+    # locally for debugging if needed.
+    ports:
+      - "8081:8081"
+
   admin-app:
     build:
       context: .
@@ -77,6 +99,8 @@ services:
         condition: service_healthy
       seed:
         condition: service_completed_successfully
+      ingest:
+        condition: service_started
     environment:
       DB_HOST: postgis
       DB_PORT: 5432
@@ -87,6 +111,8 @@ services:
       SESSION_SECRET: change-me-in-production
       SPA_BASE_PATH: /admin/
       CORS_ORIGINS: http://localhost:3000,http://localhost
+      INGEST_SERVICE_URL: http://ingest:8081
+      MAX_UPLOAD_MB: "100"
       # Set ADMIN_USERNAME and ADMIN_PASSWORD_HASH to enable authentication
       # ADMIN_USERNAME: admin
       # ADMIN_PASSWORD_HASH: <bcrypt hash>

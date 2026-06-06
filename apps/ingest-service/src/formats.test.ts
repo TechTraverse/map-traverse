@@ -1,0 +1,74 @@
+import { describe, it, expect } from 'vitest';
+import { formatFromExtension, sniffMagicBytes, resolveFormat, extname } from './formats.js';
+
+const zip = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0, 0]);
+// "SQLite format 3" + NUL — the GeoPackage/SQLite file header.
+const sqlite = Uint8Array.from([0x53, 0x51, 0x4c, 0x69, 0x74, 0x65, 0x20, 0x66, 0x6f, 0x72, 0x6d, 0x61, 0x74, 0x20, 0x33, 0x00]);
+const fgb = new Uint8Array([0x66, 0x67, 0x62, 0x03, 0x66, 0x67, 0x62, 0x01]);
+const geojson = new Uint8Array(Buffer.from('{"type":"FeatureCollection"}', 'utf8'));
+const kml = new Uint8Array(Buffer.from('<?xml version="1.0"?><kml>', 'utf8'));
+const csv = new Uint8Array(Buffer.from('id,name,geom\n1,a,POINT(0 0)\n', 'utf8'));
+
+describe('extname / formatFromExtension', () => {
+  it('extracts lowercased extensions', () => {
+    expect(extname('Parcels.GeoJSON')).toBe('.geojson');
+    expect(extname('noext')).toBe('');
+  });
+
+  it('classifies known extensions', () => {
+    expect(formatFromExtension('a.geojson')).toBe('geojson');
+    expect(formatFromExtension('a.json')).toBe('geojson');
+    expect(formatFromExtension('a.csv')).toBe('csv');
+    expect(formatFromExtension('a.kml')).toBe('kml');
+    expect(formatFromExtension('a.zip')).toBe('shp-zip');
+    expect(formatFromExtension('a.fgb')).toBe('fgb');
+    expect(formatFromExtension('a.gpkg')).toBe('gpkg');
+  });
+
+  it('returns null for unknown extensions', () => {
+    expect(formatFromExtension('a.exe')).toBeNull();
+    expect(formatFromExtension('a.tiff')).toBeNull();
+  });
+});
+
+describe('sniffMagicBytes', () => {
+  it('accepts each format with matching magic bytes', () => {
+    expect(sniffMagicBytes('shp-zip', zip)).toBe(true);
+    expect(sniffMagicBytes('gpkg', sqlite)).toBe(true);
+    expect(sniffMagicBytes('fgb', fgb)).toBe(true);
+    expect(sniffMagicBytes('geojson', geojson)).toBe(true);
+    expect(sniffMagicBytes('kml', kml)).toBe(true);
+    expect(sniffMagicBytes('csv', csv)).toBe(true);
+  });
+
+  it('rejects mismatched magic bytes', () => {
+    expect(sniffMagicBytes('gpkg', zip)).toBe(false); // zip claiming to be gpkg
+    expect(sniffMagicBytes('shp-zip', sqlite)).toBe(false);
+    expect(sniffMagicBytes('geojson', zip)).toBe(false); // binary claiming geojson
+    expect(sniffMagicBytes('fgb', geojson)).toBe(false);
+    expect(sniffMagicBytes('geojson', new Uint8Array(Buffer.from('not json', 'utf8')))).toBe(false);
+  });
+});
+
+describe('resolveFormat', () => {
+  it('detects via extension when format=auto', () => {
+    expect(resolveFormat('auto', 'data.geojson', geojson)).toBe('geojson');
+    expect(resolveFormat('auto', 'data.gpkg', sqlite)).toBe('gpkg');
+  });
+
+  it('accepts an explicit format that matches', () => {
+    expect(resolveFormat('shp-zip', 'data.zip', zip)).toBe('shp-zip');
+  });
+
+  it('rejects unsupported extensions', () => {
+    expect(() => resolveFormat('auto', 'data.tiff', zip)).toThrow(/Unsupported/);
+  });
+
+  it('rejects when explicit format contradicts the extension', () => {
+    expect(() => resolveFormat('gpkg', 'data.zip', zip)).toThrow(/does not match/);
+  });
+
+  it('rejects when contents do not match the format', () => {
+    expect(() => resolveFormat('gpkg', 'data.gpkg', zip)).toThrow(/do not look like/);
+  });
+});

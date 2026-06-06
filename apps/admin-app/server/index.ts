@@ -8,6 +8,7 @@ import connectPgSimple from 'connect-pg-simple';
 import bcrypt from 'bcryptjs';
 import { pool, initDb } from './db.js';
 import { inspectSource, normalizeUrl } from './inspect.js';
+import { registerDataRoutes } from './dataRoutes.js';
 import { detectTileSourceType, appendAuth, authHeaders } from '@ogc-maps/storybook-components/hooks';
 import type { SourceAuth } from '@ogc-maps/storybook-components/hooks';
 import { safeValidateMapConfig } from '@ogc-maps/storybook-components/schemas';
@@ -189,6 +190,9 @@ app.get('/api/health', async (_req, res) => {
     res.status(503).json({ status: 'error' });
   }
 });
+
+// --- My Data (GIS uploads) endpoints ---
+registerDataRoutes({ app, pool, requireAuth });
 
 const NAME_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const RESERVED_CONFIG_NAMES = new Set(['admin', 'api', 'ogc']);

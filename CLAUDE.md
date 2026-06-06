@@ -6,7 +6,7 @@
 - **Build**: `pnpm build` (All), `pnpm build:lib`, `pnpm build:app`
 - **Test**: `pnpm test`
 - **Test (single)**: `cd packages/map-ui-lib && pnpm exec vitest run path/to/file.test.ts`
-- **Verify**: `pnpm verify` (runs build + lib test — **must pass before declaring any task done**). NOTE: `pnpm verify` only runs the lib suite. For full pre-merge coverage also run `cd apps/admin-app && pnpm exec vitest run` and `cd apps/map-client && pnpm exec vitest run`.
+- **Verify**: `pnpm verify` (runs build + lib test — **must pass before declaring any task done**). NOTE: `pnpm verify` only runs the lib suite. For full pre-merge coverage also run `cd apps/admin-app && pnpm exec vitest run`, `cd apps/map-client && pnpm exec vitest run`, and `pnpm --filter ingest-service test`. The ingest sidecar's live integration suite (`apps/ingest-service/src/ingest.integration.test.ts`) only runs with `INGEST_INTEGRATION=1` plus a reachable PostGIS and GDAL on PATH (CI runs it as the `ingest-integration` job).
 - **Coverage**: `pnpm test:coverage` (lib only); per-app: `cd apps/<app> && pnpm exec vitest run --coverage`.
 - **Docker**: `docker compose up -d` (Start all services), `docker restart storybook-components-tipg` (Refresh tipg)
 - **Dev URLs**: gateway `:80`, map-client `:3000`, admin-app `:3001`, tipg `:8000`, postgis `:5432`

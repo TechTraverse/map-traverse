@@ -151,6 +151,43 @@ export const ManyLayers: Story = {
   },
 };
 
+export const GroupedSources: Story = {
+  render: () => {
+    const [layers, setLayers] = useState<LayerConfig[]>([]);
+    const [draft, setDraft] = useState<LayerConfig | null>({
+      id: '', sourceId: '', collection: '', label: 'New Layer', visible: true, dataMode: 'vector-tiles',
+    });
+    const groupedSources: OgcApiSource[] = [
+      { id: 'tipg-local', url: 'http://localhost/ogc/', label: 'My Data', tileMatrixSetId: 'WebMercatorQuad' },
+      { id: 'county-gis', url: 'https://gis.example.com/ogc/', label: 'County GIS', tileMatrixSetId: 'WebMercatorQuad' },
+      { id: 'state-portal', url: 'https://state.example.com/ogc/', label: 'State Portal', tileMatrixSetId: 'WebMercatorQuad' },
+    ];
+    return (
+      <div className="mapui:max-w-lg mapui:p-4">
+        <p className="mapui:m-0 mapui:mb-3 mapui:text-xs mapui:text-slate-500">
+          The Source dropdown groups uploaded datasets ("My Data") apart from remote
+          "External Sources". For the My-Data source, the collection list is filtered
+          to <code>uploads.*</code>.
+        </p>
+        <LayerList
+          layers={layers}
+          onChange={setLayers}
+          availableSources={groupedSources}
+          draftLayer={draft}
+          onDraftChange={setDraft}
+          availableSourceGroups={[
+            { id: 'my-data', label: 'My Data', sourceIds: ['tipg-local'] },
+            { id: 'external', label: 'External Sources', sourceIds: ['county-gis', 'state-portal'] },
+          ]}
+          collectionFilter={(collectionId, sourceId) =>
+            sourceId === 'tipg-local' ? collectionId.startsWith('uploads.') : true
+          }
+        />
+      </div>
+    );
+  },
+};
+
 export const ControlledDraft: Story = {
   render: () => {
     const [layers, setLayers] = useState<LayerConfig[]>(sampleLayers);

@@ -26,6 +26,11 @@ echo "Public-schema normalize function installed!"
 echo "Creating example schema..."
 psql -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" -c "CREATE SCHEMA IF NOT EXISTS example;"
 
+# "My Data" uploads land here. Created up front so tipg discovers it at boot
+# (TIPG_DB_SCHEMAS includes "uploads"); the ingest sidecar fills it at runtime.
+echo "Creating uploads schema..."
+psql -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" -c "CREATE SCHEMA IF NOT EXISTS uploads;"
+
 if [ "$DATA_EXISTS" = "t" ]; then
   echo "Example data already exists. Skipping example seed."
 else

@@ -170,4 +170,40 @@ export async function initDb(): Promise<void> {
       ('carto-voyager', 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json', 'Voyager (Streets)', 'basemap')
     ON CONFLICT (source_id) DO NOTHING
   `);
+
+  // Schema that holds user-uploaded GIS datasets ("My Data"). Pre-created so
+  // tipg (which discovers schemas at boot via TIPG_DB_SCHEMAS) sees it even when
+  // empty. The ingest sidecar writes tables here; tipg serves them as
+  // `uploads.<table>` collections under the auto-detected `tipg-local` source.
+  await pool.query(`CREATE SCHEMA IF NOT EXISTS uploads`);
+
+  // Tracking metadata for uploaded datasets. The PostGIS table in `uploads` is
+  // the source of truth for the data itself; this row records provenance and the
+  // detected geometry stats so "My Data" lists fast without round-tripping tipg.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS map_admin.uploaded_datasets (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      table_name TEXT NOT NULL UNIQUE,
+      label TEXT,
+      original_filename TEXT NOT NULL,
+      format TEXT NOT NULL,
+      geometry_type TEXT,
+      srid INTEGER DEFAULT 4326,
+      feature_count INTEGER,
+      bbox JSONB,
+      crs_assumed BOOLEAN NOT NULL DEFAULT false,
+      created_by TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+
+  // Enforce safe snake_case identifiers at the DB layer too (defense in depth).
+  await pool.query(`
+    DO $$ BEGIN
+      ALTER TABLE map_admin.uploaded_datasets ADD CONSTRAINT uploaded_datasets_table_name_slug_check
+        CHECK (table_name ~ '^[a-z_][a-z0-9_]*$');
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END $$
+  `);
 }

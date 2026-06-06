@@ -34,6 +34,7 @@ import type {
   SourceAuth,
   GlobalSearchConfig,
   InfoConfig,
+  SourceGroup,
 } from '@ogc-maps/storybook-components';
 import { ImageUploadField } from '../components/ImageUploadField';
 import { MapPreview } from '../components/MapPreview';
@@ -41,6 +42,7 @@ import { JsonConfigEditor } from '../components/JsonConfigEditor';
 import { useQueryablesByLayer } from '../hooks/useQueryablesByLayer';
 import { prettifyZodIssue } from '../utils/prettifyZodPath';
 import { lintMapConfig, type WizardLintIssue } from '../utils/lintMapConfig';
+import { TIPG_LOCAL_SOURCE_ID } from '../utils/detectLocalOgcApi';
 
 const DEFAULT_GLOBAL_SEARCH: GlobalSearchConfig = {
   enabled: true,
@@ -524,6 +526,25 @@ export function ConfigWizardPage() {
     ];
   }, [sources, savedFeatureSources]);
 
+  // Group the layer-editor source picker into "My Data" (the local tipg source,
+  // which serves uploaded datasets) vs "External Sources" (everything else).
+  const featureSourceGroups = useMemo<SourceGroup[]>(() => {
+    const myDataIds = allFeatureSourcesForDropdown
+      .filter(s => s.id === TIPG_LOCAL_SOURCE_ID)
+      .map(s => s.id);
+    const externalIds = allFeatureSourcesForDropdown
+      .filter(s => s.id !== TIPG_LOCAL_SOURCE_ID)
+      .map(s => s.id);
+    const groups: SourceGroup[] = [];
+    if (myDataIds.length) groups.push({ id: 'my-data', label: 'My Data', sourceIds: myDataIds });
+    if (externalIds.length) groups.push({ id: 'external', label: 'External Sources', sourceIds: externalIds });
+    return groups;
+  }, [allFeatureSourcesForDropdown]);
+
+  // For the My-Data source, only offer uploaded (`uploads.*`) collections.
+  const layerCollectionFilter = (collectionId: string, sourceId: string) =>
+    sourceId === TIPG_LOCAL_SOURCE_ID ? collectionId.startsWith('uploads.') : true;
+
   // Wrapper around setLayers that keeps sources[] in sync:
   // auto-adds newly referenced feature sources from the catalog.
   // Does NOT auto-prune — pruning caused sources already embedded in the config
@@ -811,6 +832,8 @@ export function ConfigWizardPage() {
               layers={layers}
               onChange={handleLayersChange}
               availableSources={allFeatureSourcesForDropdown}
+              availableSourceGroups={featureSourceGroups}
+              collectionFilter={layerCollectionFilter}
               availableIcons={availableIcons}
               sections={['style', 'legend']}
               draftLayer={layerDraft}
