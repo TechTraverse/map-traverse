@@ -16,8 +16,10 @@ COPY apps/ingest-service/ ./apps/ingest-service/
 RUN pnpm --filter ingest-service build
 
 # Stage 2: Runtime — GDAL base (ogr2ogr/ogrinfo on PATH) + Node.
+# The GDAL Alpine image's `npm` package does NOT bundle corepack (that ships only
+# with the official Node images), so install pnpm directly via npm.
 FROM ghcr.io/osgeo/gdal:alpine-normal-latest AS runtime
-RUN apk add --no-cache nodejs npm && corepack enable
+RUN apk add --no-cache nodejs npm && npm install -g pnpm@10.29.1
 WORKDIR /app
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
