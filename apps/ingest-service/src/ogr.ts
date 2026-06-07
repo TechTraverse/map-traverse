@@ -57,13 +57,25 @@ export function buildOgr2OgrArgs(opts: OgrBuildOptions): string[] {
     '-nln', dest,
     '-nlt', 'PROMOTE_TO_MULTI',
     '-lco', 'GEOMETRY_NAME=geom',
-    '-lco', 'FID=gid',
+    // Use `ogc_fid` (not `gid`) for the generated FID column. Exported files
+    // routinely carry their own `gid` attribute; when GDAL types it as a
+    // non-Integer (GeoPackage→String, Shapefile→Real, KML→String) ogr2ogr
+    // aborts with "Wrong field type for gid". `ogc_fid` is GDAL's own PG
+    // default and won't collide with user attributes, while still giving tipg
+    // a usable integer id.
+    '-lco', 'FID=ogc_fid',
     '-lco', `SCHEMA=${opts.schema}`,
     '-lco', 'SPATIAL_INDEX=GIST',
     '-t_srs', 'EPSG:4326',
     '-overwrite',
     '--config', 'PG_USE_COPY', 'YES',
   );
+
+  // Self-repair a missing/short .shx sidecar so a slightly-malformed shapefile
+  // still loads instead of failing outright.
+  if (opts.format === 'shp-zip') {
+    args.push('--config', 'SHAPE_RESTORE_SHX', 'YES');
+  }
 
   // Only assert a source SRS when the file doesn't carry its own — otherwise we
   // let GDAL read the native CRS and just reproject with -t_srs.
