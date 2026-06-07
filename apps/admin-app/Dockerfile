@@ -6,6 +6,9 @@ WORKDIR /app
 
 # Copy workspace manifest files for dependency resolution
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json .npmrc ./
+# Patched deps referenced by root package.json (pnpm patchedDependencies) must
+# be present before install, or `pnpm install --frozen-lockfile` errors.
+COPY patches/ ./patches/
 COPY packages/map-ui-lib/package.json ./packages/map-ui-lib/
 COPY apps/admin-app/package.json ./apps/admin-app/
 COPY apps/map-client/package.json ./apps/map-client/
@@ -34,6 +37,7 @@ WORKDIR /app
 
 # Copy workspace manifest files
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
+COPY patches/ ./patches/
 COPY packages/map-ui-lib/package.json ./packages/map-ui-lib/
 COPY apps/admin-app/package.json ./apps/admin-app/
 
