@@ -21,11 +21,13 @@ describe('buildOgr2OgrArgs — common invariants', () => {
     expect(valueAfter(buildOgr2OgrArgs(base), '-t_srs')).toBe('EPSG:4326');
   });
 
-  it('targets schema.table with the project geom/gid conventions', () => {
+  it('targets schema.table with the project geom/fid conventions', () => {
     const args = buildOgr2OgrArgs(base);
     expect(valueAfter(args, '-nln')).toBe('uploads.parcels');
     expect(args).toContain('GEOMETRY_NAME=geom');
-    expect(args).toContain('FID=gid');
+    // FID column must not collide with a user-supplied `gid` attribute.
+    expect(args).toContain('FID=ogc_fid');
+    expect(args).not.toContain('FID=gid');
     expect(args).toContain('SCHEMA=uploads');
     expect(args).toContain('SPATIAL_INDEX=GIST');
     expect(args).toContain('PROMOTE_TO_MULTI');
@@ -44,6 +46,20 @@ describe('buildOgr2OgrArgs — common invariants', () => {
     for (const a of args) {
       expect(a).not.toMatch(/^[;&|`$()]/);
     }
+  });
+});
+
+describe('buildOgr2OgrArgs — shapefile .shx self-repair', () => {
+  it('adds SHAPE_RESTORE_SHX for shapefile zips', () => {
+    const args = buildOgr2OgrArgs({ ...base, format: 'shp-zip' });
+    const i = args.indexOf('SHAPE_RESTORE_SHX');
+    expect(i).toBeGreaterThan(-1);
+    expect(args[i - 1]).toBe('--config');
+    expect(args[i + 1]).toBe('YES');
+  });
+
+  it('does not add SHAPE_RESTORE_SHX for non-shapefile formats', () => {
+    expect(buildOgr2OgrArgs({ ...base, format: 'gpkg' })).not.toContain('SHAPE_RESTORE_SHX');
   });
 });
 

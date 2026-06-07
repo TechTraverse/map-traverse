@@ -8,7 +8,7 @@ import fs from 'fs/promises';
 import os from 'os';
 import { execFile } from 'child_process';
 import { createPool } from './db.js';
-import { resolveFormat } from './formats.js';
+import { resolveFormat, FORMATS } from './formats.js';
 import { isValidIdentifier } from './identifiers.js';
 import { isValidSrs, isValidGeomField } from './ogr.js';
 import { Semaphore, SemaphoreBusyError } from './semaphore.js';
@@ -55,6 +55,21 @@ async function readHead(filePath: string, n = 512): Promise<Uint8Array> {
   }
 }
 
+/**
+ * Multer saves uploads under a random, EXTENSIONLESS name. GDAL detects some
+ * drivers purely from the extension — CSV has no magic bytes, so `ogrinfo` /
+ * `ogr2ogr` reject an extensionless CSV with "not recognized as being in a
+ * supported file format". Rename the temp file to carry the canonical extension
+ * for its resolved format and return the new path (caller must clean it up).
+ */
+async function ensureExtension(filePath: string, format: FormatId): Promise<string> {
+  const ext = FORMATS[format].extensions[0];
+  if (filePath.toLowerCase().endsWith(ext)) return filePath;
+  const withExt = `${filePath}${ext}`;
+  await fs.rename(filePath, withExt);
+  return withExt;
+}
+
 function field(req: express.Request, name: keyof IngestRequestFields): string | undefined {
   const v = (req.body as Record<string, unknown>)?.[name];
   return typeof v === 'string' && v.length > 0 ? v : undefined;
@@ -66,16 +81,18 @@ app.post('/layers', upload.single('file'), async (req, res) => {
     res.status(400).json({ error: 'file is required' });
     return;
   }
+  let srcPath = req.file.path;
   try {
     const requested = (field(req, 'format') ?? 'auto') as FormatId | 'auto';
-    const head = await readHead(req.file.path);
-    resolveFormat(requested, req.file.originalname, head); // validate type
-    const { layers } = await inspectSource(req.file.path);
+    const head = await readHead(srcPath);
+    const format = resolveFormat(requested, req.file.originalname, head); // validate type
+    srcPath = await ensureExtension(srcPath, format);
+    const { layers } = await inspectSource(srcPath);
     res.json({ layers });
   } catch (err) {
     res.status(400).json({ error: (err as Error).message });
   } finally {
-    await fs.rm(req.file.path, { force: true }).catch(() => undefined);
+    await fs.rm(srcPath, { force: true }).catch(() => undefined);
   }
 });
 
@@ -85,7 +102,7 @@ app.post('/ingest', upload.single('file'), async (req, res) => {
     res.status(400).json({ error: 'file is required' });
     return;
   }
-  const filePath = req.file.path;
+  let filePath = req.file.path;
   try {
     const table = field(req, 'table');
     if (!table || !isValidIdentifier(table)) {
@@ -116,6 +133,7 @@ app.post('/ingest', upload.single('file'), async (req, res) => {
 
     const head = await readHead(filePath);
     const format = resolveFormat(requested, req.file.originalname, head);
+    filePath = await ensureExtension(filePath, format);
 
     const result = await semaphore.run(() =>
       ingestFile({

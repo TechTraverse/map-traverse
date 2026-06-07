@@ -32,6 +32,9 @@
       "jszip": "^3.10.1",
       "lodash": "^4.18.0",
       "tmp": "^0.2.6"
+    },
+    "patchedDependencies": {
+      "@mapbox/shp-write": "patches/@mapbox__shp-write.patch"
     }
   }
 }
