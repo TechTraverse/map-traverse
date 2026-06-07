@@ -60,7 +60,7 @@ function field(req: express.Request, name: keyof IngestRequestFields): string | 
   return typeof v === 'string' && v.length > 0 ? v : undefined;
 }
 
-// GET /layers — multi-layer preflight: list layers in an uploaded file.
+// POST /layers — multi-layer preflight: list layers in an uploaded file.
 app.post('/layers', upload.single('file'), async (req, res) => {
   if (!req.file) {
     res.status(400).json({ error: 'file is required' });

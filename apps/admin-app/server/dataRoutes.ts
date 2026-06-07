@@ -31,8 +31,6 @@ const INGEST_SERVICE_URL = process.env.INGEST_SERVICE_URL ?? 'http://localhost:8
 const MAX_UPLOAD_BYTES = Number(process.env.MAX_UPLOAD_MB ?? 100) * 1024 * 1024;
 const ALLOWED_EXTENSIONS = new Set(['.geojson', '.json', '.csv', '.kml', '.zip', '.fgb', '.gpkg']);
 
-const TIPG_SOURCE_ID = 'tipg-local';
-
 function extname(filename: string): string {
   const i = filename.lastIndexOf('.');
   return i === -1 ? '' : filename.slice(i).toLowerCase();
@@ -68,18 +66,17 @@ async function refreshTipg(pool: Pool): Promise<boolean> {
     const result = await pool.query(
       "SELECT metadata FROM map_admin.ogc_sources WHERE source_type = 'features'",
     );
-    let refreshed = false;
-    for (const row of result.rows as Array<{ metadata: { refreshUrl?: string } | null }>) {
-      const refreshUrl = row.metadata?.refreshUrl;
-      if (!refreshUrl) continue;
-      try {
-        await fetch(refreshUrl, { signal: AbortSignal.timeout(15_000) });
-        refreshed = true;
-      } catch {
-        // ignore individual source failures
-      }
-    }
-    return refreshed;
+    const refreshUrls = (result.rows as Array<{ metadata: { refreshUrl?: string } | null }>)
+      .map(row => row.metadata?.refreshUrl)
+      .filter((u): u is string => !!u);
+    // Independent endpoints — ping concurrently so one slow/timing-out source
+    // doesn't serialize 15s waits.
+    const outcomes = await Promise.all(
+      refreshUrls.map(url =>
+        fetch(url, { signal: AbortSignal.timeout(15_000) }).then(() => true).catch(() => false),
+      ),
+    );
+    return outcomes.some(Boolean);
   } catch {
     return false;
   }
@@ -146,7 +143,6 @@ export function registerDataRoutes({ app, pool, requireAuth }: DataRouteDeps): v
       const collection = `uploads.${row.table_name}`;
       res.json({
         ...row,
-        sourceId: TIPG_SOURCE_ID,
         collection,
         previewUrl: await previewUrlFor(pool, collection),
       });
@@ -275,7 +271,6 @@ export function registerDataRoutes({ app, pool, requireAuth }: DataRouteDeps): v
       const tipgRefreshed = await refreshTipg(pool);
       res.status(201).json({
         ...saved.rows[0],
-        sourceId: TIPG_SOURCE_ID,
         collection: `uploads.${table}`,
         tipgRefreshed,
       });
