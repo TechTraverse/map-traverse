@@ -27,6 +27,22 @@ export function isValidIdentifier(name: string): boolean {
   );
 }
 
+/**
+ * Validate a *column* identifier. Same length/charset rules as
+ * `isValidIdentifier`, but WITHOUT the reserved-word table list: a real data
+ * column can legitimately be named e.g. `user` or `order`. Identifiers still
+ * must match `^[a-z_][a-z0-9_]*$` and be ≤63 chars, so they remain safe to
+ * splice into double-quoted SQL after validation.
+ */
+export function isValidColumnName(name: string): boolean {
+  return (
+    typeof name === 'string' &&
+    name.length > 0 &&
+    name.length <= MAX_IDENTIFIER_LENGTH &&
+    IDENTIFIER_RE.test(name)
+  );
+}
+
 export function sanitizeTableName(input: string): string {
   let s = (input ?? '').toString().toLowerCase().trim();
 

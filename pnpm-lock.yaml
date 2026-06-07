@@ -95,6 +95,12 @@ importers:
       shp-write:
         specifier: ^0.3.2
         version: 0.3.2
+      terra-draw:
+        specifier: ^1.31.0
+        version: 1.31.0
+      terra-draw-maplibre-gl-adapter:
+        specifier: ^1.4.1
+        version: 1.4.1(maplibre-gl@4.7.1)(terra-draw@1.31.0)
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -4899,6 +4905,15 @@ packages:
   term-size@2.2.1:
     resolution: {integrity: sha512-wK0Ri4fOGjv/XPy8SBHZChl8CM7uMc5VML7SqiQ0zG7+J5Vr+RMQDoHa2CNT6KHUnTGIXH34UDMkPzAUyapBZg==}
     engines: {node: '>=8'}
+
+  terra-draw-maplibre-gl-adapter@1.4.1:
+    resolution: {integrity: sha512-qZ/bc9bVPnyt0keLVTofV8xiTPkdkbO6RzqrfNLe9zH/edW5PsjvJw97m1EksPZeXNJtFxsVbhi12cPaoNiWfg==}
+    peerDependencies:
+      maplibre-gl: '>=4'
+      terra-draw: ^1.0.0
+
+  terra-draw@1.31.0:
+    resolution: {integrity: sha512-4tNhOHL+Oj749Ih2dRvjq8L/JvutBo+tgj8alLs002YiGIgXc57XoiC+zfzRQn/r1+N2BqU18FgC9DQXJiZADw==}
 
   test-exclude@7.0.2:
     resolution: {integrity: sha512-u9E6A+ZDYdp7a4WnarkXPZOx8Ilz46+kby6p1yZ8zsGTz9gYa6FIS7lj2oezzNKmtdyyJNNmmXDppga5GB7kSw==}
@@ -10399,6 +10414,13 @@ snapshots:
     optional: true
 
   term-size@2.2.1: {}
+
+  terra-draw-maplibre-gl-adapter@1.4.1(maplibre-gl@4.7.1)(terra-draw@1.31.0):
+    dependencies:
+      maplibre-gl: 4.7.1
+      terra-draw: 1.31.0
+
+  terra-draw@1.31.0: {}
 
   test-exclude@7.0.2:
     dependencies:

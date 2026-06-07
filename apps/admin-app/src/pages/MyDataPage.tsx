@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { ConfirmDialog } from '@ogc-maps/storybook-components';
 import { DataUploadField } from '../components/DataUploadField';
 import { listDatasets, deleteDataset, type UploadedDataset } from '../utils/dataApi';
@@ -112,7 +113,13 @@ export function MyDataPage() {
                 <td className="mapui:px-4 mapui:py-2 mapui:text-slate-500">
                   {new Date(ds.created_at).toLocaleDateString()}
                 </td>
-                <td className="mapui:px-4 mapui:py-2 mapui:text-right">
+                <td className="mapui:px-4 mapui:py-2 mapui:text-right mapui:whitespace-nowrap">
+                  <Link
+                    to={`/my-data/${ds.id}`}
+                    className="mapui:mr-1 mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-xs mapui:text-slate-700 mapui:hover:bg-slate-50"
+                  >
+                    Edit rows
+                  </Link>
                   <button
                     type="button"
                     onClick={() => setConfirmDelete(ds)}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildUploadForm, DataApiError } from '../dataApi';
+import { buildUploadForm, buildRowsQuery, DataApiError } from '../dataApi';
 
 function file(name = 'parcels.geojson'): File {
   return new File([JSON.stringify({ type: 'FeatureCollection', features: [] })], name, {
@@ -32,6 +32,33 @@ describe('buildUploadForm', () => {
     expect(form.get('srs')).toBe('EPSG:2232');
     expect(form.get('geomField')).toBe('the_geom');
     expect(form.get('layer')).toBe('roads');
+  });
+});
+
+describe('buildRowsQuery', () => {
+  it('returns an empty string when no params are given', () => {
+    expect(buildRowsQuery({})).toBe('');
+  });
+
+  it('includes only the provided params', () => {
+    expect(buildRowsQuery({ limit: 50, offset: 100 })).toBe('?limit=50&offset=100');
+  });
+
+  it('includes 0 values (offset=0)', () => {
+    expect(buildRowsQuery({ offset: 0 })).toBe('?offset=0');
+  });
+
+  it('serializes sort/order/filter', () => {
+    const qs = buildRowsQuery({ sort: 'name', order: 'desc', filterColumn: 'name', filter: 'main st' });
+    const params = new URLSearchParams(qs.slice(1));
+    expect(params.get('sort')).toBe('name');
+    expect(params.get('order')).toBe('desc');
+    expect(params.get('filterColumn')).toBe('name');
+    expect(params.get('filter')).toBe('main st');
+  });
+
+  it('url-encodes filter values', () => {
+    expect(buildRowsQuery({ filter: 'a&b=c' })).toContain('filter=a%26b%3Dc');
   });
 });
 

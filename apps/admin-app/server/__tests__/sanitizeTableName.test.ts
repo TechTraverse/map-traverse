@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sanitizeTableName, isValidIdentifier, MAX_IDENTIFIER_LENGTH } from '../sanitizeTableName.js';
+import { sanitizeTableName, isValidIdentifier, isValidColumnName, MAX_IDENTIFIER_LENGTH } from '../sanitizeTableName.js';
 
 /**
  * MUST match `apps/ingest-service/src/identifiers.test.ts`'s SANITIZER_VECTORS
@@ -46,5 +46,38 @@ describe('isValidIdentifier (admin mirror)', () => {
     expect(isValidIdentifier('Parcels')).toBe(false);
     expect(isValidIdentifier('a;b')).toBe(false);
     expect(isValidIdentifier('123')).toBe(false);
+  });
+});
+
+describe('isValidColumnName', () => {
+  it('accepts well-formed lowercase identifiers', () => {
+    for (const name of ['name', 'ogc_fid', 'geom', 'col1', '_private', 'a', 'x'.repeat(63)]) {
+      expect(isValidColumnName(name)).toBe(true);
+    }
+  });
+
+  it('accepts reserved words that are illegal as TABLE names (columns may be named e.g. "user")', () => {
+    expect(isValidColumnName('user')).toBe(true);
+    expect(isValidColumnName('select')).toBe(true);
+    expect(isValidColumnName('order')).toBe(true);
+    // ...but the table-name validator still rejects them.
+    expect(isValidIdentifier('user')).toBe(false);
+  });
+
+  it('rejects quotes, semicolons, spaces, and other punctuation', () => {
+    for (const name of ['a"b', 'a;b', 'a b', 'drop table', "a'b", 'a-b', 'a.b', 'a,b', 'a(b)']) {
+      expect(isValidColumnName(name)).toBe(false);
+    }
+  });
+
+  it('rejects uppercase, leading digits, too-long, and empty', () => {
+    expect(isValidColumnName('Name')).toBe(false);
+    expect(isValidColumnName('MixedCase')).toBe(false);
+    expect(isValidColumnName('1col')).toBe(false);
+    expect(isValidColumnName('9')).toBe(false);
+    expect(isValidColumnName('x'.repeat(64))).toBe(false);
+    expect(isValidColumnName('')).toBe(false);
+    // @ts-expect-error guarding the runtime type check
+    expect(isValidColumnName(undefined)).toBe(false);
   });
 });
