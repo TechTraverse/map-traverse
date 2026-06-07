@@ -29,6 +29,21 @@ export interface OgrBuildOptions {
 const DEFAULT_CSV_GEOM_NAMES = 'geom,wkt,the_geom,geometry';
 
 /**
+ * Open options that make GDAL treat a CSV's WKT column as geometry. These must
+ * be supplied to BOTH `ogr2ogr` (the load) and `ogrinfo` (the preflight
+ * inspection) — without them ogrinfo sees an aspatial table and the ingest is
+ * rejected as "No spatial layer found" before ogr2ogr ever runs.
+ */
+function csvOpenOptions(geomField?: string): string[] {
+  const geomNames = geomField?.trim() || DEFAULT_CSV_GEOM_NAMES;
+  return [
+    '-oo', `GEOM_POSSIBLE_NAMES=${geomNames}`,
+    '-oo', 'KEEP_GEOM_COLUMNS=NO',
+    '-oo', 'AUTODETECT_TYPE=YES',
+  ];
+}
+
+/**
  * Build the argv for `execFile('ogr2ogr', argv)`. Order follows
  * `docker/seed/load-shapefiles.sh`: `-f PostgreSQL <dst> <src> [layer] <opts>`.
  */
@@ -38,12 +53,7 @@ export function buildOgr2OgrArgs(opts: OgrBuildOptions): string[] {
 
   // Open options must precede the source path.
   if (opts.format === 'csv') {
-    const geomNames = opts.geomField?.trim() || DEFAULT_CSV_GEOM_NAMES;
-    args.push(
-      '-oo', `GEOM_POSSIBLE_NAMES=${geomNames}`,
-      '-oo', 'KEEP_GEOM_COLUMNS=NO',
-      '-oo', 'AUTODETECT_TYPE=YES',
-    );
+    args.push(...csvOpenOptions(opts.geomField));
   }
 
   args.push(opts.srcPath);
@@ -86,9 +96,25 @@ export function buildOgr2OgrArgs(opts: OgrBuildOptions): string[] {
   return args;
 }
 
-/** Build the `ogrinfo -json -ro <src>` argv used for multi-layer preflight. */
-export function buildOgrInfoArgs(srcPath: string): string[] {
-  return ['-json', '-ro', '-so', srcPath];
+export interface OgrInfoOptions {
+  format?: FormatId;
+  /** CSV WKT geometry column name(s), comma-separated. */
+  geomField?: string;
+}
+
+/**
+ * Build the `ogrinfo -json -ro -so <src>` argv used for layer/geometry
+ * preflight. For CSV the same WKT open-options as the load must be applied
+ * (and, like ogr2ogr, they must precede the source path) so GDAL recognizes
+ * the geometry column during inspection.
+ */
+export function buildOgrInfoArgs(srcPath: string, opts: OgrInfoOptions = {}): string[] {
+  const args = ['-json', '-ro', '-so'];
+  if (opts.format === 'csv') {
+    args.push(...csvOpenOptions(opts.geomField));
+  }
+  args.push(srcPath);
+  return args;
 }
 
 /**
