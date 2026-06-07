@@ -25,6 +25,7 @@ import {
   buildRowsQuery,
   parsePaging,
   mapRowToApi,
+  q as quoteIdent,
   RowValidationError,
 } from './rowSql.js';
 
@@ -129,14 +130,14 @@ async function recomputeStats(
   tableName: string,
   geomColumn: string | null,
 ): Promise<void> {
-  const countRes = await client.query(`SELECT COUNT(*)::int AS n FROM uploads."${tableName}"`);
+  const countRes = await client.query(`SELECT COUNT(*)::int AS n FROM uploads.${quoteIdent(tableName)}`);
   const featureCount = (countRes.rows[0] as { n: number }).n;
 
   let bbox: [number, number, number, number] | null = null;
   if (geomColumn) {
     const extRes = await client.query(
       `SELECT ST_XMin(e) AS minx, ST_YMin(e) AS miny, ST_XMax(e) AS maxx, ST_YMax(e) AS maxy
-         FROM (SELECT ST_Extent("${geomColumn}") AS e FROM uploads."${tableName}") q`,
+         FROM (SELECT ST_Extent(${quoteIdent(geomColumn)}) AS e FROM uploads.${quoteIdent(tableName)}) ext`,
     );
     const r = extRes.rows[0] as
       | { minx: number | null; miny: number; maxx: number; maxy: number }
@@ -361,7 +362,7 @@ export function registerRowRoutes({ app, pool, requireAuth }: RowRouteDeps): voi
       await client.query('BEGIN');
       began = true;
       const deleted = await client.query(
-        `DELETE FROM uploads."${tableName}" WHERE "${schema.primaryKey}" = $1`,
+        `DELETE FROM uploads.${quoteIdent(tableName)} WHERE ${quoteIdent(schema.primaryKey)} = $1`,
         [req.params.rowId],
       );
       if ((deleted.rowCount ?? 0) === 0) {
