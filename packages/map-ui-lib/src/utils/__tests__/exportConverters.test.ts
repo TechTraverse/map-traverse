@@ -119,6 +119,9 @@ describe('shapefileConverter', () => {
     expect(options.types.line).toBe('my_layer');
     expect(options.types.multipolygon).toBe('my_layer');
     expect(options.types.multiline).toBe('my_layer');
+    // shp-write keys line filenames off `polyline` (lower-cased shapefile type),
+    // not `line`; without this entry lines export as POLYLINE.shp.
+    expect(options.types.polyline).toBe('my_layer');
 
     expect(result.filename).toBe('my_layer.zip');
     expect(result.blob).toBe(fakeBlob);
@@ -227,6 +230,34 @@ describe('geopackageConverter', () => {
     expect(result.filename).toBe('mylayer.gpkg');
     expect(result.blob).toBeInstanceOf(Blob);
     expect(result.blob.type).toBe('application/geopackage+sqlite3');
+  });
+
+  it('drops null-geometry features (matches kml/shp/fgb)', async () => {
+    gpkgCreateFeatureTable.mockClear();
+    gpkgAddFeatures.mockClear();
+    gpkgExport.mockClear();
+    gpkgClose.mockClear();
+
+    // 5 features, 2 with null geometry. @ngageoint/geopackage would otherwise
+    // write the nulls as empty point geometries, forcing the table to MULTIPOINT
+    // and round-tripping as 5 features instead of 3.
+    const features = [
+      pointFeature('a', 1, 2),
+      featureWithoutGeometry('b'),
+      pointFeature('c', 3, 4),
+      featureWithoutGeometry('d'),
+      pointFeature('e', 5, 6),
+    ];
+
+    await geopackageConverter(features, 'towns');
+
+    expect(gpkgAddFeatures).toHaveBeenCalledTimes(1);
+    const [written] = gpkgAddFeatures.mock.calls[0] as [
+      Array<{ geometry: unknown }>,
+      string,
+    ];
+    expect(written).toHaveLength(3);
+    expect(written.every((f) => f.geometry != null)).toBe(true);
   });
 });
 

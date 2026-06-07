@@ -6,8 +6,8 @@ import {
   kmlConverter,
   shapefileConverter,
   flatgeobufConverter,
-} from './exportConverters';
-import type { GeoJsonFeature } from './ogcApi';
+} from '../exportConverters';
+import type { GeoJsonFeature } from '../ogcApi';
 
 function point(id: number): GeoJsonFeature {
   return {
