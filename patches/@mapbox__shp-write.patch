@@ -1,0 +1,28 @@
+diff --git a/src/geojson.js b/src/geojson.js
+index be8f28c8905d80783a5a04d7d80f05960050d6a0..b1d20cc03839b425ed17367f352f0553a0fc7f88 100644
+--- a/src/geojson.js
++++ b/src/geojson.js
+@@ -13,8 +13,22 @@ module.exports.multipolygon = justType("MultiPolygon", "POLYGON");
+ function justType(gjType, shpType) {
+   return function (gj) {
+     var oftype = gj.features.filter(isType(gjType));
++    // Upstream bug fix (@ogc-maps): the original code wrapped ALL polyline
++    // features in a single outer array (`[oftype.map(justCoords)]`), which
++    // collapsed N line features into one multi-part polyline record in the
++    // .shp/.shx while the .dbf still held N attribute rows. GDAL then rejected
++    // the result with "Inconsistent record number in .shx (1) and .dbf (N)".
++    // poly.js expects each LineString feature to carry one extra nesting level
++    // (so its single segment reads as one part), whereas MultiLineString coords
++    // already have that nesting. Shape each feature individually instead.
++    var geometries;
++    if (gjType === 'LineString') {
++      geometries = oftype.map(function (f) { return [justCoords(f)]; });
++    } else {
++      geometries = oftype.map(justCoords);
++    }
+     return {
+-      geometries: shpType === 'POLYLINE' ? [oftype.map(justCoords)] : oftype.map(justCoords),
++      geometries: geometries,
+       properties: oftype.map(justProps),
+       type: shpType,
+     };
