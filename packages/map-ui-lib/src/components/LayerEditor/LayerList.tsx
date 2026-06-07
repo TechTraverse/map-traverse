@@ -22,8 +22,6 @@ export interface LayerListProps {
   onDraftChange?: (draft: LayerConfig | null) => void;
   /** Optional grouping for the source dropdown. Forwarded to LayerEditor. */
   availableSourceGroups?: SourceGroup[];
-  /** Optional collection-dropdown filter per source. Forwarded to LayerEditor. */
-  collectionFilter?: (collectionId: string, sourceId: string) => boolean;
 }
 
 const defaultLayer = (): LayerConfig => ({
@@ -35,7 +33,7 @@ const defaultLayer = (): LayerConfig => ({
   dataMode: 'vector-tiles',
 });
 
-export function LayerList({ layers, onChange, availableSources, availableIcons, sections, showBasicFields, readOnly, draftLayer, onDraftChange, availableSourceGroups, collectionFilter }: LayerListProps) {
+export function LayerList({ layers, onChange, availableSources, availableIcons, sections, showBasicFields, readOnly, draftLayer, onDraftChange, availableSourceGroups }: LayerListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addingNewState, setAddingNewState] = useState(false);
   const [newLayerState, setNewLayerState] = useState<LayerConfig>(defaultLayer());
@@ -288,7 +286,6 @@ export function LayerList({ layers, onChange, availableSources, availableIcons, 
                     sections={sections}
                     showBasicFields={showBasicFields}
                     availableSourceGroups={availableSourceGroups}
-                    collectionFilter={collectionFilter}
                   />
                 </div>
               )}
@@ -322,7 +319,6 @@ export function LayerList({ layers, onChange, availableSources, availableIcons, 
             sections={sections}
             showBasicFields={showBasicFields}
             availableSourceGroups={availableSourceGroups}
-            collectionFilter={collectionFilter}
           />
 
           {/* Action row */}

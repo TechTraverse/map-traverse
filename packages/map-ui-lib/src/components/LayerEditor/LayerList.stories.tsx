@@ -165,9 +165,8 @@ export const GroupedSources: Story = {
     return (
       <div className="mapui:max-w-lg mapui:p-4">
         <p className="mapui:m-0 mapui:mb-3 mapui:text-xs mapui:text-slate-500">
-          The Source dropdown groups uploaded datasets ("My Data") apart from remote
-          "External Sources". For the My-Data source, the collection list is filtered
-          to <code>uploads.*</code>.
+          The Source dropdown groups local datasets ("My Data") apart from remote
+          "External Sources" via <code>availableSourceGroups</code>.
         </p>
         <LayerList
           layers={layers}
@@ -179,9 +178,6 @@ export const GroupedSources: Story = {
             { id: 'my-data', label: 'My Data', sourceIds: ['tipg-local'] },
             { id: 'external', label: 'External Sources', sourceIds: ['county-gis', 'state-portal'] },
           ]}
-          collectionFilter={(collectionId, sourceId) =>
-            sourceId === 'tipg-local' ? collectionId.startsWith('uploads.') : true
-          }
         />
       </div>
     );

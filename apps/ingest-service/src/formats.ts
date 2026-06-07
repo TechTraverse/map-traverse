@@ -12,17 +12,15 @@ export interface FormatDef {
   extensions: string[];
   /** May contain multiple vector layers, so needs a layer-selection preflight. */
   multiLayer: boolean;
-  /** Source files commonly carry no CRS, so an SRS may need to be supplied. */
-  crsOptional: boolean;
 }
 
 export const FORMATS: Record<FormatId, FormatDef> = {
-  geojson: { id: 'geojson', label: 'GeoJSON', extensions: ['.geojson', '.json'], multiLayer: false, crsOptional: false },
-  csv: { id: 'csv', label: 'CSV (WKT)', extensions: ['.csv'], multiLayer: false, crsOptional: true },
-  kml: { id: 'kml', label: 'KML', extensions: ['.kml'], multiLayer: true, crsOptional: false },
-  'shp-zip': { id: 'shp-zip', label: 'Shapefile (.zip)', extensions: ['.zip'], multiLayer: false, crsOptional: true },
-  fgb: { id: 'fgb', label: 'FlatGeobuf', extensions: ['.fgb'], multiLayer: false, crsOptional: false },
-  gpkg: { id: 'gpkg', label: 'GeoPackage', extensions: ['.gpkg'], multiLayer: true, crsOptional: false },
+  geojson: { id: 'geojson', label: 'GeoJSON', extensions: ['.geojson', '.json'], multiLayer: false },
+  csv: { id: 'csv', label: 'CSV (WKT)', extensions: ['.csv'], multiLayer: false },
+  kml: { id: 'kml', label: 'KML', extensions: ['.kml'], multiLayer: true },
+  'shp-zip': { id: 'shp-zip', label: 'Shapefile (.zip)', extensions: ['.zip'], multiLayer: false },
+  fgb: { id: 'fgb', label: 'FlatGeobuf', extensions: ['.fgb'], multiLayer: false },
+  gpkg: { id: 'gpkg', label: 'GeoPackage', extensions: ['.gpkg'], multiLayer: true },
 };
 
 const EXTENSION_MAP: Record<string, FormatId> = {

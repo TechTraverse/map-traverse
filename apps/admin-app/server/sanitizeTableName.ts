@@ -30,8 +30,8 @@ export function isValidIdentifier(name: string): boolean {
 export function sanitizeTableName(input: string): string {
   let s = (input ?? '').toString().toLowerCase().trim();
 
-  s = s.replace(/\.(geojson|json|csv|kml|zip|fgb|gpkg|shp|shx|dbf|prj)$/i, '');
-  s = s.replace(/\.(geojson|json|csv|kml|zip|fgb|gpkg|shp|shx|dbf|prj)$/i, '');
+  const EXT_RE = /\.(geojson|json|csv|kml|zip|fgb|gpkg|shp|shx|dbf|prj)$/i;
+  while (EXT_RE.test(s)) s = s.replace(EXT_RE, '');
 
   s = s.normalize('NFKD').replace(/[̀-ͯ]/g, '');
   s = s.replace(/[^a-z0-9]+/g, '_');

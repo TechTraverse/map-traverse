@@ -3,10 +3,6 @@ import { ConfirmDialog } from '@ogc-maps/storybook-components';
 import { DataUploadField } from '../components/DataUploadField';
 import { listDatasets, deleteDataset, type UploadedDataset } from '../utils/dataApi';
 
-function formatBadge(geometryType: string | null): string {
-  return geometryType ?? '—';
-}
-
 export function MyDataPage() {
   const [datasets, setDatasets] = useState<UploadedDataset[]>([]);
   const [loading, setLoading] = useState(true);
@@ -103,7 +99,7 @@ export function MyDataPage() {
                 <td className="mapui:px-4 mapui:py-2 mapui:font-mono mapui:text-xs mapui:text-slate-500">
                   uploads.{ds.table_name}
                 </td>
-                <td className="mapui:px-4 mapui:py-2 mapui:text-slate-600">{formatBadge(ds.geometry_type)}</td>
+                <td className="mapui:px-4 mapui:py-2 mapui:text-slate-600">{ds.geometry_type ?? '—'}</td>
                 <td className="mapui:px-4 mapui:py-2 mapui:text-slate-600">{ds.feature_count ?? '—'}</td>
                 <td className="mapui:px-4 mapui:py-2 mapui:text-slate-600">
                   EPSG:{ds.srid ?? 4326}

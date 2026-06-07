@@ -47,9 +47,9 @@ export function isValidIdentifier(name: string): boolean {
 export function sanitizeTableName(input: string): string {
   let s = (input ?? '').toString().toLowerCase().trim();
 
-  // Strip a trailing file extension (e.g. "parcels.shp.zip" -> "parcels").
-  s = s.replace(/\.(geojson|json|csv|kml|zip|fgb|gpkg|shp|shx|dbf|prj)$/i, '');
-  s = s.replace(/\.(geojson|json|csv|kml|zip|fgb|gpkg|shp|shx|dbf|prj)$/i, '');
+  // Strip trailing file extension(s), e.g. "parcels.shp.zip" -> "parcels".
+  const EXT_RE = /\.(geojson|json|csv|kml|zip|fgb|gpkg|shp|shx|dbf|prj)$/i;
+  while (EXT_RE.test(s)) s = s.replace(EXT_RE, '');
 
   // Drop diacritics, then collapse any run of non-alphanumerics to a single "_".
   s = s.normalize('NFKD').replace(/[̀-ͯ]/g, '');

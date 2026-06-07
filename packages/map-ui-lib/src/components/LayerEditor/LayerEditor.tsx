@@ -51,18 +51,12 @@ export interface LayerEditorProps {
    * Sources"). When omitted, sources render as a flat list (backward-compatible).
    */
   availableSourceGroups?: SourceGroup[];
-  /**
-   * Optional predicate to filter the collection dropdown for the selected
-   * source — e.g. show only `uploads.*` collections when the My-Data source is
-   * picked. Receives the collection id and the currently selected source id.
-   */
-  collectionFilter?: (collectionId: string, sourceId: string) => boolean;
 }
 
 const inputClass =
   'mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
 
-export function LayerEditor({ value, onChange, availableSources, availableIcons, sections, showBasicFields = true, availableSourceGroups, collectionFilter }: LayerEditorProps) {
+export function LayerEditor({ value, onChange, availableSources, availableIcons, sections, showBasicFields = true, availableSourceGroups }: LayerEditorProps) {
   const showSection = (s: LayerEditorSection) => !sections || sections.includes(s);
   const sourceOptionGroups = buildSourceOptionGroups(availableSources, availableSourceGroups);
 
@@ -95,12 +89,6 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons,
 
   // Fetch collections for the dropdown
   const { collections, loading: collectionsLoading } = useOgcCollections(baseUrl);
-
-  // Optionally narrow the collection list for the selected source (e.g. only
-  // uploads.* for the My-Data source). Pure UI filter; output is unchanged.
-  const visibleCollections = collectionFilter
-    ? collections.filter((c) => collectionFilter(c.id, value.sourceId))
-    : collections;
 
   // Fetch queryables when a collection is selected
   const { queryables, loading: queryablesLoading } = useOgcQueryables(baseUrl, collection);
@@ -224,14 +212,14 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons,
           </FormField>
 
           <FormField label="Collection" required>
-            {visibleCollections.length > 0 ? (
+            {collections.length > 0 ? (
               <select
                 value={value.collection}
                 onChange={(e) => update({ collection: e.target.value })}
                 className={inputClass}
               >
                 <option value="">Select a collection…</option>
-                {visibleCollections.map((c) => (
+                {collections.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.title ?? c.id}
                   </option>

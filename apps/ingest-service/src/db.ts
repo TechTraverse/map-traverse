@@ -37,31 +37,30 @@ function qualified(table: string): string {
 export async function collectTableStats(pool: Pool, table: string): Promise<TableStats> {
   const rel = qualified(table);
 
-  const countRes = await pool.query(`SELECT count(*)::int AS n FROM ${rel}`);
-  const featureCount = (countRes.rows[0]?.n as number) ?? 0;
-
-  const metaRes = await pool.query(
-    `SELECT GeometryType(geom) AS gt, ST_SRID(geom) AS srid
-       FROM ${rel}
-      WHERE geom IS NOT NULL
-      LIMIT 1`,
+  // Single scan: count, a representative geometry type + SRID (aggregates skip
+  // NULL geom), and the extent envelope — instead of three separate scans.
+  const res = await pool.query(
+    `SELECT count(*)::int AS n,
+            min(GeometryType(geom)) AS gt,
+            min(ST_SRID(geom))::int AS srid,
+            ST_XMin(ST_Extent(geom)) AS minx, ST_YMin(ST_Extent(geom)) AS miny,
+            ST_XMax(ST_Extent(geom)) AS maxx, ST_YMax(ST_Extent(geom)) AS maxy
+       FROM ${rel}`,
   );
-  const geometryType = (metaRes.rows[0]?.gt as string | null) ?? null;
-  const srid = (metaRes.rows[0]?.srid as number | undefined) ?? 4326;
+  const row = res.rows[0] as {
+    n: number; gt: string | null; srid: number | null;
+    minx: number | null; miny: number | null; maxx: number | null; maxy: number | null;
+  };
 
-  let bbox: [number, number, number, number] | null = null;
-  if (featureCount > 0 && geometryType) {
-    const extentRes = await pool.query(
-      `SELECT ST_XMin(e) AS minx, ST_YMin(e) AS miny, ST_XMax(e) AS maxx, ST_YMax(e) AS maxy
-         FROM (SELECT ST_Extent(geom) AS e FROM ${rel}) s`,
-    );
-    const r = extentRes.rows[0] as { minx: number; miny: number; maxx: number; maxy: number } | undefined;
-    if (r && r.minx != null) {
-      bbox = [Number(r.minx), Number(r.miny), Number(r.maxx), Number(r.maxy)];
-    }
-  }
+  const bbox: [number, number, number, number] | null =
+    row.minx != null ? [Number(row.minx), Number(row.miny), Number(row.maxx), Number(row.maxy)] : null;
 
-  return { geometryType, srid, featureCount, bbox };
+  return {
+    geometryType: row.gt ?? null,
+    srid: row.srid ?? 4326,
+    featureCount: row.n ?? 0,
+    bbox,
+  };
 }
 
 /** Best-effort drop of a (possibly partial) table after a failed ingest. */

@@ -48,10 +48,11 @@ export function DataUploadField({ onUploaded }: DataUploadFieldProps) {
   const [error, setError] = useState<string | null>(null);
   const [layers, setLayers] = useState<LayerInfo[] | null>(null);
   const [layer, setLayer] = useState('');
+  const [isConflict, setIsConflict] = useState(false);
 
   const reset = () => {
     setFile(null); setFormat('auto'); setLabel(''); setSrs('');
-    setProgress(null); setError(null); setLayers(null); setLayer('');
+    setProgress(null); setError(null); setLayers(null); setLayer(''); setIsConflict(false);
     if (inputRef.current) inputRef.current.value = '';
   };
 
@@ -61,6 +62,7 @@ export function DataUploadField({ onUploaded }: DataUploadFieldProps) {
     setError(null);
     setLayers(null);
     setLayer('');
+    setIsConflict(false);
   };
 
   // CSV has no embedded CRS; offer an SRS override there.
@@ -88,6 +90,7 @@ export function DataUploadField({ onUploaded }: DataUploadFieldProps) {
         setError('This file has multiple layers — choose one to import.');
       } else if (err instanceof DataApiError && err.status === 409) {
         // Leave the file selected so the button becomes "Replace existing".
+        setIsConflict(true);
         setError(`${err.message}. Upload again to replace it.`);
         setLayers(null);
       } else {
@@ -96,7 +99,6 @@ export function DataUploadField({ onUploaded }: DataUploadFieldProps) {
     }
   };
 
-  const isConflict = error?.includes('Upload again to replace');
   const uploading = progress !== null;
 
   return (

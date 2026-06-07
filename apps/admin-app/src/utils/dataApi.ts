@@ -36,7 +36,6 @@ export interface LayerInfo {
 }
 
 export interface UploadResult extends UploadedDataset {
-  sourceId: string;
   collection: string;
   tipgRefreshed: boolean;
 }
