@@ -5,6 +5,7 @@ import { ConfigPreviewPage } from './pages/ConfigPreviewPage';
 import { VersionHistoryPage } from './pages/VersionHistoryPage';
 import { SourcesPage } from './pages/SourcesPage';
 import { MyDataPage } from './pages/MyDataPage';
+import { DataEditorPage } from './pages/DataEditorPage';
 import { CustomizePage } from './pages/CustomizePage';
 import { LoginPage } from './pages/LoginPage';
 import { RequireAuth } from './components/RequireAuth';
@@ -88,6 +89,7 @@ export default function App() {
                     <Route path="/" element={<Navigate to="/configs" replace />} />
                     <Route path="/configs" element={<ConfigListPage />} />
                     <Route path="/my-data" element={<MyDataPage />} />
+                    <Route path="/my-data/:id" element={<DataEditorPage />} />
                     <Route path="/sources" element={<SourcesPage />} />
                     <Route path="/customize" element={<CustomizePage />} />
                     <Route path="/configs/new" element={<ConfigWizardPage />} />

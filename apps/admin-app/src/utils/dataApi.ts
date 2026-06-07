@@ -62,6 +62,120 @@ export async function deleteDataset(id: string): Promise<void> {
   if (!res.ok) throw new DataApiError(res.status, await res.json().catch(() => ({})));
 }
 
+// ---------------------------------------------------------------------------
+// Row-level CRUD over an uploaded collection (server/rowRoutes.ts).
+// Geometry is always GeoJSON in EPSG:4326; the server reprojects to the table
+// SRID and coerces single<->multi to match the collection's declared type.
+// ---------------------------------------------------------------------------
+
+/** A column as reported by GET /api/data/:id/schema. */
+export interface CollectionColumn {
+  name: string;
+  dataType: string;
+  udtName?: string;
+  nullable: boolean;
+  isPrimaryKey: boolean;
+  isGeometry: boolean;
+}
+
+export interface CollectionSchema {
+  table: string;
+  primaryKey: string;
+  geometry: { column: string; type: string; srid: number } | null;
+  columns: CollectionColumn[];
+}
+
+/** A single feature row: PK value + attribute bag + GeoJSON geometry. */
+export interface FeatureRow {
+  id: string | number;
+  properties: Record<string, unknown>;
+  geometry: GeoJSON.Geometry | null;
+}
+
+export interface ListRowsResult {
+  rows: FeatureRow[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface ListRowsParams {
+  limit?: number;
+  offset?: number;
+  sort?: string;
+  order?: 'asc' | 'desc';
+  filterColumn?: string;
+  filter?: string;
+}
+
+/** Body shape for create/update. Exported for unit testing. */
+export interface RowMutation {
+  properties: Record<string, unknown>;
+  geometry: GeoJSON.Geometry | null;
+}
+
+/** Build the query string for listRows — exported for unit testing. */
+export function buildRowsQuery(params: ListRowsParams): string {
+  const q = new URLSearchParams();
+  if (params.limit != null) q.set('limit', String(params.limit));
+  if (params.offset != null) q.set('offset', String(params.offset));
+  if (params.sort) q.set('sort', params.sort);
+  if (params.order) q.set('order', params.order);
+  if (params.filterColumn) q.set('filterColumn', params.filterColumn);
+  if (params.filter) q.set('filter', params.filter);
+  const s = q.toString();
+  return s ? `?${s}` : '';
+}
+
+async function jsonOrThrow<T>(res: Response): Promise<T> {
+  if (!res.ok) throw new DataApiError(res.status, await res.json().catch(() => ({})));
+  return res.json() as Promise<T>;
+}
+
+export async function getCollectionSchema(id: string): Promise<CollectionSchema> {
+  const res = await fetch(`/api/data/${id}/schema`, { credentials: 'include' });
+  return jsonOrThrow<CollectionSchema>(res);
+}
+
+export async function listRows(id: string, params: ListRowsParams = {}): Promise<ListRowsResult> {
+  const res = await fetch(`/api/data/${id}/rows${buildRowsQuery(params)}`, {
+    credentials: 'include',
+  });
+  return jsonOrThrow<ListRowsResult>(res);
+}
+
+export async function createRow(id: string, body: RowMutation): Promise<FeatureRow> {
+  const res = await fetch(`/api/data/${id}/rows`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return jsonOrThrow<FeatureRow>(res);
+}
+
+export async function updateRow(
+  id: string,
+  rowId: string | number,
+  body: RowMutation,
+): Promise<FeatureRow> {
+  const res = await fetch(`/api/data/${id}/rows/${encodeURIComponent(String(rowId))}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return jsonOrThrow<FeatureRow>(res);
+}
+
+export async function deleteRow(id: string, rowId: string | number): Promise<void> {
+  const res = await fetch(`/api/data/${id}/rows/${encodeURIComponent(String(rowId))}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+  if (!res.ok) throw new DataApiError(res.status, await res.json().catch(() => ({})));
+}
+
 /** Build the multipart body for an upload — exported for unit testing. */
 export function buildUploadForm(file: File, opts: UploadOptions): FormData {
   const form = new FormData();
