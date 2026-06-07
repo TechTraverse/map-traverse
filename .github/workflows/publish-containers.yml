@@ -24,6 +24,9 @@ jobs:
           - image: map-gateway
             file: docker/gateway/Dockerfile
             build-args: ""
+          - image: map-ingest
+            file: apps/ingest-service/Dockerfile
+            build-args: ""
     steps:
       - name: Checkout
         uses: actions/checkout@v6
