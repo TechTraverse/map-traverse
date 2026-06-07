@@ -113,6 +113,11 @@ services:
       CORS_ORIGINS: http://localhost:3000,http://localhost
       INGEST_SERVICE_URL: http://ingest:8081
       MAX_UPLOAD_MB: "100"
+      # Internal tipg URLs reachable from this container (the browser-origin
+      # refresh URL isn't). Lets uploads/deletes refresh tipg's catalog without a
+      # restart, and gives My Data a working preview URL.
+      TIPG_REFRESH_URL: http://tipg:8000/refresh
+      TIPG_PUBLIC_URL: /ogc
       # Set ADMIN_USERNAME and ADMIN_PASSWORD_HASH to enable authentication
       # ADMIN_USERNAME: admin
       # ADMIN_PASSWORD_HASH: <bcrypt hash>

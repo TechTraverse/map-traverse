@@ -104,6 +104,22 @@ const DEFAULT_UI_CONFIG: UIConfig = {
 };
 
 /** Derive which UI controls should be enabled based on current config state. */
+/**
+ * True when a feature source is the local OGC API (the one that serves uploaded
+ * "My Data"). Identified by same-origin `/ogc` URL rather than a fixed source id,
+ * so it works regardless of how the source was named (`tipg-local`,
+ * `tipg-localhost`, etc.). The canonical id is kept as a fallback.
+ */
+function isLocalOgcSource(source: { id: string; url: string }): boolean {
+  if (source.id === TIPG_LOCAL_SOURCE_ID) return true;
+  try {
+    const u = new URL(source.url, window.location.origin);
+    return u.origin === window.location.origin && u.pathname.replace(/\/+$/, '').endsWith('/ogc');
+  } catch {
+    return false;
+  }
+}
+
 function computeSuggestedUI(
   layers: LayerConfig[],
   basemaps: BasemapConfig[],
@@ -526,24 +542,19 @@ export function ConfigWizardPage() {
     ];
   }, [sources, savedFeatureSources]);
 
-  // Group the layer-editor source picker into "My Data" (the local tipg source,
-  // which serves uploaded datasets) vs "External Sources" (everything else).
+  // Group the layer-editor source picker into "My Data" (the local OGC API that
+  // serves uploaded datasets) vs "External Sources" (everything else). The local
+  // source is identified by URL (same-origin `/ogc`) rather than a fixed id, so
+  // it works whatever the source was named (e.g. `tipg-local`, `tipg-localhost`).
   const featureSourceGroups = useMemo<SourceGroup[]>(() => {
-    const myDataIds = allFeatureSourcesForDropdown
-      .filter(s => s.id === TIPG_LOCAL_SOURCE_ID)
-      .map(s => s.id);
-    const externalIds = allFeatureSourcesForDropdown
-      .filter(s => s.id !== TIPG_LOCAL_SOURCE_ID)
-      .map(s => s.id);
+    const myDataIds = allFeatureSourcesForDropdown.filter(isLocalOgcSource).map(s => s.id);
+    const myDataSet = new Set(myDataIds);
+    const externalIds = allFeatureSourcesForDropdown.filter(s => !myDataSet.has(s.id)).map(s => s.id);
     const groups: SourceGroup[] = [];
     if (myDataIds.length) groups.push({ id: 'my-data', label: 'My Data', sourceIds: myDataIds });
     if (externalIds.length) groups.push({ id: 'external', label: 'External Sources', sourceIds: externalIds });
     return groups;
   }, [allFeatureSourcesForDropdown]);
-
-  // For the My-Data source, only offer uploaded (`uploads.*`) collections.
-  const layerCollectionFilter = (collectionId: string, sourceId: string) =>
-    sourceId === TIPG_LOCAL_SOURCE_ID ? collectionId.startsWith('uploads.') : true;
 
   // Wrapper around setLayers that keeps sources[] in sync:
   // auto-adds newly referenced feature sources from the catalog.
@@ -833,7 +844,6 @@ export function ConfigWizardPage() {
               onChange={handleLayersChange}
               availableSources={allFeatureSourcesForDropdown}
               availableSourceGroups={featureSourceGroups}
-              collectionFilter={layerCollectionFilter}
               availableIcons={availableIcons}
               sections={['style', 'legend']}
               draftLayer={layerDraft}
