@@ -57,3 +57,6 @@ storybook-static
 /INVESTIGATION.md
 /investigation/
 /git_hours.py
+
+# AI round-trip QA scratch (exports/captures)
+.qa-tmp/
