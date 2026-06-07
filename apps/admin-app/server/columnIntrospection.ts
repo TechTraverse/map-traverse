@@ -31,23 +31,40 @@ export async function introspectCollection(
   pool: Pool,
   tableName: string,
 ): Promise<CollectionSchema> {
-  // Columns (name, type, nullability) in declaration order.
-  const colsResult = await pool.query(
-    `SELECT column_name, data_type, udt_name, is_nullable, ordinal_position
-       FROM information_schema.columns
-      WHERE table_schema = $1 AND table_name = $2
-      ORDER BY ordinal_position`,
-    [UPLOADS_SCHEMA, tableName],
-  );
+  // The three catalog lookups are independent — fire them concurrently.
+  const [colsResult, geomResult, pkResult] = await Promise.all([
+    // Columns (name, type, nullability) in declaration order.
+    pool.query(
+      `SELECT column_name, data_type, udt_name, is_nullable, ordinal_position
+         FROM information_schema.columns
+        WHERE table_schema = $1 AND table_name = $2
+        ORDER BY ordinal_position`,
+      [UPLOADS_SCHEMA, tableName],
+    ),
+    // Geometry column + declared geometry type + SRID from PostGIS.
+    pool.query(
+      `SELECT f_geometry_column, type, srid
+         FROM geometry_columns
+        WHERE f_table_schema = $1 AND f_table_name = $2
+        LIMIT 1`,
+      [UPLOADS_SCHEMA, tableName],
+    ),
+    // Primary key column name.
+    pool.query(
+      `SELECT kcu.column_name
+         FROM information_schema.table_constraints tc
+         JOIN information_schema.key_column_usage kcu
+           ON kcu.constraint_name = tc.constraint_name
+          AND kcu.constraint_schema = tc.constraint_schema
+        WHERE tc.constraint_type = 'PRIMARY KEY'
+          AND tc.table_schema = $1
+          AND tc.table_name = $2
+        ORDER BY kcu.ordinal_position
+        LIMIT 1`,
+      [UPLOADS_SCHEMA, tableName],
+    ),
+  ]);
 
-  // Geometry column + declared geometry type + SRID from PostGIS.
-  const geomResult = await pool.query(
-    `SELECT f_geometry_column, type, srid
-       FROM geometry_columns
-      WHERE f_table_schema = $1 AND f_table_name = $2
-      LIMIT 1`,
-    [UPLOADS_SCHEMA, tableName],
-  );
   const geomRow = geomResult.rows[0] as
     | { f_geometry_column: string; type: string; srid: number }
     | undefined;
@@ -55,20 +72,6 @@ export async function introspectCollection(
     ? { column: geomRow.f_geometry_column, type: geomRow.type, srid: Number(geomRow.srid) }
     : null;
 
-  // Primary key column name.
-  const pkResult = await pool.query(
-    `SELECT kcu.column_name
-       FROM information_schema.table_constraints tc
-       JOIN information_schema.key_column_usage kcu
-         ON kcu.constraint_name = tc.constraint_name
-        AND kcu.constraint_schema = tc.constraint_schema
-      WHERE tc.constraint_type = 'PRIMARY KEY'
-        AND tc.table_schema = $1
-        AND tc.table_name = $2
-      ORDER BY kcu.ordinal_position
-      LIMIT 1`,
-    [UPLOADS_SCHEMA, tableName],
-  );
   const primaryKey = (pkResult.rows[0] as { column_name: string } | undefined)?.column_name ?? '';
 
   const geometryColumn = geometry?.column;

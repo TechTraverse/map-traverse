@@ -13,7 +13,7 @@
  * the column's declared type is a MULTI* type) promoted via `ST_Multi` so a
  * single Polygon/LineString/Point round-trips into a Multi* column.
  */
-import type { CollectionSchema } from './columnIntrospection.js';
+import type { CollectionColumn, CollectionSchema } from './columnIntrospection.js';
 import { isValidColumnName } from './sanitizeTableName.js';
 
 export interface SqlQuery {
@@ -32,15 +32,18 @@ export class RowValidationError extends Error {
 const UPLOADS = 'uploads';
 
 /** Quote a column identifier that has already been validated as safe. */
-function q(name: string): string {
+export function q(name: string): string {
   return `"${name}"`;
 }
 
-/** Editable columns = everything that isn't the PK or the geometry column. */
+/** Attribute columns = everything that isn't the PK or the geometry column. */
+function attributeColumns(schema: CollectionSchema): CollectionColumn[] {
+  return schema.columns.filter(c => !c.isPrimaryKey && !c.isGeometry);
+}
+
+/** Editable column names = the attribute columns, as a lookup set. */
 function editableColumns(schema: CollectionSchema): Set<string> {
-  return new Set(
-    schema.columns.filter(c => !c.isPrimaryKey && !c.isGeometry).map(c => c.name),
-  );
+  return new Set(attributeColumns(schema).map(c => c.name));
 }
 
 /**
@@ -60,8 +63,7 @@ export function geometryExpr(paramIndex: number, srid: number, declaredType: str
  */
 export function rowSelectClause(schema: CollectionSchema): string {
   const exprs: string[] = [q(schema.primaryKey)];
-  for (const c of schema.columns) {
-    if (c.isPrimaryKey || c.isGeometry) continue;
+  for (const c of attributeColumns(schema)) {
     exprs.push(q(c.name));
   }
   if (schema.geometry) {
@@ -76,8 +78,7 @@ export function mapRowToApi(
   raw: Record<string, unknown>,
 ): { id: unknown; properties: Record<string, unknown>; geometry: unknown } {
   const properties: Record<string, unknown> = {};
-  for (const c of schema.columns) {
-    if (c.isPrimaryKey || c.isGeometry) continue;
+  for (const c of attributeColumns(schema)) {
     properties[c.name] = raw[c.name];
   }
   return {

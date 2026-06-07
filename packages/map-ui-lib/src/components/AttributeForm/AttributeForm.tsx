@@ -54,6 +54,14 @@ function toStringValue(value: unknown): string {
   return String(value);
 }
 
+/** Coerce a raw input string to the value emitted for a given input kind. Empty → null. */
+function parseInputValue(kind: InputKind, raw: string): unknown {
+  if (raw === '') return null;
+  if (kind === 'boolean') return raw === 'true';
+  if (kind === 'number') return Number(raw);
+  return raw;
+}
+
 /**
  * AttributeForm — a controlled form rendering one input per attribute column,
  * choosing the input type from the column's Postgres data type. Framework- and
@@ -80,9 +88,7 @@ export function AttributeForm({
             <select
               id={id}
               value={boolStr}
-              onChange={(e) =>
-                onChange(column.name, e.target.value === '' ? null : e.target.value === 'true')
-              }
+              onChange={(e) => onChange(column.name, parseInputValue(kind, e.target.value))}
               className={selectClass}
             >
               {column.nullable && <option value="">—</option>}
@@ -96,9 +102,7 @@ export function AttributeForm({
               id={id}
               type="number"
               value={toStringValue(raw)}
-              onChange={(e) =>
-                onChange(column.name, e.target.value === '' ? null : Number(e.target.value))
-              }
+              onChange={(e) => onChange(column.name, parseInputValue(kind, e.target.value))}
               className={inputClass}
             />
           );
@@ -108,7 +112,7 @@ export function AttributeForm({
               id={id}
               type={kind === 'date' ? 'date' : 'datetime-local'}
               value={toStringValue(raw)}
-              onChange={(e) => onChange(column.name, e.target.value === '' ? null : e.target.value)}
+              onChange={(e) => onChange(column.name, parseInputValue(kind, e.target.value))}
               className={inputClass}
             />
           );
@@ -118,7 +122,7 @@ export function AttributeForm({
               id={id}
               type="text"
               value={toStringValue(raw)}
-              onChange={(e) => onChange(column.name, e.target.value === '' ? null : e.target.value)}
+              onChange={(e) => onChange(column.name, parseInputValue(kind, e.target.value))}
               className={inputClass}
             />
           );
