@@ -155,4 +155,20 @@ describe('buildPgConn / buildOgrInfoArgs', () => {
   it('builds ogrinfo preflight args', () => {
     expect(buildOgrInfoArgs('/tmp/x.gpkg')).toEqual(['-json', '-ro', '-so', '/tmp/x.gpkg']);
   });
+
+  it('omits CSV open-options for non-CSV formats', () => {
+    expect(buildOgrInfoArgs('/tmp/x.gpkg', { format: 'gpkg' })).not.toContain('-oo');
+  });
+
+  it('applies CSV WKT open-options before the source path for CSV', () => {
+    const args = buildOgrInfoArgs('/tmp/x.csv', { format: 'csv' });
+    expect(args).toContain('GEOM_POSSIBLE_NAMES=geom,wkt,the_geom,geometry');
+    expect(args).toContain('KEEP_GEOM_COLUMNS=NO');
+    expect(args.lastIndexOf('-oo')).toBeLessThan(args.indexOf('/tmp/x.csv'));
+  });
+
+  it('uses a provided geomField for the CSV preflight', () => {
+    const args = buildOgrInfoArgs('/tmp/x.csv', { format: 'csv', geomField: 'geometry' });
+    expect(args).toContain('GEOM_POSSIBLE_NAMES=geometry');
+  });
 });

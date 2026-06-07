@@ -64,8 +64,11 @@ interface SourceInspection {
 }
 
 /** Inspect a source with `ogrinfo -json` to enumerate layers + detect a CRS. */
-export async function inspectSource(srcPath: string): Promise<SourceInspection> {
-  const { stdout } = await run('ogrinfo', buildOgrInfoArgs(srcPath));
+export async function inspectSource(
+  srcPath: string,
+  opts: { format?: FormatId; geomField?: string } = {},
+): Promise<SourceInspection> {
+  const { stdout } = await run('ogrinfo', buildOgrInfoArgs(srcPath, opts));
   let parsed: { layers?: OgrInfoLayer[] };
   try {
     parsed = JSON.parse(stdout);
@@ -113,8 +116,12 @@ export async function ingestFile(opts: IngestOptions): Promise<IngestResponse> {
       hasPrj = extracted.hasPrj;
     }
 
-    // 2. Inspect: enumerate layers, detect a source CRS.
-    const inspection = await inspectSource(srcPath);
+    // 2. Inspect: enumerate layers, detect a source CRS. CSV needs the WKT
+    //    open-options here too, or ogrinfo reports an aspatial table.
+    const inspection = await inspectSource(srcPath, {
+      format: opts.format,
+      geomField: opts.geomField,
+    });
     const spatialLayers = inspection.layers.filter(
       l => l.geometryType && l.geometryType.toLowerCase() !== 'none',
     );

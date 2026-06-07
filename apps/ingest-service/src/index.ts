@@ -87,7 +87,7 @@ app.post('/layers', upload.single('file'), async (req, res) => {
     const head = await readHead(srcPath);
     const format = resolveFormat(requested, req.file.originalname, head); // validate type
     srcPath = await ensureExtension(srcPath, format);
-    const { layers } = await inspectSource(srcPath);
+    const { layers } = await inspectSource(srcPath, { format, geomField: field(req, 'geomField') });
     res.json({ layers });
   } catch (err) {
     res.status(400).json({ error: (err as Error).message });

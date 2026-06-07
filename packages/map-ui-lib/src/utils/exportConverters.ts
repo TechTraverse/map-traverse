@@ -136,12 +136,18 @@ export const geopackageConverter: FormatConverter = async (features, collectionI
   setSqljsWasmLocateFile((filename: string) => `/${filename}`);
   const geoPackage = await GeoPackageAPI.create();
 
-  const allKeys = [...new Set(features.flatMap((f) => Object.keys(f.properties ?? {})))];
+  // GeoPackage doesn't crash on null geometry, but @ngageoint/geopackage writes
+  // those features as empty point geometries — which forces the whole table to a
+  // MULTIPOINT type and round-trips as N features instead of the clean non-null
+  // set. Drop them so the spatial output matches kml/shapefile/flatgeobuf.
+  const geometried = withGeometry(features);
+
+  const allKeys = [...new Set(geometried.flatMap((f) => Object.keys(f.properties ?? {})))];
   const properties = allKeys.map((key) => ({ name: key, dataType: 'TEXT' }));
 
   geoPackage.createFeatureTableFromProperties(collectionId, properties);
 
-  const gjFeatures = toFeatureCollection(features).features;
+  const gjFeatures = toFeatureCollection(geometried).features;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await geoPackage.addGeoJSONFeaturesToGeoPackage(gjFeatures as any, collectionId);
 
