@@ -13,7 +13,6 @@ import multer from 'multer';
 import os from 'os';
 import fs from 'fs/promises';
 import type { Pool } from 'pg';
-import { inspectSource } from './inspect.js';
 import { sanitizeTableName, isValidIdentifier } from './sanitizeTableName.js';
 
 /** Mirrors the sidecar's IngestResponse — see apps/ingest-service/src/types.ts. */
@@ -46,45 +45,39 @@ export interface DataRouteDeps {
 }
 
 /**
- * Best-effort tipg catalog refresh after an upload/delete. Reuses the exact
- * mechanism `POST /api/sources/:id/inspect` uses: read the `tipg-local` source's
- * stored `metadata.refreshUrl`, POST it, then re-inspect so the cached
- * collections list reflects the change. Returns whether the refresh succeeded.
+ * Best-effort tipg catalog refresh after an upload/delete so newly created (or
+ * dropped) `uploads.*` tables surface without a container restart. Entirely
+ * non-fatal: the data is already loaded/dropped by the time we get here.
+ *
+ * Preferred path is `TIPG_REFRESH_URL` — an internal URL reachable from inside
+ * the server container (the per-source `metadata.refreshUrl` is a *browser-origin*
+ * URL and is often unreachable server-side under Docker). If unset, fall back to
+ * pinging the stored refreshUrl of each feature source.
  */
 async function refreshTipg(pool: Pool): Promise<boolean> {
-  // Entirely best-effort: the data is already loaded/dropped by the time we get
-  // here, so a failure (incl. the initial DB lookup) must never fail the request.
   try {
+    const internal = process.env.TIPG_REFRESH_URL;
+    if (internal) {
+      try {
+        await fetch(internal, { signal: AbortSignal.timeout(15_000) });
+        return true;
+      } catch {
+        return false;
+      }
+    }
     const result = await pool.query(
-      'SELECT id, url, metadata FROM map_admin.ogc_sources WHERE source_id = $1',
-      [TIPG_SOURCE_ID],
+      "SELECT metadata FROM map_admin.ogc_sources WHERE source_type = 'features'",
     );
-    if (result.rows.length === 0) return false;
-    const { id, url, metadata } = result.rows[0] as {
-      id: string;
-      url: string;
-      metadata: { refreshUrl?: string } | null;
-    };
-
     let refreshed = false;
-    const refreshUrl = metadata?.refreshUrl;
-    if (refreshUrl) {
+    for (const row of result.rows as Array<{ metadata: { refreshUrl?: string } | null }>) {
+      const refreshUrl = row.metadata?.refreshUrl;
+      if (!refreshUrl) continue;
       try {
         await fetch(refreshUrl, { signal: AbortSignal.timeout(15_000) });
         refreshed = true;
       } catch {
-        // tipg refresh may be down — fall through and still try to re-inspect.
+        // ignore individual source failures
       }
-    }
-    // Re-inspect so the cached collection list (used by the layer editor) updates.
-    try {
-      const inspected = await inspectSource(url);
-      await pool.query(
-        'UPDATE map_admin.ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2',
-        [JSON.stringify(inspected), id],
-      );
-    } catch {
-      // non-fatal — the data is already loaded
     }
     return refreshed;
   } catch {
@@ -92,14 +85,20 @@ async function refreshTipg(pool: Pool): Promise<boolean> {
   }
 }
 
-/** Derive the tipg items preview URL for an uploaded collection, if known. */
+/**
+ * Derive a tipg items preview URL for an uploaded collection. Uses a public tipg
+ * base (`TIPG_PUBLIC_URL`) if configured, else any known local feature source's
+ * URL. Best-effort — returns null if none is known.
+ */
 async function previewUrlFor(pool: Pool, collection: string): Promise<string | null> {
-  const result = await pool.query(
-    'SELECT url FROM map_admin.ogc_sources WHERE source_id = $1',
-    [TIPG_SOURCE_ID],
-  );
-  if (result.rows.length === 0) return null;
-  const base = (result.rows[0] as { url: string }).url.replace(/\/+$/, '');
+  let base = process.env.TIPG_PUBLIC_URL?.replace(/\/+$/, '') ?? null;
+  if (!base) {
+    const result = await pool.query(
+      "SELECT url FROM map_admin.ogc_sources WHERE source_type = 'features' ORDER BY created_at LIMIT 1",
+    );
+    if (result.rows.length === 0) return null;
+    base = (result.rows[0] as { url: string }).url.replace(/\/+$/, '');
+  }
   return `${base}/collections/${collection}/items?f=json&limit=100`;
 }
 
