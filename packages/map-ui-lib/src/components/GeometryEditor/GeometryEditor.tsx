@@ -55,11 +55,13 @@ function rowsToCoords(rows: Array<[string, string]>): number[][] {
 }
 
 const tabBase =
-  'mapui:px-3 mapui:py-1.5 mapui:text-sm mapui:font-medium mapui:border-b-2 mapui:cursor-pointer mapui:bg-transparent';
-const tabActive = 'mapui:border-blue-500 mapui:text-blue-600';
-const tabInactive = 'mapui:border-transparent mapui:text-slate-500 hover:mapui:text-slate-700';
+  'mapui:rounded-md mapui:px-3 mapui:py-1 mapui:text-sm mapui:font-medium mapui:cursor-pointer mapui:transition-colors';
+const tabActive = 'mapui:bg-white mapui:text-blue-700 mapui:shadow-sm mapui:ring-1 mapui:ring-slate-200';
+const tabInactive = 'mapui:text-slate-500 mapui:hover:text-slate-800';
 const inputClass =
-  'mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
+  'mapui:rounded-md mapui:border mapui:border-slate-300 mapui:px-2.5 mapui:py-1.5 mapui:text-sm mapui:outline-none mapui:transition-colors mapui:focus:border-blue-500 mapui:focus:ring-2 mapui:focus:ring-blue-100';
+const ghostBtn =
+  'mapui:cursor-pointer mapui:rounded-md mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-2.5 mapui:py-1.5 mapui:text-sm mapui:font-medium mapui:text-slate-600 mapui:transition-colors mapui:hover:bg-slate-50 mapui:hover:text-slate-900';
 
 const TABS: Array<{ id: GeometryEditorMode; label: string }> = [
   { id: 'draw', label: 'Draw' },
@@ -180,7 +182,10 @@ export function GeometryEditor({
   return (
     <div className="mapui:flex mapui:flex-col mapui:gap-2">
       {/* Tabs */}
-      <div className="mapui:flex mapui:gap-1 mapui:border-b mapui:border-slate-200" role="tablist">
+      <div
+        className="mapui:inline-flex mapui:gap-0.5 mapui:self-start mapui:rounded-lg mapui:border mapui:border-slate-200 mapui:bg-slate-50 mapui:p-0.5"
+        role="tablist"
+      >
         {TABS.map((tab) => (
           <button
             key={tab.id}
@@ -199,7 +204,7 @@ export function GeometryEditor({
       {activeMode === 'draw' && (
         <div>
           {mapSlot ?? (
-            <div className="mapui:flex mapui:h-48 mapui:items-center mapui:justify-center mapui:rounded mapui:border mapui:border-dashed mapui:border-slate-300 mapui:bg-slate-50 mapui:text-sm mapui:text-slate-400">
+            <div className="mapui:flex mapui:h-48 mapui:items-center mapui:justify-center mapui:rounded-lg mapui:border mapui:border-dashed mapui:border-slate-300 mapui:bg-slate-50 mapui:text-sm mapui:text-slate-400">
               No draw map available.
             </div>
           )}
@@ -281,7 +286,7 @@ export function GeometryEditor({
                       type="button"
                       onClick={() => removeRow(i)}
                       aria-label={`Remove coordinate ${i + 1}`}
-                      className="mapui:cursor-pointer mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-2 mapui:py-1 mapui:text-sm mapui:text-slate-600 hover:mapui:bg-slate-50"
+                      className="mapui:cursor-pointer mapui:rounded-md mapui:px-2 mapui:py-1.5 mapui:text-sm mapui:text-slate-400 mapui:transition-colors mapui:hover:bg-red-50 mapui:hover:text-red-600"
                     >
                       ✕
                     </button>
@@ -289,11 +294,7 @@ export function GeometryEditor({
                 ))}
               </div>
 
-              <button
-                type="button"
-                onClick={addRow}
-                className="mapui:self-start mapui:cursor-pointer mapui:rounded mapui:border mapui:border-slate-300 mapui:bg-white mapui:px-3 mapui:py-1 mapui:text-sm mapui:font-medium mapui:text-slate-700 hover:mapui:bg-slate-50"
-              >
+              <button type="button" onClick={addRow} className={`mapui:self-start ${ghostBtn}`}>
                 + Add coordinate
               </button>
             </>

@@ -21,6 +21,16 @@ import {
 } from 'terra-draw';
 import { TerraDrawMapLibreGLAdapter } from 'terra-draw-maplibre-gl-adapter';
 import bbox from '@turf/bbox';
+import type { IconType } from 'react-icons';
+import {
+  LuMapPin,
+  LuSpline,
+  LuHexagon,
+  LuSquare,
+  LuMousePointer2,
+  LuTrash2,
+  LuCheck,
+} from 'react-icons/lu';
 import {
   featuresToGeometry,
   geometryToDrawFeatures,
@@ -39,12 +49,12 @@ export interface GeometryDrawMapProps {
   height?: number;
 }
 
-const TOOLS: Array<{ id: ToolMode; label: string }> = [
-  { id: 'point', label: 'Point' },
-  { id: 'linestring', label: 'Line' },
-  { id: 'polygon', label: 'Polygon' },
-  { id: 'rectangle', label: 'Box' },
-  { id: 'select', label: 'Edit' },
+const TOOLS: Array<{ id: ToolMode; label: string; Icon: IconType }> = [
+  { id: 'point', label: 'Point', Icon: LuMapPin },
+  { id: 'linestring', label: 'Line', Icon: LuSpline },
+  { id: 'polygon', label: 'Polygon', Icon: LuHexagon },
+  { id: 'rectangle', label: 'Box', Icon: LuSquare },
+  { id: 'select', label: 'Edit', Icon: LuMousePointer2 },
 ];
 
 /** Stable structural key so we can ignore prop echoes of our own emissions. */
@@ -209,33 +219,61 @@ export function GeometryDrawMap({
     onChange(null);
   };
 
+  const hasGeometry = geometry != null;
+
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-1">
-        {TOOLS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => selectTool(t.id)}
-            aria-pressed={activeTool === t.id}
-            className={`rounded border px-2 py-1 text-xs font-medium ${
-              activeTool === t.id
-                ? 'border-blue-500 bg-blue-50 text-blue-700'
-                : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+    <div className="mapui:flex mapui:flex-col mapui:gap-2">
+      <div className="mapui:flex mapui:flex-wrap mapui:items-center mapui:gap-2">
+        {/* Segmented tool control */}
+        <div className="mapui:inline-flex mapui:items-center mapui:gap-0.5 mapui:rounded-lg mapui:border mapui:border-slate-200 mapui:bg-slate-50 mapui:p-0.5">
+          {TOOLS.map((t) => {
+            const active = activeTool === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => selectTool(t.id)}
+                aria-pressed={active}
+                title={t.label}
+                className={`mapui:inline-flex mapui:items-center mapui:gap-1.5 mapui:rounded-md mapui:px-2.5 mapui:py-1.5 mapui:text-xs mapui:font-medium mapui:transition-colors ${
+                  active
+                    ? 'mapui:bg-white mapui:text-blue-700 mapui:shadow-sm mapui:ring-1 mapui:ring-slate-200'
+                    : 'mapui:text-slate-600 mapui:hover:text-slate-900'
+                }`}
+              >
+                <t.Icon className="mapui:h-3.5 mapui:w-3.5" aria-hidden />
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <span
+          className={`mapui:inline-flex mapui:items-center mapui:gap-1 mapui:rounded-full mapui:px-2 mapui:py-0.5 mapui:text-[11px] mapui:font-medium ${
+            hasGeometry
+              ? 'mapui:bg-green-50 mapui:text-green-700'
+              : 'mapui:bg-slate-100 mapui:text-slate-500'
+          }`}
+        >
+          {hasGeometry && <LuCheck className="mapui:h-3 mapui:w-3" aria-hidden />}
+          {hasGeometry ? 'Geometry set' : 'No geometry'}
+        </span>
+
         <button
           type="button"
           onClick={clearAll}
-          className="ml-auto rounded border border-red-200 bg-white px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+          disabled={!hasGeometry}
+          className="mapui:ml-auto mapui:inline-flex mapui:items-center mapui:gap-1.5 mapui:rounded-md mapui:px-2.5 mapui:py-1.5 mapui:text-xs mapui:font-medium mapui:text-slate-500 mapui:transition-colors mapui:hover:bg-red-50 mapui:hover:text-red-600 mapui:disabled:cursor-not-allowed mapui:disabled:opacity-40 mapui:disabled:hover:bg-transparent mapui:disabled:hover:text-slate-500"
         >
+          <LuTrash2 className="mapui:h-3.5 mapui:w-3.5" aria-hidden />
           Clear
         </button>
       </div>
-      <div className="overflow-hidden rounded border border-slate-200" style={{ height }}>
+
+      <div
+        className="mapui:overflow-hidden mapui:rounded-lg mapui:border mapui:border-slate-200 mapui:shadow-sm"
+        style={{ height }}
+      >
         <Map
           ref={mapRef}
           mapLib={maplibregl}
