@@ -46,7 +46,7 @@ export function attributeInputKind(column: AttributeColumn): InputKind {
 }
 
 const inputClass =
-  'mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500';
+  'mapui:w-full mapui:rounded-md mapui:border mapui:border-slate-300 mapui:px-2.5 mapui:py-1.5 mapui:text-sm mapui:text-slate-800 mapui:outline-none mapui:transition-colors mapui:focus:border-blue-500 mapui:focus:ring-2 mapui:focus:ring-blue-100';
 const selectClass = `${inputClass} mapui:bg-white`;
 
 function toStringValue(value: unknown): string {
