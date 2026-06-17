@@ -45,6 +45,19 @@ describe('STYLE_PRESETS', () => {
     expect(styles.every((s) => s.type === 'line')).toBe(true);
   });
 
+  it('line-cased uses the chosen colour for the inner road and a darker casing outside', () => {
+    const preset = STYLE_PRESETS.find((p) => p.id === 'line-cased');
+    const [outer, inner] = preset!.build('#2980b9') as [
+      { paint: Record<string, unknown> },
+      { paint: Record<string, unknown> },
+    ];
+    // Inner road keeps the exact chosen colour; outer casing is darker.
+    expect(inner.paint['line-color']).toBe('#2980b9');
+    expect(outer.paint['line-color']).not.toBe('#2980b9');
+    // Casing must be wider than the road so it reads as an edge.
+    expect(outer.paint['line-width'] as number).toBeGreaterThan(inner.paint['line-width'] as number);
+  });
+
   it('point-icon produces a symbol style with icon-image', () => {
     const preset = STYLE_PRESETS.find((p) => p.id === 'point-icon');
     const styles = preset!.build('#e74c3c');

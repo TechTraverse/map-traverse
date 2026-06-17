@@ -90,6 +90,8 @@ export { CollectionBrowser } from './CollectionBrowser';
 export type { CollectionBrowserProps } from './CollectionBrowser';
 export { StyleEditor, defaultFill, defaultLine, defaultCircle, defaultSymbol } from './StyleEditor';
 export type { StyleEditorProps } from './StyleEditor';
+export { CasedLineEditor } from './StyleEditor';
+export type { CasedLineEditorProps } from './StyleEditor';
 export { LegendEntryEditor, LegendEditor } from './LegendEditor';
 export type { LegendEntryEditorProps, LegendEditorProps } from './LegendEditor';
 export { SearchFieldEditor, SearchFieldList } from './SearchFieldEditor';

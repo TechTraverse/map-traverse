@@ -24,16 +24,6 @@ function darken(hex: string, amount = 0.25): string {
   return `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
 }
 
-function lighten(hex: string, amount = 0.25): string {
-  const m = /^#?([0-9a-f]{6})$/i.exec(hex);
-  if (!m) return hex;
-  const n = parseInt(m[1], 16);
-  const r = Math.round(((n >> 16) & 0xff) + (255 - ((n >> 16) & 0xff)) * amount);
-  const g = Math.round(((n >> 8) & 0xff) + (255 - ((n >> 8) & 0xff)) * amount);
-  const b = Math.round((n & 0xff) + (255 - (n & 0xff)) * amount);
-  return `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
-}
-
 function presetPolygonFill(color: string): StyleConfig[] {
   return [
     { type: 'fill', paint: { 'fill-color': color, 'fill-opacity': 0.6, 'fill-antialias': true } } satisfies FillStyle,
@@ -77,9 +67,11 @@ function presetLineDashed(color: string): StyleConfig[] {
 }
 
 function presetLineCased(color: string): StyleConfig[] {
+  // [outer casing, inner road]. The chosen colour is the road itself; the
+  // casing is a darker derived outline. Default edge = (4 - 2) / 2 = 1px/side.
   return [
-    { type: 'line', paint: { 'line-color': darken(color, 0.35), 'line-width': 4, 'line-opacity': 1 } } satisfies LineStyle,
-    { type: 'line', paint: { 'line-color': lighten(color, 0.4), 'line-width': 2, 'line-opacity': 1 } } satisfies LineStyle,
+    { type: 'line', paint: { 'line-color': darken(color, 0.4), 'line-width': 4, 'line-opacity': 1 } } satisfies LineStyle,
+    { type: 'line', paint: { 'line-color': color, 'line-width': 2, 'line-opacity': 1 } } satisfies LineStyle,
   ];
 }
 
