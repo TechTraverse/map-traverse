@@ -393,52 +393,52 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons,
             onChange={(styles) => update({ styles })}
           />
           {(() => {
-            const styleCards = (value.styles ?? [defaultFill]).map((style, i) => (
-              <StyleCard
-                key={i}
-                index={i}
-                style={style}
-                onRemove={
-                  (value.styles?.length ?? 0) > 0
-                    ? () => update({ styles: removeAt(value.styles, i) })
-                    : undefined
-                }
-              >
-                <StyleEditor
-                  value={style}
-                  onChange={(s) => update({ styles: replaceAt(value.styles, i, s) })}
-                  suggestedTypes={suitableStyleTypes}
-                  availableIcons={availableIcons}
-                  availableProperties={availableProperties}
-                  onFetchDistinctValues={
-                    baseUrl && collection
-                      ? (property, opts) => fetchDistinctValues(baseUrl, collection, property, { fetchAll: true, ...opts })
+            const styles = value.styles ?? [defaultFill];
+            const renderCards = () =>
+              styles.map((style, i) => (
+                <StyleCard
+                  key={i}
+                  index={i}
+                  style={style}
+                  onRemove={
+                    (value.styles?.length ?? 0) > 0
+                      ? () => update({ styles: removeAt(value.styles, i) })
                       : undefined
                   }
-                />
-              </StyleCard>
-            ));
+                >
+                  <StyleEditor
+                    value={style}
+                    onChange={(s) => update({ styles: replaceAt(value.styles, i, s) })}
+                    suggestedTypes={suitableStyleTypes}
+                    availableIcons={availableIcons}
+                    availableProperties={availableProperties}
+                    onFetchDistinctValues={
+                      baseUrl && collection
+                        ? (property, opts) => fetchDistinctValues(baseUrl, collection, property, { fetchAll: true, ...opts })
+                        : undefined
+                    }
+                  />
+                </StyleCard>
+              ));
 
-            const styles = value.styles ?? [];
             const isCased =
               inferActivePresetId(value.styles) === 'line-cased' &&
               styles.length === 2 &&
               isPlainCasedLine(styles as CasedLinePair);
 
-            if (isCased) {
-              return (
-                <>
-                  <CasedLineEditor
-                    value={[styles[0], styles[1]] as CasedLinePair}
-                    onChange={(pair) => update({ styles: pair })}
-                  />
-                  <CollapsibleSection title="Advanced — edit raw line layers">
-                    <div className="mapui:flex mapui:flex-col mapui:gap-4">{styleCards}</div>
-                  </CollapsibleSection>
-                </>
-              );
-            }
-            return styleCards;
+            if (!isCased) return renderCards();
+
+            return (
+              <>
+                <CasedLineEditor
+                  value={[styles[0], styles[1]] as CasedLinePair}
+                  onChange={(pair) => update({ styles: pair })}
+                />
+                <CollapsibleSection title="Advanced — edit raw line layers">
+                  <div className="mapui:flex mapui:flex-col mapui:gap-4">{renderCards()}</div>
+                </CollapsibleSection>
+              </>
+            );
           })()}
           <div className="mapui:flex mapui:flex-wrap mapui:items-center mapui:gap-2">
             <button
