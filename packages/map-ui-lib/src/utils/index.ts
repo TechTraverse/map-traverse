@@ -23,5 +23,6 @@ export * from './slugify';
 export * from './dashByCategory';
 export * from './globalSearchFetcher';
 export * from './stylePresets';
+export * from './casedLine';
 export * from './wkt';
 export * from './geometry';
