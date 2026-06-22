@@ -50,9 +50,6 @@ storybook-static
 # Local config / infra (not committed)
 /config.json
 /TODO.md
-/ansible/
-/terraform/
-/terraform-gcp/
 /scripts/
 
 # Local-only investigation artifacts (raw DB dumps, logs, screenshots

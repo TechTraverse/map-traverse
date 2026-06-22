@@ -11,7 +11,4 @@
 .env
 .env.*
 GISData
-terraform
-terraform-gcp
-ansible
 *.log

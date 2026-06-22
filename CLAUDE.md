@@ -72,7 +72,6 @@ For dev setup and Docker troubleshooting, see `.agent/workflows/development.md`.
 - No `@testing-library/react` in map-ui-lib. Tests use `renderToStaticMarkup` for components; extract pure logic to `utils/` for direct vitest coverage.
 - After loading data into a new PostGIS schema (or changing `TIPG_DB_SCHEMAS`), `docker restart techtraverse-tipg` is required — tipg discovers schemas only at boot. Without this the new `/collections` entry won't appear.
 - Admin configs live in `map_admin.*` (search_path: `map_admin,public`). The `public.{map_configs,ogc_sources}` rows are stale seed leftovers — the running app does not read them.
-- Deployed containers on the EC2 host are `techtraverse-*` (Caddy gateway). Repo's `docker-compose.yml` is for local dev only — `docker logs techtraverse-tipg` etc. only work locally.
 - `getVectorTileSourceKey` must be called with the **merged** base+active cql2 filter, not just the active one. MapLibre won't refetch vector tiles unless both the React key AND Source/Layer id change.
 - `packages/map-ui-lib`'s main bundle touches `document` at module load. Node-only vitest in `apps/admin-app/` cannot import lib helpers; mirror the helper locally or test it from inside `packages/map-ui-lib` instead.
 - `apps/admin-app/src/components/MapPreview.tsx` has multiple `<Legend>` and per-layer render call sites. When sweeping the file, grep for **all** hits of the relevant symbol — spot-fixes miss the rest.

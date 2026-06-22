@@ -22,11 +22,10 @@ The session that defined this skill (2026-05-10) found a critical map-client cra
 ## What you need before starting
 
 1. **Target deployment URL** — default to the local Docker Compose stack at `http://localhost:8000` (the gateway, after `docker compose up -d`). If QA'ing a remote deploy, ask the user for its URL. Never assume.
-2. **Admin credentials.** For the EC2 deploy, `terraform/terraform.tfvars` shows commented-out hints (the password used to generate `ansible/group_vars/all.yml`'s `admin_password_hash` is named in a `# admin_password_hash = "..."` comment). Verify the candidate against the bcrypt hash with:
+2. **Admin credentials.** The local Docker Compose stack runs with **auth open by default** — `ADMIN_PASSWORD_HASH` is unset (the `ADMIN_USERNAME` / `ADMIN_PASSWORD_HASH` lines in `docker-compose.yml` are commented out), so the admin app needs no login. If auth has been enabled (those env vars are set), get the credentials from whoever configured them, or verify a candidate password against the configured bcrypt hash with:
    ```bash
    node -e "require('bcryptjs').compare('CANDIDATE', '$HASH').then(console.log)"
    ```
-   For local: check `ansible/group_vars/all.yml` and verify the same way, or hand-verify with the user.
 3. **Browser automation.** Playwright MCP (`mcp__plugin_playwright_playwright__browser_*`) is the default driver. Load schemas via `ToolSearch` if not already in context.
 4. **GitHub repo for issue filing.** Default is `techtraverse/map-traverse`. Confirm with the user if they want a different repo. Verify the `qa-session` label exists (`gh label list -R techtraverse/map-traverse`); create it if not.
 5. **A working directory for artifacts.** Use `.playwright-mcp/qa-session/` — it's already screenshot-writable and inside the repo so paths in tool calls work.
