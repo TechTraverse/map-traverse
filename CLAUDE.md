@@ -88,4 +88,4 @@ This repo ships task-specific skills under `.claude/skills/`. Read the relevant 
 - **`extend-map-config`** — Adding or modifying a field in the Zod `MapConfig` schema and propagating it through the store/URL/components/admin editor.
 - **`load-gis-data`** — Ingesting shapefiles, GeoPackages, GeoJSON, FlatGeobuf, etc. into PostGIS so tipg serves them at `/collections`.
 - **`ogc-api-troubleshoot`** — Triage flow for "data exists in PostGIS but isn't reaching the browser".
-- **`qa-storybook-map`** — Live, hands-on QA against a deployed admin + map-client. Builds a throwaway `test` config covering every feature, runs a golden-path checklist plus exploratory probing, files issues under the `qa-session` label.
+- **`qa-map-deployment`** — Live, hands-on QA against a deployed admin + map-client. Builds a throwaway `test` config covering every feature, runs a golden-path checklist plus exploratory probing, files issues under the `qa-session` label.

@@ -1,9 +1,9 @@
 ---
-name: qa-storybook-map
+name: qa-map-deployment
 description: Run a live, hands-on QA session against a deployed (or local) instance of the TechTraverse admin app + map client, using a freshly built throwaway "test" map config to exercise as much of the wizard, lib, and viewer surface as possible. Use this skill whenever the user asks to "test the deployment", "smoke-test the map", "run QA against the live admin", "see if the new build works", "exercise the new feature on the deployed instance", or anything similar that involves driving the running system through a browser. Also use it after a meaningful change to the wizard, the map-client App shell, or any of the lib's interactive components, when you want a real-instance check on top of unit tests. The skill walks through credential discovery, layer research, building a feature-rich test config, round-trip verification, scripted golden-path interactions in the map client, exploratory probing, and structured GitHub issue filing under the `qa-session` label. Do **not** use this skill for unit testing, schema validation, or anything that runs offline — `pnpm verify` covers those.
 ---
 
-# QA the Storybook Map (live, end-to-end)
+# QA the Map Apps (live, end-to-end)
 
 ## Why this skill exists
 
