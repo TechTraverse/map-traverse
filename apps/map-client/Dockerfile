@@ -20,7 +20,7 @@ COPY packages/map-ui-lib/ ./packages/map-ui-lib/
 COPY apps/map-client/ ./apps/map-client/
 
 # Build lib then app
-RUN pnpm --filter @ogc-maps/storybook-components build
+RUN pnpm --filter @techtraverse/map-ui-lib build
 RUN pnpm --filter map-client build
 
 # Stage 2: Runtime

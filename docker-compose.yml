@@ -1,7 +1,7 @@
 services:
   postgis:
     image: postgis/postgis:16-3.4-alpine
-    container_name: storybook-components-postgis
+    container_name: techtraverse-postgis
     environment:
       POSTGRES_DB: gis
       POSTGRES_USER: postgres
@@ -18,7 +18,7 @@ services:
 
   tipg:
     image: ghcr.io/developmentseed/tipg:latest
-    container_name: storybook-components-tipg
+    container_name: techtraverse-tipg
     depends_on:
       postgis:
         condition: service_healthy
@@ -40,7 +40,7 @@ services:
     build:
       context: ./docker/seed
       dockerfile: Dockerfile
-    container_name: storybook-components-seed
+    container_name: techtraverse-seed
     depends_on:
       postgis:
         condition: service_healthy
@@ -59,7 +59,7 @@ services:
     build:
       context: .
       dockerfile: apps/ingest-service/Dockerfile
-    container_name: storybook-components-ingest
+    container_name: techtraverse-ingest
     depends_on:
       postgis:
         condition: service_healthy
@@ -93,7 +93,7 @@ services:
             - .git/
             - .env
             - .env.local
-    container_name: storybook-components-admin-app
+    container_name: techtraverse-admin-app
     depends_on:
       postgis:
         condition: service_healthy
@@ -138,7 +138,7 @@ services:
             - .git/
             - .env
             - .env.local
-    container_name: storybook-components-map-client
+    container_name: techtraverse-map-client
     depends_on:
       tipg:
         condition: service_started
@@ -149,7 +149,7 @@ services:
 
   gateway:
     image: nginx:alpine
-    container_name: storybook-components-gateway
+    container_name: techtraverse-gateway
     depends_on:
       - admin-app
       - map-client

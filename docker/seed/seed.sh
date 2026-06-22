@@ -103,7 +103,7 @@ fi
 # project-specific data. The script is responsible for creating its own
 # schemas and using ogr2ogr -overwrite (or equivalent) for idempotency.
 # Remember to add any new schemas to TIPG_DB_SCHEMAS (via .env override)
-# and to restart tipg afterwards: docker restart storybook-components-tipg
+# and to restart tipg afterwards: docker restart techtraverse-tipg
 if [ -f /scripts/load-shapefiles.sh ]; then
   echo "Running user-provided data loader: load-shapefiles.sh"
   bash /scripts/load-shapefiles.sh
