@@ -1,5 +1,5 @@
 ---
-description: Development workflows for Ogc Maps
+description: Development workflows for TechTraverse Map Apps
 ---
 
 # Development Workflows

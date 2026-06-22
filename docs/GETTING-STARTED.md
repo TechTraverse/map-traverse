@@ -1,26 +1,20 @@
 # Getting Started
 
-This guide walks you through installing `@techtraverse/map-ui-lib`, defining a minimal config, and rendering your first components.
+This guide walks you through defining a minimal config and rendering your first components from `@techtraverse/map-ui-lib`.
 
-## Installation
+## Using the library
 
-```bash
-pnpm add @techtraverse/map-ui-lib
-# or
-npm install @techtraverse/map-ui-lib
-# or
-yarn add @techtraverse/map-ui-lib
+`@techtraverse/map-ui-lib` is an **internal workspace package** — it is not published to npm. It is consumed by the apps in this monorepo (`apps/map-client`, `apps/admin-app`) via a `workspace:*` reference in their `package.json`. No install step is needed; running `pnpm install` at the repo root wires everything up automatically.
+
+To import from the lib within the monorepo:
+
+```ts
+import { LayerPanel } from '@techtraverse/map-ui-lib/components/LayerPanel';
+import type { MapConfig } from '@techtraverse/map-ui-lib/types';
+import { safeValidateMapConfig } from '@techtraverse/map-ui-lib/schemas';
 ```
 
-**Peer dependencies** (install separately if not already present):
-
-```bash
-pnpm add react react-dom react-icons
-```
-
-## Import Styles
-
-Import the library's compiled CSS in your app entry point (e.g., `main.tsx`):
+The lib's compiled CSS must be imported in the consuming app's entry point (e.g., `main.tsx`):
 
 ```tsx
 import '@techtraverse/map-ui-lib/style.css';
