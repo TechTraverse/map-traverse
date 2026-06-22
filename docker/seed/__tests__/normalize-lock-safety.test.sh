@@ -4,7 +4,7 @@
 # init_normalize_public.sql already installed.
 set -euo pipefail
 
-PSQL=(docker exec -i storybook-components-postgis psql -U postgres -d gis -v ON_ERROR_STOP=1 -At)
+PSQL=(docker exec -i techtraverse-postgis psql -U postgres -d gis -v ON_ERROR_STOP=1 -At)
 
 cleanup() { "${PSQL[@]}" -c 'DROP TABLE IF EXISTS public."zz_busy"; DROP TABLE IF EXISTS public."Zz Busy";' >/dev/null 2>&1 || true; }
 trap cleanup EXIT
@@ -13,7 +13,7 @@ cleanup
 "${PSQL[@]}" -c 'CREATE TABLE public."Zz Busy" (id int);' >/dev/null
 
 # ROW EXCLUSIVE conflicts with the ACCESS EXCLUSIVE lock that RENAME requires
-docker exec -i storybook-components-postgis psql -U postgres -d gis -c \
+docker exec -i techtraverse-postgis psql -U postgres -d gis -c \
   'BEGIN; LOCK TABLE public."Zz Busy" IN ROW EXCLUSIVE MODE; SELECT pg_sleep(6); COMMIT;' >/dev/null &
 LOCK_PID=$!
 # Wait until the background session actually holds its lock before sweeping.

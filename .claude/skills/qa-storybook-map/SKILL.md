@@ -1,6 +1,6 @@
 ---
 name: qa-storybook-map
-description: Run a live, hands-on QA session against a deployed (or local) instance of the storybook-components admin app + map client, using a freshly built throwaway "test" map config to exercise as much of the wizard, lib, and viewer surface as possible. Use this skill whenever the user asks to "test the deployment", "smoke-test the map", "run QA against the live admin", "see if the new build works", "exercise the new feature on the deployed instance", or anything similar that involves driving the running system through a browser. Also use it after a meaningful change to the wizard, the map-client App shell, or any of the lib's interactive components, when you want a real-instance check on top of unit tests. The skill walks through credential discovery, layer research, building a feature-rich test config, round-trip verification, scripted golden-path interactions in the map client, exploratory probing, and structured GitHub issue filing under the `qa-session` label. Do **not** use this skill for unit testing, schema validation, or anything that runs offline — `pnpm verify` covers those.
+description: Run a live, hands-on QA session against a deployed (or local) instance of the TechTraverse admin app + map client, using a freshly built throwaway "test" map config to exercise as much of the wizard, lib, and viewer surface as possible. Use this skill whenever the user asks to "test the deployment", "smoke-test the map", "run QA against the live admin", "see if the new build works", "exercise the new feature on the deployed instance", or anything similar that involves driving the running system through a browser. Also use it after a meaningful change to the wizard, the map-client App shell, or any of the lib's interactive components, when you want a real-instance check on top of unit tests. The skill walks through credential discovery, layer research, building a feature-rich test config, round-trip verification, scripted golden-path interactions in the map client, exploratory probing, and structured GitHub issue filing under the `qa-session` label. Do **not** use this skill for unit testing, schema validation, or anything that runs offline — `pnpm verify` covers those.
 ---
 
 # QA the Storybook Map (live, end-to-end)
@@ -28,7 +28,7 @@ The session that defined this skill (2026-05-10) found a critical map-client cra
    ```
    For local: check `ansible/group_vars/all.yml` and verify the same way, or hand-verify with the user.
 3. **Browser automation.** Playwright MCP (`mcp__plugin_playwright_playwright__browser_*`) is the default driver. Load schemas via `ToolSearch` if not already in context.
-4. **GitHub repo for issue filing.** Default is `ogc-maps/storybook-components`. Confirm with the user if they want a different repo. Verify the `qa-session` label exists (`gh label list -R ogc-maps/storybook-components`); create it if not.
+4. **GitHub repo for issue filing.** Default is `techtraverse/map-traverse`. Confirm with the user if they want a different repo. Verify the `qa-session` label exists (`gh label list -R techtraverse/map-traverse`); create it if not.
 5. **A working directory for artifacts.** Use `.playwright-mcp/qa-session/` — it's already screenshot-writable and inside the repo so paths in tool calls work.
 
 ## The phase flow

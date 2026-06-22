@@ -1,4 +1,4 @@
-# @ogc-maps/storybook-components
+# @techtraverse/map-ui-lib
 
 A reusable, config-driven map component library built on OGC API standards. Designed for building interactive web maps with React and `tipg` — the library itself has no MapLibre dependency.
 
@@ -12,33 +12,25 @@ A reusable, config-driven map component library built on OGC API standards. Desi
 - **Data-Driven Styling**: Visual editors for categorical and gradient color expressions.
 - **Geometry Export**: CSV export with WKT geometry support.
 
-## Installation
+## Usage
 
-```bash
-pnpm add @ogc-maps/storybook-components
-# or
-npm install @ogc-maps/storybook-components
-# or
-yarn add @ogc-maps/storybook-components
-```
-
-Peer dependencies: `react`, `react-dom`, `react-icons`
+This is an **internal workspace package** consumed by the monorepo apps via `workspace:*`. It is not published to npm — no `pnpm add` / `npm install` step is needed. Apps reference it directly from the monorepo.
 
 ## Quick Start
 
 ```tsx
 // 1. Import styles in your entry point (default styles use the mapui: prefix; you can override with your own Tailwind/CSS)
-import '@ogc-maps/storybook-components/style.css';
+import '@techtraverse/map-ui-lib/style.css';
 
 // 2. Define and validate your config
-import { safeValidateMapConfig } from '@ogc-maps/storybook-components/schemas';
+import { safeValidateMapConfig } from '@techtraverse/map-ui-lib/schemas';
 
 const result = safeValidateMapConfig(myConfig);
 if (!result.success) throw new Error('Invalid config');
 
 // 3. Render components with your state
-import { LayerPanel } from '@ogc-maps/storybook-components/components/LayerPanel';
-import { Legend }     from '@ogc-maps/storybook-components/components/Legend';
+import { LayerPanel } from '@techtraverse/map-ui-lib/components/LayerPanel';
+import { Legend }     from '@techtraverse/map-ui-lib/components/Legend';
 
 function MapUI({ layers, visibleIds, onToggle }) {
   return (
@@ -58,7 +50,6 @@ Default styles use the `mapui:` Tailwind prefix so they won't clash with your ap
 - [Configuration](../../docs/CONFIGURATION.md) — Full `MapConfig` schema reference
 - [Components](../../docs/COMPONENTS.md) — All component APIs with props tables and examples
 - [Hooks & Utilities](../../docs/HOOKS.md) — OGC API hooks and utility functions
-- [Publishing](../../docs/PUBLISHING.md) — Versioning and release guide
 
 ## License
 

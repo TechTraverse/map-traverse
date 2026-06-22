@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { FormField, ColorPicker } from '@ogc-maps/storybook-components';
+import { FormField, ColorPicker } from '@techtraverse/map-ui-lib';
 import { useSettings } from '../hooks/useSettings';
 import type { SiteSettings } from '../hooks/useSettings';
 import { ImageUploadField } from '../components/ImageUploadField';

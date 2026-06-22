@@ -4,12 +4,12 @@ How to file GitHub issues from a QA session so they're actionable, deduplicatabl
 
 ## Repo + labels
 
-- **Default repo:** `ogc-maps/storybook-components`. Confirm with the user if working against a fork.
+- **Default repo:** `techtraverse/map-traverse`. Confirm with the user if working against a fork.
 - **Required label:** `qa-session` (so all session findings can be queried as a group). Create it once if missing:
   ```bash
   gh label create qa-session --color "BFE5BF" \
     --description "Found during a Claude QA session" \
-    -R ogc-maps/storybook-components
+    -R techtraverse/map-traverse
   ```
 - **Type label** (pick one):
   - `bug` — something is broken or returns the wrong result
@@ -108,13 +108,13 @@ Found during a Claude-driven QA session against the deployment on <YYYY-MM-DD>.
 1. **Verify the bug is reproducible.** Hit it twice, ideally with a fresh browser context. If it's a one-off, write it under "non-reproducible observations" in the report and skip filing.
 2. **Search existing issues** before filing:
    ```bash
-   gh issue list -R ogc-maps/storybook-components --state all --search "<short keyword>"
+   gh issue list -R techtraverse/map-traverse --state all --search "<short keyword>"
    ```
    If there's an existing issue, comment with your repro instead of opening a duplicate. Tag with `qa-session` via `gh issue edit N --add-label qa-session` if it isn't already.
 3. **Take a screenshot** at the failure state — save to `.playwright-mcp/qa-session/NN-short-description.png`. Reference the relative path in the issue body.
 4. **File via gh CLI**, using a heredoc to preserve formatting:
    ```bash
-   gh issue create -R ogc-maps/storybook-components \
+   gh issue create -R techtraverse/map-traverse \
      --title "<title>" \
      --label "bug,qa-session" \
      --body "$(cat <<'EOF'

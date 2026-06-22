@@ -1,7 +1,7 @@
 # Config Versioning Strategy
 
 > Status: **Design proposal** — nothing in this document is implemented yet.
-> This file exists so that when `@ogc-maps/storybook-components` approaches
+> This file exists so that when `@techtraverse/map-ui-lib` approaches
 > v1.0.0 we already have a plan for managing `MapConfig` shape changes
 > without breaking stored admin configs.
 
@@ -20,7 +20,7 @@ today, parse with `safeValidateMapConfig`"*. Pre-1.0 that is fine — if we
 break the schema, we fix the checked-in configs and move on. Post-1.0 we
 will have:
 
-- **External consumers** of `@ogc-maps/storybook-components` who depend on
+- **External consumers** of `@techtraverse/map-ui-lib` who depend on
   the shape of `MapConfig` and cannot be fixed by us.
 - **Long-lived admin DB rows** that may have been written against older
   schema versions and need to keep parsing after an upgrade.
@@ -51,9 +51,8 @@ Key rules:
 - **Default, not required.** Configs on disk that predate the versioning
   rollout parse as `1.0.0` (or whatever the first released version is).
   This means existing configs work unchanged.
-- **Semver string, not integer.** We already publish with semver via
-  changesets, so using the same scheme for the schema avoids a second
-  mental model.
+- **Semver string, not integer.** We version with semver, so using the same
+  scheme for the schema avoids a second mental model.
 - **MAJOR bumps** when we make a breaking change (field removal, type
   change, semantic change). **MINOR** for additive changes (new optional
   field with a default). **PATCH** for bug fixes to the parse logic itself.

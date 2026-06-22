@@ -67,7 +67,7 @@ body:
       placeholder: |
         - Browser: Chrome 124 / Firefox 126 / Safari 17
         - OS: macOS / Windows / Linux
-        - Package version: (if known, e.g. @ogc-maps/map-ui-lib@0.3.1)
+        - Package version: (if known, e.g. @techtraverse/map-ui-lib@0.3.1)
         - Storybook story: (if applicable)
         - API endpoint: (if applicable)
     validations:

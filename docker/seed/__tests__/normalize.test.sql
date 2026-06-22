@@ -1,5 +1,5 @@
 -- Run against the local dev DB AFTER installing init_normalize_public.sql:
---   docker exec -i storybook-components-postgis psql -U postgres -d gis -v ON_ERROR_STOP=1 \
+--   docker exec -i techtraverse-postgis psql -U postgres -d gis -v ON_ERROR_STOP=1 \
 --     < docker/seed/__tests__/normalize.test.sql
 -- Exits non-zero on first failed ASSERT. Cleans up its own fixtures.
 

@@ -1,6 +1,6 @@
 ---
 name: project-conventions
-description: The non-negotiable architectural rules for the storybook-components / ogc-maps monorepo, with the *why* behind each. Use this skill at the start of any non-trivial code change in this repo — before adding components, hooks, store fields, URL params, schema fields, app routes, or anything that crosses the lib/app boundary. Also use it whenever the user asks "how should I structure X", "where should this code live", "is this the right pattern", or seems about to violate one of the rules in CLAUDE.md or .cursorrules. The rules look like preferences but each one exists because violating it caused a real bug in the past. Reading this skill before writing code is much cheaper than discovering the rule during PR review.
+description: The non-negotiable architectural rules for the map-traverse / techtraverse monorepo, with the *why* behind each. Use this skill at the start of any non-trivial code change in this repo — before adding components, hooks, store fields, URL params, schema fields, app routes, or anything that crosses the lib/app boundary. Also use it whenever the user asks "how should I structure X", "where should this code live", "is this the right pattern", or seems about to violate one of the rules in CLAUDE.md or .cursorrules. The rules look like preferences but each one exists because violating it caused a real bug in the past. Reading this skill before writing code is much cheaper than discovering the rule during PR review.
 ---
 
 # Project Conventions
@@ -17,13 +17,12 @@ If you're about to write code in this repo and you haven't read this skill yet, 
 
 > No `maplibre-gl`, no `react-map-gl`, no map rendering anywhere in the lib.
 
-The library is published as `@ogc-maps/storybook-components` and gets consumed by:
+The library (`@techtraverse/map-ui-lib`) is an internal workspace package consumed only within this monorepo:
 - `apps/map-client` (which renders an actual map with MapLibre)
 - `apps/admin-app` (which renders the *config* for a map but doesn't render the map itself)
-- External users (who may use a different map library entirely)
 - vitest in jsdom (which has no canvas, no WebGL, nothing)
 
-If you import MapLibre into the lib, the admin app starts pulling MapLibre into its bundle for no reason, vitest blows up trying to run jsdom, and external consumers are forced into our renderer choice. Map rendering belongs in `apps/map-client`. The lib can produce style specs (JSON), accept viewport state as plain props, and emit callbacks — but it never *renders* a map.
+If you import MapLibre into the lib, the admin app starts pulling MapLibre into its bundle for no reason, and vitest blows up trying to run jsdom. The lib must remain usable without a map renderer. Map rendering belongs in `apps/map-client`. The lib can produce style specs (JSON), accept viewport state as plain props, and emit callbacks — but it never *renders* a map.
 
 **Where to put map code instead:** `apps/map-client/src/`. The client wraps `react-map-gl/maplibre` in controlled mode and binds it to the Zustand store.
 
@@ -88,7 +87,7 @@ This is what makes the lib reusable against any OGC API server, and what lets us
 
 > Every component and every hook in `packages/map-ui-lib` has at least one `.stories.tsx` next to it.
 
-Stories are how consumers discover the lib (literally — its name is "storybook-components"), how visual changes get reviewed, and how you debug a component in isolation when something goes wrong in the app. A component without a story is a component nobody else will use correctly.
+Stories are how developers discover the lib, how visual changes get reviewed, and how you debug a component in isolation when something goes wrong in the app. A component without a story is a component nobody else will use correctly.
 
 ### 8. Always run `pnpm verify` before declaring a task done
 
@@ -103,11 +102,11 @@ If `pnpm verify` fails, fix the failure or — if the failure is real and
 out of scope — say so explicitly in the PR description rather than silently
 skipping.
 
-### 9. Versioning via changesets
+### 9. No publish or changeset step
 
-> Public changes to `@ogc-maps/storybook-components` need a changeset.
+> `@techtraverse/map-ui-lib` is an internal workspace package — it is NOT published to npm.
 
-The lib is published. PRs that touch its public API should `pnpm changeset` and commit the resulting `.changeset/*.md` file. See `docs/PUBLISHING.md` and the existing entries in `.changeset/`.
+Apps reference it via `workspace:*` in their `package.json`. There is no `pnpm changeset`, no `.changeset/` directory, and no publish/release script. When the lib API changes, update the consuming apps in the same PR.
 
 ## When the rules seem to conflict with the task
 

@@ -1,10 +1,10 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { Map, Source, Layer, Marker, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
-import { useOgcFeatures } from '@ogc-maps/storybook-components/hooks';
-import { getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSourceKey, buildGeometryFilter, getImageryTileUrl, expandDashByCategory, buildSourceUrlMap, buildHeaderAuthTransformRequest } from '@ogc-maps/storybook-components/utils';
-import type { CQL2Expression, SourceAuth } from '@ogc-maps/storybook-components/utils';
-import type { LayerConfig, ImageryLayerConfig } from '@ogc-maps/storybook-components/types';
-import type { MeasureMode, SelectionMode } from '@ogc-maps/storybook-components';
+import { useOgcFeatures } from '@techtraverse/map-ui-lib/hooks';
+import { getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSourceKey, buildGeometryFilter, getImageryTileUrl, expandDashByCategory, buildSourceUrlMap, buildHeaderAuthTransformRequest } from '@techtraverse/map-ui-lib/utils';
+import type { CQL2Expression, SourceAuth } from '@techtraverse/map-ui-lib/utils';
+import type { LayerConfig, ImageryLayerConfig } from '@techtraverse/map-ui-lib/types';
+import type { MeasureMode, SelectionMode } from '@techtraverse/map-ui-lib';
 import { useMapStore, useEffectiveCql2Filters } from '../stores/mapStore';
 
 // Inline component for vector tile layers

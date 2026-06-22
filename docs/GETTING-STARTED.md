@@ -1,29 +1,23 @@
 # Getting Started
 
-This guide walks you through installing `@ogc-maps/storybook-components`, defining a minimal config, and rendering your first components.
+This guide walks you through defining a minimal config and rendering your first components from `@techtraverse/map-ui-lib`.
 
-## Installation
+## Using the library
 
-```bash
-pnpm add @ogc-maps/storybook-components
-# or
-npm install @ogc-maps/storybook-components
-# or
-yarn add @ogc-maps/storybook-components
+`@techtraverse/map-ui-lib` is an **internal workspace package** — it is not published to npm. It is consumed by the apps in this monorepo (`apps/map-client`, `apps/admin-app`) via a `workspace:*` reference in their `package.json`. No install step is needed; running `pnpm install` at the repo root wires everything up automatically.
+
+To import from the lib within the monorepo:
+
+```ts
+import { LayerPanel } from '@techtraverse/map-ui-lib/components/LayerPanel';
+import type { MapConfig } from '@techtraverse/map-ui-lib/types';
+import { safeValidateMapConfig } from '@techtraverse/map-ui-lib/schemas';
 ```
 
-**Peer dependencies** (install separately if not already present):
-
-```bash
-pnpm add react react-dom react-icons
-```
-
-## Import Styles
-
-Import the library's compiled CSS in your app entry point (e.g., `main.tsx`):
+The lib's compiled CSS must be imported in the consuming app's entry point (e.g., `main.tsx`):
 
 ```tsx
-import '@ogc-maps/storybook-components/style.css';
+import '@techtraverse/map-ui-lib/style.css';
 ```
 
 The library uses TailwindCSS v4 with a `mapui:` prefix — all styles are scoped and self-contained.
@@ -33,7 +27,7 @@ The library uses TailwindCSS v4 with a `mapui:` prefix — all styles are scoped
 Create a config object that satisfies `MapConfig`. At minimum you need one source, one basemap, and an `initialView`:
 
 ```ts
-import type { MapConfig } from '@ogc-maps/storybook-components/types';
+import type { MapConfig } from '@techtraverse/map-ui-lib/types';
 
 export const mapConfig: MapConfig = {
   sources: [
@@ -77,7 +71,7 @@ export const mapConfig: MapConfig = {
 Use `safeValidateMapConfig` to validate without throwing:
 
 ```ts
-import { safeValidateMapConfig } from '@ogc-maps/storybook-components/schemas';
+import { safeValidateMapConfig } from '@techtraverse/map-ui-lib/schemas';
 
 const result = safeValidateMapConfig(mapConfig);
 
@@ -91,7 +85,7 @@ if (!result.success) {
 Or use `validateMapConfig` if you prefer exceptions:
 
 ```ts
-import { validateMapConfig } from '@ogc-maps/storybook-components/schemas';
+import { validateMapConfig } from '@techtraverse/map-ui-lib/schemas';
 
 const validConfig = validateMapConfig(mapConfig); // throws ZodError if invalid
 ```
@@ -104,8 +98,8 @@ All components are fully controlled — you manage state and pass it down via pr
 
 ```tsx
 import { useState } from 'react';
-import { LayerPanel } from '@ogc-maps/storybook-components/components/LayerPanel';
-import { Legend } from '@ogc-maps/storybook-components/components/Legend';
+import { LayerPanel } from '@techtraverse/map-ui-lib/components/LayerPanel';
+import { Legend } from '@techtraverse/map-ui-lib/components/Legend';
 import { mapConfig } from './mapConfig';
 
 function MapUI() {
@@ -137,4 +131,3 @@ function MapUI() {
 - **[CONFIGURATION.md](./CONFIGURATION.md)** — Full `MapConfig` schema reference
 - **[COMPONENTS.md](./COMPONENTS.md)** — All component APIs
 - **[HOOKS.md](./HOOKS.md)** — OGC API hooks and utility functions
-- **[PUBLISHING.md](./PUBLISHING.md)** — Publishing and versioning guide

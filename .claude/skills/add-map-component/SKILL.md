@@ -1,20 +1,20 @@
 ---
 name: add-map-component
-description: Add a new UI component to the @ogc-maps/storybook-components library (packages/map-ui-lib). Use this whenever the user asks to create, scaffold, or add a new component, panel, control, editor, drawer, modal, or widget to the map UI library, even if they don't explicitly say "component". Also use it when they ask to add a Storybook story for an existing component or to expose a new export from the library. The skill enforces the project's non-negotiable rules: framework-agnostic (no MapLibre imports), fully controlled, mapui:-prefixed Tailwind, plus a Storybook story.
+description: Add a new UI component to the @techtraverse/map-ui-lib library (packages/map-ui-lib). Use this whenever the user asks to create, scaffold, or add a new component, panel, control, editor, drawer, modal, or widget to the map UI library, even if they don't explicitly say "component". Also use it when they ask to add a Storybook story for an existing component or to expose a new export from the library. The skill enforces the project's non-negotiable rules: framework-agnostic (no MapLibre imports), fully controlled, mapui:-prefixed Tailwind, plus a Storybook story.
 ---
 
 # Add a Map UI Component
 
 ## Why this skill exists
 
-`packages/map-ui-lib` is published as `@ogc-maps/storybook-components` and is consumed by `apps/map-client`, `apps/admin-app`, and external users. It has strict rules that exist for real reasons — violating them silently breaks downstream consumers in ways the type checker won't catch. This skill keeps new components consistent with the ~30 existing ones and the rules in `CLAUDE.md`.
+`packages/map-ui-lib` is an internal workspace package (`@techtraverse/map-ui-lib`) consumed by `apps/map-client` and `apps/admin-app` within this monorepo. It is NOT published to npm. It has strict rules that exist for real reasons — violating them silently breaks downstream consumers in ways the type checker won't catch. This skill keeps new components consistent with the ~30 existing ones and the rules in `CLAUDE.md`.
 
 ## The non-negotiables (and why)
 
 - **No MapLibre, no `react-map-gl`, no map rendering code in the lib.** The library has to stay usable in environments that don't have a map (e.g. the admin app's config editor, jsdom tests, or a different renderer). If you import MapLibre here, you make the lib unusable for those consumers and you couple two layers that should evolve independently. Map integration lives in `apps/map-client`.
 - **Fully controlled components.** State for *data* lives in the consumer (Zustand store, parent component, etc.). The component receives data via props and emits changes via callbacks. Local UI state (e.g. "is this dropdown open") is fine, but don't store domain data internally — that breaks URL sync via `nuqs` and makes the component impossible to reset deterministically.
 - **`mapui:` Tailwind prefix on every class.** The lib ships its own scoped Tailwind v4 build so it can be embedded in pages with their own styles without collisions. A class without the prefix will simply not be styled in production. Always write `mapui:flex`, never bare `flex`.
-- **Every component gets a Storybook story.** The lib's name is literally "storybook-components" — stories are how consumers discover and verify behavior, and how you debug in isolation.
+- **Every component gets a Storybook story.** Stories are how developers discover and verify behavior, and how you debug in isolation.
 
 ## Steps
 
@@ -46,7 +46,7 @@ description: Add a new UI component to the @ogc-maps/storybook-components librar
    Then re-export from `packages/map-ui-lib/src/components/index.ts` *and* from `packages/map-ui-lib/src/main.ts`. If you skip `main.ts`, downstream apps won't see the new component.
 
 6. **Verify before handing off.**
-   - `pnpm --filter @ogc-maps/storybook-components build` — catches missing exports and TS errors.
+   - `pnpm --filter @techtraverse/map-ui-lib build` — catches missing exports and TS errors.
    - `pnpm storybook` — visually verify the new story renders.
    - `pnpm test` — run vitest if there are existing tests touching the area.
 

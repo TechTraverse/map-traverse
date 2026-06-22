@@ -77,7 +77,7 @@ For these phases, you (the lead) do all the work yourself. No team needed — th
 3. Work through Chunks 2A → 2B → 2C → 2D → 2E in order (read each from PLAN.md)
 4. Commit after each chunk with a descriptive message
 5. After all chunks: run `pnpm verify`, fix any failures
-6. If you modified the public API of packages/map-ui-lib, run `pnpm changeset` and commit the result
+6. If you modified the public API of packages/map-ui-lib, update the consuming apps in the same PR (no changeset — the lib is internal-only)
 7. Merge into ai/main: `git checkout ai/main && git merge ai/phase-2 --no-ff`
 8. Log: "Phase 2 complete. ai/main is green."
 
@@ -87,7 +87,7 @@ For these phases, you (the lead) do all the work yourself. No team needed — th
 3. Work through Chunks 4A → 4B → 4C → 4D in order (read each from PLAN.md)
 4. Commit after each chunk
 5. After all chunks: `pnpm verify`, fix failures
-6. Changeset if needed, merge into ai/main
+6. Merge into ai/main: `git checkout ai/main && git merge ai/phase-4 --no-ff`
 7. Log: "Phase 4 complete. ai/main is green."
 
 **Phase 5:**
@@ -96,7 +96,7 @@ For these phases, you (the lead) do all the work yourself. No team needed — th
 3. Work through Chunks 5A → 5B → 5C → 5D → 5E in order (read each from PLAN.md)
 4. Commit after each chunk
 5. After all chunks: `pnpm verify`, fix failures
-6. Changeset if needed, merge into ai/main
+6. Merge into ai/main: `git checkout ai/main && git merge ai/phase-5 --no-ff`
 7. Log: "Phase 5 complete. ai/main is green."
 
 ---

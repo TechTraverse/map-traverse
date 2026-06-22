@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { ConfirmDialog } from '@ogc-maps/storybook-components';
+import { ConfirmDialog } from '@techtraverse/map-ui-lib';
 import { LuPencil, LuTrash2, LuDatabase } from 'react-icons/lu';
 import { DataUploadField } from '../components/DataUploadField';
 import { GeometryBadge } from '../components/GeometryBadge';

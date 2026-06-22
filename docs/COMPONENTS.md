@@ -8,15 +8,15 @@ All components are fully controlled — no internal state for data. The library 
 Import them individually by sub-path to enable tree-shaking:
 
 ```ts
-import { LayerPanel }           from '@ogc-maps/storybook-components/components/LayerPanel';
-import { Legend }               from '@ogc-maps/storybook-components/components/Legend';
-import { BasemapSwitcher }      from '@ogc-maps/storybook-components/components/BasemapSwitcher';
-import { CollapsibleControl }   from '@ogc-maps/storybook-components/components/CollapsibleControl';
-import { CoordinateDisplay }    from '@ogc-maps/storybook-components/components/CoordinateDisplay';
-import { SearchPanel }          from '@ogc-maps/storybook-components/components/SearchPanel';
-import { FeatureDetailPanel }   from '@ogc-maps/storybook-components/components/FeatureDetailPanel';
-import { FeatureTooltip }       from '@ogc-maps/storybook-components/components/FeatureTooltip';
-import { ExportButton }         from '@ogc-maps/storybook-components/components/ExportButton';
+import { LayerPanel }           from '@techtraverse/map-ui-lib/components/LayerPanel';
+import { Legend }               from '@techtraverse/map-ui-lib/components/Legend';
+import { BasemapSwitcher }      from '@techtraverse/map-ui-lib/components/BasemapSwitcher';
+import { CollapsibleControl }   from '@techtraverse/map-ui-lib/components/CollapsibleControl';
+import { CoordinateDisplay }    from '@techtraverse/map-ui-lib/components/CoordinateDisplay';
+import { SearchPanel }          from '@techtraverse/map-ui-lib/components/SearchPanel';
+import { FeatureDetailPanel }   from '@techtraverse/map-ui-lib/components/FeatureDetailPanel';
+import { FeatureTooltip }       from '@techtraverse/map-ui-lib/components/FeatureTooltip';
+import { ExportButton }         from '@techtraverse/map-ui-lib/components/ExportButton';
 ```
 
 ---
@@ -46,7 +46,7 @@ A list of layers with visibility checkboxes and optional drag-to-reorder.
 
 ```tsx
 import { useState } from 'react';
-import { LayerPanel } from '@ogc-maps/storybook-components/components/LayerPanel';
+import { LayerPanel } from '@techtraverse/map-ui-lib/components/LayerPanel';
 
 function App() {
   const [layers, setLayers] = useState(mapConfig.layers);
@@ -98,7 +98,7 @@ Displays a legend for visible layers, auto-derived from layer styles when no exp
 ### Example
 
 ```tsx
-import { Legend } from '@ogc-maps/storybook-components/components/Legend';
+import { Legend } from '@techtraverse/map-ui-lib/components/Legend';
 
 <Legend
   layers={mapConfig.layers}
@@ -132,7 +132,7 @@ A button group for selecting the active basemap. Supports optional thumbnail ima
 
 ```tsx
 import { useState } from 'react';
-import { BasemapSwitcher } from '@ogc-maps/storybook-components/components/BasemapSwitcher';
+import { BasemapSwitcher } from '@techtraverse/map-ui-lib/components/BasemapSwitcher';
 
 function App() {
   const [activeBasemap, setActiveBasemap] = useState('carto-positron');
@@ -180,8 +180,8 @@ A wrapper that collapses any content into a compact icon button. Designed as an 
 
 ```tsx
 import { LuLayers3 } from 'react-icons/lu';
-import { CollapsibleControl } from '@ogc-maps/storybook-components/components/CollapsibleControl';
-import { LayerPanel } from '@ogc-maps/storybook-components/components/LayerPanel';
+import { CollapsibleControl } from '@techtraverse/map-ui-lib/components/CollapsibleControl';
+import { LayerPanel } from '@techtraverse/map-ui-lib/components/LayerPanel';
 
 <CollapsibleControl icon={LuLayers3} label="Layers">
   <LayerPanel
@@ -227,7 +227,7 @@ Both formatters are exported from the component module:
 import {
   formatDecimal,
   formatDMS,
-} from '@ogc-maps/storybook-components/components/CoordinateDisplay';
+} from '@techtraverse/map-ui-lib/components/CoordinateDisplay';
 ```
 
 | Function | Output example |
@@ -248,7 +248,7 @@ import {
   CoordinateDisplay,
   formatDecimal,
   formatDMS,
-} from '@ogc-maps/storybook-components/components/CoordinateDisplay';
+} from '@techtraverse/map-ui-lib/components/CoordinateDisplay';
 
 const formats = [
   { id: 'decimal', label: 'DD',  format: formatDecimal },
@@ -318,9 +318,9 @@ type SearchFilterValues = Record<string, SearchFilterValue>;
 
 ```tsx
 import { useState, useCallback, useMemo } from 'react';
-import { SearchPanel } from '@ogc-maps/storybook-components/components/SearchPanel';
-import { fromStructuredFilters } from '@ogc-maps/storybook-components/hooks';
-import type { SearchFilterValues, SearchFilterValue } from '@ogc-maps/storybook-components/types';
+import { SearchPanel } from '@techtraverse/map-ui-lib/components/SearchPanel';
+import { fromStructuredFilters } from '@techtraverse/map-ui-lib/hooks';
+import type { SearchFilterValues, SearchFilterValue } from '@techtraverse/map-ui-lib/types';
 
 function App() {
   const [filters, setFilters] = useState<Record<string, SearchFilterValues>>({});
@@ -387,7 +387,7 @@ Displays properties for a selected map feature. Supports an inline panel variant
 
 ```tsx
 import { useState } from 'react';
-import { FeatureDetailPanel } from '@ogc-maps/storybook-components/components/FeatureDetailPanel';
+import { FeatureDetailPanel } from '@techtraverse/map-ui-lib/components/FeatureDetailPanel';
 
 function App() {
   const [selectedFeature, setSelectedFeature] = useState<Record<string, unknown> | null>(null);
@@ -430,7 +430,7 @@ A compact tooltip that shows a preview of feature properties. The caller is resp
 ### Example
 
 ```tsx
-import { FeatureTooltip } from '@ogc-maps/storybook-components/components/FeatureTooltip';
+import { FeatureTooltip } from '@techtraverse/map-ui-lib/components/FeatureTooltip';
 
 function MapTooltip({ x, y, feature }) {
   return (
@@ -481,8 +481,8 @@ interface ExportableLayer {
 ### Example
 
 ```tsx
-import { ExportButton } from '@ogc-maps/storybook-components/components/ExportButton';
-import { useCsvExport } from '@ogc-maps/storybook-components/hooks';
+import { ExportButton } from '@techtraverse/map-ui-lib/components/ExportButton';
+import { useCsvExport } from '@techtraverse/map-ui-lib/hooks';
 
 function App() {
   const { exportCsv, loading } = useCsvExport({ baseUrl: 'http://localhost:8000' });
@@ -511,9 +511,9 @@ These components are used by the `admin-app` app to build a visual config wizard
 Import via the main components sub-path:
 
 ```ts
-import { SourceEditor, LayerEditor, StyleEditor, ... } from '@ogc-maps/storybook-components/components/...';
+import { SourceEditor, LayerEditor, StyleEditor, ... } from '@techtraverse/map-ui-lib/components/...';
 // or from the main entry:
-import { SourceEditor } from '@ogc-maps/storybook-components';
+import { SourceEditor } from '@techtraverse/map-ui-lib';
 ```
 
 All admin components are fully controlled (value + onChange pattern).
@@ -756,8 +756,8 @@ Visual CQL2 filter builder for constructing query templates. Supports comparison
 
 ```tsx
 import { useState } from 'react';
-import type { Cql2FilterConfig } from '@ogc-maps/storybook-components/hooks';
-import { Cql2FilterEditor } from '@ogc-maps/storybook-components/components/Cql2FilterEditor';
+import type { Cql2FilterConfig } from '@techtraverse/map-ui-lib/hooks';
+import { Cql2FilterEditor } from '@techtraverse/map-ui-lib/components/Cql2FilterEditor';
 
 function MyAdmin() {
   const [filter, setFilter] = useState<Cql2FilterConfig | undefined>(undefined);

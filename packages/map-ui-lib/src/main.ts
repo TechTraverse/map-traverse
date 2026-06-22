@@ -1,4 +1,4 @@
-// Main entry point for @ogc-maps/storybook-components
+// Main entry point for @techtraverse/map-ui-lib
 import '../tailwind.css';
 
 // Re-export components

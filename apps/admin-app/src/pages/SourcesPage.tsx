@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useState } from 'react';
-import { SourceEditor, BasemapEditor, ConfirmDialog, WmtsSourceEditor } from '@ogc-maps/storybook-components';
-import type { OgcApiSource, SourceAuth, BasemapConfig, WmtsSource } from '@ogc-maps/storybook-components';
-import { detectTileSourceType, appendAuth, authHeaders } from '@ogc-maps/storybook-components/utils';
+import { SourceEditor, BasemapEditor, ConfirmDialog, WmtsSourceEditor } from '@techtraverse/map-ui-lib';
+import type { OgcApiSource, SourceAuth, BasemapConfig, WmtsSource } from '@techtraverse/map-ui-lib';
+import { detectTileSourceType, appendAuth, authHeaders } from '@techtraverse/map-ui-lib/utils';
 import { SourceMetadataPanel } from '../components/SourceMetadataPanel';
 import type { InspectionResult } from '../components/SourceMetadataPanel';
 import { inspectSourceClientSide } from '../utils/inspectSource';

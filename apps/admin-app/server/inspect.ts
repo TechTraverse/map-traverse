@@ -3,7 +3,7 @@
  * and returns a structured result with graceful error handling.
  */
 
-import { detectTileSourceType } from '@ogc-maps/storybook-components/hooks';
+import { detectTileSourceType } from '@techtraverse/map-ui-lib/hooks';
 
 const REQUEST_TIMEOUT_MS = 10_000;
 const COLLECTION_BATCH_SIZE = 5;

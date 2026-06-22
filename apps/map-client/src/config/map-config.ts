@@ -1,4 +1,4 @@
-import type { MapConfig } from '@ogc-maps/storybook-components/types';
+import type { MapConfig } from '@techtraverse/map-ui-lib/types';
 
 export const mapConfig: MapConfig = {
   sources: [

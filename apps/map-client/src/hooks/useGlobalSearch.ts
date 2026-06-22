@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useMapStore } from '../stores/mapStore';
-import { isOgcApiSource } from '@ogc-maps/storybook-components/utils';
+import { isOgcApiSource } from '@techtraverse/map-ui-lib/utils';
 import {
   applyZoomInstruction,
   featureCollectionFromGeometries,
@@ -20,11 +20,11 @@ import {
   runGlobalSearch,
   zoomToFeature,
   type GlobalSearchContext,
-} from '@ogc-maps/storybook-components/utils';
+} from '@techtraverse/map-ui-lib/utils';
 import type {
   GlobalSearchFeatureMatch,
   GlobalSearchGroupedResults,
-} from '@ogc-maps/storybook-components';
+} from '@techtraverse/map-ui-lib';
 
 export interface UseGlobalSearchReturn {
   query: string;

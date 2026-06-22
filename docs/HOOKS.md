@@ -3,7 +3,7 @@
 All hooks and utility functions are exported from the `hooks` sub-path:
 
 ```ts
-import { useOgcCollections, useOgcFeatures, fetchCollections, ... } from '@ogc-maps/storybook-components/hooks';
+import { useOgcCollections, useOgcFeatures, fetchCollections, ... } from '@techtraverse/map-ui-lib/hooks';
 ```
 
 ---
@@ -45,7 +45,7 @@ interface UseOgcCollectionsResult {
 **Example:**
 
 ```tsx
-import { useOgcCollections } from '@ogc-maps/storybook-components/hooks';
+import { useOgcCollections } from '@techtraverse/map-ui-lib/hooks';
 
 function CollectionList() {
   const { collections, loading, error } = useOgcCollections('http://localhost:8000');
@@ -120,7 +120,7 @@ interface UseOgcFeaturesResult {
 
 ```tsx
 import { useState } from 'react';
-import { useOgcFeatures } from '@ogc-maps/storybook-components/hooks';
+import { useOgcFeatures } from '@techtraverse/map-ui-lib/hooks';
 
 function FeatureList() {
   const [offset, setOffset] = useState(0);
@@ -182,7 +182,7 @@ interface UseOgcQueryablesResult {
 **Example:**
 
 ```tsx
-import { useOgcQueryables } from '@ogc-maps/storybook-components/hooks';
+import { useOgcQueryables } from '@techtraverse/map-ui-lib/hooks';
 
 function QueryablesList({ baseUrl, collectionId }) {
   const { queryables, loading, error } = useOgcQueryables(baseUrl, collectionId);
@@ -234,7 +234,7 @@ interface UseOgcCollectionDetailResult {
 **Example:**
 
 ```tsx
-import { useOgcCollectionDetail } from '@ogc-maps/storybook-components/hooks';
+import { useOgcCollectionDetail } from '@techtraverse/map-ui-lib/hooks';
 
 function CollectionInfo({ baseUrl, collectionId }) {
   const { collection, loading, error } = useOgcCollectionDetail(baseUrl, collectionId);
@@ -283,8 +283,8 @@ function useCsvExport(options: UseCsvExportOptions): UseCsvExportResult
 **Example:**
 
 ```tsx
-import { ExportButton } from '@ogc-maps/storybook-components/components/ExportButton';
-import { useCsvExport } from '@ogc-maps/storybook-components/hooks';
+import { ExportButton } from '@techtraverse/map-ui-lib/components/ExportButton';
+import { useCsvExport } from '@techtraverse/map-ui-lib/hooks';
 
 function App() {
   const { exportCsv, loading, error } = useCsvExport({
@@ -324,7 +324,7 @@ async function fetchCollections(baseUrl: string): Promise<OgcCollection[]>
 Fetches `GET {baseUrl}/collections?f=json` and returns the `collections` array.
 
 ```ts
-import { fetchCollections } from '@ogc-maps/storybook-components/hooks';
+import { fetchCollections } from '@techtraverse/map-ui-lib/hooks';
 
 const collections = await fetchCollections('http://localhost:8000');
 ```
@@ -344,7 +344,7 @@ async function fetchFeatures(
 Fetches features from `GET {baseUrl}/collections/{collection}/items` with query parameters derived from `options`.
 
 ```ts
-import { fetchFeatures } from '@ogc-maps/storybook-components/hooks';
+import { fetchFeatures } from '@techtraverse/map-ui-lib/hooks';
 
 const data = await fetchFeatures('http://localhost:8000', 'public.countries', {
   limit: 5,
@@ -367,7 +367,7 @@ async function fetchQueryables(
 Fetches the queryable schema for a collection from `GET {baseUrl}/collections/{collection}/queryables?f=json`. Used internally by `SearchPanel` to populate dynamic select options.
 
 ```ts
-import { fetchQueryables } from '@ogc-maps/storybook-components/hooks';
+import { fetchQueryables } from '@techtraverse/map-ui-lib/hooks';
 
 const queryables = await fetchQueryables('http://localhost:8000', 'public.countries');
 // queryables.properties['continent'].enum → ['Africa', 'Asia', ...]
@@ -394,7 +394,7 @@ Fetches distinct non-null string values for a property in an OGC API collection.
 | `limit` | `number` | Max values to return (default: 50) |
 
 ```ts
-import { fetchDistinctValues } from '@ogc-maps/storybook-components/hooks';
+import { fetchDistinctValues } from '@techtraverse/map-ui-lib/hooks';
 
 const continents = await fetchDistinctValues('http://localhost:8000', 'public.countries', 'continent');
 // → ['Africa', 'Asia', 'Europe', 'North America', 'Oceania', 'South America']
@@ -419,7 +419,7 @@ async function fetchCollectionDetail(
 Fetches metadata for a single OGC API collection by ID from `GET {baseUrl}/collections/{collectionId}?f=json`.
 
 ```ts
-import { fetchCollectionDetail } from '@ogc-maps/storybook-components/hooks';
+import { fetchCollectionDetail } from '@techtraverse/map-ui-lib/hooks';
 
 const collection = await fetchCollectionDetail('http://localhost:8000', 'public.countries');
 console.log(collection.title, collection.description);
@@ -436,7 +436,7 @@ async function fetchConformance(baseUrl: string): Promise<OgcConformance>
 Fetches the OGC API conformance declaration to discover server capabilities. Returns an object with a `conformsTo` array of conformance class URIs.
 
 ```ts
-import { fetchConformance } from '@ogc-maps/storybook-components/hooks';
+import { fetchConformance } from '@techtraverse/map-ui-lib/hooks';
 
 const conformance = await fetchConformance('http://localhost:8000');
 const supportsCql2 = conformance.conformsTo.some((c) => c.includes('cql2'));
@@ -457,7 +457,7 @@ async function fetchTileJson(
 Fetches the TileJSON document for a collection's vector tiles. Returns tile metadata including bounds, min/max zoom, and `vector_layers` schema.
 
 ```ts
-import { fetchTileJson } from '@ogc-maps/storybook-components/hooks';
+import { fetchTileJson } from '@techtraverse/map-ui-lib/hooks';
 
 const tileJson = await fetchTileJson('http://localhost:8000', 'public.countries');
 console.log(tileJson.vector_layers); // layer definitions
@@ -478,7 +478,7 @@ async function fetchFeatureCount(
 Fetches the total feature count for a collection using `limit=0` and reading `numberMatched` from the response. Returns `null` if the server does not report `numberMatched`. Accepts optional CQL2 or datetime filters to count filtered results.
 
 ```ts
-import { fetchFeatureCount } from '@ogc-maps/storybook-components/hooks';
+import { fetchFeatureCount } from '@techtraverse/map-ui-lib/hooks';
 
 const total = await fetchFeatureCount('http://localhost:8000', 'public.countries');
 // total may be null if server doesn't support numberMatched
@@ -505,7 +505,7 @@ function getTileJsonUrl(
 Returns the TileJSON URL for a collection's vector tiles. Use this with MapLibre's `addSource` to register a tile source via metadata URL.
 
 ```ts
-import { getTileJsonUrl } from '@ogc-maps/storybook-components/hooks';
+import { getTileJsonUrl } from '@techtraverse/map-ui-lib/hooks';
 
 const url = getTileJsonUrl('http://localhost:8000', 'public.countries');
 // → 'http://localhost:8000/collections/public.countries/tiles/WebMercatorQuad/tilejson.json'
@@ -526,7 +526,7 @@ function getVectorTileUrl(
 Returns a MapLibre-compatible tile URL template with `{z}/{x}/{y}` placeholders.
 
 ```ts
-import { getVectorTileUrl } from '@ogc-maps/storybook-components/hooks';
+import { getVectorTileUrl } from '@techtraverse/map-ui-lib/hooks';
 
 const tileUrl = getVectorTileUrl('http://localhost:8000', 'public.countries');
 // → 'http://localhost:8000/collections/public.countries/tiles/WebMercatorQuad/{z}/{x}/{y}'
@@ -548,7 +548,7 @@ function getFilteredVectorTileUrl(
 Same as `getVectorTileUrl` but appends property filter query parameters. When `filter` is empty or undefined, returns a plain tile URL.
 
 ```ts
-import { getFilteredVectorTileUrl } from '@ogc-maps/storybook-components/hooks';
+import { getFilteredVectorTileUrl } from '@techtraverse/map-ui-lib/hooks';
 
 const url = getFilteredVectorTileUrl(
   'http://localhost:8000',
@@ -576,7 +576,7 @@ Builds a MapLibre-compatible tile URL template with a CQL2 JSON filter applied v
 **Important:** When using this with react-map-gl, also change the React `key` and MapLibre Source `id` whenever the filter changes — MapLibre does not re-fetch tiles when the `tiles` prop updates on an existing Source.
 
 ```ts
-import { getCql2FilteredVectorTileUrl } from '@ogc-maps/storybook-components/hooks';
+import { getCql2FilteredVectorTileUrl } from '@techtraverse/map-ui-lib/hooks';
 
 const url = getCql2FilteredVectorTileUrl(
   'http://localhost:8000',
@@ -611,7 +611,7 @@ Converts an array of GeoJSON features to a CSV string.
 - Properly escapes values containing quotes, the delimiter, or newlines using RFC 4180 quoting.
 
 ```ts
-import { featuresToCsv } from '@ogc-maps/storybook-components/hooks';
+import { featuresToCsv } from '@techtraverse/map-ui-lib/hooks';
 
 const csv = featuresToCsv(features, { fields: ['name', 'continent'], delimiter: ';' });
 ```
@@ -627,7 +627,7 @@ function downloadCsv(csv: string, filename: string): void
 Creates a `Blob` from a CSV string and triggers a browser file download.
 
 ```ts
-import { downloadCsv } from '@ogc-maps/storybook-components/hooks';
+import { downloadCsv } from '@techtraverse/map-ui-lib/hooks';
 
 downloadCsv(csv, 'countries.csv');
 ```
@@ -647,7 +647,7 @@ Transforms a `PropertyDisplayConfig` into a resolved form with a flat list of vi
 Use this utility when rendering feature properties to respect the layer's `propertyDisplay` configuration.
 
 ```ts
-import { resolvePropertyDisplay } from '@ogc-maps/storybook-components/hooks';
+import { resolvePropertyDisplay } from '@techtraverse/map-ui-lib/hooks';
 
 const resolved = resolvePropertyDisplay(layer.propertyDisplay);
 // resolved?.fields → ['name', 'continent', 'pop_est']
@@ -661,7 +661,7 @@ const resolved = resolvePropertyDisplay(layer.propertyDisplay);
 The library provides a full set of CQL2 JSON builder functions for constructing OGC Common Query Language 2 filter expressions. All functions return `CQL2Expression` objects suitable for JSON serialization.
 
 ```ts
-import { eq, and, between, like, fromStructuredFilters } from '@ogc-maps/storybook-components/hooks';
+import { eq, and, between, like, fromStructuredFilters } from '@techtraverse/map-ui-lib/hooks';
 ```
 
 ### Comparison Operators
@@ -718,7 +718,7 @@ function fromStructuredFilters(
 High-level converter that transforms a `SearchFilterValues` record (as produced by `SearchPanel`) into a CQL2 expression. Uses the `fields` config array to determine the correct operator per field type. Returns `null` if no active filters remain.
 
 ```ts
-import { fromStructuredFilters } from '@ogc-maps/storybook-components/hooks';
+import { fromStructuredFilters } from '@techtraverse/map-ui-lib/hooks';
 
 const cql2 = fromStructuredFilters(
   { continent: 'Europe', pop: { min: 1000000, max: 50000000 } },
@@ -763,7 +763,7 @@ import {
   buildCql2Query,
   resolveRelativeDate,
   isFilterRuleGroup,
-} from '@ogc-maps/storybook-components/hooks';
+} from '@techtraverse/map-ui-lib/hooks';
 ```
 
 #### `fromFilterRuleGroup`
@@ -827,7 +827,7 @@ Type guard that distinguishes `FilterRuleGroup` (has `combinator`) from `FilterR
 ### Usage Examples
 
 ```ts
-import { eq, gt, like, and, or, between, tDuring, sIntersects, sDwithin } from '@ogc-maps/storybook-components/hooks';
+import { eq, gt, like, and, or, between, tDuring, sIntersects, sDwithin } from '@techtraverse/map-ui-lib/hooks';
 
 // Simple equality
 const filter1 = eq('continent', 'Europe');
@@ -863,7 +863,7 @@ import type {
   CQL2Date,
   CQL2Timestamp,
   CQL2Interval,
-} from '@ogc-maps/storybook-components/hooks';
+} from '@techtraverse/map-ui-lib/hooks';
 ```
 
 | Type | Shape | Description |
@@ -892,7 +892,7 @@ import type {
   RelativeDateValue,
   DateRangeValue,
   ComputedRangeValue,
-} from '@ogc-maps/storybook-components/hooks';
+} from '@techtraverse/map-ui-lib/hooks';
 ```
 
 | Type | Description |
@@ -980,5 +980,5 @@ import type {
   ComputedRangeValue,
   // CSV export
   CsvExportOptions,
-} from '@ogc-maps/storybook-components/hooks';
+} from '@techtraverse/map-ui-lib/hooks';
 ```

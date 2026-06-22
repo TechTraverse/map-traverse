@@ -43,16 +43,16 @@ Look for: `postgis` (healthy), `seed` (Exited 0 — it's a one-shot), `tipg` (Up
 If anything is `Exited` with non-zero or `Restarting`, that's your layer. Get its logs:
 
 ```bash
-docker logs storybook-components-tipg
-docker logs storybook-components-postgis
-docker logs storybook-components-seed
-docker logs storybook-components-admin-app
+docker logs techtraverse-tipg
+docker logs techtraverse-postgis
+docker logs techtraverse-seed
+docker logs techtraverse-admin-app
 ```
 
 ### Step 2: Is PostgreSQL serving?
 
 ```bash
-docker exec -it storybook-components-postgis psql -U postgres -d gis -c "\dn"
+docker exec -it techtraverse-postgis psql -U postgres -d gis -c "\dn"
 ```
 
 You should see the `example` and `gunnison` schemas. If they're missing, the seed container failed — re-run it:
@@ -64,11 +64,11 @@ docker compose up seed
 ### Step 3: Is the data actually in PostGIS?
 
 ```bash
-docker exec -it storybook-components-postgis psql -U postgres -d gis \
+docker exec -it techtraverse-postgis psql -U postgres -d gis \
   -c "\dt example.*; \dt gunnison.*"
 ```
 
-If the table you expect isn't there, the loader didn't run or failed silently. Check `docker logs storybook-components-seed` and re-run with `docker compose up seed --force-recreate`.
+If the table you expect isn't there, the loader didn't run or failed silently. Check `docker logs techtraverse-seed` and re-run with `docker compose up seed --force-recreate`.
 
 If the table is there, check the row count and the SRID:
 
@@ -99,7 +99,7 @@ curl -s http://localhost:8000/collections | jq '.collections[].id'
 If the collection ID is missing but the table exists in the right schema, tipg's catalog is stale. Restart it:
 
 ```bash
-docker restart storybook-components-tipg
+docker restart techtraverse-tipg
 sleep 3
 curl -s http://localhost:8000/collections | jq '.collections[].id'
 ```
@@ -135,10 +135,10 @@ If the admin app can't connect to PostGIS, the relevant env vars on the `admin-a
 
 ```bash
 # Tail tipg logs while reproducing the issue
-docker logs -f storybook-components-tipg
+docker logs -f techtraverse-tipg
 
 # Watch for slow queries
-docker exec -it storybook-components-postgis psql -U postgres -d gis \
+docker exec -it techtraverse-postgis psql -U postgres -d gis \
   -c "SELECT pid, now() - query_start AS dur, query FROM pg_stat_activity WHERE state = 'active';"
 
 # Validate all collections at once
@@ -153,4 +153,4 @@ curl -s 'http://localhost:8000/collections/<id>/items?bbox=-180,-90,180,90&limit
 - `docker-compose.yml` — the source of truth for service names, ports, and env vars.
 - `docker/gateway/nginx.conf` — how requests are routed when going through `localhost`.
 - `docker/seed/seed.sh` and `docker/seed/load-shapefiles.sh` — what the seed container actually does.
-- The CLAUDE.md note: "Restart tipg with `docker restart storybook-components-tipg` if collections don't appear" — that's the headline fix and worth trying early.
+- The CLAUDE.md note: "Restart tipg with `docker restart techtraverse-tipg` if collections don't appear" — that's the headline fix and worth trying early.

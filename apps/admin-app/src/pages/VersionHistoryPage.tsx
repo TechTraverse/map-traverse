@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ConfigPreview } from '@ogc-maps/storybook-components';
+import { ConfigPreview } from '@techtraverse/map-ui-lib';
 
 interface VersionSummary {
   id: string;

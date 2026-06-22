@@ -6,7 +6,7 @@ import { polygon as turfPolygon, point as turfPoint } from '@turf/helpers';
 import {
   buildMeasureGeometryData,
   buildMeasurePointsData,
-} from '@ogc-maps/storybook-components';
+} from '@techtraverse/map-ui-lib';
 
 export interface UsePolygonDrawOptions {
   mapRef: React.RefObject<MapRef | null>;

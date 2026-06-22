@@ -34,14 +34,14 @@ jobs:
       - name: Extract version from package.json
         id: version
         run: |
-          VERSION=$(node -p "require('./packages/map-ui-lib/package.json').version")
+          VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Docker metadata
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ghcr.io/ogc-maps/${{ matrix.image }}
+          images: ghcr.io/techtraverse/${{ matrix.image }}
           tags: |
             type=sha,prefix=,format=short
             type=raw,value=${{ steps.version.outputs.version }}
@@ -72,7 +72,7 @@ jobs:
       - name: Scan image with Trivy
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ghcr.io/ogc-maps/${{ matrix.image }}:${{ steps.meta.outputs.version }}
+          image-ref: ghcr.io/techtraverse/${{ matrix.image }}:${{ steps.meta.outputs.version }}
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'

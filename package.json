@@ -1,23 +1,20 @@
 {
-  "name": "storybook-components",
+  "name": "map-traverse",
   "version": "0.1.0",
   "private": true,
-  "description": "Monorepo for OGC API-based map component library and demo app",
+  "description": "TechTraverse map applications monorepo",
   "scripts": {
     "build": "pnpm -r build",
-    "dev:lib": "pnpm --filter @ogc-maps/storybook-components dev",
+    "dev:lib": "pnpm --filter @techtraverse/map-ui-lib dev",
     "dev:app": "pnpm --filter map-client dev",
-    "storybook": "pnpm --filter @ogc-maps/storybook-components storybook",
-    "build:lib": "pnpm --filter @ogc-maps/storybook-components build",
+    "storybook": "pnpm --filter @techtraverse/map-ui-lib storybook",
+    "build:lib": "pnpm --filter @techtraverse/map-ui-lib build",
     "build:app": "pnpm --filter map-client build",
-    "release": "pnpm build && changeset publish",
-    "changeset": "changeset",
-    "test": "pnpm --filter @ogc-maps/storybook-components test",
-    "test:coverage": "pnpm --filter @ogc-maps/storybook-components test:coverage",
+    "test": "pnpm --filter @techtraverse/map-ui-lib test",
+    "test:coverage": "pnpm --filter @techtraverse/map-ui-lib test:coverage",
     "verify": "pnpm build && pnpm test"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.29.8",
     "typescript": "^6.0.3"
   },
   "packageManager": "pnpm@10.29.1",

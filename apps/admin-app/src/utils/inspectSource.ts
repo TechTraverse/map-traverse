@@ -9,8 +9,8 @@ import type {
   CollectionMeta,
   QueryableMeta,
 } from '../../server/inspect.js';
-import { appendAuth, authHeaders, stripTrailingSlash, detectTileSourceType } from '@ogc-maps/storybook-components/utils';
-import type { SourceAuth } from '@ogc-maps/storybook-components/types';
+import { appendAuth, authHeaders, stripTrailingSlash, detectTileSourceType } from '@techtraverse/map-ui-lib/utils';
+import type { SourceAuth } from '@techtraverse/map-ui-lib/types';
 
 const REQUEST_TIMEOUT_MS = 10_000;
 const COLLECTION_BATCH_SIZE = 5;

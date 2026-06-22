@@ -1,5 +1,5 @@
 @import 'maplibre-gl/dist/maplibre-gl.css';
-@import '@ogc-maps/storybook-components/tailwind.css';
+@import '@techtraverse/map-ui-lib/tailwind.css';
 @source "./**/*.tsx";
 
 body {

@@ -138,7 +138,7 @@ SELECT count(*), ST_SRID(geom) FROM gunnison.parcels GROUP BY ST_SRID(geom);
 Then bounce tipg and curl `/collections`:
 
 ```bash
-docker restart storybook-components-tipg
+docker restart techtraverse-tipg
 sleep 3
 curl -s http://localhost:8000/collections | jq '.collections[].id' | grep parcels
 ```

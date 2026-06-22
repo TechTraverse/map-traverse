@@ -14,10 +14,10 @@ import type {
   SearchFilterValues,
   GlobalSearchConfig,
   InfoConfig,
-} from '@ogc-maps/storybook-components/types';
-import type { CQL2Expression, BBox } from '@ogc-maps/storybook-components/utils';
-import { mergeBaseAndActiveCql2Filters } from '@ogc-maps/storybook-components/utils';
-import type { GlobalSearchGroupedResults } from '@ogc-maps/storybook-components';
+} from '@techtraverse/map-ui-lib/types';
+import type { CQL2Expression, BBox } from '@techtraverse/map-ui-lib/utils';
+import { mergeBaseAndActiveCql2Filters } from '@techtraverse/map-ui-lib/utils';
+import type { GlobalSearchGroupedResults } from '@techtraverse/map-ui-lib';
 
 interface MapState {
   viewState: ViewConfig;
