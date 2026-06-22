@@ -1,15 +1,13 @@
 # CI/CD Pipelines
 
-This repository uses GitHub Actions for continuous integration, container publishing, security scanning, and documentation deployment. Dependabot keeps dependencies up to date automatically.
+This repository uses GitHub Actions for continuous integration, container publishing, and security scanning. Dependabot keeps dependencies up to date automatically.
 
 ## Workflows Overview
 
 | Workflow | File | Trigger | Purpose |
 |----------|------|---------|---------|
 | CI | `ci.yml` | Pull requests to `main` | Build and test |
-| Release | `release.yml` | Push to `main` | Version bumps and npm publish |
 | Publish Containers | `publish-containers.yml` | Push to `main`, release published | Build/scan/push Docker images |
-| Docs | `docs.yml` | Push to `main` | Deploy Storybook to GitHub Pages |
 | CodeQL | `codeql.yml` | Push/PR to `main` | Security analysis |
 
 ## CI (`ci.yml`)
@@ -19,15 +17,6 @@ Runs on every pull request targeting `main`. Builds the full monorepo and runs t
 **Steps**: checkout, setup Node 22 + pnpm, `pnpm install --frozen-lockfile`, `pnpm build`, `pnpm test`
 
 Concurrency is set to cancel in-progress runs for the same branch, so pushing new commits to a PR cancels the previous run.
-
-## Release (`release.yml`)
-
-Automates versioning and npm publishing using [Changesets](https://github.com/changesets/changesets). Runs on every push to `main`.
-
-- If pending changesets exist, the workflow creates a **"Version Packages"** PR that bumps versions and updates changelogs.
-- When that PR is merged, the workflow publishes the updated packages to npm and creates GitHub Releases.
-
-See [PUBLISHING.md](PUBLISHING.md) for the full development and release workflow.
 
 ## Container Publishing (`publish-containers.yml`)
 
@@ -48,14 +37,6 @@ Builds and publishes Docker images to GitHub Container Registry (ghcr.io) on pus
 **Security scanning**: Each image is scanned with [Trivy](https://github.com/aquasecurity/trivy) for CRITICAL and HIGH severity vulnerabilities. The build fails if vulnerabilities are found (unfixed issues are ignored). Scan results are uploaded as SARIF to the GitHub Security tab.
 
 **Caching**: Uses GitHub Actions cache (`type=gha`) scoped per image for faster rebuilds.
-
-## Storybook Docs (`docs.yml`)
-
-Deploys the Storybook documentation site to GitHub Pages on every push to `main`.
-
-**Steps**: checkout, setup Node 22 + pnpm, install, `pnpm --filter @techtraverse/map-ui-lib build-storybook`, upload and deploy to Pages.
-
-The built output is read from `packages/map-ui-lib/storybook-static`.
 
 ## CodeQL (`codeql.yml`)
 
@@ -78,5 +59,4 @@ Dependabot PRs go through the same CI checks as any other PR. Review and merge t
 
 | Secret | Used by | Purpose |
 |--------|---------|---------|
-| `NPM_TOKEN` | `release.yml` | Automation token for publishing to npm |
-| `GITHUB_TOKEN` | All workflows | Automatically provided; must have **"Allow GitHub Actions to create and approve pull requests"** enabled (Settings > Actions > General > Workflow permissions) for the release workflow to create Version Packages PRs |
+| `GITHUB_TOKEN` | All workflows | Automatically provided; used by container publishing and CodeQL workflows |

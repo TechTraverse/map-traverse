@@ -131,4 +131,3 @@ function MapUI() {
 - **[CONFIGURATION.md](./CONFIGURATION.md)** — Full `MapConfig` schema reference
 - **[COMPONENTS.md](./COMPONENTS.md)** — All component APIs
 - **[HOOKS.md](./HOOKS.md)** — OGC API hooks and utility functions
-- **[PUBLISHING.md](./PUBLISHING.md)** — Publishing and versioning guide

@@ -49,7 +49,7 @@ The schema parses real `config.json` files that exist on disk and in the admin d
 3. Run a migration script over existing configs to fill in the field.
 4. Tighten the schema in a follow-up.
 
-If you're truly making a breaking change, bump the major version (this is a published package — see `docs/PUBLISHING.md` and the changeset workflow in `.changeset/`).
+If you're truly making a breaking change, bump the major version. The lib is an **internal workspace package** — it is NOT published to npm and there is no changeset or publish step. Propagate breaking schema/config changes by updating the consuming apps (`apps/map-client`, `apps/admin-app`) in the same PR.
 
 ## What to read first
 

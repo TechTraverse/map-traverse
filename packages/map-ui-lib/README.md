@@ -50,7 +50,6 @@ Default styles use the `mapui:` Tailwind prefix so they won't clash with your ap
 - [Configuration](../../docs/CONFIGURATION.md) — Full `MapConfig` schema reference
 - [Components](../../docs/COMPONENTS.md) — All component APIs with props tables and examples
 - [Hooks & Utilities](../../docs/HOOKS.md) — OGC API hooks and utility functions
-- [Publishing](../../docs/PUBLISHING.md) — Versioning and release guide
 
 ## License
 

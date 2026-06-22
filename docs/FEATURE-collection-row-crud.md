@@ -30,7 +30,7 @@ gives the admin full **CRUD over the rows of an uploaded collection**:
   inputs, and a geometry editor that takes geometry as **controlled props** and
   emits changes — but it must not render a map.
 - **Controlled components**, **`mapui:` Tailwind prefix** in the lib, Storybook
-  story per lib component, **changeset** for any public lib API change.
+  story per lib component.
 - **No `@testing-library/react`** in the lib — test pure logic in `utils/` + use
   `renderToStaticMarkup` for components.
 - **`pnpm verify`** (build + lib tests) must pass; for full coverage also run
@@ -141,7 +141,7 @@ All paths under `apps/admin-app/server/` unless noted.
 
 ## Testing strategy (carry forward)
 - Lib: pure geometry utils (WKT/coord↔GeoJSON, validation) — exhaustive vitest;
-  components via `renderToStaticMarkup`; stories as visual contract; changeset.
+  components via `renderToStaticMarkup`; stories as visual contract.
 - Admin server: route tests with pg-mem + `supertest.agent` for **non-geometry**
   paths (auth, validation, 404, param building); **integration test against real
   PostGIS** (gated like `INGEST_INTEGRATION`) for the actual geometry SQL
