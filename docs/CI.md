@@ -37,9 +37,9 @@ Builds and publishes Docker images to GitHub Container Registry (ghcr.io) on pus
 
 | Image | Dockerfile | Build args |
 |-------|-----------|------------|
-| `ghcr.io/ogc-maps/map-admin` | `apps/admin-app/Dockerfile` | `VITE_BASE_PATH=/admin/` |
-| `ghcr.io/ogc-maps/map-client` | `apps/map-client/Dockerfile` | — |
-| `ghcr.io/ogc-maps/map-gateway` | `docker/gateway/Dockerfile` | — |
+| `ghcr.io/techtraverse/map-admin` | `apps/admin-app/Dockerfile` | `VITE_BASE_PATH=/admin/` |
+| `ghcr.io/techtraverse/map-client` | `apps/map-client/Dockerfile` | — |
+| `ghcr.io/techtraverse/map-gateway` | `docker/gateway/Dockerfile` | — |
 
 **Tagging**:
 - Every push to `main`: tagged with short commit SHA
@@ -53,7 +53,7 @@ Builds and publishes Docker images to GitHub Container Registry (ghcr.io) on pus
 
 Deploys the Storybook documentation site to GitHub Pages on every push to `main`.
 
-**Steps**: checkout, setup Node 22 + pnpm, install, `pnpm --filter @ogc-maps/storybook-components build-storybook`, upload and deploy to Pages.
+**Steps**: checkout, setup Node 22 + pnpm, install, `pnpm --filter @techtraverse/map-ui-lib build-storybook`, upload and deploy to Pages.
 
 The built output is read from `packages/map-ui-lib/storybook-static`.
 

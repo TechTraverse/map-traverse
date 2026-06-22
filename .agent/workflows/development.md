@@ -45,5 +45,5 @@ description: Development workflows for Ogc Maps
 - `pnpm --filter admin-app build`: Build admin UI
 
 ## Docker Troubleshooting
-- **Restart tipg**: `docker restart storybook-components-tipg` (if collections don't appear)
-- **Logs**: `docker logs -f storybook-components-tipg`
+- **Restart tipg**: `docker restart techtraverse-tipg` (if collections don't appear)
+- **Logs**: `docker logs -f techtraverse-tipg`

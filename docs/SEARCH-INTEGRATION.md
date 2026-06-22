@@ -42,7 +42,7 @@ MapConfig.layers[].search.fields
 Add a `search` config to each layer in your `MapConfig`:
 
 ```ts
-import type { MapConfig } from '@ogc-maps/storybook-components/types';
+import type { MapConfig } from '@techtraverse/map-ui-lib/types';
 
 const mapConfig: MapConfig = {
   // ... sources, basemaps, initialView ...
@@ -107,7 +107,7 @@ See [CONFIGURATION.md](./CONFIGURATION.md#searchconfig) for the full SearchField
 
 ```ts
 import { create } from 'zustand';
-import type { SearchFilterValues, SearchFilterValue } from '@ogc-maps/storybook-components/types';
+import type { SearchFilterValues, SearchFilterValue } from '@techtraverse/map-ui-lib/types';
 
 interface FilterState {
   filters: Record<string, SearchFilterValues>;
@@ -149,7 +149,7 @@ const handleClear = (layerId: string) =>
 ## Step 3: Wire SearchPanel
 
 ```tsx
-import { SearchPanel } from '@ogc-maps/storybook-components/components/SearchPanel';
+import { SearchPanel } from '@techtraverse/map-ui-lib/components/SearchPanel';
 
 <SearchPanel
   layers={mapConfig.layers}
@@ -174,7 +174,7 @@ The SearchPanel's filter is then **AND-merged on top** of the base. So:
 - **Search active**: every request carries `filter=AND(<layer.cql2Filter>, <searchPanelDerived>)`.
 - **Clearing the SearchPanel** does NOT remove the base — base-filtered features stay hidden. To see the unfiltered layer, edit the layer's `cql2Filter` in the admin.
 
-Apps wire this via `mergeBaseAndActiveCql2Filters(layers, activeCql2Filters)` (exported from `@ogc-maps/storybook-components/utils`). The result is a `Record<layerId, CQL2Expression | undefined>` ready to drop into every consumer (`getCql2FilteredVectorTileUrl`, `getVectorTileSourceKey`, `fetchFeatures`, `useCsvExport`, etc.).
+Apps wire this via `mergeBaseAndActiveCql2Filters(layers, activeCql2Filters)` (exported from `@techtraverse/map-ui-lib/utils`). The result is a `Record<layerId, CQL2Expression | undefined>` ready to drop into every consumer (`getCql2FilteredVectorTileUrl`, `getVectorTileSourceKey`, `fetchFeatures`, `useCsvExport`, etc.).
 
 > **Gotcha — distinct values matter.** A base filter that doesn't match any feature will hide the entire layer, which often looks like a bug. The CQL2 editor surfaces a distinct-values dropdown for string properties to prevent typos like `"No"` vs `"NO"`.
 
@@ -186,7 +186,7 @@ Apps wire this via `mergeBaseAndActiveCql2Filters(layers, activeCql2Filters)` (e
 
 ```ts
 import { useMemo } from 'react';
-import { fromStructuredFilters } from '@ogc-maps/storybook-components/hooks';
+import { fromStructuredFilters } from '@techtraverse/map-ui-lib/hooks';
 
 // For each layer that has search fields:
 const layer = mapConfig.layers.find((l) => l.id === 'countries')!;
@@ -200,7 +200,7 @@ const cql2Filter = useMemo(
 ### Manual builder example
 
 ```ts
-import { eq, between, and } from '@ogc-maps/storybook-components/hooks';
+import { eq, between, and } from '@techtraverse/map-ui-lib/hooks';
 
 const cql2Filter = and(
   eq('continent', 'Europe'),
@@ -219,7 +219,7 @@ MapLibre does **not** re-fetch tiles when the `tiles` URL prop changes on an exi
 ```tsx
 import { useMemo } from 'react';
 import { Source, Layer } from 'react-map-gl/maplibre';
-import { getCql2FilteredVectorTileUrl, serializeCql2 } from '@ogc-maps/storybook-components/hooks';
+import { getCql2FilteredVectorTileUrl, serializeCql2 } from '@techtraverse/map-ui-lib/hooks';
 
 function FilteredVectorLayer({ layer, cql2Filter }) {
   const tileUrl = useMemo(
@@ -241,7 +241,7 @@ function FilteredVectorLayer({ layer, cql2Filter }) {
 ### GeoJSON with useOgcFeatures
 
 ```tsx
-import { useOgcFeatures } from '@ogc-maps/storybook-components/hooks';
+import { useOgcFeatures } from '@techtraverse/map-ui-lib/hooks';
 
 const { features, loading } = useOgcFeatures(sourceUrl, layer.collection, {
   cql2Filter,
@@ -257,7 +257,7 @@ Wire `fetchDistinctValues` with debouncing to provide autocomplete suggestions:
 
 ```ts
 import { useState, useCallback, useRef } from 'react';
-import { fetchDistinctValues } from '@ogc-maps/storybook-components/hooks';
+import { fetchDistinctValues } from '@techtraverse/map-ui-lib/hooks';
 
 function useAutocompleteSuggestions(sources, layers) {
   const [suggestions, setSuggestions] = useState<Record<string, string[]>>({});
@@ -302,7 +302,7 @@ Persist filter state in the URL using [nuqs](https://nuqs.47ng.com/):
 
 ```ts
 import { useQueryState, parseAsJson } from 'nuqs';
-import type { SearchFilterValues } from '@ogc-maps/storybook-components/types';
+import type { SearchFilterValues } from '@techtraverse/map-ui-lib/types';
 
 const [urlFilters, setUrlFilters] = useQueryState(
   'filters',
@@ -324,7 +324,7 @@ const handleChange = (layerId: string, property: string, value: SearchFilterValu
 Pass the CQL2 filter to `exportCsv` to export only filtered features:
 
 ```ts
-import { useCsvExport } from '@ogc-maps/storybook-components/hooks';
+import { useCsvExport } from '@techtraverse/map-ui-lib/hooks';
 
 const { exportCsv, loading } = useCsvExport({ baseUrl: sourceUrl });
 
@@ -355,16 +355,16 @@ A single component that wires SearchPanel, CQL2 filtering, autocomplete, and CSV
 ```tsx
 import { useState, useMemo, useCallback, useRef } from 'react';
 import Map, { Source, Layer } from 'react-map-gl/maplibre';
-import { SearchPanel } from '@ogc-maps/storybook-components/components/SearchPanel';
-import { ExportButton } from '@ogc-maps/storybook-components/components/ExportButton';
+import { SearchPanel } from '@techtraverse/map-ui-lib/components/SearchPanel';
+import { ExportButton } from '@techtraverse/map-ui-lib/components/ExportButton';
 import {
   fromStructuredFilters,
   getCql2FilteredVectorTileUrl,
   serializeCql2,
   fetchDistinctValues,
   useCsvExport,
-} from '@ogc-maps/storybook-components/hooks';
-import type { SearchFilterValues, SearchFilterValue } from '@ogc-maps/storybook-components/types';
+} from '@techtraverse/map-ui-lib/hooks';
+import type { SearchFilterValues, SearchFilterValue } from '@techtraverse/map-ui-lib/types';
 import { mapConfig } from './config/map-config';
 
 const SOURCE_URL = 'http://localhost:8000';

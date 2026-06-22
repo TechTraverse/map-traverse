@@ -1,15 +1,15 @@
 # Getting Started
 
-This guide walks you through installing `@ogc-maps/storybook-components`, defining a minimal config, and rendering your first components.
+This guide walks you through installing `@techtraverse/map-ui-lib`, defining a minimal config, and rendering your first components.
 
 ## Installation
 
 ```bash
-pnpm add @ogc-maps/storybook-components
+pnpm add @techtraverse/map-ui-lib
 # or
-npm install @ogc-maps/storybook-components
+npm install @techtraverse/map-ui-lib
 # or
-yarn add @ogc-maps/storybook-components
+yarn add @techtraverse/map-ui-lib
 ```
 
 **Peer dependencies** (install separately if not already present):
@@ -23,7 +23,7 @@ pnpm add react react-dom react-icons
 Import the library's compiled CSS in your app entry point (e.g., `main.tsx`):
 
 ```tsx
-import '@ogc-maps/storybook-components/style.css';
+import '@techtraverse/map-ui-lib/style.css';
 ```
 
 The library uses TailwindCSS v4 with a `mapui:` prefix — all styles are scoped and self-contained.
@@ -33,7 +33,7 @@ The library uses TailwindCSS v4 with a `mapui:` prefix — all styles are scoped
 Create a config object that satisfies `MapConfig`. At minimum you need one source, one basemap, and an `initialView`:
 
 ```ts
-import type { MapConfig } from '@ogc-maps/storybook-components/types';
+import type { MapConfig } from '@techtraverse/map-ui-lib/types';
 
 export const mapConfig: MapConfig = {
   sources: [
@@ -77,7 +77,7 @@ export const mapConfig: MapConfig = {
 Use `safeValidateMapConfig` to validate without throwing:
 
 ```ts
-import { safeValidateMapConfig } from '@ogc-maps/storybook-components/schemas';
+import { safeValidateMapConfig } from '@techtraverse/map-ui-lib/schemas';
 
 const result = safeValidateMapConfig(mapConfig);
 
@@ -91,7 +91,7 @@ if (!result.success) {
 Or use `validateMapConfig` if you prefer exceptions:
 
 ```ts
-import { validateMapConfig } from '@ogc-maps/storybook-components/schemas';
+import { validateMapConfig } from '@techtraverse/map-ui-lib/schemas';
 
 const validConfig = validateMapConfig(mapConfig); // throws ZodError if invalid
 ```
@@ -104,8 +104,8 @@ All components are fully controlled — you manage state and pass it down via pr
 
 ```tsx
 import { useState } from 'react';
-import { LayerPanel } from '@ogc-maps/storybook-components/components/LayerPanel';
-import { Legend } from '@ogc-maps/storybook-components/components/Legend';
+import { LayerPanel } from '@techtraverse/map-ui-lib/components/LayerPanel';
+import { Legend } from '@techtraverse/map-ui-lib/components/Legend';
 import { mapConfig } from './mapConfig';
 
 function MapUI() {

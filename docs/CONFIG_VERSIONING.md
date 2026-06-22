@@ -1,7 +1,7 @@
 # Config Versioning Strategy
 
 > Status: **Design proposal** — nothing in this document is implemented yet.
-> This file exists so that when `@ogc-maps/storybook-components` approaches
+> This file exists so that when `@techtraverse/map-ui-lib` approaches
 > v1.0.0 we already have a plan for managing `MapConfig` shape changes
 > without breaking stored admin configs.
 
@@ -20,7 +20,7 @@ today, parse with `safeValidateMapConfig`"*. Pre-1.0 that is fine — if we
 break the schema, we fix the checked-in configs and move on. Post-1.0 we
 will have:
 
-- **External consumers** of `@ogc-maps/storybook-components` who depend on
+- **External consumers** of `@techtraverse/map-ui-lib` who depend on
   the shape of `MapConfig` and cannot be fixed by us.
 - **Long-lived admin DB rows** that may have been written against older
   schema versions and need to keep parsing after an upgrade.

@@ -1,6 +1,6 @@
-# Storybook Maps
+# TechTraverse Map Apps
 
-A reusable, config-driven map component ecosystem built on OGC API standards (tipg). This monorepo provides a React component library for building interactive web maps backed by PostGIS and vector tile services.
+TechTraverse's config-driven map ecosystem: a public map viewer (`map-client`), an admin panel (`admin-app`), and an ingest pipeline (`ingest-service`) — all backed by PostGIS, tipg (OGC API), and an internal React component library (`@techtraverse/map-ui-lib`).
 
 ## Project Goals
 
@@ -14,7 +14,7 @@ A reusable, config-driven map component ecosystem built on OGC API standards (ti
 
 ### Technical Principles
 
-- **Component Library** (`@ogc-maps/storybook-components`): Pure UI components with no MapLibre dependencies
+- **Internal Library** (`@techtraverse/map-ui-lib`): Pure UI components with no MapLibre dependencies
 - **Controlled Components**: All components are fully controlled via props and callbacks
 - **Tree-shakeable**: Multiple entry points for optimal bundle sizes
 - **Storybook-First**: All components developed with interactive Storybook stories
@@ -49,10 +49,10 @@ A reusable, config-driven map component ecosystem built on OGC API standards (ti
 ## Monorepo Structure
 
 ```
-storybook-components/
+map-traverse/
 ├── docker-compose.yml           # PostGIS + tipg + seed + admin-app
 ├── packages/
-│   └── map-ui-lib/              # Reusable component library
+│   └── map-ui-lib/              # Internal component library (@techtraverse/map-ui-lib)
 │       ├── src/
 │       │   ├── components/      # LayerPanel, Legend, BasemapSwitcher, CollapsibleControl,
 │       │   │                    # CoordinateDisplay, SearchPanel, FeatureDetailPanel,
@@ -65,16 +65,18 @@ storybook-components/
 │       └── .storybook/          # Storybook configuration
 │
 ├── apps/
-│   ├── map-client/              # Demo map application
+│   ├── map-client/              # Public map application
 │   │   └── src/
 │   │       ├── config/          # Map configuration
 │   │       ├── stores/          # Zustand state management
 │   │       ├── hooks/           # URL sync hooks
 │   │       └── components/      # Map containers
 │   │
-│   └── admin-app/               # Map config admin panel
-│       ├── src/                 # React frontend (config wizard, version history)
-│       └── server/              # Express API + PostgreSQL backend
+│   ├── admin-app/               # Map config admin panel
+│   │   ├── src/                 # React frontend (config wizard, version history)
+│   │   └── server/              # Express API + PostgreSQL backend
+│   │
+│   └── ingest-service/          # GIS data ingest pipeline (PostGIS loader)
 │
 └── docker/                      # Development infrastructure
     └── seed/                    # Natural Earth sample data
@@ -82,7 +84,7 @@ storybook-components/
 
 ## Technology Stack
 
-### Component Library
+### Internal Library
 - **React 18**: UI framework (peer dependency)
 - **Zod**: Schema validation and type inference
 - **TailwindCSS v4**: Styling with `mapui:` prefix to prevent conflicts
@@ -119,7 +121,7 @@ pnpm install
 docker compose up -d
 
 # Wait for seed to complete (~30 seconds)
-docker logs -f storybook-components-seed
+docker logs -f techtraverse-seed
 
 # Verify tipg is serving data
 curl http://localhost:8000/collections
@@ -265,21 +267,6 @@ Config names `admin`, `api`, and `ogc` are reserved to prevent conflicts with ga
 2. TypeScript types auto-infer from schema
 3. Update example config in `apps/map-client/src/config/`
 4. Validation errors show at runtime
-
-## Project Status
-
-All core implementation phases are complete:
-
-- **Phase 1**: ✅ Project scaffolding and Docker infrastructure
-- **Phase 2**: ✅ Config schemas and types
-- **Phase 3**: ✅ Data hooks
-- **Phase 4**: ✅ Core UI components
-- **Phase 5**: ✅ Client app integration
-- **Phase 6**: ✅ URL state management
-
-## Contributing
-
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 

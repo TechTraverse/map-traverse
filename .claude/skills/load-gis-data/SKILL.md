@@ -51,7 +51,7 @@ The existing seed pipeline at `docker/seed/` is the reference — `seed.sh` load
 
 7. **Restart tipg so it re-scans.** tipg builds its catalog at startup, so newly added tables don't appear until you bounce it:
    ```bash
-   docker restart storybook-components-tipg
+   docker restart techtraverse-tipg
    ```
 
 8. **Verify the new collection is live.**
@@ -74,7 +74,7 @@ The existing seed pipeline at `docker/seed/` is the reference — `seed.sh` load
 
 - **Forgetting `-t_srs EPSG:4326`.** The data loads but renders in the wrong place (or, for non-projected data labeled as projected, doesn't render at all).
 - **Loading into a schema not in `TIPG_DB_SCHEMAS`.** The table exists in PostGIS, queries work over psql, but `/collections` doesn't list it. Always check the env var.
-- **Forgetting to restart tipg.** Same symptom — table exists, collection missing. `docker restart storybook-components-tipg` is a cheap fix but easy to skip.
+- **Forgetting to restart tipg.** Same symptom — table exists, collection missing. `docker restart techtraverse-tipg` is a cheap fix but easy to skip.
 - **Skipping the GiST index.** Things "work" in dev with small tables, then production queries time out at scale.
 - **Mixed-case or hyphenated table names.** PostgreSQL will let you create them but you'll need to quote them everywhere afterward, including in tipg URLs. Use lowercase snake_case.
 - **Missing `.prj` for shapefiles.** ogr2ogr guesses, often wrong. Always include all sidecar files.

@@ -7,7 +7,7 @@ description: Add a new React hook in packages/map-ui-lib/src/hooks/ that fetches
 
 ## Why this skill exists
 
-All data fetching in `@ogc-maps/storybook-components` flows through hooks in `packages/map-ui-lib/src/hooks/`. Components stay dumb and controlled; hooks own the fetch lifecycle. This separation is what makes it possible to swap the backend (tipg, pygeoapi, a mocked test server) without touching components, and it's what keeps Storybook stories working — stories can render the hook in isolation.
+All data fetching in `@techtraverse/map-ui-lib` flows through hooks in `packages/map-ui-lib/src/hooks/`. Components stay dumb and controlled; hooks own the fetch lifecycle. This separation is what makes it possible to swap the backend (tipg, pygeoapi, a mocked test server) without touching components, and it's what keeps Storybook stories working — stories can render the hook in isolation.
 
 The existing hooks (`useOgcCollections`, `useOgcFeatures`, `useOgcQueryables`, `useOgcCollectionDetail`) all share a deliberate shape. New hooks should match that shape so consumers don't have to learn a new pattern every time.
 

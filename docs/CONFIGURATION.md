@@ -6,10 +6,10 @@ The `MapConfig` object is the single source of truth for your map. It is defined
 
 ```ts
 // Types only
-import type { MapConfig, LayerConfig, ... } from '@ogc-maps/storybook-components/types';
+import type { MapConfig, LayerConfig, ... } from '@techtraverse/map-ui-lib/types';
 
 // Schemas + validation utilities
-import { MapConfigSchema, validateMapConfig, safeValidateMapConfig } from '@ogc-maps/storybook-components/schemas';
+import { MapConfigSchema, validateMapConfig, safeValidateMapConfig } from '@techtraverse/map-ui-lib/schemas';
 ```
 
 ---
@@ -617,7 +617,7 @@ Initial camera position for the map.
 Parses and validates a config, throwing a `ZodError` if invalid.
 
 ```ts
-import { validateMapConfig } from '@ogc-maps/storybook-components/schemas';
+import { validateMapConfig } from '@techtraverse/map-ui-lib/schemas';
 
 try {
   const config = validateMapConfig(rawConfig);
@@ -632,7 +632,7 @@ try {
 Returns a result object instead of throwing.
 
 ```ts
-import { safeValidateMapConfig } from '@ogc-maps/storybook-components/schemas';
+import { safeValidateMapConfig } from '@techtraverse/map-ui-lib/schemas';
 
 const result = safeValidateMapConfig(rawConfig);
 
@@ -650,7 +650,7 @@ if (result.success) {
 Based on the reference app (`apps/map-client/src/config/map-config.ts`):
 
 ```ts
-import type { MapConfig } from '@ogc-maps/storybook-components/types';
+import type { MapConfig } from '@techtraverse/map-ui-lib/types';
 
 export const mapConfig: MapConfig = {
   sources: [

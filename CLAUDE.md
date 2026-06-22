@@ -8,7 +8,7 @@
 - **Test (single)**: `cd packages/map-ui-lib && pnpm exec vitest run path/to/file.test.ts`
 - **Verify**: `pnpm verify` (runs build + lib test — **must pass before declaring any task done**). NOTE: `pnpm verify` only runs the lib suite. For full pre-merge coverage also run `cd apps/admin-app && pnpm exec vitest run`, `cd apps/map-client && pnpm exec vitest run`, and `pnpm --filter ingest-service test`. The ingest sidecar's live integration suite (`apps/ingest-service/src/ingest.integration.test.ts`) only runs with `INGEST_INTEGRATION=1` plus a reachable PostGIS and GDAL on PATH (CI runs it as the `ingest-integration` job).
 - **Coverage**: `pnpm test:coverage` (lib only); per-app: `cd apps/<app> && pnpm exec vitest run --coverage`.
-- **Docker**: `docker compose up -d` (Start all services), `docker restart storybook-components-tipg` (Refresh tipg)
+- **Docker**: `docker compose up -d` (Start all services), `docker restart techtraverse-tipg` (Refresh tipg)
 - **Dev URLs**: gateway `:80`, map-client `:3000`, admin-app `:3001`, tipg `:8000`, postgis `:5432`
 
 ## Architecture Guidelines
@@ -21,7 +21,7 @@
 - **CQL2 filtering**: `layer.cql2Filter` is a permanent base filter applied to every request; SearchPanel filters AND on top. Use `mergeBaseAndActiveCql2Filters` (lib) or `useEffectiveCql2Filters` (map-client) — never read `activeCql2Filters[id]` directly for rendering.
 
 ## Project Structure
-- `packages/map-ui-lib`: UI library (React, Zod, Hooks). Published as `@ogc-maps/storybook-components`.
+- `packages/map-ui-lib`: UI library (React, Zod, Hooks). Internal workspace package `@techtraverse/map-ui-lib` (not published).
 - `apps/map-client`: Main map app (MapLibre, Zustand, nuqs).
 - `apps/admin-app`: Admin UI for managing map configs (Express + React, PostgreSQL, auth).
 - `docker-compose.yml`: Six services — PostGIS, tipg (OGC API), seed (data loader), admin-app, map-client, gateway (nginx reverse proxy).
@@ -70,9 +70,9 @@ For dev setup and Docker troubleshooting, see `.agent/workflows/development.md`.
 ## Gotchas
 - Widening a paint/layout field in `schemas/config.ts` to accept `Expression` (unknown[]) can break `<Layer>` typing in `apps/map-client/src/components/MapContainer.tsx`. Cast `layout` as `any` to match the existing `paint as any` pattern.
 - No `@testing-library/react` in map-ui-lib. Tests use `renderToStaticMarkup` for components; extract pure logic to `utils/` for direct vitest coverage.
-- After loading data into a new PostGIS schema (or changing `TIPG_DB_SCHEMAS`), `docker restart storybook-components-tipg` is required — tipg discovers schemas only at boot. Without this the new `/collections` entry won't appear.
+- After loading data into a new PostGIS schema (or changing `TIPG_DB_SCHEMAS`), `docker restart techtraverse-tipg` is required — tipg discovers schemas only at boot. Without this the new `/collections` entry won't appear.
 - Admin configs live in `map_admin.*` (search_path: `map_admin,public`). The `public.{map_configs,ogc_sources}` rows are stale seed leftovers — the running app does not read them.
-- Deployed containers on the EC2 host are `ogc-maps-*` (Caddy gateway). Repo's `docker-compose.yml` is for local dev only — `docker logs storybook-components-tipg` etc. only work locally.
+- Deployed containers on the EC2 host are `techtraverse-*` (Caddy gateway). Repo's `docker-compose.yml` is for local dev only — `docker logs techtraverse-tipg` etc. only work locally.
 - `getVectorTileSourceKey` must be called with the **merged** base+active cql2 filter, not just the active one. MapLibre won't refetch vector tiles unless both the React key AND Source/Layer id change.
 - `packages/map-ui-lib`'s main bundle touches `document` at module load. Node-only vitest in `apps/admin-app/` cannot import lib helpers; mirror the helper locally or test it from inside `packages/map-ui-lib` instead.
 - `apps/admin-app/src/components/MapPreview.tsx` has multiple `<Legend>` and per-layer render call sites. When sweeping the file, grep for **all** hits of the relevant symbol — spot-fixes miss the rest.
