@@ -367,7 +367,7 @@ import {
 import type { SearchFilterValues, SearchFilterValue } from '@techtraverse/map-ui-lib/types';
 import { mapConfig } from './config/map-config';
 
-const SOURCE_URL = 'http://localhost:8000';
+const SOURCE_URL = 'http://localhost:8001';
 
 export function FilteredMapApp() {
   // --- Filter state ---

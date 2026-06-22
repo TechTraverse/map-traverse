@@ -93,7 +93,7 @@ docker compose up -d tipg
 ### Step 5: Is the collection exposed?
 
 ```bash
-curl -s http://localhost:8000/collections | jq '.collections[].id'
+curl -s http://localhost:8001/collections | jq '.collections[].id'
 ```
 
 If the collection ID is missing but the table exists in the right schema, tipg's catalog is stale. Restart it:
@@ -101,7 +101,7 @@ If the collection ID is missing but the table exists in the right schema, tipg's
 ```bash
 docker restart techtraverse-tipg
 sleep 3
-curl -s http://localhost:8000/collections | jq '.collections[].id'
+curl -s http://localhost:8001/collections | jq '.collections[].id'
 ```
 
 This catches the most common single-line cause of "I added data but it's not showing".
@@ -109,7 +109,7 @@ This catches the most common single-line cause of "I added data but it's not sho
 ### Step 6: Can you fetch features?
 
 ```bash
-curl -s 'http://localhost:8000/collections/<schema>.<table>/items?limit=1' | jq '.features[0].properties'
+curl -s 'http://localhost:8001/collections/<schema>.<table>/items?limit=1' | jq '.features[0].properties'
 ```
 
 If this returns features, the backend is fine and the problem is in the frontend (next steps). If it returns an error, read the body — tipg's errors are usually descriptive (missing column, bad bbox, schema not found).
@@ -118,7 +118,7 @@ If this returns features, the backend is fine and the problem is in the frontend
 
 Open the browser devtools network tab and reproduce. Check:
 
-- **Is the URL going to `localhost:8000` directly, or through the gateway at `localhost/ogc`?** Both are valid depending on whether the source in `config.json` points at the direct port or the proxied path. Make sure it matches your actual deployment.
+- **Is the URL going to `localhost:8001` directly, or through the gateway at `localhost:8000/ogc`?** Both are valid depending on whether the source in `config.json` points at the direct port or the proxied path. Make sure it matches your actual deployment.
 - **Status code.** 404 = collection name wrong, 502 = gateway can't reach tipg, 500 = tipg internal (check tipg logs), 0 / CORS = next step.
 
 ### Step 8: CORS
@@ -142,10 +142,10 @@ docker exec -it techtraverse-postgis psql -U postgres -d gis \
   -c "SELECT pid, now() - query_start AS dur, query FROM pg_stat_activity WHERE state = 'active';"
 
 # Validate all collections at once
-curl -s http://localhost:8000/collections | jq '.collections[] | {id, itemType, crs}'
+curl -s http://localhost:8001/collections | jq '.collections[] | {id, itemType, crs}'
 
 # Quick bbox test for a collection
-curl -s 'http://localhost:8000/collections/<id>/items?bbox=-180,-90,180,90&limit=1' | jq '.numberMatched'
+curl -s 'http://localhost:8001/collections/<id>/items?bbox=-180,-90,180,90&limit=1' | jq '.numberMatched'
 ```
 
 ## What to read first

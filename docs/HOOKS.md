@@ -48,7 +48,7 @@ interface UseOgcCollectionsResult {
 import { useOgcCollections } from '@techtraverse/map-ui-lib/hooks';
 
 function CollectionList() {
-  const { collections, loading, error } = useOgcCollections('http://localhost:8000');
+  const { collections, loading, error } = useOgcCollections('http://localhost:8001');
 
   if (loading) return <p>Loading…</p>;
   if (error)   return <p>Error: {error.message}</p>;
@@ -126,7 +126,7 @@ function FeatureList() {
   const [offset, setOffset] = useState(0);
 
   const { features, loading, error, hasMore } = useOgcFeatures(
-    'http://localhost:8000',
+    'http://localhost:8001',
     'public.countries',
     { limit: 10, offset, filter: { continent: 'Europe' } }
   );
@@ -288,7 +288,7 @@ import { useCsvExport } from '@techtraverse/map-ui-lib/hooks';
 
 function App() {
   const { exportCsv, loading, error } = useCsvExport({
-    baseUrl: 'http://localhost:8000',
+    baseUrl: 'http://localhost:8001',
     limit: 500,
   });
 
@@ -326,7 +326,7 @@ Fetches `GET {baseUrl}/collections?f=json` and returns the `collections` array.
 ```ts
 import { fetchCollections } from '@techtraverse/map-ui-lib/hooks';
 
-const collections = await fetchCollections('http://localhost:8000');
+const collections = await fetchCollections('http://localhost:8001');
 ```
 
 ---
@@ -346,7 +346,7 @@ Fetches features from `GET {baseUrl}/collections/{collection}/items` with query 
 ```ts
 import { fetchFeatures } from '@techtraverse/map-ui-lib/hooks';
 
-const data = await fetchFeatures('http://localhost:8000', 'public.countries', {
+const data = await fetchFeatures('http://localhost:8001', 'public.countries', {
   limit: 5,
   filter: { continent: 'Asia' },
 });
@@ -369,7 +369,7 @@ Fetches the queryable schema for a collection from `GET {baseUrl}/collections/{c
 ```ts
 import { fetchQueryables } from '@techtraverse/map-ui-lib/hooks';
 
-const queryables = await fetchQueryables('http://localhost:8000', 'public.countries');
+const queryables = await fetchQueryables('http://localhost:8001', 'public.countries');
 // queryables.properties['continent'].enum → ['Africa', 'Asia', ...]
 ```
 
@@ -396,11 +396,11 @@ Fetches distinct non-null string values for a property in an OGC API collection.
 ```ts
 import { fetchDistinctValues } from '@techtraverse/map-ui-lib/hooks';
 
-const continents = await fetchDistinctValues('http://localhost:8000', 'public.countries', 'continent');
+const continents = await fetchDistinctValues('http://localhost:8001', 'public.countries', 'continent');
 // → ['Africa', 'Asia', 'Europe', 'North America', 'Oceania', 'South America']
 
 const matching = await fetchDistinctValues(
-  'http://localhost:8000', 'public.countries', 'name', { query: 'Ger' }
+  'http://localhost:8001', 'public.countries', 'name', { query: 'Ger' }
 );
 // → ['Germany']
 ```
@@ -421,7 +421,7 @@ Fetches metadata for a single OGC API collection by ID from `GET {baseUrl}/colle
 ```ts
 import { fetchCollectionDetail } from '@techtraverse/map-ui-lib/hooks';
 
-const collection = await fetchCollectionDetail('http://localhost:8000', 'public.countries');
+const collection = await fetchCollectionDetail('http://localhost:8001', 'public.countries');
 console.log(collection.title, collection.description);
 ```
 
@@ -438,7 +438,7 @@ Fetches the OGC API conformance declaration to discover server capabilities. Ret
 ```ts
 import { fetchConformance } from '@techtraverse/map-ui-lib/hooks';
 
-const conformance = await fetchConformance('http://localhost:8000');
+const conformance = await fetchConformance('http://localhost:8001');
 const supportsCql2 = conformance.conformsTo.some((c) => c.includes('cql2'));
 ```
 
@@ -459,7 +459,7 @@ Fetches the TileJSON document for a collection's vector tiles. Returns tile meta
 ```ts
 import { fetchTileJson } from '@techtraverse/map-ui-lib/hooks';
 
-const tileJson = await fetchTileJson('http://localhost:8000', 'public.countries');
+const tileJson = await fetchTileJson('http://localhost:8001', 'public.countries');
 console.log(tileJson.vector_layers); // layer definitions
 ```
 
@@ -480,11 +480,11 @@ Fetches the total feature count for a collection using `limit=0` and reading `nu
 ```ts
 import { fetchFeatureCount } from '@techtraverse/map-ui-lib/hooks';
 
-const total = await fetchFeatureCount('http://localhost:8000', 'public.countries');
+const total = await fetchFeatureCount('http://localhost:8001', 'public.countries');
 // total may be null if server doesn't support numberMatched
 
 const europeanCount = await fetchFeatureCount(
-  'http://localhost:8000',
+  'http://localhost:8001',
   'public.countries',
   { cql2Filter: { op: '=', args: [{ property: 'continent' }, 'Europe'] } }
 );
@@ -507,8 +507,8 @@ Returns the TileJSON URL for a collection's vector tiles. Use this with MapLibre
 ```ts
 import { getTileJsonUrl } from '@techtraverse/map-ui-lib/hooks';
 
-const url = getTileJsonUrl('http://localhost:8000', 'public.countries');
-// → 'http://localhost:8000/collections/public.countries/tiles/WebMercatorQuad/tilejson.json'
+const url = getTileJsonUrl('http://localhost:8001', 'public.countries');
+// → 'http://localhost:8001/collections/public.countries/tiles/WebMercatorQuad/tilejson.json'
 ```
 
 ---
@@ -528,8 +528,8 @@ Returns a MapLibre-compatible tile URL template with `{z}/{x}/{y}` placeholders.
 ```ts
 import { getVectorTileUrl } from '@techtraverse/map-ui-lib/hooks';
 
-const tileUrl = getVectorTileUrl('http://localhost:8000', 'public.countries');
-// → 'http://localhost:8000/collections/public.countries/tiles/WebMercatorQuad/{z}/{x}/{y}'
+const tileUrl = getVectorTileUrl('http://localhost:8001', 'public.countries');
+// → 'http://localhost:8001/collections/public.countries/tiles/WebMercatorQuad/{z}/{x}/{y}'
 ```
 
 ---
@@ -551,7 +551,7 @@ Same as `getVectorTileUrl` but appends property filter query parameters. When `f
 import { getFilteredVectorTileUrl } from '@techtraverse/map-ui-lib/hooks';
 
 const url = getFilteredVectorTileUrl(
-  'http://localhost:8000',
+  'http://localhost:8001',
   'public.countries',
   { continent: 'Europe' }
 );
@@ -579,7 +579,7 @@ Builds a MapLibre-compatible tile URL template with a CQL2 JSON filter applied v
 import { getCql2FilteredVectorTileUrl } from '@techtraverse/map-ui-lib/hooks';
 
 const url = getCql2FilteredVectorTileUrl(
-  'http://localhost:8000',
+  'http://localhost:8001',
   'public.countries',
   { op: '=', args: [{ property: 'continent' }, 'Europe'] }
 );

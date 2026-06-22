@@ -21,7 +21,7 @@ The session that defined this skill (2026-05-10) found a critical map-client cra
 
 ## What you need before starting
 
-1. **Target deployment URL** (e.g. `http://16.147.169.174` for the EC2 box, or `http://localhost` if running locally via `docker compose up -d`). Ask the user if not given. Never assume.
+1. **Target deployment URL** — default to the local Docker Compose stack at `http://localhost:8000` (the gateway, after `docker compose up -d`). If QA'ing a remote deploy, ask the user for its URL. Never assume.
 2. **Admin credentials.** For the EC2 deploy, `terraform/terraform.tfvars` shows commented-out hints (the password used to generate `ansible/group_vars/all.yml`'s `admin_password_hash` is named in a `# admin_password_hash = "..."` comment). Verify the candidate against the bcrypt hash with:
    ```bash
    node -e "require('bcryptjs').compare('CANDIDATE', '$HASH').then(console.log)"

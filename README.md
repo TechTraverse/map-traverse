@@ -124,7 +124,7 @@ docker compose up -d
 docker logs -f techtraverse-seed
 
 # Verify tipg is serving data
-curl http://localhost:8000/collections
+curl http://localhost:8001/collections
 ```
 
 ### Development
@@ -147,10 +147,10 @@ pnpm build:app
 
 | URL | Service |
 |---|---|
-| http://localhost | Gateway (all services on one port) |
+| http://localhost:8000 | Gateway (all services on one port) |
 | http://localhost:3000 | Map client (direct) |
 | http://localhost:3001 | Admin app (direct) |
-| http://localhost:8000 | tipg OGC API (direct) |
+| http://localhost:8001 | tipg OGC API (direct) |
 
 ### Available Services (Dev / Vite)
 
@@ -169,7 +169,7 @@ A single nginx gateway exposes all services through one port. The map client is 
                             Internet
                                |
                           [ Gateway ]
-                           nginx :80
+                          nginx :8000
                                |
             ┌──────────┬───────┴───────┬──────────┐
             |          |               |          |

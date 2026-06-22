@@ -56,7 +56,7 @@ Credentials attached to requests for authenticated sources.
 // Public source — no auth
 {
   id: 'tipg-local',
-  url: 'http://localhost:8000',
+  url: 'http://localhost:8001',
   label: 'Local tipg',
   tileMatrixSetId: 'WebMercatorQuad',
 }
@@ -656,7 +656,7 @@ export const mapConfig: MapConfig = {
   sources: [
     {
       id: 'tipg-local',
-      url: 'http://localhost:8000',
+      url: 'http://localhost:8001',
       label: 'Local tipg (Natural Earth)',
       tileMatrixSetId: 'WebMercatorQuad',
     },

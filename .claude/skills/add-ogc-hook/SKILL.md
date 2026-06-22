@@ -40,7 +40,7 @@ The existing hooks (`useOgcCollections`, `useOgcFeatures`, `useOgcQueryables`, `
 
 5. **Verify.**
    - `pnpm storybook` and open the new hook story.
-   - If you have a local tipg up (`docker compose up -d`), point the story at `http://localhost:8000` to test against your real data.
+   - If you have a local tipg up (`docker compose up -d`), point the story at `http://localhost:8001` to test against your real data.
    - `pnpm test` if you added unit tests for the util.
 
 ## What to read first

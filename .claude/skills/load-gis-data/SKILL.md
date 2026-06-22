@@ -56,8 +56,8 @@ The existing seed pipeline at `docker/seed/` is the reference — `seed.sh` load
 
 8. **Verify the new collection is live.**
    ```bash
-   curl http://localhost:8000/collections | jq '.collections[].id'
-   curl 'http://localhost:8000/collections/<schema>.<table>/items?limit=1' | jq
+   curl http://localhost:8001/collections | jq '.collections[].id'
+   curl 'http://localhost:8001/collections/<schema>.<table>/items?limit=1' | jq
    ```
    The collection ID format tipg uses is `<schema>.<table>`. If it's missing, see the `ogc-api-troubleshoot` skill.
 

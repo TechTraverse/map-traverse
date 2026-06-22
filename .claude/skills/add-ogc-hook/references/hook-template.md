@@ -116,7 +116,7 @@ export default meta;
 type Story = StoryObj<typeof ThingHarness>;
 
 export const LocalTipg: Story = {
-  args: { baseUrl: 'http://localhost:8000', collection: 'example.ne_110m_admin_0_countries' },
+  args: { baseUrl: 'http://localhost:8001', collection: 'example.ne_110m_admin_0_countries' },
 };
 ```
 

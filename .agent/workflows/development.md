@@ -20,7 +20,7 @@ description: Development workflows for TechTraverse Map Apps
    ```
 3. Verify data loaded:
    ```bash
-   curl http://localhost:8000/collections
+   curl http://localhost:8001/collections
    ```
 
 ## Development Commands

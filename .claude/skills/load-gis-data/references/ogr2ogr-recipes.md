@@ -140,5 +140,5 @@ Then bounce tipg and curl `/collections`:
 ```bash
 docker restart techtraverse-tipg
 sleep 3
-curl -s http://localhost:8000/collections | jq '.collections[].id' | grep parcels
+curl -s http://localhost:8001/collections | jq '.collections[].id' | grep parcels
 ```
