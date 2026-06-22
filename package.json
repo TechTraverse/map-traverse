@@ -10,14 +10,11 @@
     "storybook": "pnpm --filter @techtraverse/map-ui-lib storybook",
     "build:lib": "pnpm --filter @techtraverse/map-ui-lib build",
     "build:app": "pnpm --filter map-client build",
-    "release": "pnpm build && changeset publish",
-    "changeset": "changeset",
     "test": "pnpm --filter @techtraverse/map-ui-lib test",
     "test:coverage": "pnpm --filter @techtraverse/map-ui-lib test:coverage",
     "verify": "pnpm build && pnpm test"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.29.8",
     "typescript": "^6.0.3"
   },
   "packageManager": "pnpm@10.29.1",
