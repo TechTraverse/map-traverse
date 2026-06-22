@@ -55,7 +55,7 @@ docker logs techtraverse-admin-app
 docker exec -it techtraverse-postgis psql -U postgres -d gis -c "\dn"
 ```
 
-You should see the `example` and `gunnison` schemas. If they're missing, the seed container failed — re-run it:
+You should see the `example` and `your_county` schemas (or whatever schemas the deployment uses). If they're missing, the seed container failed — re-run it:
 
 ```bash
 docker compose up seed
@@ -65,7 +65,7 @@ docker compose up seed
 
 ```bash
 docker exec -it techtraverse-postgis psql -U postgres -d gis \
-  -c "\dt example.*; \dt gunnison.*"
+  -c "\dt example.*; \dt your_county.*"
 ```
 
 If the table you expect isn't there, the loader didn't run or failed silently. Check `docker logs techtraverse-seed` and re-run with `docker compose up seed --force-recreate`.
@@ -73,7 +73,7 @@ If the table you expect isn't there, the loader didn't run or failed silently. C
 If the table is there, check the row count and the SRID:
 
 ```sql
-SELECT count(*), ST_SRID(geom) FROM gunnison.parcels GROUP BY ST_SRID(geom);
+SELECT count(*), ST_SRID(geom) FROM your_county.parcels GROUP BY ST_SRID(geom);
 ```
 
 Expected: a single row with `4326`. If you see multiple SRIDs or anything other than 4326, the load was wrong — see the `load-gis-data` skill for the reprojection step.

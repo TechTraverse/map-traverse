@@ -42,7 +42,7 @@ Goal: understand what the deployment *is* before you change anything.
 1. Hit `/admin/` and `/ogc/collections?f=json` and `/api/configs` to confirm the basics respond. If anything 5xx's, stop and triage with `ogc-api-troubleshoot` instead of pressing on.
 2. Inventory the existing configs (admin → Maps list). **Memorize their names** — you will not modify them.
 3. Inventory the OGC collections you'll be drawing from. Use the procedure in `references/layer-research-playbook.md` to capture per-collection geometry type, queryables, sample feature properties, and row count. The output of this step is your menu of layers to compose into the test config.
-4. Pick a layer set. Aim for **6–10 layers** that span all geometry types and create variety. The playbook has a recommended Gunnison set; adapt for whatever data is loaded.
+4. Pick a layer set. Aim for **6–10 layers** that span all geometry types and create variety. The playbook explains how to build the set from whatever `/collections` returns for this deployment.
 
 ### Phase 1 — Build the test config
 

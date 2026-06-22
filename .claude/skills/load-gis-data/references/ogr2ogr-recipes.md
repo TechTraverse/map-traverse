@@ -18,7 +18,7 @@ ogr2ogr -f PostgreSQL "$PG" \
   -t_srs EPSG:4326 \
   -lco GEOMETRY_NAME=geom \
   -lco FID=gid \
-  -lco SCHEMA=gunnison
+  -lco SCHEMA=your_county
 ```
 
 If the source `.prj` is missing, add `-s_srs EPSG:<source_epsg>` (you have to know the source CRS).
@@ -33,7 +33,7 @@ ogr2ogr -f PostgreSQL "$PG" \
   -t_srs EPSG:4326 \
   -lco GEOMETRY_NAME=geom \
   -lco FID=gid \
-  -lco SCHEMA=gunnison
+  -lco SCHEMA=your_county
 ```
 
 ## GeoPackage (specific layer from a multi-layer file)
@@ -46,7 +46,7 @@ ogr2ogr -f PostgreSQL "$PG" \
   -t_srs EPSG:4326 \
   -lco GEOMETRY_NAME=geom \
   -lco FID=gid \
-  -lco SCHEMA=gunnison \
+  -lco SCHEMA=your_county \
   waterways  # <-- source layer name within the gpkg
 ```
 
@@ -62,7 +62,7 @@ ogr2ogr -f PostgreSQL "$PG" \
   -t_srs EPSG:4326 \
   -lco GEOMETRY_NAME=geom \
   -lco FID=gid \
-  -lco SCHEMA=gunnison
+  -lco SCHEMA=your_county
 ```
 
 GeoJSON is EPSG:4326 by spec, so the reprojection is a no-op but harmless. Keep it for consistency.
@@ -77,7 +77,7 @@ ogr2ogr -f PostgreSQL "$PG" \
   -t_srs EPSG:4326 \
   -lco GEOMETRY_NAME=geom \
   -lco FID=gid \
-  -lco SCHEMA=gunnison
+  -lco SCHEMA=your_county
 ```
 
 ## File Geodatabase
@@ -90,7 +90,7 @@ ogr2ogr -f PostgreSQL "$PG" \
   -t_srs EPSG:4326 \
   -lco GEOMETRY_NAME=geom \
   -lco FID=gid \
-  -lco SCHEMA=gunnison \
+  -lco SCHEMA=your_county \
   county_boundary  # source layer name
 ```
 
@@ -105,7 +105,7 @@ ogr2ogr -f PostgreSQL "$PG" \
   -nln points \
   -lco GEOMETRY_NAME=geom \
   -lco FID=gid \
-  -lco SCHEMA=gunnison
+  -lco SCHEMA=your_county
 ```
 
 For lat/lon columns instead of WKT, swap to `-oo X_POSSIBLE_NAMES=lon -oo Y_POSSIBLE_NAMES=lat`.
@@ -127,11 +127,11 @@ ogrinfo -so /GISData/parcels.shp parcels | grep 'Feature Count'
 
 ```sql
 -- Run via psql
-CREATE INDEX IF NOT EXISTS idx_parcels_geom ON gunnison.parcels USING GIST (geom);
-ANALYZE gunnison.parcels;
+CREATE INDEX IF NOT EXISTS idx_parcels_geom ON your_county.parcels USING GIST (geom);
+ANALYZE your_county.parcels;
 
 -- Sanity check
-SELECT count(*), ST_SRID(geom) FROM gunnison.parcels GROUP BY ST_SRID(geom);
+SELECT count(*), ST_SRID(geom) FROM your_county.parcels GROUP BY ST_SRID(geom);
 -- Expect a single row with SRID = 4326.
 ```
 

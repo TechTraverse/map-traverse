@@ -15,7 +15,7 @@ file in GISData/  →  ogr2ogr  →  PostGIS table  →  tipg discovery  →  /c
 
 Every step has a gotcha. The CRS has to be EPSG:4326 or the map will draw it in the wrong place. The table has to be in a schema tipg knows about (`TIPG_DB_SCHEMAS`), or the collection won't appear. tipg caches its catalog at startup, so a freshly-loaded table isn't visible until you restart the container. And without a GiST index on the geometry column, every bbox query does a full scan. This skill walks through all of that in the right order.
 
-The existing seed pipeline at `docker/seed/` is the reference — `seed.sh` loads Natural Earth data, and `load-shapefiles.sh` loads the Gunnison County data from `GISData/`. Your job, when adding new data, is usually to extend `load-shapefiles.sh` or write a small companion script that follows the same pattern.
+The existing seed pipeline at `docker/seed/` is the reference — `seed.sh` loads Natural Earth data, and `load-shapefiles.sh` loads the deployment's GIS data from `GISData/`. Your job, when adding new data, is usually to extend `load-shapefiles.sh` or write a small companion script that follows the same pattern.
 
 ## Steps
 
@@ -25,7 +25,7 @@ The existing seed pipeline at `docker/seed/` is the reference — `seed.sh` load
    - **GeoJSON / FlatGeobuf**: a single file. Always EPSG:4326 by spec for GeoJSON, but FlatGeobuf can be in any CRS, so don't assume.
    - **File Geodatabase**: a `.gdb` directory.
 
-2. **Pick a schema.** Decide whether the new data belongs in an existing schema (`example`, `gunnison`) or a new one. Use a new schema for a logically separate dataset (a new client, a new region) — schemas are the unit of access control and tipg discovery. Create with `CREATE SCHEMA IF NOT EXISTS <name>;` in `seed.sh` or your loader script.
+2. **Pick a schema.** Decide whether the new data belongs in an existing schema (e.g. `example`, `your_county`) or a new one. Use a new schema for a logically separate dataset (a new client, a new region) — schemas are the unit of access control and tipg discovery. Create with `CREATE SCHEMA IF NOT EXISTS <name>;` in `seed.sh` or your loader script.
 
 3. **Reproject to EPSG:4326.** This is the project-wide convention because MapLibre and the OGC API Features clients all expect WGS84. Pass `-t_srs EPSG:4326` to ogr2ogr. If the source has no CRS metadata, also pass `-s_srs EPSG:<source_epsg>` so the reprojection has a starting point.
 
@@ -44,9 +44,9 @@ The existing seed pipeline at `docker/seed/` is the reference — `seed.sh` load
    CREATE INDEX IF NOT EXISTS idx_<table>_geom ON <schema>.<table> USING GIST (geom);
    ```
 
-6. **Tell tipg about the schema.** tipg only discovers tables in schemas listed in the `TIPG_DB_SCHEMAS` env var on the `tipg` service in `docker-compose.yml`. If you used an existing schema (`example`, `gunnison`) you can skip this. If you added a new schema, append it:
+6. **Tell tipg about the schema.** tipg only discovers tables in schemas listed in the `TIPG_DB_SCHEMAS` env var on the `tipg` service in `docker-compose.yml`. If you used an existing schema (e.g. `example`, `your_county`) you can skip this. If you added a new schema, append it:
    ```yaml
-   TIPG_DB_SCHEMAS: '["example", "gunnison", "your_new_schema"]'
+   TIPG_DB_SCHEMAS: '["example", "your_county", "your_new_schema"]'
    ```
 
 7. **Restart tipg so it re-scans.** tipg builds its catalog at startup, so newly added tables don't appear until you bounce it:
