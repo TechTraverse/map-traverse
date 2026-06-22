@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-27
 **Status:** Approved (design)
-**Scope:** `docker/seed/`, `ansible/` — no application (admin-app / map-client / lib) changes.
+**Scope:** `docker/seed/` — no application (admin-app / map-client / lib) changes.
 
 ## Problem
 
@@ -46,7 +46,7 @@ which is the source of the current bug.)
 
 ## Design
 
-Three pieces, all in `docker/seed/` + `ansible/`:
+Two pieces, both in `docker/seed/`:
 
 ### 1. Drop the event trigger
 
@@ -73,37 +73,10 @@ trigger's normalization logic but applied out-of-band and defensively:
   - On `lock_not_available` (busy table) or any error: **catch, log via
     `RAISE NOTICE`, and continue** — the table is retried on the next run. One
     busy/failed table never aborts the rest.
-- Return a `SETOF text` (or `TABLE(old_name text, new_name text)`) describing
-  the renames performed, so the wrapper can decide whether to refresh tipg.
+- Return a count of renames performed, so the caller can decide whether to
+  refresh tipg.
 
 `_normalize_ident` stays: `regexp_replace(lower(raw), '\s+', '_', 'g')`.
-
-### 3. Host cron + wrapper script
-
-A small shell script (e.g. `ansible/normalize-sweep.sh`, following the existing
-`ansible/backup.sh` pattern) that:
-
-1. Runs `docker exec ogc-maps-postgis psql -U postgres -d gis -At -c
-   "SELECT public.normalize_public_tables()"`.
-2. If the function reported **any** renames, curls tipg's refresh route
-   (`http://localhost/ogc/refresh` — enabled by `tipg_debug: true`) so the
-   corrected collection appears immediately instead of waiting for the existing
-   30-minute `ogc-maps-tipg-restart` cron.
-3. Logs to `/var/log/ogc-maps-normalize.log`.
-
-Installed by the ansible playbook as a **cron job every 2 minutes**, alongside
-the existing `ogc-maps-backup` (daily) and `ogc-maps-tipg-restart` (*/30) jobs.
-
-### Ansible wiring
-
-- Replace the opt-in `install-normalize-trigger` task (currently
-  `tags: [install-normalize-trigger, never]`, installing
-  `init_normalize_triggers.sql`) with a task that installs the new SQL
-  (drop trigger + helper + sweep function).
-- Copy `normalize-sweep.sh` to the host (like `backup.sh`).
-- Add the `*/2` cron job (`ansible.builtin.cron`).
-- Apply once to prod: run the SQL (drops the trigger, installs the function)
-  and do an initial `SELECT public.normalize_public_tables()`.
 
 ## Data flow
 
@@ -113,11 +86,9 @@ GIS client drag-drop ─┐
                       │
    (no trigger fires — load commits cleanly, table = "My Layer")
                       ▼
-host cron (*/2 min) ─► normalize-sweep.sh
-                      ► SELECT normalize_public_tables()
+scheduled invocation ─► normalize_public_tables()
                            • lock_timeout=2s; table not busy → rename "My Layer" → my_layer
                            • (if still loading → lock_not_available → skip, retry next run)
-                      ► renames happened? → curl tipg /refresh
                       ▼
               tipg serves collection public.my_layer
 ```
@@ -127,9 +98,9 @@ host cron (*/2 min) ─► normalize-sweep.sh
 - **Busy table (load in progress):** `lock_timeout` → `lock_not_available`
   caught per-table → skipped → retried next cycle. Never breaks a load.
 - **Name collision** (normalized name already taken): guarded, skipped, logged.
-- **psql/docker exec failure in the wrapper:** non-zero exit logged; cron retries
-  in 2 min. No state to corrupt (function is idempotent).
-- **tipg refresh failure:** non-fatal; the */30 tipg-restart cron is the backstop.
+- **Invocation failure:** non-zero exit logged; retried on next scheduled run.
+  No state to corrupt (function is idempotent).
+- **tipg refresh failure:** non-fatal; a periodic tipg restart is the backstop.
 
 ## Testing
 
@@ -162,6 +133,4 @@ No vitest surface (SQL + shell). Verify against the local
 - `docker/seed/init_normalize_triggers.sql` → replaced by a new SQL file
   (drop trigger + `_normalize_ident` + `normalize_public_tables()`); rename to
   reflect it's no longer a trigger (e.g. `init_normalize_public.sql`).
-- `ansible/normalize-sweep.sh` (new).
-- `ansible/playbook.yml` (swap trigger task → function install; copy script; add cron).
 - `apps/admin-app/**` — **untouched.**
