@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { lintMapConfig, isSearchFieldTypeCompatible } from '../lintMapConfig';
-import type { ImageryLayerConfig, LayerConfig, SearchField, AvailableProperty, GlobalSearchConfig } from '@ogc-maps/storybook-components';
+import type { ImageryLayerConfig, LayerConfig, SearchField, AvailableProperty, GlobalSearchConfig } from '@techtraverse/map-ui-lib';
 
 const baseImagery: ImageryLayerConfig = {
   id: 'i1',

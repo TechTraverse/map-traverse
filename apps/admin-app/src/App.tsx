@@ -12,7 +12,7 @@ import { RequireAuth } from './components/RequireAuth';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useAuth } from './hooks/useAuth';
 import { useSettings } from './hooks/useSettings';
-import { UserMenu } from '@ogc-maps/storybook-components';
+import { UserMenu } from '@techtraverse/map-ui-lib';
 
 function Header() {
   const location = useLocation();

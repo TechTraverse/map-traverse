@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react';
-import { CollapsibleSection } from '@ogc-maps/storybook-components';
-import { detectTileSourceType } from '@ogc-maps/storybook-components/utils';
+import { CollapsibleSection } from '@techtraverse/map-ui-lib';
+import { detectTileSourceType } from '@techtraverse/map-ui-lib/utils';
 import type { InspectionResult, QueryableMeta } from '../../server/inspect.js';
 
 export type { InspectionResult };

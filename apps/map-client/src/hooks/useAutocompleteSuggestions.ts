@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchDistinctValues, isOgcApiSource } from '@ogc-maps/storybook-components/utils';
+import { fetchDistinctValues, isOgcApiSource } from '@techtraverse/map-ui-lib/utils';
 import { useMapStore } from '../stores/mapStore';
 
 const CACHE_MAX = 200;

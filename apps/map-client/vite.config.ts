@@ -13,7 +13,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@ogc-maps/storybook-components/tailwind.css': path.resolve(__dirname, '../../packages/map-ui-lib/tailwind.css'),
+      '@techtraverse/map-ui-lib/tailwind.css': path.resolve(__dirname, '../../packages/map-ui-lib/tailwind.css'),
     },
   },
   server: {

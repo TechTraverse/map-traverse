@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@ngageoint/geopackage": "^4.2.0",
-    "@ogc-maps/storybook-components": "workspace:*",
+    "@techtraverse/map-ui-lib": "workspace:*",
     "@tmcw/tokml": "^1.0.0-alpha.0",
     "@turf/bbox": "^7.3.4",
     "@turf/boolean-intersects": "^7.3.4",

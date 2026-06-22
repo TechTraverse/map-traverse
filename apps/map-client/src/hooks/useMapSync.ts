@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { fromStructuredFilters } from '@ogc-maps/storybook-components/utils';
-import type { SearchFilterValue, SearchFilterValues } from '@ogc-maps/storybook-components/types';
+import { fromStructuredFilters } from '@techtraverse/map-ui-lib/utils';
+import type { SearchFilterValue, SearchFilterValues } from '@techtraverse/map-ui-lib/types';
 import { useMapStore } from '../stores/mapStore';
 import { useMapUrlState } from './useMapUrlState';
 

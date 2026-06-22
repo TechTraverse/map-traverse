@@ -4,7 +4,7 @@ import {
   ConfirmDialog,
   attributeInputKind,
   type AttributeColumn,
-} from '@ogc-maps/storybook-components';
+} from '@techtraverse/map-ui-lib';
 import {
   LuArrowLeft,
   LuPlus,

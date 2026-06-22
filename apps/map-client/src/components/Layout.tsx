@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { MapRef } from 'react-map-gl/maplibre';
-import type { UIConfig } from '@ogc-maps/storybook-components/types';
-import { DEFAULT_HEADER_COLOR } from '@ogc-maps/storybook-components/schemas';
+import type { UIConfig } from '@techtraverse/map-ui-lib/types';
+import { DEFAULT_HEADER_COLOR } from '@techtraverse/map-ui-lib/schemas';
 import {
   formatDecimal,
   formatDMS,
   formatDDM,
   ResultsDrawer,
   type CoordinateFormatOption,
-} from '@ogc-maps/storybook-components';
-import type { ResultsDrawerTab } from '@ogc-maps/storybook-components';
-import { useMeasure, useSelection } from '@ogc-maps/storybook-components/hooks';
+} from '@techtraverse/map-ui-lib';
+import type { ResultsDrawerTab } from '@techtraverse/map-ui-lib';
+import { useMeasure, useSelection } from '@techtraverse/map-ui-lib/hooks';
 import {
   fetchFeatureById,
   resolvePropertyDisplay,
@@ -18,8 +18,8 @@ import {
   fetchFeatures,
   combineGeometries,
   isOgcApiSource,
-} from '@ogc-maps/storybook-components/utils';
-import type { Cql2FilterConfig } from '@ogc-maps/storybook-components/types';
+} from '@techtraverse/map-ui-lib/utils';
+import type { Cql2FilterConfig } from '@techtraverse/map-ui-lib/types';
 import { useMapStore, useEffectiveCql2Filters } from '../stores/mapStore';
 import { MapContainer } from './MapContainer';
 import { MapOverlay } from './MapOverlay';

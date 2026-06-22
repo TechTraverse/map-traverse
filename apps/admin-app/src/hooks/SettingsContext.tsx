@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
-import { DEFAULT_HEADER_COLOR } from '@ogc-maps/storybook-components/schemas';
+import { DEFAULT_HEADER_COLOR } from '@techtraverse/map-ui-lib/schemas';
 
 export interface SiteSettings {
   header_title: string;

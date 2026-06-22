@@ -11,7 +11,7 @@ import {
   AttributeForm,
   GeometryEditor,
   type AttributeColumn,
-} from '@ogc-maps/storybook-components';
+} from '@techtraverse/map-ui-lib';
 import { GeometryDrawMap } from './GeometryDrawMap';
 
 export interface FeatureEditorDrawerProps {

@@ -10,9 +10,9 @@ import { pool, initDb } from './db.js';
 import { inspectSource, normalizeUrl } from './inspect.js';
 import { registerDataRoutes } from './dataRoutes.js';
 import { registerRowRoutes } from './rowRoutes.js';
-import { detectTileSourceType, appendAuth, authHeaders } from '@ogc-maps/storybook-components/hooks';
-import type { SourceAuth } from '@ogc-maps/storybook-components/hooks';
-import { safeValidateMapConfig } from '@ogc-maps/storybook-components/schemas';
+import { detectTileSourceType, appendAuth, authHeaders } from '@techtraverse/map-ui-lib/hooks';
+import type { SourceAuth } from '@techtraverse/map-ui-lib/hooks';
+import { safeValidateMapConfig } from '@techtraverse/map-ui-lib/schemas';
 
 // Shared shape for source create/update request bodies
 interface SourceRequestBody {

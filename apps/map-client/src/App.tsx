@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import { safeValidateMapConfig } from '@ogc-maps/storybook-components/schemas';
-import type { BrandingConfig } from '@ogc-maps/storybook-components/types';
+import { safeValidateMapConfig } from '@techtraverse/map-ui-lib/schemas';
+import type { BrandingConfig } from '@techtraverse/map-ui-lib/types';
 import { useMapStore } from './stores/mapStore';
 import { useMapSync } from './hooks/useMapSync';
 import { Layout } from './components/Layout';

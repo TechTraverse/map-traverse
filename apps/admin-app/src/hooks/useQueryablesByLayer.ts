@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import type { LayerConfig, MapSource, AvailableProperty } from '@ogc-maps/storybook-components';
-import { fetchQueryables, toAvailableProperties, isOgcApiSource } from '@ogc-maps/storybook-components/utils';
+import type { LayerConfig, MapSource, AvailableProperty } from '@techtraverse/map-ui-lib';
+import { fetchQueryables, toAvailableProperties, isOgcApiSource } from '@techtraverse/map-ui-lib/utils';
 
 export interface UseQueryablesByLayerResult {
   queryablesByLayer: Record<string, AvailableProperty[]>;

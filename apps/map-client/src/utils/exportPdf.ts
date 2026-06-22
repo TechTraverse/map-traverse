@@ -3,7 +3,7 @@ import html2canvas from 'html2canvas';
 import {
   computeMetricScale,
   type PdfExportOptions,
-} from '@ogc-maps/storybook-components';
+} from '@techtraverse/map-ui-lib';
 import type { Map as MapLibreMap } from 'maplibre-gl';
 
 interface ExportPdfInput {

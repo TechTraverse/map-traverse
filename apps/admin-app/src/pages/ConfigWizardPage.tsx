@@ -17,9 +17,9 @@ import {
   resolveAvailableIcons,
   slugify,
   INFO_POSITIONS,
-} from '@ogc-maps/storybook-components';
-import { safeValidateMapConfig, DEFAULT_HEADER_COLOR } from '@ogc-maps/storybook-components/schemas';
-import { detectTileSourceType, isOgcApiSource } from '@ogc-maps/storybook-components/utils';
+} from '@techtraverse/map-ui-lib';
+import { safeValidateMapConfig, DEFAULT_HEADER_COLOR } from '@techtraverse/map-ui-lib/schemas';
+import { detectTileSourceType, isOgcApiSource } from '@techtraverse/map-ui-lib/utils';
 import type {
   OgcApiSource,
   MapSource,
@@ -35,7 +35,7 @@ import type {
   GlobalSearchConfig,
   InfoConfig,
   SourceGroup,
-} from '@ogc-maps/storybook-components';
+} from '@techtraverse/map-ui-lib';
 import { ImageUploadField } from '../components/ImageUploadField';
 import { MapPreview } from '../components/MapPreview';
 import { JsonConfigEditor } from '../components/JsonConfigEditor';

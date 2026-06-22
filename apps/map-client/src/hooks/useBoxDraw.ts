@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import type { MapRef } from 'react-map-gl/maplibre';
-import { buildBoxDrawData } from '@ogc-maps/storybook-components';
+import { buildBoxDrawData } from '@techtraverse/map-ui-lib';
 
 export interface UseBoxDrawOptions {
   mapRef: React.RefObject<MapRef | null>;

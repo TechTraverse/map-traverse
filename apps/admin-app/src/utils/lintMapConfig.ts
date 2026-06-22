@@ -19,7 +19,7 @@ import type {
   LayerConfig,
   SearchField,
   GlobalSearchConfig,
-} from '@ogc-maps/storybook-components';
+} from '@techtraverse/map-ui-lib';
 
 /**
  * Local mirror of `isImageryLayerIncomplete` exported from the lib —

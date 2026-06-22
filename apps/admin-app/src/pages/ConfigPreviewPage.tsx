@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import type { MapConfig, LayerConfig, ImageryLayerConfig } from '@ogc-maps/storybook-components';
+import type { MapConfig, LayerConfig, ImageryLayerConfig } from '@techtraverse/map-ui-lib';
 import { MapPreview } from '../components/MapPreview';
 
 const DEFAULT_VIEW = { latitude: 0, longitude: 0, zoom: 2, pitch: 0, bearing: 0 };

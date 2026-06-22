@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { safeValidateMapConfig } from '@ogc-maps/storybook-components/schemas';
-import type { MapConfig } from '@ogc-maps/storybook-components';
+import { safeValidateMapConfig } from '@techtraverse/map-ui-lib/schemas';
+import type { MapConfig } from '@techtraverse/map-ui-lib';
 
 interface JsonConfigEditorProps {
   /** Current config. Used to seed the editor and on "Reset". */

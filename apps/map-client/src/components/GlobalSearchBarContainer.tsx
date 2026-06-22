@@ -1,4 +1,4 @@
-import { GlobalSearchBar } from '@ogc-maps/storybook-components';
+import { GlobalSearchBar } from '@techtraverse/map-ui-lib';
 import { useMapStore } from '../stores/mapStore';
 import { useGlobalSearch } from '../hooks/useGlobalSearch';
 
