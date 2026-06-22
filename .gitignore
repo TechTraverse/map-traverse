@@ -44,6 +44,9 @@ storybook-static
 /GISData/
 /docker/seed/load-shapefiles.sh
 
+# Superpowers SDD scratch workspace (briefs, reports, review packages, ledger)
+/.superpowers/
+
 # Local config / infra (not committed)
 /config.json
 /TODO.md
