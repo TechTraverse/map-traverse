@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   LayerList,
   ImageryList,
+  DEFAULT_IMAGERY_LAYER,
   isImageryLayerIncomplete,
   CollectionBrowser,
   BasemapList,
@@ -19,9 +20,11 @@ import {
   INFO_POSITIONS,
 } from '@techtraverse/map-ui-lib';
 import { safeValidateMapConfig, DEFAULT_HEADER_COLOR } from '@techtraverse/map-ui-lib/schemas';
-import { detectTileSourceType, isOgcApiSource } from '@techtraverse/map-ui-lib/utils';
+import { detectTileSourceType, isOgcApiSource, isImagerySource } from '@techtraverse/map-ui-lib/utils';
+import { savedSourceToWmts, savedSourceIsImagery } from '../utils/wmtsSource';
 import type {
   OgcApiSource,
+  WmtsSource,
   MapSource,
   LayerConfig,
   ImageryLayerConfig,
@@ -65,7 +68,7 @@ const INFO_POSITION_OPTIONS = INFO_POSITIONS.map((pos) => ({
   label: pos.replace('-', ' ').replace(/^./, (c) => c.toUpperCase()),
 }));
 
-interface SavedSourceSummary { id: string; source_id: string; url: string; label: string | null; tile_matrix_set_id: string; source_type?: string; auth?: SourceAuth | null; metadata?: { thumbnail?: string; tileJson?: { tiles: string[]; name?: string; minzoom?: number; maxzoom?: number } } | null }
+interface SavedSourceSummary { id: string; source_id: string; url: string; label: string | null; tile_matrix_set_id: string; source_type?: string; auth?: SourceAuth | null; metadata?: { thumbnail?: string; tileJson?: { tiles: string[]; name?: string; minzoom?: number; maxzoom?: number }; wmtsLayer?: string; wmtsStyle?: string; wmtsFormat?: string; wmtsTileMatrixSet?: string; wmtsTileSize?: number; wmtsTileUrlTemplate?: string } | null }
 
 type WizardStep = 'metadata' | 'info' | 'layers' | 'search-display' | 'imagery' | 'basemaps' | 'ui' | 'view' | 'review';
 
@@ -516,7 +519,7 @@ export function ConfigWizardPage() {
 
   // Derive filtered saved sources by type
   const savedFeatureSources = savedSources.filter(s => (s.source_type ?? 'features') === 'features');
-  const savedImagerySources = savedSources.filter(s => s.source_type === 'imagery');
+  const savedImagerySources = savedSources.filter(savedSourceIsImagery);
   const savedBasemapSources = savedSources.filter(s => s.source_type === 'basemap');
   const imageryOgcSources = sources.filter(
     (s): s is OgcApiSource =>
@@ -704,7 +707,7 @@ export function ConfigWizardPage() {
               />
             </div>
 
-            <CollapsibleSection title="Branding" badge="optional">
+            <CollapsibleSection title="Branding & Title" defaultOpen={true}>
               <div className="mapui:flex mapui:flex-col mapui:gap-4">
                 <FormField label="Header Title" description="Title shown in the map header bar">
                   <input
@@ -716,11 +719,7 @@ export function ConfigWizardPage() {
                   />
                 </FormField>
 
-                <FormField label="Header Background Color">
-                  <ColorPicker value={branding.headerColor ?? DEFAULT_HEADER_COLOR} onChange={color => updateBranding({ headerColor: color })} />
-                </FormField>
-
-                <FormField label="Browser Tab Title" description="Title shown in the browser tab">
+                <FormField label="Browser Tab Title" description="Sets the browser tab text (the title shown in the browser's tab/window). Defaults to the header title if left blank.">
                   <input
                     type="text"
                     value={branding.browserTitle ?? ''}
@@ -728,6 +727,10 @@ export function ConfigWizardPage() {
                     placeholder="My Map"
                     className="mapui:w-full mapui:rounded mapui:border mapui:border-slate-300 mapui:px-2 mapui:py-1 mapui:text-sm mapui:outline-none focus:mapui:border-blue-500 focus:mapui:ring-1 focus:mapui:ring-blue-500"
                   />
+                </FormField>
+
+                <FormField label="Header Background Color">
+                  <ColorPicker value={branding.headerColor ?? DEFAULT_HEADER_COLOR} onChange={color => updateBranding({ headerColor: color })} />
                 </FormField>
 
                 <FormField label="Favicon" description="Icon shown in the browser tab (PNG, ICO, or SVG, max 100KB)">
@@ -896,6 +899,23 @@ export function ConfigWizardPage() {
                             setImageryLayers(prev => prev.filter(l => l.sourceId !== saved.source_id));
                             return;
                           }
+                          // WMTS sources carry their layer/style/matrixset in the
+                          // saved row's metadata — reconstruct the WmtsSource and
+                          // auto-add an imagery layer that just points at it (no
+                          // collection, no template; buildSourceUrlMap derives the URL).
+                          if (saved.source_type === 'wmts') {
+                            const wmtsSource: WmtsSource = savedSourceToWmts(saved);
+                            setSources(prev => [...prev, wmtsSource]);
+                            const label = saved.label ?? saved.source_id;
+                            setImageryLayers(prev => [...prev, {
+                              ...DEFAULT_IMAGERY_LAYER,
+                              id: slugify(label) || saved.source_id,
+                              sourceId: saved.source_id,
+                              label,
+                            }]);
+                            return;
+                          }
+
                           const newSource: OgcApiSource = {
                             id: saved.source_id,
                             url: saved.url,
@@ -1008,7 +1028,7 @@ export function ConfigWizardPage() {
                       <ImageryList
                         imageryLayers={imageryLayers}
                         onChange={setImageryLayers}
-                        availableSources={sources.filter(isOgcApiSource)}
+                        availableSources={sources.filter(isImagerySource)}
                       />
                     </div>
                   )}

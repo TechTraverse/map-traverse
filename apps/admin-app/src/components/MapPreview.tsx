@@ -1,7 +1,7 @@
 import { Fragment, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import { Map, Source, Layer, Marker, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
-import { useOgcFeatures, useExport } from '@techtraverse/map-ui-lib/hooks';
+import { useOgcFeatures, useExport, useHeaderAuthTransformRequest, useVectorSourceLayer } from '@techtraverse/map-ui-lib/hooks';
 import {
   getCql2FilteredVectorTileUrl,
   getImageryTileUrl,
@@ -18,6 +18,12 @@ import {
   featureCollectionFromGeometries,
   baseCql2FilterFromLayer,
   getVectorTileSourceKey,
+  getSubLayerId,
+  getDashSubLayerId,
+  getStyleSubLayerIds,
+  getLayerSourceKey,
+  getLayerSubLayerIds,
+  DASH_PER_CASE_PAINT_PROPS,
   buildGeometryFilter,
   buildCql2Query,
   combineGeometries,
@@ -30,7 +36,6 @@ import {
   prefetchKey,
   type GlobalSearchContext,
   buildSourceUrlMap,
-  buildHeaderAuthTransformRequest,
   isOgcApiSource,
 } from '@techtraverse/map-ui-lib/utils';
 import type { CQL2Expression } from '@techtraverse/map-ui-lib/utils';
@@ -100,6 +105,7 @@ import { resolveEffectiveLayout } from './mapPreviewLayout';
 import { useBoxDraw } from '../hooks/useBoxDraw';
 import { usePolygonDraw } from '../hooks/usePolygonDraw';
 import { useQueryablesByLayer } from '../hooks/useQueryablesByLayer';
+import { proxifyWmtsSources } from '../utils/proxyPreview';
 import { exportConverters } from '@techtraverse/map-ui-lib/utils';
 
 const coordinateFormats: CoordinateFormatOption[] = [
@@ -145,19 +151,19 @@ function renderPreviewStyleLayers(
     ...(sourceLayer ? { 'source-layer': sourceLayer } : {}),
   };
   const baseFilter = style.geometryFilter ? buildGeometryFilter(style.geometryFilter) : undefined;
-  const baseSubLayerId = `${baseId}--${style.type}--${styleIndex}`;
+  const baseSubLayerId = getSubLayerId(baseId, style.type, styleIndex);
 
   if (style.type === 'line' && style.dashByCategory) {
     const expansions = expandDashByCategory(style);
     if (expansions.length > 0) {
       const sharedPaint = { ...style.paint } as Record<string, unknown>;
-      delete sharedPaint['line-dasharray'];
+      for (const prop of DASH_PER_CASE_PAINT_PROPS) delete sharedPaint[prop];
       return expansions.map((sub) => {
         const filter = baseFilter ? ['all', baseFilter, sub.filter] : sub.filter;
         return (
           <Layer
             key={`${style.type}--${styleIndex}--${sub.idSuffix}`}
-            id={`${baseSubLayerId}--${sub.idSuffix}`}
+            id={getDashSubLayerId(baseSubLayerId, sub.idSuffix)}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             paint={{ ...sharedPaint, 'line-dasharray': sub.dasharray } as any}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -196,13 +202,19 @@ function PreviewVectorTileLayer({
   auth?: SourceAuth;
 }) {
   const tileUrl = getCql2FilteredVectorTileUrl(sourceUrl, layer.collection, cql2Filter, tileMatrixSetId, auth);
+  // Resolve the MVT `source-layer` from the collection's TileJSON (handles tipg
+  // instances that name the tile layer `default` rather than the table name).
+  const sourceLayer = useVectorSourceLayer(sourceUrl, layer.collection, tileMatrixSetId, auth);
   const sourceKey = getVectorTileSourceKey(layer.id, cql2Filter);
-  const sourceLayer = layer.collection.replace(/^[^.]+\./, '');
+  // Fold the resolved source-layer into the React key only — remounts the
+  // Source/Layers when the name resolves without changing the MapLibre ids that
+  // interactiveLayerIds / paint-sync / reorder / selection rebuild via getSubLayerId.
+  const remountKey = `${sourceKey}::${sourceLayer}`;
 
   if (!layer.styles?.length) return null;
 
   return (
-    <Source id={sourceKey} key={sourceKey} type="vector" tiles={[tileUrl]}>
+    <Source id={sourceKey} key={remountKey} type="vector" tiles={[tileUrl]}>
       {layer.styles.flatMap((style, i) => renderPreviewStyleLayers(style, i, sourceKey, layer, sourceLayer))}
     </Source>
   );
@@ -513,10 +525,7 @@ export function MapPreview({
     if (!selection.activeLayerId) return [];
     const layer = layers.find((l) => l.id === selection.activeLayerId);
     if (!layer) return [];
-    const sourceKey = layer.dataMode === 'vector-tiles'
-      ? getVectorTileSourceKey(layer.id, effectiveCql2Filters[layer.id])
-      : layer.id;
-    return (layer.styles ?? []).map((s, i) => `${sourceKey}--${s.type}--${i}`);
+    return getLayerSubLayerIds(layer, effectiveCql2Filters[layer.id]);
   }, [selection.activeLayerId, layers, effectiveCql2Filters]);
 
   const handleSpatialSelectionComplete = useCallback(
@@ -558,8 +567,11 @@ export function MapPreview({
     });
   }, [basemaps]);
 
-  const sourceUrlMap = useMemo(() => buildSourceUrlMap(sources), [sources]);
-  const transformRequest = useMemo(() => buildHeaderAuthTransformRequest(sources), [sources]);
+  // Route proxied WMTS sources through the server proxy so the preview matches
+  // what published viewers get (tiles via /api/proxy, auth attached server-side).
+  const previewSources = useMemo(() => proxifyWmtsSources(sources), [sources]);
+  const sourceUrlMap = useMemo(() => buildSourceUrlMap(previewSources), [previewSources]);
+  const transformRequest = useHeaderAuthTransformRequest(previewSources);
 
   // Cleanup debounce timers on unmount
   useEffect(() => {
@@ -657,12 +669,9 @@ export function MapPreview({
 
   const interactiveLayerIds = useMemo(() => {
     if (!featureInteractionEnabled) return undefined;
-    return layers.filter(l => l.visible).flatMap(l => {
-      const sourceKey = l.dataMode === 'vector-tiles'
-        ? getVectorTileSourceKey(l.id, effectiveCql2Filters[l.id])
-        : l.id;
-      return (l.styles ?? []).map((s, i) => `${sourceKey}--${s.type}--${i}`);
-    });
+    return layers
+      .filter(l => l.visible)
+      .flatMap(l => getLayerSubLayerIds(l, effectiveCql2Filters[l.id]));
   }, [featureInteractionEnabled, layers, effectiveCql2Filters]);
 
   const { runExport, loading: exportLoading, progress: exportProgress, error: exportError } = useExport({
@@ -919,9 +928,7 @@ export function MapPreview({
 
   const findLayerForFeature = useCallback((featureLayerId: string) => {
     return layers.find(l => {
-      const sourceKey = l.dataMode === 'vector-tiles'
-        ? getVectorTileSourceKey(l.id, effectiveCql2Filters[l.id])
-        : l.id;
+      const sourceKey = getLayerSourceKey(l, effectiveCql2Filters[l.id]);
       // Match either the parent source key or any sub-layer ID (sourceKey--type--i)
       return featureLayerId === sourceKey ||
         featureLayerId.startsWith(`${sourceKey}--`);
@@ -948,18 +955,21 @@ export function MapPreview({
     if (!mapInstance) return;
     for (const layer of layersWithDefaults) {
       if (!layer.styles?.length) continue;
-      const sourceKey =
-        layer.dataMode === 'vector-tiles'
-          ? getVectorTileSourceKey(layer.id, effectiveCql2Filters[layer.id])
-          : layer.id;
+      const sourceKey = getLayerSourceKey(layer, effectiveCql2Filters[layer.id]);
       layer.styles.forEach((style, i) => {
-        const subLayerId = `${sourceKey}--${style.type}--${i}`;
-        if (!mapInstance.getLayer(subLayerId)) return;
-        for (const [prop, value] of Object.entries(style.paint)) {
-          try {
-            mapInstance.setPaintProperty(subLayerId, prop, value);
-          } catch {
-            // Layer may not be added yet
+        const ids = getStyleSubLayerIds(sourceKey, style, i);
+        // A dash-expanded style renders per-case layers whose DASH_PER_CASE_PAINT_PROPS
+        // are static per case — don't overwrite them. (Expanded ⇒ no base id.)
+        const ownsDashPaint = ids[0] !== getSubLayerId(sourceKey, style.type, i);
+        for (const subLayerId of ids) {
+          if (!mapInstance.getLayer(subLayerId)) continue;
+          for (const [prop, value] of Object.entries(style.paint)) {
+            if (ownsDashPaint && DASH_PER_CASE_PAINT_PROPS.includes(prop)) continue;
+            try {
+              mapInstance.setPaintProperty(subLayerId, prop, value);
+            } catch {
+              // Layer may not be added yet
+            }
           }
         }
       });
@@ -973,12 +983,7 @@ export function MapPreview({
     const frame = requestAnimationFrame(() => {
       const desiredOrder = reversedLayers
         .filter(l => sourceUrlMap[l.sourceId] && l.styles?.length)
-        .flatMap(l => {
-          const sourceKey = l.dataMode === 'vector-tiles'
-            ? getVectorTileSourceKey(l.id, effectiveCql2Filters[l.id])
-            : l.id;
-          return (l.styles ?? []).map((s, i) => `${sourceKey}--${s.type}--${i}`);
-        })
+        .flatMap(l => getLayerSubLayerIds(l, effectiveCql2Filters[l.id]))
         .filter(id => mapInstance.getLayer(id));
 
       // Move each layer before the one above it, from bottom to top
