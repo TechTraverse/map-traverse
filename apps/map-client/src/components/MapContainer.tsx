@@ -1,7 +1,7 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { Map, Source, Layer, Marker, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
-import { useOgcFeatures, useHeaderAuthTransformRequest } from '@techtraverse/map-ui-lib/hooks';
-import { getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSourceKey, buildGeometryFilter, getImageryTileUrl, expandDashByCategory, buildSourceUrlMap } from '@techtraverse/map-ui-lib/utils';
+import { useOgcFeatures, useHeaderAuthTransformRequest, useVectorSourceLayer } from '@techtraverse/map-ui-lib/hooks';
+import { getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSourceKey, getSubLayerId, getDashSubLayerId, getStyleSubLayerIds, getLayerSourceKey, getLayerSubLayerIds, buildGeometryFilter, getImageryTileUrl, expandDashByCategory, DASH_PER_CASE_PAINT_PROPS, buildSourceUrlMap } from '@techtraverse/map-ui-lib/utils';
 import type { CQL2Expression, SourceAuth } from '@techtraverse/map-ui-lib/utils';
 import type { LayerConfig, ImageryLayerConfig } from '@techtraverse/map-ui-lib/types';
 import type { MeasureMode, SelectionMode } from '@techtraverse/map-ui-lib';
@@ -22,8 +22,16 @@ function VectorTileLayer({
   auth?: SourceAuth;
 }) {
   const tileUrl = getCql2FilteredVectorTileUrl(sourceUrl, layer.collection, cql2Filter, tileMatrixSetId, auth);
+  // Resolve the MVT `source-layer` from the collection's TileJSON. Folded into
+  // the source key so the source remounts if the resolved name differs from the
+  // synchronous fallback (e.g. a tipg instance that names the tile layer `default`).
+  const sourceLayer = useVectorSourceLayer(sourceUrl, layer.collection, tileMatrixSetId, auth);
   const sourceKey = getVectorTileSourceKey(layer.id, cql2Filter);
-  const sourceLayer = layer.collection.replace(/^[^.]+\./, '');
+  // Fold the resolved source-layer into the React key only — this remounts the
+  // Source/Layers when the name resolves (MapLibre can't change `source-layer`
+  // in place) without changing the MapLibre ids that interactiveLayerIds,
+  // paint-sync, reorder, and selection rebuild independently via getSubLayerId.
+  const remountKey = `${sourceKey}::${sourceLayer}`;
 
   if (!layer.styles?.length) {
     console.warn(`Layer ${layer.id} has no style configuration`);
@@ -31,7 +39,7 @@ function VectorTileLayer({
   }
 
   return (
-    <Source id={sourceKey} key={sourceKey} type="vector" tiles={[tileUrl]}>
+    <Source id={sourceKey} key={remountKey} type="vector" tiles={[tileUrl]}>
       {layer.styles.flatMap((style, i) => renderStyleLayers(style, i, sourceKey, layer, sourceLayer))}
     </Source>
   );
@@ -91,20 +99,21 @@ function renderStyleLayers(
     ...(sourceLayer ? { 'source-layer': sourceLayer } : {}),
   };
   const baseFilter = style.geometryFilter ? buildGeometryFilter(style.geometryFilter) : undefined;
-  const baseSubLayerId = `${baseId}--${style.type}--${styleIndex}`;
+  const baseSubLayerId = getSubLayerId(baseId, style.type, styleIndex);
 
   if (style.type === 'line' && style.dashByCategory) {
     const expansions = expandDashByCategory(style);
     if (expansions.length > 0) {
-      // Strip user-set line-dasharray from the shared paint — each sub-layer overrides per-case.
+      // Strip the per-case paint props from the shared paint — each sub-layer
+      // sets its own static value (see DASH_PER_CASE_PAINT_PROPS).
       const sharedPaint = { ...style.paint } as Record<string, unknown>;
-      delete sharedPaint['line-dasharray'];
+      for (const prop of DASH_PER_CASE_PAINT_PROPS) delete sharedPaint[prop];
       return expansions.map((sub) => {
         const filter = baseFilter ? ['all', baseFilter, sub.filter] : sub.filter;
         return (
           <Layer
             key={`${style.type}--${styleIndex}--${sub.idSuffix}`}
-            id={`${baseSubLayerId}--${sub.idSuffix}`}
+            id={getDashSubLayerId(baseSubLayerId, sub.idSuffix)}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             paint={{ ...sharedPaint, 'line-dasharray': sub.dasharray } as any}
             filter={filter as any}
@@ -255,18 +264,21 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
     if (!mapInstance) return;
     for (const layer of layers) {
       if (!layer.styles?.length) continue;
-      const sourceKey =
-        layer.dataMode === 'vector-tiles'
-          ? getVectorTileSourceKey(layer.id, activeCql2Filters[layer.id])
-          : layer.id;
+      const sourceKey = getLayerSourceKey(layer, activeCql2Filters[layer.id]);
       layer.styles.forEach((style, i) => {
-        const subLayerId = `${sourceKey}--${style.type}--${i}`;
-        if (!mapInstance.getLayer(subLayerId)) return;
-        for (const [prop, value] of Object.entries(style.paint)) {
-          try {
-            mapInstance.setPaintProperty(subLayerId, prop, value);
-          } catch {
-            // Layer may not be added yet
+        const ids = getStyleSubLayerIds(sourceKey, style, i);
+        // A dash-expanded style renders per-case layers whose DASH_PER_CASE_PAINT_PROPS
+        // are static per case — don't overwrite them. (Expanded ⇒ no base id.)
+        const ownsDashPaint = ids[0] !== getSubLayerId(sourceKey, style.type, i);
+        for (const subLayerId of ids) {
+          if (!mapInstance.getLayer(subLayerId)) continue;
+          for (const [prop, value] of Object.entries(style.paint)) {
+            if (ownsDashPaint && DASH_PER_CASE_PAINT_PROPS.includes(prop)) continue;
+            try {
+              mapInstance.setPaintProperty(subLayerId, prop, value);
+            } catch {
+              // Layer may not be added yet
+            }
           }
         }
       });
@@ -331,12 +343,7 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
     const frame = requestAnimationFrame(() => {
       const desiredOrder = reversedLayers
         .filter(l => sourceUrlMap[l.sourceId] && l.styles?.length)
-        .flatMap(l => {
-          const sourceKey = l.dataMode === 'vector-tiles'
-            ? getVectorTileSourceKey(l.id, activeCql2Filters[l.id])
-            : l.id;
-          return (l.styles ?? []).map((s, i) => `${sourceKey}--${s.type}--${i}`);
-        })
+        .flatMap(l => getLayerSubLayerIds(l, activeCql2Filters[l.id]))
         .filter(id => mapInstance.getLayer(id));
 
       for (let i = desiredOrder.length - 2; i >= 0; i--) {
@@ -362,13 +369,9 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
   // IDs of visible layers for feature querying (one per sub-layer)
   const interactiveLayerIds = useMemo(
     () =>
-      layers.filter((l) => l.visible).flatMap((l) => {
-        const sourceKey =
-          l.dataMode === 'vector-tiles'
-            ? getVectorTileSourceKey(l.id, activeCql2Filters[l.id])
-            : l.id;
-        return (l.styles ?? []).map((s, i) => `${sourceKey}--${s.type}--${i}`);
-      }),
+      layers
+        .filter((l) => l.visible)
+        .flatMap((l) => getLayerSubLayerIds(l, activeCql2Filters[l.id])),
     [layers, activeCql2Filters],
   );
 
@@ -376,13 +379,9 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
   const subLayerToLayerId = useMemo(() => {
     const map: Record<string, string> = {};
     layers.forEach((l) => {
-      const sourceKey =
-        l.dataMode === 'vector-tiles'
-          ? getVectorTileSourceKey(l.id, activeCql2Filters[l.id])
-          : l.id;
-      (l.styles ?? []).forEach((s, i) => {
-        map[`${sourceKey}--${s.type}--${i}`] = l.id;
-      });
+      for (const subLayerId of getLayerSubLayerIds(l, activeCql2Filters[l.id])) {
+        map[subLayerId] = l.id;
+      }
     });
     return map;
   }, [layers, activeCql2Filters]);
