@@ -1,7 +1,7 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { Map, Source, Layer, Marker, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
-import { useOgcFeatures } from '@techtraverse/map-ui-lib/hooks';
-import { getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSourceKey, buildGeometryFilter, getImageryTileUrl, expandDashByCategory, buildSourceUrlMap, buildHeaderAuthTransformRequest } from '@techtraverse/map-ui-lib/utils';
+import { useOgcFeatures, useHeaderAuthTransformRequest } from '@techtraverse/map-ui-lib/hooks';
+import { getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSourceKey, buildGeometryFilter, getImageryTileUrl, expandDashByCategory, buildSourceUrlMap } from '@techtraverse/map-ui-lib/utils';
 import type { CQL2Expression, SourceAuth } from '@techtraverse/map-ui-lib/utils';
 import type { LayerConfig, ImageryLayerConfig } from '@techtraverse/map-ui-lib/types';
 import type { MeasureMode, SelectionMode } from '@techtraverse/map-ui-lib';
@@ -297,7 +297,7 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
   }, [pendingBearing, clearPendingBearing]);
 
   const sourceUrlMap = useMemo(() => buildSourceUrlMap(sources), [sources]);
-  const transformRequest = useMemo(() => buildHeaderAuthTransformRequest(sources), [sources]);
+  const transformRequest = useHeaderAuthTransformRequest(sources);
 
   // Get active basemap URL
   const activeBasemap = basemaps.find((b) => b.id === activeBasemapId);

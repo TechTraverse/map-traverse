@@ -1,7 +1,7 @@
 import { Fragment, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import { Map, Source, Layer, Marker, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
-import { useOgcFeatures, useExport } from '@techtraverse/map-ui-lib/hooks';
+import { useOgcFeatures, useExport, useHeaderAuthTransformRequest } from '@techtraverse/map-ui-lib/hooks';
 import {
   getCql2FilteredVectorTileUrl,
   getImageryTileUrl,
@@ -30,7 +30,6 @@ import {
   prefetchKey,
   type GlobalSearchContext,
   buildSourceUrlMap,
-  buildHeaderAuthTransformRequest,
   isOgcApiSource,
 } from '@techtraverse/map-ui-lib/utils';
 import type { CQL2Expression } from '@techtraverse/map-ui-lib/utils';
@@ -100,6 +99,7 @@ import { resolveEffectiveLayout } from './mapPreviewLayout';
 import { useBoxDraw } from '../hooks/useBoxDraw';
 import { usePolygonDraw } from '../hooks/usePolygonDraw';
 import { useQueryablesByLayer } from '../hooks/useQueryablesByLayer';
+import { proxifyWmtsSources } from '../utils/proxyPreview';
 import { exportConverters } from '@techtraverse/map-ui-lib/utils';
 
 const coordinateFormats: CoordinateFormatOption[] = [
@@ -558,8 +558,11 @@ export function MapPreview({
     });
   }, [basemaps]);
 
-  const sourceUrlMap = useMemo(() => buildSourceUrlMap(sources), [sources]);
-  const transformRequest = useMemo(() => buildHeaderAuthTransformRequest(sources), [sources]);
+  // Route proxied WMTS sources through the server proxy so the preview matches
+  // what published viewers get (tiles via /api/proxy, auth attached server-side).
+  const previewSources = useMemo(() => proxifyWmtsSources(sources), [sources]);
+  const sourceUrlMap = useMemo(() => buildSourceUrlMap(previewSources), [previewSources]);
+  const transformRequest = useHeaderAuthTransformRequest(previewSources);
 
   // Cleanup debounce timers on unmount
   useEffect(() => {
