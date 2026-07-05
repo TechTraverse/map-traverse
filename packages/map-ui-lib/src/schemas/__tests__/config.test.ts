@@ -146,6 +146,55 @@ describe('LayerConfigSchema backward-compat preprocess', () => {
   });
 });
 
+describe('LayerConfigSchema propertyDisplay', () => {
+  const base = {
+    id: 'test-layer',
+    sourceId: 'source-1',
+    collection: 'my-collection',
+    label: 'Test Layer',
+    dataMode: 'vector-tiles' as const,
+  };
+
+  it('parses legacy entries without order (backward compat)', () => {
+    const result = LayerConfigSchema.parse({
+      ...base,
+      propertyDisplay: {
+        owner: { label: 'Owner', visible: true },
+        internal_id: { visible: false },
+        acres: {},
+      },
+    });
+    expect(result.propertyDisplay).toEqual({
+      owner: { label: 'Owner', visible: true },
+      internal_id: { visible: false },
+      acres: { visible: true },
+    });
+    expect(result.propertyDisplay!.owner.order).toBeUndefined();
+  });
+
+  it('parses entries with explicit order', () => {
+    const result = LayerConfigSchema.parse({
+      ...base,
+      propertyDisplay: {
+        owner: { label: 'Owner', order: 0 },
+        acres: { order: 1 },
+      },
+    });
+    expect(result.propertyDisplay!.owner.order).toBe(0);
+    expect(result.propertyDisplay!.acres.order).toBe(1);
+  });
+
+  it('rejects negative and non-integer order values', () => {
+    for (const order of [-1, 1.5]) {
+      const result = LayerConfigSchema.safeParse({
+        ...base,
+        propertyDisplay: { owner: { order } },
+      });
+      expect(result.success).toBe(false);
+    }
+  });
+});
+
 describe('CQL2 Filter Schemas', () => {
   describe('FilterRuleValueSchema', () => {
     it('accepts static', () => {

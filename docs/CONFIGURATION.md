@@ -90,6 +90,27 @@ Defines a single map layer.
 | `legend` | `LegendConfig` | No | Legend entries (auto-derived from style if omitted) |
 | `filters` | `FilterConfig` | No | Initial/static filter state |
 | `search` | `SearchConfig` | No | Search fields for the SearchPanel |
+| `propertyDisplay` | `PropertyDisplayConfig` | No | Which feature properties to show in tooltips/detail panels, with labels and order |
+
+### PropertyDisplayConfig
+
+A record keyed by property name controlling what `FeatureTooltip` and `FeatureDetailPanel` show. When omitted, all properties are shown with their raw names.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `label` | `string` | No | Friendly display name (falls back to the property key) |
+| `visible` | `boolean` | No (default `true`) | Hide the property without removing its config |
+| `order` | `number` (integer ≥ 0) | No | Explicit display position, lowest first. Entries without `order` appear after ordered ones, in key order. |
+
+`order` exists because the admin DB stores configs as Postgres `jsonb`, which does **not** preserve object key order — key order alone cannot express display order. The admin editor stamps `order` automatically on every edit; legacy configs without it keep their previous behavior.
+
+```json
+"propertyDisplay": {
+  "owner": { "label": "Owner", "order": 0 },
+  "acres": { "label": "Acres", "order": 1 },
+  "internal_id": { "visible": false, "order": 2 }
+}
+```
 
 ---
 
