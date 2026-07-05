@@ -10,21 +10,29 @@ export interface PropertyDisplayEditorProps {
 export type PropertyEntry = { key: string; label: string; visible: boolean };
 
 export function toEntries(config: PropertyDisplayConfig): PropertyEntry[] {
-  return Object.entries(config).map(([key, val]) => ({
-    key,
-    label: val.label ?? '',
-    visible: val.visible ?? true,
-  }));
+  // Sort by explicit `order` (entries without it keep key order, at the end).
+  // Key order alone doesn't survive the admin DB's jsonb normalization.
+  return Object.entries(config)
+    .sort(
+      (a, b) =>
+        (a[1].order ?? Number.MAX_SAFE_INTEGER) - (b[1].order ?? Number.MAX_SAFE_INTEGER),
+    )
+    .map(([key, val]) => ({
+      key,
+      label: val.label ?? '',
+      visible: val.visible ?? true,
+    }));
 }
 
 export function fromEntries(entries: PropertyEntry[]): PropertyDisplayConfig {
   const result: PropertyDisplayConfig = {};
-  for (const entry of entries) {
+  entries.forEach((entry, index) => {
     result[entry.key] = {
       visible: entry.visible,
+      order: index,
       ...(entry.label ? { label: entry.label } : {}),
     };
-  }
+  });
   return result;
 }
 
