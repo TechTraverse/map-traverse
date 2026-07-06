@@ -9,6 +9,10 @@ import {
   MapConfigSchema,
   ViewConfigSchema,
   WmtsSourceSchema,
+  FillStyleSchema,
+  LineStyleSchema,
+  CircleStyleSchema,
+  SymbolStyleSchema,
 } from '../config';
 
 const baseMapConfig = {
@@ -695,5 +699,100 @@ describe('MapConfigSchema with WMTS sources', () => {
       imageryLayers: [{ id: 'no-collection', sourceId: 'ogc', label: 'Bad' }],
     };
     expect(() => MapConfigSchema.parse(config)).toThrow(/collection/i);
+  });
+});
+
+describe('Per-style minZoom/maxZoom', () => {
+  const stylesByType = {
+    fill: { type: 'fill', paint: { 'fill-color': '#f00', 'fill-opacity': 0.5 } },
+    line: { type: 'line', paint: { 'line-color': '#00f', 'line-width': 2 } },
+    circle: { type: 'circle', paint: { 'circle-color': '#0f0', 'circle-radius': 4 } },
+    symbol: { type: 'symbol', paint: { 'text-color': '#333' }, layout: { 'text-field': '{name}' } },
+  } as const;
+  const schemas = {
+    fill: FillStyleSchema,
+    line: LineStyleSchema,
+    circle: CircleStyleSchema,
+    symbol: SymbolStyleSchema,
+  } as const;
+
+  for (const type of ['fill', 'line', 'circle', 'symbol'] as const) {
+    const schema = schemas[type];
+    const base = stylesByType[type];
+
+    it(`${type}: defaults to undefined when absent (backward compat)`, () => {
+      const result = schema.parse(base);
+      expect(result.minZoom).toBeUndefined();
+      expect(result.maxZoom).toBeUndefined();
+    });
+
+    it(`${type}: parses minZoom/maxZoom`, () => {
+      const result = schema.parse({ ...base, minZoom: 3, maxZoom: 15 });
+      expect(result.minZoom).toBe(3);
+      expect(result.maxZoom).toBe(15);
+    });
+
+    it(`${type}: rejects out-of-range values`, () => {
+      expect(() => schema.parse({ ...base, minZoom: -1 })).toThrow();
+      expect(() => schema.parse({ ...base, maxZoom: 25 })).toThrow();
+    });
+  }
+
+  it('MapConfigSchema rejects a style with minZoom > maxZoom, with a precise path', () => {
+    const config = {
+      ...baseMapConfig,
+      layers: [
+        {
+          ...baseMapConfig.layers[0],
+          styles: [
+            stylesByType.line,
+            { ...stylesByType.line, minZoom: 15, maxZoom: 5 },
+          ],
+        },
+      ],
+    };
+    const result = MapConfigSchema.safeParse(config);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const issue = result.error.issues.find((i) => i.message.includes('minZoom'));
+      expect(issue).toBeDefined();
+      expect(issue!.path).toEqual(['layers', 0, 'styles', 1, 'minZoom']);
+    }
+  });
+
+  it('allows style minZoom to equal maxZoom', () => {
+    const config = {
+      ...baseMapConfig,
+      layers: [
+        { ...baseMapConfig.layers[0], styles: [{ ...stylesByType.fill, minZoom: 10, maxZoom: 10 }] },
+      ],
+    };
+    expect(MapConfigSchema.safeParse(config).success).toBe(true);
+  });
+
+  it('round-trips a layer stacking styles with no, partial, and full bounds', () => {
+    // The "mike3" case: 4WD roads / local roads / highways as one layer.
+    const config = {
+      ...baseMapConfig,
+      layers: [
+        {
+          ...baseMapConfig.layers[0],
+          minZoom: 4,
+          styles: [
+            { ...stylesByType.line, maxZoom: 11 }, // 4WD roads
+            { ...stylesByType.line, minZoom: 11, maxZoom: 15 }, // local roads
+            stylesByType.line, // highways — no override
+          ],
+        },
+      ],
+    };
+    const parsed = MapConfigSchema.parse(config);
+    const styles = parsed.layers[0].styles!;
+    expect(styles[0].minZoom).toBeUndefined();
+    expect(styles[0].maxZoom).toBe(11);
+    expect(styles[1].minZoom).toBe(11);
+    expect(styles[1].maxZoom).toBe(15);
+    expect(styles[2].minZoom).toBeUndefined();
+    expect(styles[2].maxZoom).toBeUndefined();
   });
 });

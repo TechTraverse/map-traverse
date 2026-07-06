@@ -226,6 +226,8 @@ export const FillStyleSchema = z.object({
   paint: FillPaintSchema,
   layout: FillLayoutSchema.optional(),
   geometryFilter: z.array(GeometryTypeSchema).optional(),
+  minZoom: z.number().min(0).max(24).optional(),
+  maxZoom: z.number().min(0).max(24).optional(),
 });
 
 /**
@@ -257,6 +259,8 @@ export const LineStyleSchema = z.object({
    * this field render unchanged.
    */
   dashByCategory: DashByCategorySchema.optional(),
+  minZoom: z.number().min(0).max(24).optional(),
+  maxZoom: z.number().min(0).max(24).optional(),
 });
 
 export const CircleStyleSchema = z.object({
@@ -264,6 +268,8 @@ export const CircleStyleSchema = z.object({
   paint: CirclePaintSchema,
   layout: CircleLayoutSchema.optional(),
   geometryFilter: z.array(GeometryTypeSchema).optional(),
+  minZoom: z.number().min(0).max(24).optional(),
+  maxZoom: z.number().min(0).max(24).optional(),
 });
 
 export const SymbolStyleSchema = z.object({
@@ -271,6 +277,8 @@ export const SymbolStyleSchema = z.object({
   paint: SymbolPaintSchema,
   layout: SymbolLayoutSchema.optional(),
   geometryFilter: z.array(GeometryTypeSchema).optional(),
+  minZoom: z.number().min(0).max(24).optional(),
+  maxZoom: z.number().min(0).max(24).optional(),
 });
 
 export const StyleConfigSchema = z.discriminatedUnion('type', [
@@ -899,6 +907,19 @@ export const MapConfigSchema = z.object({
         path: ['imageryLayers', i, 'collection'],
         message: 'Collection is required when not using a custom tile URL',
       });
+    }
+  }
+  // Per-style zoom bounds: each style's own minZoom must not exceed its own
+  // maxZoom. (The 0-24 range is enforced field-level on the style schemas.)
+  for (const [li, layer] of data.layers.entries()) {
+    for (const [si, style] of (layer.styles ?? []).entries()) {
+      if (style.minZoom != null && style.maxZoom != null && style.minZoom > style.maxZoom) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['layers', li, 'styles', si, 'minZoom'],
+          message: 'minZoom must be less than or equal to maxZoom',
+        });
+      }
     }
   }
 });
