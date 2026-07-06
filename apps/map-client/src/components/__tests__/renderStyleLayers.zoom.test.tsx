@@ -19,7 +19,7 @@ const layer: LayerConfig = {
 
 const dashLineStyle = {
   type: 'line' as const,
-  paint: { 'line-color': '#000', 'line-width': 1 },
+  paint: { 'line-color': '#000', 'line-width': 1, 'line-opacity': 1 },
   minZoom: 11,
   maxZoom: 15,
   dashByCategory: {
@@ -35,7 +35,7 @@ const dashLineStyle = {
 describe('renderStyleLayers per-style zoom bounds', () => {
   it('applies the layer/style intersection to a plain style layer', () => {
     const els = renderStyleLayers(
-      { type: 'line', paint: { 'line-color': '#000' }, minZoom: 11, maxZoom: 15 },
+      { type: 'line', paint: { 'line-color': '#000', 'line-width': 1, 'line-opacity': 1 }, minZoom: 11, maxZoom: 15 },
       0,
       'roads',
       layer,
@@ -64,7 +64,7 @@ describe('renderStyleLayers per-style zoom bounds', () => {
 
   it('falls back to layer-level bounds when the style has none', () => {
     const els = renderStyleLayers(
-      { type: 'line', paint: { 'line-color': '#000' } },
+      { type: 'line', paint: { 'line-color': '#000', 'line-width': 1, 'line-opacity': 1 } },
       0,
       'roads',
       layer,
@@ -77,7 +77,7 @@ describe('renderStyleLayers per-style zoom bounds', () => {
   it('sets no bounds when neither layer nor style defines them', () => {
     const bare = { ...layer, minZoom: undefined, maxZoom: undefined } as LayerConfig;
     const els = renderStyleLayers(
-      { type: 'line', paint: { 'line-color': '#000' } },
+      { type: 'line', paint: { 'line-color': '#000', 'line-width': 1, 'line-opacity': 1 } },
       0,
       'roads',
       bare,
