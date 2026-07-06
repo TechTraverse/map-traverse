@@ -42,6 +42,29 @@ Describes an OGC API Features/Tiles server.
 | `auth` | `SourceAuth` | No | Authentication credentials (see below) |
 | `proxy` | `boolean` | No | Route requests through the admin server to protect credentials and bypass CORS. See [PROXY.md](./PROXY.md) |
 
+## WmtsSource
+
+Describes a WMTS imagery server (identified by `sourceType: 'wmts'` in the
+`sources` array). The admin editor fetches GetCapabilities to populate the
+layer/style/matrix-set fields and resolves `tileUrlTemplate` and `maxZoom`
+from it at save time.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Unique identifier (referenced by `ImageryLayerConfig.sourceId`) |
+| `sourceType` | `"wmts"` | Yes | Discriminator marking this as a WMTS source |
+| `capabilitiesUrl` | `string` (URL) | Yes | GetCapabilities document URL |
+| `layer` | `string` | Yes | WMTS layer identifier |
+| `style` | `string` | No | WMTS style; default `"default"` |
+| `format` | `string` | No | Tile image format; default `"image/png"` |
+| `tileMatrixSet` | `string` | No | Matrix set; default `"WebMercatorQuad"` |
+| `tileSize` | `number` | No | Tile size in px; default `256` |
+| `maxZoom` | `number` (0–24) | No | Deepest zoom with native tiles. Set on the MapLibre raster *source*, so zooming further overzooms (upscales) the deepest tiles instead of fetching blank ones. Distinct from `ImageryLayerConfig.maxZoom`, which hides the layer past that zoom. Auto-filled from capabilities in the admin editor |
+| `tileUrlTemplate` | `string` | No | Resolved `{z}/{y}/{x}` tile URL template; auto-filled from capabilities |
+| `label` | `string` | No | Human-readable name |
+| `auth` | `SourceAuth` | No | Authentication credentials (see below) |
+| `proxy` | `boolean` | No | Route requests through the admin server |
+
 ### SourceAuth
 
 Credentials attached to requests for authenticated sources.
