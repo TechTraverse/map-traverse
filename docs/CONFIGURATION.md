@@ -583,6 +583,14 @@ An icon sprite definition used by symbol layers.
 { id: 'my-icons', url: 'https://example.com/sprites/icons' }
 ```
 
+> **Reserved id: `shields`.** Every map automatically gets a bundled default
+> highway-shield sprite sheet merged in at runtime (SDF icons, tintable via
+> `icon-color`): `shields:shield-generic`, `shields:shield-interstate`,
+> `shields:shield-us-route`, `shields:shield-state`, `shields:shield-circle`,
+> `shields:shield-rect`. It is not part of the persisted config. Adding a
+> custom `SpriteSource` with `id: 'shields'` overrides/replaces it entirely.
+> Regenerate the bundled assets with `pnpm build:shields`.
+
 ---
 
 ## UIConfig
