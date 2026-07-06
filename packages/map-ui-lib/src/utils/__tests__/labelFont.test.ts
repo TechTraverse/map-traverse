@@ -15,7 +15,7 @@ const fillStyle: StyleConfig = {
 
 const lineStyle: StyleConfig = {
   type: 'line',
-  paint: { 'line-color': '#00ff00', 'line-width': 2 },
+  paint: { 'line-color': '#00ff00', 'line-width': 2, 'line-opacity': 1 },
 };
 
 const circleStyle: StyleConfig = {

@@ -503,6 +503,9 @@ export function ConfigReview({ config, name, description, onEditSection }: Confi
           {ui?.coordinateFormat && (
             <Row label="Coordinates">{COORDINATE_FORMAT_LABELS[ui.coordinateFormat] ?? ui.coordinateFormat}</Row>
           )}
+          {ui?.defaultLabelFont?.length ? (
+            <Row label="Label font">{ui.defaultLabelFont.join(', ')}</Row>
+          ) : null}
         </dl>
       </SectionCard>
 
