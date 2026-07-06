@@ -39,7 +39,11 @@ export function WmtsSourceEditor({ value, onChange }: WmtsSourceEditorProps) {
       tileMatrixSet: value.tileMatrixSet,
       format: value.format,
     });
-    const nativeMaxZoom = resolveWmtsMaxZoom(capabilities, selectedLayer.id, value.tileMatrixSet);
+    const nativeMaxZoom = resolveWmtsMaxZoom(
+      selectedLayer,
+      capabilities.tileMatrixSets,
+      value.tileMatrixSet,
+    );
     const patch: Partial<WmtsSource> = {};
     if (resolved && resolved !== value.tileUrlTemplate) patch.tileUrlTemplate = resolved;
     if (nativeMaxZoom !== undefined && nativeMaxZoom !== value.maxZoom) patch.maxZoom = nativeMaxZoom;

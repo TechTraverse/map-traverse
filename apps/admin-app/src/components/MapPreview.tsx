@@ -5,6 +5,7 @@ import { useOgcFeatures, useExport, useHeaderAuthTransformRequest, useVectorSour
 import {
   getCql2FilteredVectorTileUrl,
   getImageryTileUrl,
+  getRasterImagerySourceKey,
   DEFAULT_EXPORT_FORMATS,
   fromStructuredFilters,
   resolvePropertyDisplay,
@@ -270,17 +271,16 @@ function PreviewRasterImageryLayer({
   const tileUrl = getImageryTileUrl(sourceUrl, layer.collection, tileMatrixSetId, template, auth);
   // Source maxzoom caps tile *requests* (overzoom); the Layer keeps its own
   // maxzoom, which *hides* rendering — two different behaviors, don't merge.
-  const sourceMaxzoom = sourceMaxZoom ?? layer.maxZoom;
+  const requestMaxzoom = sourceMaxZoom ?? layer.maxZoom;
   return (
     <Source
       id={`imagery-${layer.id}`}
-      // maxzoom can't be updated on a live raster source; key remounts it.
-      key={`imagery-${layer.id}--mz${sourceMaxzoom ?? 'none'}`}
+      key={getRasterImagerySourceKey(`imagery-${layer.id}`, sourceMaxZoom)}
       type="raster"
       tiles={[tileUrl]}
       tileSize={layer.tileSize ?? 256}
       {...(layer.minZoom != null ? { minzoom: layer.minZoom } : {})}
-      {...(sourceMaxzoom != null ? { maxzoom: sourceMaxzoom } : {})}
+      {...(requestMaxzoom != null ? { maxzoom: requestMaxzoom } : {})}
     >
       <Layer
         id={`imagery-${layer.id}`}

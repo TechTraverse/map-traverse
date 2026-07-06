@@ -1,7 +1,7 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { Map, Source, Layer, Marker, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
 import { useOgcFeatures, useHeaderAuthTransformRequest, useVectorSourceLayer } from '@techtraverse/map-ui-lib/hooks';
-import { getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSourceKey, getSubLayerId, getDashSubLayerId, getStyleSubLayerIds, getLayerSourceKey, getLayerSubLayerIds, buildGeometryFilter, getImageryTileUrl, expandDashByCategory, DASH_PER_CASE_PAINT_PROPS, buildSourceUrlMap } from '@techtraverse/map-ui-lib/utils';
+import { getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSourceKey, getSubLayerId, getDashSubLayerId, getStyleSubLayerIds, getLayerSourceKey, getLayerSubLayerIds, buildGeometryFilter, getImageryTileUrl, getRasterImagerySourceKey, expandDashByCategory, DASH_PER_CASE_PAINT_PROPS, buildSourceUrlMap } from '@techtraverse/map-ui-lib/utils';
 import type { CQL2Expression, SourceAuth } from '@techtraverse/map-ui-lib/utils';
 import type { LayerConfig, ImageryLayerConfig } from '@techtraverse/map-ui-lib/types';
 import type { MeasureMode, SelectionMode } from '@techtraverse/map-ui-lib';
@@ -158,17 +158,16 @@ function RasterImageryLayer({
   const tileUrl = getImageryTileUrl(sourceUrl, layer.collection, tileMatrixSetId, template, auth);
   // Source maxzoom caps tile *requests* (overzoom); the Layer keeps its own
   // maxzoom, which *hides* rendering — two different behaviors, don't merge.
-  const sourceMaxzoom = sourceMaxZoom ?? layer.maxZoom;
+  const requestMaxzoom = sourceMaxZoom ?? layer.maxZoom;
   return (
     <Source
       id={`imagery-${layer.id}`}
-      // maxzoom can't be updated on a live raster source; key remounts it.
-      key={`imagery-${layer.id}--mz${sourceMaxzoom ?? 'none'}`}
+      key={getRasterImagerySourceKey(`imagery-${layer.id}`, sourceMaxZoom)}
       type="raster"
       tiles={[tileUrl]}
       tileSize={layer.tileSize ?? 256}
       {...(layer.minZoom != null ? { minzoom: layer.minZoom } : {})}
-      {...(sourceMaxzoom != null ? { maxzoom: sourceMaxzoom } : {})}
+      {...(requestMaxzoom != null ? { maxzoom: requestMaxzoom } : {})}
     >
       <Layer
         id={`imagery-${layer.id}`}

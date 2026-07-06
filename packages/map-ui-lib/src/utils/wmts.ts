@@ -41,12 +41,6 @@ export interface WmtsTileResourceUrl {
   format?: string;
 }
 
-/** Depth info for a TileMatrixSet (or a layer's TileMatrixSetLimits view of one). */
-export interface WmtsTileMatrixSetInfo {
-  /** Deepest zoom with native tiles; undefined when identifiers aren't zoom-like. */
-  maxZoom?: number;
-}
-
 export interface WmtsLayer {
   id: string;
   title?: string;
@@ -57,14 +51,14 @@ export interface WmtsLayer {
   tileResourceUrls?: WmtsTileResourceUrl[];
   /** Dimensions (e.g. `Time`) advertised by the layer, with their defaults. */
   dimensions?: WmtsDimension[];
-  /** Per-layer TileMatrixSetLimits depth, keyed by TileMatrixSet name. */
-  tileMatrixSetLimits?: Record<string, WmtsTileMatrixSetInfo>;
+  /** Per-layer TileMatrixSetLimits max zoom, keyed by TileMatrixSet name. */
+  tileMatrixSetLimits?: Record<string, number>;
 }
 
 export interface WmtsCapabilities {
   layers: WmtsLayer[];
-  /** TileMatrixSet definitions from `Contents`, keyed by Identifier. */
-  tileMatrixSets: Record<string, WmtsTileMatrixSetInfo>;
+  /** Deepest native zoom per TileMatrixSet definition in `Contents`; entry absent when the matrix identifiers aren't zoom-like. */
+  tileMatrixSets: Record<string, number>;
 }
 
 /**
@@ -206,7 +200,7 @@ export function parseWmtsCapabilities(xml: string): WmtsCapabilities {
 
     // Per-layer TileMatrixSetLimits: a layer may only serve a sub-range of the
     // matrix set it links to, so its limits are more specific than the set depth.
-    const tileMatrixSetLimits: Record<string, WmtsTileMatrixSetInfo> = {};
+    const tileMatrixSetLimits: Record<string, number> = {};
     el.querySelectorAll(':scope > TileMatrixSetLink').forEach((link) => {
       const tmsName = link.querySelector(':scope > TileMatrixSet')?.textContent?.trim();
       if (!tmsName) return;
@@ -214,7 +208,7 @@ export function parseWmtsCapabilities(xml: string): WmtsCapabilities {
         link.querySelectorAll(':scope > TileMatrixSetLimits > TileMatrixLimits > TileMatrix'),
       ).map((m) => m.textContent?.trim() ?? '');
       const maxZoom = maxZoomFromIdentifiers(limitIds);
-      if (maxZoom !== undefined) tileMatrixSetLimits[tmsName] = { maxZoom };
+      if (maxZoom !== undefined) tileMatrixSetLimits[tmsName] = maxZoom;
     });
 
     layers.push({
@@ -225,21 +219,23 @@ export function parseWmtsCapabilities(xml: string): WmtsCapabilities {
       formats,
       tileResourceUrls,
       dimensions,
-      ...(Object.keys(tileMatrixSetLimits).length > 0 ? { tileMatrixSetLimits } : {}),
+      tileMatrixSetLimits:
+        Object.keys(tileMatrixSetLimits).length > 0 ? tileMatrixSetLimits : undefined,
     });
   });
 
   // TileMatrixSet definitions are direct children of Contents (the per-layer
   // link elements above are nested under Layer > TileMatrixSetLink, so the
   // child combinator keeps them apart).
-  const tileMatrixSets: Record<string, WmtsTileMatrixSetInfo> = {};
+  const tileMatrixSets: Record<string, number> = {};
   doc.querySelectorAll('Contents > TileMatrixSet').forEach((el) => {
     const id = el.querySelector(':scope > Identifier')?.textContent?.trim();
     if (!id) return;
     const matrixIds = Array.from(el.querySelectorAll(':scope > TileMatrix > Identifier')).map(
       (m) => m.textContent?.trim() ?? '',
     );
-    tileMatrixSets[id] = { maxZoom: maxZoomFromIdentifiers(matrixIds) };
+    const maxZoom = maxZoomFromIdentifiers(matrixIds);
+    if (maxZoom !== undefined) tileMatrixSets[id] = maxZoom;
   });
 
   return { layers, tileMatrixSets };
@@ -269,15 +265,11 @@ function maxZoomFromIdentifiers(ids: string[]): number | undefined {
  * instead of requesting blank ones past native depth.
  */
 export function resolveWmtsMaxZoom(
-  capabilities: WmtsCapabilities,
-  layerId: string,
+  layer: WmtsLayer,
+  tileMatrixSets: WmtsCapabilities['tileMatrixSets'],
   tileMatrixSet: string,
 ): number | undefined {
-  const layer = capabilities.layers.find((l) => l.id === layerId);
-  return (
-    layer?.tileMatrixSetLimits?.[tileMatrixSet]?.maxZoom ??
-    capabilities.tileMatrixSets[tileMatrixSet]?.maxZoom
-  );
+  return layer.tileMatrixSetLimits?.[tileMatrixSet] ?? tileMatrixSets[tileMatrixSet];
 }
 
 /**
