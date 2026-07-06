@@ -143,6 +143,7 @@ function RasterImageryLayer({
   tileMatrixSetId,
   auth,
   sourceTileUrlTemplate,
+  sourceMaxZoom,
 }: {
   layer: ImageryLayerConfig;
   sourceUrl: string;
@@ -150,18 +151,24 @@ function RasterImageryLayer({
   auth?: SourceAuth;
   /** Source-level tile URL template (e.g. from a WMTS source). Takes precedence over layer.tileUrlTemplate. */
   sourceTileUrlTemplate?: string;
+  /** Deepest native zoom of the source; MapLibre overzooms past it instead of fetching blank tiles. */
+  sourceMaxZoom?: number;
 }) {
   const template = sourceTileUrlTemplate ?? layer.tileUrlTemplate;
   const tileUrl = getImageryTileUrl(sourceUrl, layer.collection, tileMatrixSetId, template, auth);
+  // Source maxzoom caps tile *requests* (overzoom); the Layer keeps its own
+  // maxzoom, which *hides* rendering — two different behaviors, don't merge.
+  const sourceMaxzoom = sourceMaxZoom ?? layer.maxZoom;
   return (
     <Source
       id={`imagery-${layer.id}`}
-      key={`imagery-${layer.id}`}
+      // maxzoom can't be updated on a live raster source; key remounts it.
+      key={`imagery-${layer.id}--mz${sourceMaxzoom ?? 'none'}`}
       type="raster"
       tiles={[tileUrl]}
       tileSize={layer.tileSize ?? 256}
       {...(layer.minZoom != null ? { minzoom: layer.minZoom } : {})}
-      {...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {})}
+      {...(sourceMaxzoom != null ? { maxzoom: sourceMaxzoom } : {})}
     >
       <Layer
         id={`imagery-${layer.id}`}
@@ -525,6 +532,7 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
             tileMatrixSetId={sourceInfo?.tileMatrixSetId}
             auth={sourceInfo?.auth}
             sourceTileUrlTemplate={sourceInfo?.tileUrlTemplate}
+            sourceMaxZoom={sourceInfo?.maxZoom}
           />
         );
       })}

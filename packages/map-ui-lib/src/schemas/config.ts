@@ -85,6 +85,10 @@ export const WmtsSourceSchema = z.object({
   format: z.string().default('image/png'),
   tileMatrixSet: z.string().default('WebMercatorQuad'),
   tileSize: z.number().int().positive().default(256),
+  // Deepest zoom the server has native tiles for. Applied to the raster
+  // *source* so MapLibre overzooms past it instead of fetching blank tiles;
+  // distinct from imagery-layer maxZoom, which hides the layer.
+  maxZoom: z.number().min(0).max(24).optional(),
   tileUrlTemplate: z.string().optional(),
   label: z.string().optional(),
   auth: SourceAuthSchema.optional(),

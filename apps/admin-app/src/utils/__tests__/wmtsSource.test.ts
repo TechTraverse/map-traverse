@@ -33,6 +33,19 @@ describe('savedSourceToWmts', () => {
     const src = savedSourceToWmts({ ...base, metadata: { wmtsLayer: 'MODIS' } });
     expect(src.tileUrlTemplate).toBeUndefined();
   });
+
+  it('maps metadata.wmtsMaxZoom onto the WmtsSource maxZoom', () => {
+    const src = savedSourceToWmts({
+      ...base,
+      metadata: { wmtsLayer: 'bluesky-high', wmtsMaxZoom: 19 },
+    });
+    expect(src.maxZoom).toBe(19);
+  });
+
+  it('leaves maxZoom undefined when not stored (pre-fix sources)', () => {
+    const src = savedSourceToWmts({ ...base, metadata: { wmtsLayer: 'MODIS' } });
+    expect(src.maxZoom).toBeUndefined();
+  });
 });
 
 describe('savedSourceIsImagery', () => {

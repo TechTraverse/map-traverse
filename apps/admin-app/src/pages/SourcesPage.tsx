@@ -23,6 +23,8 @@ interface WmtsMetadata {
   wmtsFormat?: string;
   wmtsTileMatrixSet?: string;
   wmtsTileSize?: number;
+  wmtsTileUrlTemplate?: string;
+  wmtsMaxZoom?: number;
 }
 
 type BasemapMode = 'style-url' | 'from-imagery';
@@ -616,6 +618,7 @@ export function SourcesPage() {
             wmtsTileMatrixSet: newWmtsSource.tileMatrixSet,
             wmtsTileSize: newWmtsSource.tileSize,
             wmtsTileUrlTemplate: newWmtsSource.tileUrlTemplate,
+            wmtsMaxZoom: newWmtsSource.maxZoom,
           },
         }),
       });
@@ -659,6 +662,7 @@ export function SourcesPage() {
             wmtsTileMatrixSet: editingWmtsSource.tileMatrixSet,
             wmtsTileSize: editingWmtsSource.tileSize,
             wmtsTileUrlTemplate: editingWmtsSource.tileUrlTemplate,
+            wmtsMaxZoom: editingWmtsSource.maxZoom,
           },
         }),
       });

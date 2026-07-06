@@ -599,6 +599,16 @@ describe('WmtsSourceSchema', () => {
     const invalid = { ...validWmts, capabilitiesUrl: 'not-a-url' };
     expect(() => WmtsSourceSchema.parse(invalid)).toThrow();
   });
+
+  it('parses source-level maxZoom and leaves it undefined when absent', () => {
+    expect(WmtsSourceSchema.parse({ ...validWmts, maxZoom: 19 }).maxZoom).toBe(19);
+    expect(WmtsSourceSchema.parse(validWmts).maxZoom).toBeUndefined();
+  });
+
+  it('rejects out-of-range maxZoom', () => {
+    expect(() => WmtsSourceSchema.parse({ ...validWmts, maxZoom: -1 })).toThrow();
+    expect(() => WmtsSourceSchema.parse({ ...validWmts, maxZoom: 25 })).toThrow();
+  });
 });
 
 describe('MapConfigSchema with WMTS sources', () => {
