@@ -26,6 +26,7 @@ export * from './labelUtils';
 export * from './slugify';
 export * from './dashByCategory';
 export * from './styleZoomBounds';
+export * from './labelFont';
 export * from './globalSearchFetcher';
 export * from './stylePresets';
 export * from './casedLine';

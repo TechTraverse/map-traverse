@@ -747,6 +747,16 @@ export const UIConfigSchema = z.object({
    */
   legendDisplay: LegendDisplayConfigSchema.optional(),
   coordinateFormat: z.enum(COORDINATE_FORMATS).default('decimal-degrees'),
+  /**
+   * Default `text-font` fallback list applied to `symbol` styles that don't
+   * set their own `layout['text-font']`. An explicit `text-font` on a style
+   * always wins. Must reference a font stack name actually served by the
+   * active basemap's `glyphs` endpoint (e.g. CARTO/OpenMapTiles glyph
+   * servers) — an unmatched name silently fails to render text rather than
+   * erroring. Defaults to "Open Sans Bold" (bleeds less inside text halos
+   * than the regular weight).
+   */
+  defaultLabelFont: z.array(z.string().min(1)).min(1).default(['Open Sans Bold']),
 });
 
 /** Returns the effective control order, falling back to defaults and appending any missing keys. */
@@ -908,6 +918,7 @@ export const MapConfigSchema = z.object({
     controlLayout: 'individual',
     sideMenuToggleCorner: 'top-right',
     coordinateFormat: 'decimal-degrees',
+    defaultLabelFont: ['Open Sans Bold'],
   }),
   initialView: ViewConfigSchema,
   branding: BrandingConfigSchema.optional(),

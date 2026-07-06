@@ -481,6 +481,48 @@ describe('UIConfigSchema phase-2 additions', () => {
   });
 });
 
+describe('UIConfigSchema defaultLabelFont', () => {
+  it('defaults to ["Open Sans Bold"] when omitted', () => {
+    const result = MapConfigSchema.parse(baseMapConfig);
+    expect(result.ui.defaultLabelFont).toEqual(['Open Sans Bold']);
+  });
+
+  it('accepts an explicit font stack and returns it unchanged', () => {
+    const result = MapConfigSchema.parse({
+      ...baseMapConfig,
+      ui: { defaultLabelFont: ['Noto Sans Bold'] },
+    });
+    expect(result.ui.defaultLabelFont).toEqual(['Noto Sans Bold']);
+  });
+
+  it('rejects an empty array', () => {
+    expect(() =>
+      MapConfigSchema.parse({
+        ...baseMapConfig,
+        ui: { defaultLabelFont: [] },
+      }),
+    ).toThrow();
+  });
+
+  it('rejects empty-string font names', () => {
+    expect(() =>
+      MapConfigSchema.parse({
+        ...baseMapConfig,
+        ui: { defaultLabelFont: [''] },
+      }),
+    ).toThrow();
+  });
+
+  it('back-compat: an old config with a ui block but no defaultLabelFont still parses', () => {
+    const result = MapConfigSchema.parse({
+      ...baseMapConfig,
+      ui: { showLegend: false, coordinateFormat: 'dms' },
+    });
+    expect(result.ui.defaultLabelFont).toEqual(['Open Sans Bold']);
+    expect(result.ui.coordinateFormat).toBe('dms');
+  });
+});
+
 describe('UIConfigSchema controlIcons / controlPositions partial records', () => {
   it('accepts a controlIcons override for a single control', () => {
     const result = MapConfigSchema.parse({
