@@ -39,8 +39,22 @@ Describes an OGC API Features/Tiles server.
 | `label` | `string` | No | Human-readable name |
 | `tileMatrixSetId` | `string` | No | Tile matrix set; default `"WebMercatorQuad"` |
 | `type` | `"features" \| "imagery"` | No | Source type; default `"features"` |
+| `maxZoom` | `number` (0–24) | No | Deepest zoom with native tiles (e.g. from ArcGIS cache LODs). Set on the MapLibre raster *source*, so zooming further overzooms (upscales) the deepest tiles instead of fetching blank ones. Distinct from `ImageryLayerConfig.maxZoom`, which hides the layer past that zoom. Mirrors `WmtsSource.maxZoom` |
 | `auth` | `SourceAuth` | No | Authentication credentials (see below) |
 | `proxy` | `boolean` | No | Route requests through the admin server to protect credentials and bypass CORS. See [PROXY.md](./PROXY.md) |
+
+### ArcGIS cached MapServers
+
+An ArcGIS REST **cached** MapServer root URL (e.g.
+`https://server.arcgisonline.com/ArcGIS/rest/services/USA_Topo_Maps/MapServer`)
+can be saved as an imagery source in the admin's External Sources page. At
+save time the service description (`?f=json`) is inspected: the service must be
+a fused tile cache (`singleFusedMapCache`) in Web Mercator, and its LOD range
+becomes the source `maxZoom`. Tiles are served via the XYZ template
+`{url}/tile/{z}/{y}/{x}` (ArcGIS uses z/row/col ordering; MapLibre substitutes
+the tokens by name). To use one as a basemap, save it as an imagery source and
+create the basemap in "From imagery source" mode — the admin server synthesizes
+the MapLibre style at `/api/basemaps/<id>/style.json`.
 
 ## WmtsSource
 
