@@ -38,6 +38,7 @@ import {
   type GlobalSearchContext,
   buildSourceUrlMap,
   isOgcApiSource,
+  resolveStyleZoomBounds,
 } from '@techtraverse/map-ui-lib/utils';
 import type { CQL2Expression } from '@techtraverse/map-ui-lib/utils';
 import type { PropertyFilter } from '@techtraverse/map-ui-lib/utils';
@@ -147,8 +148,7 @@ function renderPreviewStyleLayers(
   const commonProps: Record<string, any> = {
     type: style.type,
     layout: { ...(style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' },
-    ...(layer.minZoom != null ? { minzoom: layer.minZoom } : {}),
-    ...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {}),
+    ...resolveStyleZoomBounds(layer, style),
     ...(sourceLayer ? { 'source-layer': sourceLayer } : {}),
   };
   const baseFilter = style.geometryFilter ? buildGeometryFilter(style.geometryFilter) : undefined;
