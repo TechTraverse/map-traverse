@@ -1,7 +1,7 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { Map, Source, Layer, Marker, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
 import { useOgcFeatures, useHeaderAuthTransformRequest, useVectorSourceLayer } from '@techtraverse/map-ui-lib/hooks';
-import { getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSourceKey, getSubLayerId, getDashSubLayerId, getStyleSubLayerIds, getLayerSourceKey, getLayerSubLayerIds, buildGeometryFilter, getImageryTileUrl, getRasterImagerySourceKey, expandDashByCategory, DASH_PER_CASE_PAINT_PROPS, buildSourceUrlMap } from '@techtraverse/map-ui-lib/utils';
+import { getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSourceKey, getSubLayerId, getDashSubLayerId, getStyleSubLayerIds, getLayerSourceKey, getLayerSubLayerIds, buildGeometryFilter, getImageryTileUrl, getRasterImagerySourceKey, expandDashByCategory, DASH_PER_CASE_PAINT_PROPS, buildSourceUrlMap, resolveStyleZoomBounds } from '@techtraverse/map-ui-lib/utils';
 import type { CQL2Expression, SourceAuth } from '@techtraverse/map-ui-lib/utils';
 import type { LayerConfig, ImageryLayerConfig } from '@techtraverse/map-ui-lib/types';
 import type { MeasureMode, SelectionMode } from '@techtraverse/map-ui-lib';
@@ -82,8 +82,10 @@ function GeoJsonLayer({ layer, sourceUrl, cql2Filter, auth }: { layer: LayerConf
  * Layers (one per case + a default-case) so each can carry a static
  * `line-dasharray` — MapLibre data-constants this paint property, so a
  * `["match", ...]` expression isn't an option.
+ *
+ * Exported for tests only — not part of the component API.
  */
-function renderStyleLayers(
+export function renderStyleLayers(
   style: LayerConfig['styles'] extends (infer S)[] | undefined ? S : never,
   styleIndex: number,
   baseId: string,
@@ -94,8 +96,7 @@ function renderStyleLayers(
   const commonProps: Record<string, any> = {
     type: style.type,
     layout: { ...(style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' },
-    ...(layer.minZoom != null ? { minzoom: layer.minZoom } : {}),
-    ...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {}),
+    ...resolveStyleZoomBounds(layer, style),
     ...(sourceLayer ? { 'source-layer': sourceLayer } : {}),
   };
   const baseFilter = style.geometryFilter ? buildGeometryFilter(style.geometryFilter) : undefined;

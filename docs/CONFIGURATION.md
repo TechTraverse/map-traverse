@@ -257,6 +257,39 @@ The legend `Generate from styles` button picks up `dashByCategory` and
 produces one entry per case — each with a dashed-line swatch faithfully
 matching the rendered pattern.
 
+#### Zoom-level visibility per style (`minZoom`/`maxZoom`)
+
+Every style (fill, line, circle, symbol) accepts optional `minZoom`/`maxZoom`
+fields (0–24, `minZoom <= maxZoom` enforced by the schema). They narrow the
+layer's own zoom range for just that style: at render time
+`resolveStyleZoomBounds(layer, style)` intersects the two ranges (effective
+min = the greater of the two mins, effective max = the lesser of the two
+maxes) and applies the result to every MapLibre `<Layer>` the style produces —
+including all `dashByCategory`-expanded sub-layers.
+
+This lets one layer stack styles that appear and disappear at different zoom
+levels. For example, road classes over a single collection:
+
+```ts
+{
+  id: 'roads',
+  // ...
+  styles: [
+    // 4WD tracks: only while zoomed in
+    { type: 'line', paint: { 'line-color': '#a05a2c', 'line-width': 1 }, minZoom: 11 },
+    // Local roads: mid zooms and up
+    { type: 'line', paint: { 'line-color': '#888', 'line-width': 1.5 }, minZoom: 8 },
+    // Highways: always visible (no override — inherits the layer's range)
+    { type: 'line', paint: { 'line-color': '#d97706', 'line-width': 2.5 } },
+  ],
+}
+```
+
+Combine with per-style `geometryFilter` or data-driven paint expressions to
+scope each style to its road class. Blank/omitted values are unbounded. Note
+the schema only validates each style's own `minZoom <= maxZoom`; a style range
+that falls entirely outside the layer's range simply never renders.
+
 ### Circle Style
 
 ```ts
