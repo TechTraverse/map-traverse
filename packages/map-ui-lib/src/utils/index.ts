@@ -1,4 +1,6 @@
 export * from './ogcApi';
+export * from './arcgis';
+export * from './sourceUrl';
 export * from './subLayerIds';
 export * from './wmts';
 export * from './sourceUrlMap';

@@ -9,6 +9,7 @@ import {
   MapConfigSchema,
   ViewConfigSchema,
   WmtsSourceSchema,
+  OgcApiSourceSchema,
 } from '../config';
 
 const baseMapConfig = {
@@ -608,6 +609,20 @@ describe('WmtsSourceSchema', () => {
   it('rejects out-of-range maxZoom', () => {
     expect(() => WmtsSourceSchema.parse({ ...validWmts, maxZoom: -1 })).toThrow();
     expect(() => WmtsSourceSchema.parse({ ...validWmts, maxZoom: 25 })).toThrow();
+  });
+});
+
+describe('OgcApiSourceSchema maxZoom', () => {
+  const validOgc = { id: 'arcgis-topo', url: 'https://example.com/rest/services/Topo/MapServer' };
+
+  it('parses source-level maxZoom and leaves it undefined when absent (backward compat)', () => {
+    expect(OgcApiSourceSchema.parse({ ...validOgc, maxZoom: 15 }).maxZoom).toBe(15);
+    expect(OgcApiSourceSchema.parse(validOgc).maxZoom).toBeUndefined();
+  });
+
+  it('rejects out-of-range maxZoom', () => {
+    expect(() => OgcApiSourceSchema.parse({ ...validOgc, maxZoom: -1 })).toThrow();
+    expect(() => OgcApiSourceSchema.parse({ ...validOgc, maxZoom: 25 })).toThrow();
   });
 });
 

@@ -70,6 +70,11 @@ export const OgcApiSourceSchema = z.object({
   label: z.string().optional(),
   tileMatrixSetId: z.string().optional().default('WebMercatorQuad'),
   type: z.enum(['features', 'imagery']).optional(),
+  // Deepest zoom the server has native tiles for (e.g. ArcGIS cache LODs).
+  // Applied to the raster *source* so MapLibre overzooms past it instead of
+  // fetching blank tiles; distinct from imagery-layer maxZoom, which hides
+  // the layer. Mirrors WmtsSourceSchema.maxZoom.
+  maxZoom: z.number().min(0).max(24).optional(),
   auth: SourceAuthSchema.optional(),
   proxy: z.boolean().optional(),
 });
