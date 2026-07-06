@@ -5,6 +5,11 @@
 Everything canonical lives in `AGENTS.md` (imported above) and `.agents/skills/`.
 This file holds only what other harnesses can't use.
 
+## Worktrees
+`EnterWorktree` branches from `origin/main` by default — wrong for this repo.
+Create manually off `ai/main` first, then enter by path:
+`git worktree add .claude/worktrees/<name> -b ai/<name> ai/main`
+
 ## Team tasks
 Each teammate gets its own worktree off `ai/main`. The lead merges all branches
 into `ai/main` after teammates finish (full orchestrator prompt:

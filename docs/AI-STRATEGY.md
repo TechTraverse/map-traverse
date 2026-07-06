@@ -55,6 +55,10 @@ docs/DEVELOPMENT.md        ← dev setup + Docker troubleshooting (referenced fr
 4. **Don't duplicate.** The pre-2026-07 setup repeated the architecture rules in
    five places (`CLAUDE.md`, `.cursorrules`, `.cursor/rules/*.mdc`, `.agent/`,
    skills). One canonical home each, everything else references it.
+5. **After changing agent config** (AGENTS.md, skills, symlinks), smoke-test
+   discovery headlessly: `claude -p "list your project skills"` and
+   `opencode run "list your skills"` — both should show the 7 skills and
+   AGENTS.md content.
 
 ## Adding a skill
 
