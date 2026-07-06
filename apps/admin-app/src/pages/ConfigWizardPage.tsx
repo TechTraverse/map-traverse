@@ -20,7 +20,7 @@ import {
   INFO_POSITIONS,
 } from '@techtraverse/map-ui-lib';
 import { safeValidateMapConfig, DEFAULT_HEADER_COLOR } from '@techtraverse/map-ui-lib/schemas';
-import { detectTileSourceType, isOgcApiSource, isImagerySource } from '@techtraverse/map-ui-lib/utils';
+import { detectTileSourceType, isOgcApiSource, isImagerySource, buildArcgisTileUrlTemplate } from '@techtraverse/map-ui-lib/utils';
 import { savedSourceToWmts, savedSourceIsImagery, type WmtsSourceMetadata } from '../utils/wmtsSource';
 import type {
   OgcApiSource,
@@ -68,7 +68,7 @@ const INFO_POSITION_OPTIONS = INFO_POSITIONS.map((pos) => ({
   label: pos.replace('-', ' ').replace(/^./, (c) => c.toUpperCase()),
 }));
 
-interface SavedSourceSummary { id: string; source_id: string; url: string; label: string | null; tile_matrix_set_id: string; source_type?: string; auth?: SourceAuth | null; metadata?: (WmtsSourceMetadata & { thumbnail?: string; tileJson?: { tiles: string[]; name?: string; minzoom?: number; maxzoom?: number } }) | null }
+interface SavedSourceSummary { id: string; source_id: string; url: string; label: string | null; tile_matrix_set_id: string; source_type?: string; auth?: SourceAuth | null; metadata?: (WmtsSourceMetadata & { thumbnail?: string; tileJson?: { tiles: string[]; name?: string; minzoom?: number; maxzoom?: number }; arcgis?: { tileUrlTemplate: string; minZoom?: number; maxZoom?: number; attribution?: string } }) | null }
 
 type WizardStep = 'metadata' | 'info' | 'layers' | 'search-display' | 'imagery' | 'basemaps' | 'ui' | 'view' | 'review';
 
@@ -917,6 +917,12 @@ export function ConfigWizardPage() {
                             return;
                           }
 
+                          const urlType = detectTileSourceType(saved.url);
+                          // ArcGIS cached MapServers normalize to an XYZ template;
+                          // maxZoom goes on the *source* (overzoom) rather than the
+                          // layer (which hides past its maxZoom).
+                          const ag = urlType === 'arcgis' ? saved.metadata?.arcgis : null;
+
                           const newSource: OgcApiSource = {
                             id: saved.source_id,
                             url: saved.url,
@@ -924,14 +930,17 @@ export function ConfigWizardPage() {
                             tileMatrixSetId: saved.tile_matrix_set_id,
                             type: 'imagery' as const,
                             auth: saved.auth ?? undefined,
+                            ...(ag?.maxZoom != null ? { maxZoom: ag.maxZoom } : {}),
                           };
                           setSources(prev => [...prev, newSource]);
 
-                          // Auto-add imagery layer for TileJSON/XYZ sources
-                          const urlType = detectTileSourceType(saved.url);
+                          // Auto-add imagery layer for TileJSON/XYZ/ArcGIS sources
                           if (urlType === 'style') return; // style URLs handled by Basemaps tab
                           const tj = urlType === 'tilejson' ? saved.metadata?.tileJson : null;
-                          const tileUrl = urlType === 'xyz' ? saved.url : tj?.tiles?.[0];
+                          const tileUrl =
+                            urlType === 'xyz' ? saved.url
+                            : urlType === 'arcgis' ? (ag?.tileUrlTemplate ?? buildArcgisTileUrlTemplate(saved.url))
+                            : tj?.tiles?.[0];
                           if (tileUrl) {
                             const label = (tj?.name ?? saved.label ?? saved.source_id);
                             setImageryLayers(prev => [...prev, {
@@ -946,6 +955,7 @@ export function ConfigWizardPage() {
                               tileUrlTemplate: tileUrl,
                               ...(tj?.minzoom != null ? { minZoom: tj.minzoom } : {}),
                               ...(tj?.maxzoom != null ? { maxZoom: tj.maxzoom } : {}),
+                              ...(ag?.minZoom != null && ag.minZoom > 0 ? { minZoom: ag.minZoom } : {}),
                             }]);
                           }
                         }}

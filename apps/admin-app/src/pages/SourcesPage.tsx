@@ -1,7 +1,14 @@
 import { Fragment, useEffect, useState } from 'react';
 import { SourceEditor, BasemapEditor, ConfirmDialog, WmtsSourceEditor } from '@techtraverse/map-ui-lib';
 import type { OgcApiSource, SourceAuth, BasemapConfig, WmtsSource } from '@techtraverse/map-ui-lib';
-import { detectTileSourceType, appendAuth, authHeaders } from '@techtraverse/map-ui-lib/utils';
+import {
+  detectTileSourceType,
+  appendAuth,
+  authHeaders,
+  validateSourceUrl,
+  isArcgisMapServerUrl,
+  fetchArcgisServiceInfo,
+} from '@techtraverse/map-ui-lib/utils';
 import { SourceMetadataPanel } from '../components/SourceMetadataPanel';
 import type { InspectionResult } from '../components/SourceMetadataPanel';
 import { inspectSourceClientSide } from '../utils/inspectSource';
@@ -297,6 +304,13 @@ export function SourcesPage() {
 
     // Try client-side first (browser fetches directly)
     try {
+      if (sourceType === 'arcgis') {
+        // Succeeds only for a cached Web-Mercator tile service
+        await fetchArcgisServiceInfo(testUrl, auth ?? undefined, AbortSignal.timeout(10_000));
+        setTestStatus(prev => ({ ...prev, [key]: 'success' }));
+        return;
+      }
+
       let testEndpoint: string;
       let acceptHeader = 'application/json';
       if (sourceType === 'tilejson') {
@@ -352,14 +366,38 @@ export function SourcesPage() {
     }
   };
 
+  // Validate a basemap Style-URL field; returns the normalized url, or null
+  // after setting the error. ArcGIS MapServer roots get a guided message
+  // (mirror of the server-side 400) so the user never round-trips.
+  const validateBasemapStyleUrl = (url: string): string | null => {
+    const validated = validateSourceUrl(url, { allowRelative: true });
+    if (!validated.ok) {
+      setActionError(validated.error);
+      return null;
+    }
+    if (isArcgisMapServerUrl(validated.url)) {
+      setActionError(
+        'An ArcGIS MapServer URL is not a MapLibre style. Save it as an Imagery source first, then create the basemap in "From imagery source" mode.',
+      );
+      return null;
+    }
+    return validated.url;
+  };
+
   const handleCreate = async () => {
     setSaving(true);
     setActionError(null);
     try {
+      const validated = validateSourceUrl(newSource.url);
+      if (!validated.ok) {
+        setActionError(validated.error);
+        return;
+      }
+
       // Try client-side inspection first
       let clientMetadata: InspectionResult | undefined;
       try {
-        clientMetadata = await inspectSourceClientSide(newSource.url, newSource.auth);
+        clientMetadata = await inspectSourceClientSide(validated.url, newSource.auth);
       } catch {
         // Client-side inspection failed (CORS/network) — server will auto-inspect
       }
@@ -370,7 +408,7 @@ export function SourcesPage() {
         credentials: 'include',
         body: JSON.stringify({
           source_id: newSource.id,
-          url: newSource.url,
+          url: validated.url,
           label: newSource.label || null,
           tile_matrix_set_id: newSource.tileMatrixSetId || 'WebMercatorQuad',
           source_type: activeTab,
@@ -400,13 +438,15 @@ export function SourcesPage() {
     setSaving(true);
     setActionError(null);
     try {
+      const validated = validateBasemapStyleUrl(newBasemap.url);
+      if (!validated) return;
       const res = await fetch('/api/sources', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
           source_id: newBasemap.id,
-          url: newBasemap.url,
+          url: validated,
           label: newBasemap.label || null,
           source_type: 'basemap',
           thumbnail: newBasemap.thumbnail || null,
@@ -526,13 +566,18 @@ export function SourcesPage() {
     setSaving(true);
     setActionError(null);
     try {
+      const validated = validateSourceUrl(editingSource.url);
+      if (!validated.ok) {
+        setActionError(validated.error);
+        return;
+      }
       const res = await fetch(`/api/sources/${editingId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
           source_id: editingSource.id,
-          url: editingSource.url,
+          url: validated.url,
           label: editingSource.label || null,
           tile_matrix_set_id: editingSource.tileMatrixSetId || 'WebMercatorQuad',
           source_type: activeTab,
@@ -560,13 +605,15 @@ export function SourcesPage() {
     setSaving(true);
     setActionError(null);
     try {
+      const validated = validateBasemapStyleUrl(editingBasemap.url);
+      if (!validated) return;
       const res = await fetch(`/api/sources/${editingId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
           source_id: editingBasemap.id,
-          url: editingBasemap.url,
+          url: validated,
           label: editingBasemap.label || null,
           source_type: 'basemap',
           thumbnail: editingBasemap.thumbnail || null,
@@ -591,11 +638,17 @@ export function SourcesPage() {
     setSaving(true);
     setActionError(null);
     try {
+      const fields = wmtsSourceToSavedFields(newWmtsSource);
+      const validated = validateSourceUrl(fields.url);
+      if (!validated.ok) {
+        setActionError(validated.error);
+        return;
+      }
       const res = await fetch('/api/sources', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(wmtsSourceToSavedFields(newWmtsSource)),
+        body: JSON.stringify({ ...fields, url: validated.url }),
       });
       if (!res.ok) {
         const data = await res.json() as { error: string };
@@ -618,11 +671,17 @@ export function SourcesPage() {
     setSaving(true);
     setActionError(null);
     try {
+      const fields = wmtsSourceToSavedFields(editingWmtsSource);
+      const validated = validateSourceUrl(fields.url);
+      if (!validated.ok) {
+        setActionError(validated.error);
+        return;
+      }
       const res = await fetch(`/api/sources/${editingId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(wmtsSourceToSavedFields(editingWmtsSource)),
+        body: JSON.stringify({ ...fields, url: validated.url }),
       });
       if (!res.ok) {
         const data = await res.json() as { error: string };
