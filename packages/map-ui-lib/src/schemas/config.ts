@@ -422,6 +422,10 @@ export const GlobalSearchConfigSchema = z.object({
 
 // --- Property Display Config ---
 
+/** How a property's value is rendered in popups/detail panels. */
+export const PROPERTY_DISPLAY_TYPES = ['text', 'link'] as const;
+export type PropertyDisplayType = (typeof PROPERTY_DISPLAY_TYPES)[number];
+
 export const PropertyDisplaySchema = z.object({
   label: z.string().optional(),
   visible: z.boolean().optional().default(true),
@@ -429,6 +433,16 @@ export const PropertyDisplaySchema = z.object({
   // stores config as jsonb, which normalizes object key order. Entries
   // without `order` sort after ordered ones, in key order.
   order: z.number().int().min(0).optional(),
+  // Generic display-type mechanism for property values. Semantic default is
+  // 'text' (undefined === 'text'; no Zod default so legacy configs round-trip
+  // byte-for-byte and the editor can omit it). 'link' renders the value as an
+  // <a target="_blank" rel="noopener noreferrer"> when it is a safe http(s)
+  // URL (see isSafeHttpUrl); any other value for a 'link' field silently
+  // falls back to plain text. Extensible for future display kinds.
+  type: z.enum(PROPERTY_DISPLAY_TYPES).optional(),
+  // Custom anchor text for type: 'link' entries (e.g. "View Assessor Record").
+  // Falls back to a generic "Open" label when unset. Ignored for type: 'text'.
+  linkText: z.string().optional(),
 });
 
 export const PropertyDisplayConfigSchema = z.record(z.string(), PropertyDisplaySchema);

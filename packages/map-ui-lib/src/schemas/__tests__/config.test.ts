@@ -193,6 +193,34 @@ describe('LayerConfigSchema propertyDisplay', () => {
       expect(result.success).toBe(false);
     }
   });
+
+  it('parses type: link with linkText', () => {
+    const result = LayerConfigSchema.parse({
+      ...base,
+      propertyDisplay: {
+        assessorlink: { label: 'Assessor Record', type: 'link', linkText: 'View Assessor Record' },
+      },
+    });
+    expect(result.propertyDisplay!.assessorlink.type).toBe('link');
+    expect(result.propertyDisplay!.assessorlink.linkText).toBe('View Assessor Record');
+  });
+
+  it('leaves type unset when omitted (semantic default: text)', () => {
+    const result = LayerConfigSchema.parse({
+      ...base,
+      propertyDisplay: { owner: { label: 'Owner' } },
+    });
+    expect(result.propertyDisplay!.owner.type).toBeUndefined();
+    expect(result.propertyDisplay!.owner.linkText).toBeUndefined();
+  });
+
+  it('rejects invalid type values', () => {
+    const result = LayerConfigSchema.safeParse({
+      ...base,
+      propertyDisplay: { owner: { type: 'foo' } },
+    });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe('CQL2 Filter Schemas', () => {
