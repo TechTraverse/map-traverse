@@ -32,6 +32,7 @@ import {
   and,
   mergeBaseAndActiveCql2Filters,
   expandDashByCategory,
+  applyDefaultLabelFont,
   runGlobalSearch,
   prefetchAllDistinctValues,
   prefetchKey,
@@ -142,11 +143,16 @@ function renderPreviewStyleLayers(
   baseId: string,
   layer: LayerConfig,
   sourceLayer?: string,
+  defaultLabelFont?: string[],
 ) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const commonProps: Record<string, any> = {
     type: style.type,
-    layout: { ...(style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' },
+    layout: applyDefaultLabelFont(
+      { ...(style.layout ?? {}), visibility: layer.visible ? 'visible' : 'none' },
+      style,
+      defaultLabelFont,
+    ),
     ...(layer.minZoom != null ? { minzoom: layer.minZoom } : {}),
     ...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {}),
     ...(sourceLayer ? { 'source-layer': sourceLayer } : {}),
@@ -195,12 +201,14 @@ function PreviewVectorTileLayer({
   tileMatrixSetId,
   cql2Filter,
   auth,
+  defaultLabelFont,
 }: {
   layer: LayerConfig;
   sourceUrl: string;
   tileMatrixSetId?: string;
   cql2Filter?: CQL2Expression | null;
   auth?: SourceAuth;
+  defaultLabelFont?: string[];
 }) {
   const tileUrl = getCql2FilteredVectorTileUrl(sourceUrl, layer.collection, cql2Filter, tileMatrixSetId, auth);
   // Resolve the MVT `source-layer` from the collection's TileJSON (handles tipg
@@ -216,7 +224,7 @@ function PreviewVectorTileLayer({
 
   return (
     <Source id={sourceKey} key={remountKey} type="vector" tiles={[tileUrl]}>
-      {layer.styles.flatMap((style, i) => renderPreviewStyleLayers(style, i, sourceKey, layer, sourceLayer))}
+      {layer.styles.flatMap((style, i) => renderPreviewStyleLayers(style, i, sourceKey, layer, sourceLayer, defaultLabelFont))}
     </Source>
   );
 }
@@ -226,11 +234,13 @@ function PreviewGeoJsonLayer({
   sourceUrl,
   cql2Filter,
   auth,
+  defaultLabelFont,
 }: {
   layer: LayerConfig;
   sourceUrl: string;
   cql2Filter?: CQL2Expression | null;
   auth?: SourceAuth;
+  defaultLabelFont?: string[];
 }) {
   const { features } = useOgcFeatures(sourceUrl, layer.collection, { limit: 10000, cql2Filter: cql2Filter ?? undefined }, auth);
 
@@ -246,7 +256,7 @@ function PreviewGeoJsonLayer({
 
   return (
     <Source id={layer.id} key={layer.id} type="geojson" data={featureCollection}>
-      {layer.styles.flatMap((style, i) => renderPreviewStyleLayers(style, i, layer.id, layer))}
+      {layer.styles.flatMap((style, i) => renderPreviewStyleLayers(style, i, layer.id, layer, undefined, defaultLabelFont))}
     </Source>
   );
 }
@@ -377,6 +387,10 @@ export function MapPreview({
     return () => mq.removeEventListener('change', handler);
   }, []);
   const effectiveLayout = resolveEffectiveLayout(uiConfig?.controlLayout, isNarrowViewport);
+
+  // Map-level default text-font for symbol styles; resolved at render time by
+  // the shared applyDefaultLabelFont util so preview matches map-client.
+  const defaultLabelFont = uiConfig?.defaultLabelFont;
 
   // Global search state — mirrors map-client's useGlobalSearch with local
   // useState instead of a Zustand store, since the admin preview is a
@@ -1231,6 +1245,7 @@ export function MapPreview({
                 sourceUrl={sourceInfo.url}
                 cql2Filter={effectiveCql2Filters[layer.id]}
                 auth={sourceInfo.auth}
+                defaultLabelFont={defaultLabelFont}
               />
             );
           }
@@ -1243,6 +1258,7 @@ export function MapPreview({
               tileMatrixSetId={sourceInfo.tileMatrixSetId}
               cql2Filter={effectiveCql2Filters[layer.id]}
               auth={sourceInfo.auth}
+              defaultLabelFont={defaultLabelFont}
             />
           );
         })}

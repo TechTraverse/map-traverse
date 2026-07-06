@@ -104,6 +104,7 @@ const DEFAULT_UI_CONFIG: UIConfig = {
   coordinateFormat: 'decimal-degrees',
   controlLayout: 'individual',
   sideMenuToggleCorner: 'top-right',
+  defaultLabelFont: ['Open Sans Bold'],
 };
 
 /** Derive which UI controls should be enabled based on current config state. */

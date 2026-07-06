@@ -603,6 +603,7 @@ Controls which UI panels are visible. All fields default to shown, except `showS
 | `showScaleBar` | `boolean` | `false` | Show/hide the `ScaleBarControl` at the bottom-left of the map |
 | `legendOrder` | `string[]` | _(unset)_ | Optional explicit display order for legend layers (array of layer IDs). Unlisted legend-bearing layers follow in natural order |
 | `coordinateFormat` | `"decimal-degrees" \| "ddm" \| "dms"` | `"decimal-degrees"` | Default format for the cursor coordinate readout (decimal degrees, degree decimal minutes, or degrees-minutes-seconds) |
+| `defaultLabelFont` | `string[]` | `["Open Sans Bold"]` | Default `text-font` fallback list for symbol styles that don't set their own `text-font`. Per-style overrides in the Style Editor always win. Names must exist on the active basemap's glyph server |
 
 ---
 
