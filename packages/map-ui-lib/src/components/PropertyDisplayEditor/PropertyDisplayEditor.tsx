@@ -1,4 +1,5 @@
 import type { PropertyDisplayConfig, AvailableProperty } from '../../types';
+import { sortedPropertyDisplayEntries } from '../../utils/propertyDisplay';
 import { FormField } from '../admin/FormField';
 
 export interface PropertyDisplayEditorProps {
@@ -10,18 +11,11 @@ export interface PropertyDisplayEditorProps {
 export type PropertyEntry = { key: string; label: string; visible: boolean };
 
 export function toEntries(config: PropertyDisplayConfig): PropertyEntry[] {
-  // Sort by explicit `order` (entries without it keep key order, at the end).
-  // Key order alone doesn't survive the admin DB's jsonb normalization.
-  return Object.entries(config)
-    .sort(
-      (a, b) =>
-        (a[1].order ?? Number.MAX_SAFE_INTEGER) - (b[1].order ?? Number.MAX_SAFE_INTEGER),
-    )
-    .map(([key, val]) => ({
-      key,
-      label: val.label ?? '',
-      visible: val.visible ?? true,
-    }));
+  return sortedPropertyDisplayEntries(config).map(([key, val]) => ({
+    key,
+    label: val.label ?? '',
+    visible: val.visible ?? true,
+  }));
 }
 
 export function fromEntries(entries: PropertyEntry[]): PropertyDisplayConfig {
