@@ -197,7 +197,7 @@ export function SourcesPage() {
 
   // Create/edit state for basemaps
   const [addingNewBasemap, setAddingNewBasemap] = useState(false);
-  const [newBasemap, setNewBasemap] = useState<BasemapConfig>({ id: '', label: '', url: '' });
+  const [newBasemap, setNewBasemap] = useState<BasemapConfig>({ id: '', label: 'New Basemap', url: '' });
   const [editingBasemap, setEditingBasemap] = useState<BasemapConfig | null>(null);
 
   // Create/edit state for WMTS sources
@@ -220,7 +220,7 @@ export function SourcesPage() {
   // from an existing imagery source (the server synthesizes the style.json).
   const [basemapMode, setBasemapMode] = useState<BasemapMode>('style-url');
   const [newImageryBasemap, setNewImageryBasemap] = useState<ImageryBasemapDraft>({
-    source_id: '', label: '', imagery_source_id: '', collection_id: '', thumbnail: '',
+    source_id: '', label: 'New Basemap', imagery_source_id: '', collection_id: '', thumbnail: '',
   });
   const [editingImageryBasemap, setEditingImageryBasemap] = useState<ImageryBasemapDraft | null>(null);
 
@@ -418,7 +418,7 @@ export function SourcesPage() {
         return;
       }
       setAddingNewBasemap(false);
-      setNewBasemap({ id: '', label: '', url: '' });
+      setNewBasemap({ id: '', label: 'New Basemap', url: '' });
       await fetchSources();
     } catch (err) {
       setActionError(String(err));
@@ -464,7 +464,7 @@ export function SourcesPage() {
         return;
       }
       setAddingNewBasemap(false);
-      setNewImageryBasemap({ source_id: '', label: '', imagery_source_id: '', collection_id: '', thumbnail: '' });
+      setNewImageryBasemap({ source_id: '', label: 'New Basemap', imagery_source_id: '', collection_id: '', thumbnail: '' });
       setBasemapMode('style-url');
       await fetchSources();
     } catch (err) {
@@ -760,8 +760,8 @@ export function SourcesPage() {
   const handleAddNew = () => {
     if (activeTab === 'basemap') {
       setAddingNewBasemap(true);
-      setNewBasemap({ id: '', label: '', url: '' });
-      setNewImageryBasemap({ source_id: '', label: '', imagery_source_id: '', collection_id: '', thumbnail: '' });
+      setNewBasemap({ id: '', label: 'New Basemap', url: '' });
+      setNewImageryBasemap({ source_id: '', label: 'New Basemap', imagery_source_id: '', collection_id: '', thumbnail: '' });
       setBasemapMode('style-url');
     } else {
       setAddingNew(true);

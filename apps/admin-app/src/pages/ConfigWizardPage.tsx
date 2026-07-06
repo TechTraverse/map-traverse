@@ -317,11 +317,12 @@ export function ConfigWizardPage() {
       lintMapConfig({
         layers,
         imageryLayers,
+        basemaps,
         globalSearch,
         queryablesByLayer,
         queryablesLoading,
       }),
-    [layers, imageryLayers, globalSearch, queryablesByLayer, queryablesLoading],
+    [layers, imageryLayers, basemaps, globalSearch, queryablesByLayer, queryablesLoading],
   );
 
   const lintErrorCount = lintIssues.filter((i) => i.severity === 'error').length;
