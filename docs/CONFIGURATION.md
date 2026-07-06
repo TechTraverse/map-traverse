@@ -124,14 +124,19 @@ A record keyed by property name controlling what `FeatureTooltip` and `FeatureDe
 | `label` | `string` | No | Friendly display name (falls back to the property key) |
 | `visible` | `boolean` | No (default `true`) | Hide the property without removing its config |
 | `order` | `number` (integer ≥ 0) | No | Explicit display position, lowest first. Entries without `order` appear after ordered ones, in key order. |
+| `type` | `'text' \| 'link'` | No (default `'text'`) | How the value is rendered. `'link'` renders the value as a clickable hyperlink when it is a valid `http(s)` URL. |
+| `linkText` | `string` | No | Anchor text for `type: 'link'` entries (defaults to a generic "Open ↗" label). Ignored for `type: 'text'`. |
 
 `order` exists because the admin DB stores configs as Postgres `jsonb`, which does **not** preserve object key order — key order alone cannot express display order. The admin editor stamps `order` automatically on every edit; legacy configs without it keep their previous behavior.
+
+`type: 'link'` safety: only absolute `http://` / `https://` values render as links — `javascript:`/`data:` URIs, relative paths, and non-string values silently fall back to plain text. Links always open in a new tab with `rel="noopener noreferrer"`.
 
 ```json
 "propertyDisplay": {
   "owner": { "label": "Owner", "order": 0 },
   "acres": { "label": "Acres", "order": 1 },
-  "internal_id": { "visible": false, "order": 2 }
+  "internal_id": { "visible": false, "order": 2 },
+  "assessorlink": { "label": "Assessor Record", "visible": true, "type": "link", "linkText": "View Assessor Record", "order": 3 }
 }
 ```
 
