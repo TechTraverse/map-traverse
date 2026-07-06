@@ -98,7 +98,7 @@ import type {
   InfoConfig,
   GlobalSearchConfig,
 } from '@techtraverse/map-ui-lib';
-import type { SearchFilterValue, SearchFilterValues, Cql2FilterConfig, InfoPosition } from '@techtraverse/map-ui-lib/types';
+import type { SearchFilterValue, SearchFilterValues, Cql2FilterConfig, InfoPosition, PropertyDisplayType } from '@techtraverse/map-ui-lib/types';
 import { useMeasure, useSelection } from '@techtraverse/map-ui-lib/hooks';
 
 import { LuDownload, LuLayers3, LuList, LuMap, LuMousePointer2, LuRuler, LuSatellite, LuSearch } from 'react-icons/lu';
@@ -355,12 +355,16 @@ export function MapPreview({
     title?: string;
     fields?: string[];
     labels?: Record<string, string>;
+    types?: Record<string, PropertyDisplayType>;
+    linkText?: Record<string, string>;
   }[]>([]);
   const [hoveredFeatures, setHoveredFeatures] = useState<{
     properties: Record<string, unknown>;
     title?: string;
     fields?: string[];
     labels?: Record<string, string>;
+    types?: Record<string, PropertyDisplayType>;
+    linkText?: Record<string, string>;
   }[]>([]);
   const [hoveredPoint, setHoveredPoint] = useState<{ x: number; y: number } | null>(null);
   const [openControl, setOpenControl] = useState<string | null>(null);
@@ -1141,6 +1145,8 @@ export function MapPreview({
                 title: layer?.label ?? (f.properties?.['name'] as string) ?? f.layer.id,
                 fields: resolved?.fields,
                 labels: resolved?.labels,
+                types: resolved?.types,
+                linkText: resolved?.linkText,
               });
             }
             setSelectedFeatures(infos);
@@ -1179,6 +1185,8 @@ export function MapPreview({
                   title: layer?.label ?? (f.properties?.['name'] as string),
                   fields: resolved?.fields,
                   labels: resolved?.labels,
+                  types: resolved?.types,
+                  linkText: resolved?.linkText,
                 });
               }
               setHoveredFeatures(infos);
@@ -1388,6 +1396,8 @@ export function MapPreview({
                   title={feature.title ?? 'Feature Properties'}
                   fields={feature.fields}
                   labels={feature.labels}
+                  types={feature.types}
+                  linkText={feature.linkText}
                   variant="panel"
                 />
               ))}
