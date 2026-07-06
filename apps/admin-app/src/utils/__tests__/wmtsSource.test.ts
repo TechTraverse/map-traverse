@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { savedSourceToWmts, savedSourceIsImagery } from '../wmtsSource';
+import { savedSourceToWmts, savedSourceIsImagery, wmtsSourceToSavedFields } from '../wmtsSource';
 
 describe('savedSourceToWmts', () => {
   const base = {
@@ -29,9 +29,10 @@ describe('savedSourceToWmts', () => {
     expect(src.layer).toBe('MODIS');
   });
 
-  it('leaves tileUrlTemplate undefined when not stored (pre-fix sources)', () => {
+  it('leaves tileUrlTemplate and maxZoom undefined when not stored (pre-fix sources)', () => {
     const src = savedSourceToWmts({ ...base, metadata: { wmtsLayer: 'MODIS' } });
     expect(src.tileUrlTemplate).toBeUndefined();
+    expect(src.maxZoom).toBeUndefined();
   });
 
   it('maps metadata.wmtsMaxZoom onto the WmtsSource maxZoom', () => {
@@ -41,10 +42,27 @@ describe('savedSourceToWmts', () => {
     });
     expect(src.maxZoom).toBe(19);
   });
+});
 
-  it('leaves maxZoom undefined when not stored (pre-fix sources)', () => {
-    const src = savedSourceToWmts({ ...base, metadata: { wmtsLayer: 'MODIS' } });
-    expect(src.maxZoom).toBeUndefined();
+describe('wmtsSourceToSavedFields', () => {
+  it('round-trips a WmtsSource through the saved-row shape', () => {
+    const source = {
+      id: 'vexcel',
+      sourceType: 'wmts' as const,
+      capabilitiesUrl: 'https://api.gic.org/wmts/GetCapabilities',
+      layer: 'bluesky-high',
+      style: 'RGB',
+      format: 'image/png',
+      tileMatrixSet: 'bluesky-high',
+      tileSize: 256,
+      maxZoom: 19,
+      tileUrlTemplate: 'https://api.gic.org/wmts/rest/bluesky-high/RGB/bluesky-high/{z}/{y}/{x}.png',
+      label: 'Vexcel',
+    };
+    const saved = wmtsSourceToSavedFields(source);
+    expect(saved.source_type).toBe('wmts');
+    expect(saved.metadata.wmtsMaxZoom).toBe(19);
+    expect(savedSourceToWmts(saved)).toEqual({ ...source, auth: undefined, proxy: false });
   });
 });
 

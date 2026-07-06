@@ -373,7 +373,7 @@ describe('parseWmtsCapabilities — TileMatrixSet depth', () => {
 
   it('extracts maxZoom from a per-layer matrix set (Vexcel-shaped)', () => {
     const caps = parseWmtsCapabilities(vexcelLike);
-    expect(caps.tileMatrixSets['bluesky-high']).toEqual({ maxZoom: 19 });
+    expect(caps.tileMatrixSets['bluesky-high']).toBe(19);
   });
 
   it('takes the numeric tail of prefixed identifiers like EPSG:3857:14', () => {
@@ -387,7 +387,7 @@ describe('parseWmtsCapabilities — TileMatrixSet depth', () => {
     </TileMatrixSet>
   </Contents>
 </Capabilities>`);
-    expect(caps.tileMatrixSets['EPSG3857'].maxZoom).toBe(14);
+    expect(caps.tileMatrixSets['EPSG3857']).toBe(14);
   });
 
   it('leaves maxZoom undefined when identifiers are not zoom-like', () => {
@@ -401,7 +401,7 @@ describe('parseWmtsCapabilities — TileMatrixSet depth', () => {
     </TileMatrixSet>
   </Contents>
 </Capabilities>`);
-    expect(caps.tileMatrixSets['weird'].maxZoom).toBeUndefined();
+    expect(caps.tileMatrixSets['weird']).toBeUndefined();
   });
 
   it('captures per-layer TileMatrixSetLimits depth', () => {
@@ -426,40 +426,35 @@ describe('parseWmtsCapabilities — TileMatrixSet depth', () => {
     </TileMatrixSet>
   </Contents>
 </Capabilities>`);
-    expect(caps.layers[0].tileMatrixSetLimits).toEqual({ 'bluesky-high': { maxZoom: 17 } });
+    expect(caps.layers[0].tileMatrixSetLimits).toEqual({ 'bluesky-high': 17 });
   });
 });
 
 describe('resolveWmtsMaxZoom', () => {
-  const caps = {
-    layers: [
-      {
-        id: 'limited',
-        styles: ['default'],
-        tileMatrixSets: ['bluesky-high'],
-        formats: ['image/png'],
-        tileMatrixSetLimits: { 'bluesky-high': { maxZoom: 17 } },
-      },
-      {
-        id: 'unlimited',
-        styles: ['default'],
-        tileMatrixSets: ['bluesky-high'],
-        formats: ['image/png'],
-      },
-    ],
-    tileMatrixSets: { 'bluesky-high': { maxZoom: 19 } },
+  const limited: WmtsLayer = {
+    id: 'limited',
+    styles: ['default'],
+    tileMatrixSets: ['bluesky-high'],
+    formats: ['image/png'],
+    tileMatrixSetLimits: { 'bluesky-high': 17 },
   };
+  const unlimited: WmtsLayer = {
+    id: 'unlimited',
+    styles: ['default'],
+    tileMatrixSets: ['bluesky-high'],
+    formats: ['image/png'],
+  };
+  const tileMatrixSets = { 'bluesky-high': 19 };
 
   it('prefers the layer TileMatrixSetLimits over the set depth', () => {
-    expect(resolveWmtsMaxZoom(caps, 'limited', 'bluesky-high')).toBe(17);
+    expect(resolveWmtsMaxZoom(limited, tileMatrixSets, 'bluesky-high')).toBe(17);
   });
 
   it('falls back to the matrix set depth when the layer has no limits', () => {
-    expect(resolveWmtsMaxZoom(caps, 'unlimited', 'bluesky-high')).toBe(19);
+    expect(resolveWmtsMaxZoom(unlimited, tileMatrixSets, 'bluesky-high')).toBe(19);
   });
 
-  it('returns undefined for an unknown layer or matrix set', () => {
-    expect(resolveWmtsMaxZoom(caps, 'unlimited', 'nope')).toBeUndefined();
-    expect(resolveWmtsMaxZoom(caps, 'nope', 'nope')).toBeUndefined();
+  it('returns undefined for an unknown matrix set', () => {
+    expect(resolveWmtsMaxZoom(unlimited, tileMatrixSets, 'nope')).toBeUndefined();
   });
 });
