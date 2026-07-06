@@ -1,7 +1,7 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { Map, Source, Layer, Marker, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
 import { useOgcFeatures, useHeaderAuthTransformRequest, useVectorSourceLayer } from '@techtraverse/map-ui-lib/hooks';
-import { getCql2FilteredVectorTileUrl, resolveStyleWithSprites, getVectorTileSourceKey, getSubLayerId, getDashSubLayerId, getStyleSubLayerIds, getLayerSourceKey, getLayerSubLayerIds, buildGeometryFilter, getImageryTileUrl, getRasterImagerySourceKey, expandDashByCategory, DASH_PER_CASE_PAINT_PROPS, buildSourceUrlMap, resolveStyleZoomBounds } from '@techtraverse/map-ui-lib/utils';
+import { getCql2FilteredVectorTileUrl, resolveStyleWithSprites, withDefaultShieldSprite, getVectorTileSourceKey, getSubLayerId, getDashSubLayerId, getStyleSubLayerIds, getLayerSourceKey, getLayerSubLayerIds, buildGeometryFilter, getImageryTileUrl, getRasterImagerySourceKey, expandDashByCategory, DASH_PER_CASE_PAINT_PROPS, buildSourceUrlMap, resolveStyleZoomBounds } from '@techtraverse/map-ui-lib/utils';
 import type { CQL2Expression, SourceAuth } from '@techtraverse/map-ui-lib/utils';
 import type { LayerConfig, ImageryLayerConfig } from '@techtraverse/map-ui-lib/types';
 import type { MeasureMode, SelectionMode } from '@techtraverse/map-ui-lib';
@@ -324,11 +324,14 @@ export function MapContainer({ onMouseMove, onMouseLeave, onFeatureClick, onFeat
 
   useEffect(() => {
     if (!mapStyleUrl) return;
-    if (!sprites.length) {
-      setResolvedStyle(mapStyleUrl);
-      return;
-    }
-    resolveStyleWithSprites(mapStyleUrl, sprites)
+    // Always merge in the bundled default shield sprite (id "shields") so
+    // `icon-image: "shields:*"` works out of the box; a config-level sprite
+    // with the same id overrides it.
+    const allSprites = withDefaultShieldSprite(
+      sprites,
+      `${window.location.origin}${import.meta.env.BASE_URL}`,
+    );
+    resolveStyleWithSprites(mapStyleUrl, allSprites)
       .then(setResolvedStyle)
       .catch((err) => {
         console.warn('Failed to resolve sprite style, using basemap URL:', err);

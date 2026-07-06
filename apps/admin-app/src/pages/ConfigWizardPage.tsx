@@ -16,6 +16,7 @@ import {
   FormField,
   ColorPicker,
   resolveAvailableIcons,
+  withDefaultShieldSprite,
   slugify,
   INFO_POSITIONS,
 } from '@techtraverse/map-ui-lib';
@@ -269,7 +270,13 @@ export function ConfigWizardPage() {
   useEffect(() => {
     let stale = false;
     const basemapUrl = basemaps[0]?.url;
-    resolveAvailableIcons(basemapUrl, sprites)
+    // Include the bundled default shield sprite so `shields:*` icons always
+    // populate the icon picker, even without a custom sprite sheet.
+    const allSprites = withDefaultShieldSprite(
+      sprites,
+      `${window.location.origin}${import.meta.env.BASE_URL}`,
+    );
+    resolveAvailableIcons(basemapUrl, allSprites)
       .then(icons => { if (!stale) setAvailableIcons(icons); })
       .catch(() => {});
     return () => { stale = true; };

@@ -11,6 +11,7 @@ import {
   resolvePropertyDisplay,
   fetchDistinctValues,
   resolveStyleWithSprites,
+  withDefaultShieldSprite,
   fetchFeatures,
   fetchFeatureById,
   eq,
@@ -660,11 +661,14 @@ export function MapPreview({
   const mapStyleUrl = activeBasemap?.url ?? basemaps[0]?.url ?? FALLBACK_BASEMAP_URL;
 
   useEffect(() => {
-    if (!sprites?.length) {
-      setResolvedStyle(mapStyleUrl);
-      return;
-    }
-    resolveStyleWithSprites(mapStyleUrl, sprites)
+    // Always merge in the bundled default shield sprite (id "shields") so
+    // `icon-image: "shields:*"` works in the preview; a config-level sprite
+    // with the same id overrides it.
+    const allSprites = withDefaultShieldSprite(
+      sprites ?? [],
+      `${window.location.origin}${import.meta.env.BASE_URL}`,
+    );
+    resolveStyleWithSprites(mapStyleUrl, allSprites)
       .then(setResolvedStyle)
       .catch((err) => {
         console.warn('Failed to resolve sprite style, using basemap URL:', err);
