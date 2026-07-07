@@ -1,7 +1,7 @@
 // OGC API utility functions - pure fetch functions with no React dependencies
 import type { CQL2Expression } from './cql2';
 import type { SourceAuth } from '../types';
-import { ARCGIS_MAPSERVER_URL_REGEX } from './arcgis';
+import { isArcgisMapServerUrl } from './arcgis';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -674,12 +674,16 @@ export async function fetchGenericTileJson(
 export function detectTileSourceType(
   url: string,
 ): 'tilejson' | 'xyz' | 'style' | 'ogc-api' | 'wmts' | 'arcgis' {
-  if (/\{z\}.*\{x\}.*\{y\}|\{z\}.*\{y\}.*\{x\}/i.test(url)) return 'xyz';
+  // {z} followed by {x} and {y} in either order. indexOf (not a regex with
+  // chained wildcards) so untrusted input can't trigger backtracking.
+  const lower = url.toLowerCase();
+  const z = lower.indexOf('{z}');
+  if (z !== -1 && lower.indexOf('{x}', z) !== -1 && lower.indexOf('{y}', z) !== -1) return 'xyz';
   if (/tilejson\.json|tiles\.json/i.test(url)) return 'tilejson';
   if (/\/style\.json(?:$|[?#])/i.test(url)) return 'style';
   if (/service=wmts/i.test(url)) return 'wmts';
   if (/wmtscapabilities\.xml/i.test(url)) return 'wmts';
   if (/\/wmts\//i.test(url) && /capabilities\.xml/i.test(url)) return 'wmts';
-  if (ARCGIS_MAPSERVER_URL_REGEX.test(url)) return 'arcgis';
+  if (isArcgisMapServerUrl(url)) return 'arcgis';
   return 'ogc-api';
 }

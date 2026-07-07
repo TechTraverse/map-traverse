@@ -2,15 +2,16 @@ import type { SourceAuth } from '../types';
 import { appendAuth, authHeaders, stripTrailingSlash } from './ogcApi';
 
 /**
- * Matches the root URL of an ArcGIS REST MapServer, e.g.
+ * True for the root URL of an ArcGIS REST MapServer, e.g.
  * `https://server.arcgisonline.com/ArcGIS/rest/services/USA_Topo_Maps/MapServer`.
  * Deliberately does not match sub-paths (`/MapServer/tile/...`), ImageServer,
  * or FeatureServer — only a cached MapServer root can serve XYZ tiles.
+ * Plain string checks (no regex) so untrusted input can't trigger backtracking.
  */
-export const ARCGIS_MAPSERVER_URL_REGEX = /\/rest\/services\/.+\/mapserver\/?(?:[?#]|$)/i;
-
 export function isArcgisMapServerUrl(url: string): boolean {
-  return ARCGIS_MAPSERVER_URL_REGEX.test(url);
+  const path = url.split(/[?#]/, 1)[0]!.toLowerCase();
+  const trimmed = path.endsWith('/') ? path.slice(0, -1) : path;
+  return trimmed.endsWith('/mapserver') && trimmed.includes('/rest/services/');
 }
 
 /**
