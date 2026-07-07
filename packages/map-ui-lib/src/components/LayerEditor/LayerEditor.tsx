@@ -130,7 +130,7 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons,
       setSuggestedStyles(styles);
       setSuitableStyleTypes(styleTypes);
       const current = valueRef.current.styles;
-      const action = resolveStyleReapplyAction(current, styles, lastAutoAppliedRef.current);
+      const action = resolveStyleReapplyAction(current, styles, lastAutoAppliedRef.current, styleTypes);
       if (action === 'keep') {
         // Already matches detected defaults (or nothing to apply) — sync the ref.
         if (styles.length > 0 && JSON.stringify(current) === JSON.stringify(styles)) {
@@ -143,7 +143,7 @@ export function LayerEditor({ value, onChange, availableSources, availableIcons,
         setGeometryMismatch(null);
         onChangeRef.current({ ...valueRef.current, styles });
       } else {
-        // User-customized styles + a geometry change → warn, don't clobber.
+        // Customized styles incompatible with the detected geometry → warn, don't clobber.
         setGeometryMismatch({ styles, types: styleTypes });
       }
     };
