@@ -1072,8 +1072,10 @@ export function MapPreview({
         latitude={internalViewState.latitude}
         longitude={internalViewState.longitude}
         zoom={internalViewState.zoom}
-        pitch={internalViewState.pitch}
-        bearing={internalViewState.bearing}
+        // pitch/bearing may be absent on raw (un-Zod-parsed) configs; undefined
+        // here makes MapLibre's projection matrix singular and crashes the map
+        pitch={internalViewState.pitch ?? 0}
+        bearing={internalViewState.bearing ?? 0}
         {...(zoomConstraintsValid && internalViewState.minZoom != null ? { minZoom: internalViewState.minZoom } : {})}
         {...(zoomConstraintsValid && internalViewState.maxZoom != null ? { maxZoom: internalViewState.maxZoom } : {})}
         style={{ width: '100%', height: '100%' }}

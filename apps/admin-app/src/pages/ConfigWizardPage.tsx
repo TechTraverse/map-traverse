@@ -47,6 +47,7 @@ import { useQueryablesByLayer } from '../hooks/useQueryablesByLayer';
 import { prettifyZodIssue } from '../utils/prettifyZodPath';
 import { lintMapConfig, type WizardLintIssue } from '../utils/lintMapConfig';
 import { TIPG_LOCAL_SOURCE_ID } from '../utils/detectLocalOgcApi';
+import { DEFAULT_VIEW, normalizeInitialView } from '../utils/viewConfig';
 
 const DEFAULT_GLOBAL_SEARCH: GlobalSearchConfig = {
   enabled: true,
@@ -164,13 +165,6 @@ function computeSuggestedUI(
   return suggested;
 }
 
-const DEFAULT_VIEW: ViewConfig = {
-  latitude: 0,
-  longitude: 0,
-  zoom: 2,
-  pitch: 0,
-  bearing: 0,
-};
 
 const PRESET_SPRITES: (SpriteSource & { displayLabel: string })[] = [
   { id: 'maplibre-osm-bright', url: 'https://demotiles.maplibre.org/styles/osm-bright-gl-style/sprite', displayLabel: 'MapLibre OSM Bright' },
@@ -363,7 +357,7 @@ export function ConfigWizardPage() {
           setUiOverrides(data.config.ui ?? DEFAULT_UI_CONFIG);
           setGlobalSearch(data.config.globalSearch);
           setInfo(data.config.info);
-          setInitialView(data.config.initialView ?? DEFAULT_VIEW);
+          setInitialView(normalizeInitialView(data.config.initialView));
           if (data.config.branding) {
             setBranding(data.config.branding);
           }
@@ -383,7 +377,7 @@ export function ConfigWizardPage() {
     setUiOverrides(next.ui ?? {});
     setGlobalSearch(next.globalSearch);
     setInfo(next.info);
-    setInitialView(next.initialView ?? DEFAULT_VIEW);
+    setInitialView(normalizeInitialView(next.initialView));
     setBranding(next.branding ?? {});
     setValidationErrors([]);
   };
