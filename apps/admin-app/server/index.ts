@@ -985,8 +985,13 @@ app.put('/api/sources/:id', requireAuth, async (req, res) => {
 
     const newUrl = normalizedUrl ?? row.url;
 
+    // Client-provided metadata is persisted regardless of whether the URL
+    // changed — the wizard's WMTS editor saves settings like wmtsMaxZoom with
+    // an unchanged capabilities URL.
     const result = await pool.query(
-      `UPDATE map_admin.ogc_sources SET source_id = $1, url = $2, label = $3, tile_matrix_set_id = $4, source_type = $5, auth = $6, proxy = $7, updated_at = now()
+      `UPDATE map_admin.ogc_sources SET source_id = $1, url = $2, label = $3, tile_matrix_set_id = $4, source_type = $5, auth = $6, proxy = $7, updated_at = now()${
+        metadata ? ', metadata = $9, metadata_updated_at = now()' : ''
+      }
        WHERE id = $8 RETURNING *`,
       [
         source_id ?? row.source_id,
@@ -997,6 +1002,7 @@ app.put('/api/sources/:id', requireAuth, async (req, res) => {
         auth !== undefined ? (auth ? JSON.stringify(auth) : null) : (row.auth ? JSON.stringify(row.auth) : null),
         proxy !== undefined ? proxy : row.proxy,
         req.params.id,
+        ...(metadata ? [JSON.stringify(metadata)] : []),
       ],
     );
 
@@ -1015,18 +1021,10 @@ app.put('/api/sources/:id', requireAuth, async (req, res) => {
       return;
     }
 
-    // Re-inspect if URL changed (non-basemap sources)
-    if (normalizedUrl && normalizedUrl !== row.url) {
-      if (metadata) {
-        // Client provided metadata — save directly
-        const updated = await pool.query(
-          'UPDATE map_admin.ogc_sources SET metadata = $1, metadata_updated_at = now() WHERE id = $2 RETURNING *',
-          [JSON.stringify(metadata), req.params.id],
-        );
-        res.json(updated.rows[0]);
-        return;
-      }
-      // No metadata provided — auto-inspect server-side (fallback)
+    // Re-inspect if URL changed and the client sent no metadata of its own
+    // (non-basemap sources)
+    if (normalizedUrl && normalizedUrl !== row.url && !metadata) {
+      // Auto-inspect server-side (fallback)
       try {
         const inspected = await inspectSource(newUrl);
         const updated = await pool.query(
