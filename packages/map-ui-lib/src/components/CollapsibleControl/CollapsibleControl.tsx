@@ -1,6 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { LuX } from 'react-icons/lu';
 import type { ControlCorner } from '../../types';
+import { computePopoverMaxHeight } from '../../utils/popoverMaxHeight';
+
+// renderToStaticMarkup-based tests run without a DOM; plain useLayoutEffect
+// would warn there.
+const useIsomorphicLayoutEffect =
+  typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 const PANEL_POSITION_CLASSES: Record<ControlCorner, string> = {
   'top-right': 'mapui:top-0 mapui:right-full mapui:mr-2',
@@ -49,10 +55,32 @@ export function CollapsibleControl({
   className = '',
 }: CollapsibleControlProps) {
   const [internalCollapsed, setInternalCollapsed] = useState(defaultCollapsed);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [maxHeight, setMaxHeight] = useState<number | null>(null);
 
   // Use controlled state if provided, otherwise use internal state
   const isCollapsed =
     controlledCollapsed !== undefined ? controlledCollapsed : internalCollapsed;
+
+  // Cap the open panel to the space between its anchor (the button box) and
+  // the viewport edge, so tall content scrolls instead of running off-screen.
+  useIsomorphicLayoutEffect(() => {
+    if (isCollapsed) return;
+    const update = () => {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setMaxHeight(
+        computePopoverMaxHeight(rect.top, rect.bottom, window.innerHeight, corner),
+      );
+    };
+    update();
+    window.addEventListener('resize', update);
+    window.visualViewport?.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('resize', update);
+      window.visualViewport?.removeEventListener('resize', update);
+    };
+  }, [isCollapsed, corner]);
 
   const handleToggle = () => {
     const newCollapsed = !isCollapsed;
@@ -65,7 +93,7 @@ export function CollapsibleControl({
 
   // Always render in a fixed-size container to prevent layout shift
   return (
-    <div className={`mapui:relative mapui:w-10 mapui:h-10 ${className}`}>
+    <div ref={containerRef} className={`mapui:relative mapui:w-10 mapui:h-10 ${className}`}>
       {/* Collapsed button - always rendered to maintain layout space */}
       <button
         type="button"
@@ -80,13 +108,16 @@ export function CollapsibleControl({
       </button>
 
       {/* Expanded panel - positioned based on corner prop */}
-      <div className={`mapui:absolute ${PANEL_POSITION_CLASSES[corner]} mapui:z-10 mapui:bg-white/90 mapui:backdrop-blur-sm mapui:rounded-lg mapui:shadow-lg mapui:transition-all mapui:duration-150 mapui:origin-top-right ${
-        isCollapsed
-          ? 'mapui:opacity-0 mapui:scale-95 mapui:pointer-events-none'
-          : 'mapui:opacity-100 mapui:scale-100 mapui:pointer-events-auto'
-      }`}>
+      <div
+        className={`mapui:absolute ${PANEL_POSITION_CLASSES[corner]} mapui:z-10 mapui:flex mapui:flex-col mapui:bg-white/90 mapui:backdrop-blur-sm mapui:rounded-lg mapui:shadow-lg mapui:transition-all mapui:duration-150 mapui:origin-top-right ${
+          isCollapsed
+            ? 'mapui:opacity-0 mapui:scale-95 mapui:pointer-events-none'
+            : 'mapui:opacity-100 mapui:scale-100 mapui:pointer-events-auto'
+        }`}
+        style={!isCollapsed && maxHeight != null ? { maxHeight } : undefined}
+      >
         {/* Header with icon and close button */}
-        <div className="mapui:flex mapui:items-center mapui:justify-between mapui:p-2 mapui:border-b mapui:border-slate-200">
+        <div className="mapui:flex mapui:shrink-0 mapui:items-center mapui:justify-between mapui:p-2 mapui:border-b mapui:border-slate-200">
           <div className="mapui:flex mapui:items-center mapui:gap-2">
             <Icon size={18} className="mapui:text-slate-700" />
             <span className="mapui:text-sm mapui:font-medium mapui:text-slate-700">
@@ -105,7 +136,7 @@ export function CollapsibleControl({
         </div>
 
         {/* Content */}
-        <div className="mapui:p-2">{children}</div>
+        <div className="mapui:min-h-0 mapui:overflow-y-auto mapui:overscroll-contain mapui:p-2">{children}</div>
       </div>
     </div>
   );

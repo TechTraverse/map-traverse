@@ -32,3 +32,4 @@ export * from './stylePresets';
 export * from './casedLine';
 export * from './wkt';
 export * from './geometry';
+export * from './popoverMaxHeight';

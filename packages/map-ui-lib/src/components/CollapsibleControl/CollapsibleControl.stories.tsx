@@ -200,6 +200,35 @@ export const CornerPositions: Story = {
   },
 };
 
+/**
+ * Tall panel content opened from a button partway down the viewport.
+ * The panel caps itself to the space below the button (minus a 16px margin)
+ * and scrolls internally instead of running off the bottom of the window.
+ * The cap measures the real browser window, so resize the canvas/window to
+ * see it update live.
+ */
+export const TallContentInShortViewport: Story = {
+  render: () => (
+    <div className="mapui:relative mapui:h-[480px] mapui:border mapui:border-slate-300 mapui:rounded-lg mapui:bg-slate-50">
+      <div className="mapui:absolute mapui:top-[300px] mapui:right-4">
+        <CollapsibleControl icon={LuSearch} label="Search" corner="top-right" defaultCollapsed={false}>
+          <div className="mapui:flex mapui:w-64 mapui:flex-col mapui:gap-3 mapui:p-2">
+            {Array.from({ length: 25 }, (_, i) => (
+              <label key={i} className="mapui:flex mapui:flex-col mapui:gap-1 mapui:text-xs mapui:text-slate-600">
+                Field {i + 1}
+                <input
+                  type="text"
+                  className="mapui:w-full mapui:px-3 mapui:py-2 mapui:border mapui:border-slate-300 mapui:rounded"
+                />
+              </label>
+            ))}
+          </div>
+        </CollapsibleControl>
+      </div>
+    </div>
+  ),
+};
+
 /** Multiple controls demonstrating layout. */
 export const MultipleControls: Story = {
   render: () => {
